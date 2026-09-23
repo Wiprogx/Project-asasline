@@ -1,21 +1,39 @@
 import type { Metadata } from "next";
-import { ModulePending } from "@/components/shared/module-pending";
+import { SearchInput } from "@/components/shared/search-input";
+import { Card, CardContent } from "@/components/ui/card";
+import { NewTaskForm } from "@/features/activity/components/new-task-form";
+import { TaskFilters } from "@/features/activity/components/task-filters";
+import { TaskList } from "@/features/activity/components/task-list";
+import { listTasks, staffOptions } from "@/features/activity/queries";
+import { listFilterSchema } from "@/features/activity/schemas";
 import { requirePagePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Activity" };
 
-export default async function ActivityPage() {
-  await requirePagePermission("app.activity");
+/** My open tasks by default (legacy "My tasks"), grouped by the traffic light. */
+export default async function ActivityPage({ searchParams }: PageProps<"/activity">) {
+  const me = await requirePagePermission("app.activity");
+  const filters = listFilterSchema.parse(await searchParams);
+  const [rows, staff] = await Promise.all([listTasks(filters), staffOptions()]);
+
   return (
-    <ModulePending
-      title="Activity"
-      legacy="demo.html lines 11550–12625 (Activity filters & calendar, withdraw) and 9049–10236 (document rules engine)"
-      scope={[
-        "My tasks (default), person filter, date pager and month calendar",
-        "Document rules engine (DOC_RULES): anchors, working days, holidays per country",
-        "Away & cover, hand-over, withdraw / put back with a reason",
-        "Search by SB, container or customer; the undated bucket",
-      ]}
-    />
+    <div className="grid gap-4">
+      <Card>
+        <CardContent className="pt-4">
+          <NewTaskForm staff={staff} meId={me.id} />
+        </CardContent>
+      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TaskFilters staff={staff} />
+        <SearchInput placeholder="Search a task or an SB ref…" />
+      </div>
+      <TaskList
+        rows={rows}
+        today={officeToday()}
+        staff={staff}
+        grouped={filters.state === "open"}
+      />
+    </div>
   );
 }

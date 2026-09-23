@@ -1,4 +1,4 @@
-import { date, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { date, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { recordColumns } from "./_columns";
 import { activityStateEnum, roleEnum } from "./enums";
 import { users } from "./identity";
@@ -18,11 +18,16 @@ export const activities = pgTable(
     ruleCode: text(),
     state: activityStateEnum().notNull().default("open"),
     withdrawReason: text(),
+    note: text(),
+    doneAt: timestamp({ withTimezone: true }),
+    doneBy: uuid().references(() => users.id),
     linkKind: text(),
     linkId: uuid(),
   },
   (t) => [
     index("activities_assignee_idx").on(t.assigneeId, t.state),
     index("activities_link_idx").on(t.linkKind, t.linkId),
+    index("activities_role_idx").on(t.role, t.state),
+    index("activities_due_idx").on(t.due),
   ],
 );

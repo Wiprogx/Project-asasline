@@ -27,7 +27,7 @@ export const NAV: NavItem[] = [
     label: "Activity",
     icon: ListTodoIcon,
     permission: "app.activity",
-    migrated: false,
+    migrated: true,
   },
   {
     href: "/quotations",

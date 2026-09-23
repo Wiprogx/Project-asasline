@@ -14,6 +14,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Activity: My tasks (assigned to me, or to my role and not yet taken), Everyone and per-person views, Overdue · Today · Upcoming · No date buckets, search by task or SB ref, create, done/reopen, withdraw/put back with a reason, hand over to a person or a role, a Monday-first month calendar, a Tasks tab on each booking, and my overdue/today counts on Home. State moves are a tested domain rule (`nextState`).
 - Bookings: Edit tab (parties by contact id, route, loading, vessel/voyage, ETD/ETA guard, carrier and B/L numbers), Containers tab (ISO 6346 numbers, seals, tare/cargo, VGM against the type maximum, add/remove with a reason) and History tab.
 - Playwright browser suite (smoke, booking journey, settings), run locally against the dev database and in CI against a fresh Postgres and Redis.
 - The unguarded-server-function probe also scans cached const queries and `*-actions.ts` files.
