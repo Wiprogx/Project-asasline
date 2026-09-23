@@ -22,6 +22,8 @@ export async function issuedDocs(range?: { from: string; to: string }) {
         date: invoices.issueDate,
         partner: contacts.name,
         country: contacts.country,
+        partnerId: invoices.customerId,
+        vat: contacts.vat,
       })
       .from(invoices)
       .innerJoin(contacts, eq(contacts.id, invoices.customerId))
@@ -47,6 +49,8 @@ export async function issuedDocs(range?: { from: string; to: string }) {
     date: d.date ?? "",
     partner: d.partner,
     partnerCountry: d.country,
+    partnerId: d.partnerId,
+    partnerVat: d.vat,
     lines: linesOf.get(d.id) ?? [],
   }));
 }

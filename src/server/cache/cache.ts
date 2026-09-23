@@ -25,7 +25,12 @@ export async function cached<T>(
   const value = await fn();
   try {
     const m = r.multi().set(k, JSON.stringify(value), "EX", opts.ttlSeconds);
-    for (const t of opts.tags) m.sadd(TAG + t, k).expire(TAG + t, opts.ttlSeconds * 2);
+    // A tag set must outlive every key in it, or invalidation misses the longest-lived ones:
+    // set its expiry when it has none (NX), otherwise only ever raise it (GT) — never shorten.
+    for (const t of opts.tags)
+      m.sadd(TAG + t, k)
+        .expire(TAG + t, opts.ttlSeconds * 2, "NX")
+        .expire(TAG + t, opts.ttlSeconds * 2, "GT");
     await m.exec();
   } catch {
     // A failed write only means the next read computes again.

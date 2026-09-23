@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { periodOf } from "@/domain/period";
 import { JournalList } from "@/features/accounting/components/journal-list";
@@ -20,6 +21,14 @@ export default async function JournalPage({ searchParams }: PageProps<"/accounti
       <PageHeader
         title="Journal"
         description="Every entry comes from a numbered document or a payment — nothing is typed in."
+        actions={
+          <a
+            className={buttonVariants({ variant: "outline" })}
+            href={`/accounting/journal/export?from=${period.from}&to=${period.to}`}
+          >
+            Export for the accountant (CSV)
+          </a>
+        }
       />
       <PeriodPicker path="/accounting/journal" period={period} today={today} />
       <Card>

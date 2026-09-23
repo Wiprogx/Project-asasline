@@ -136,7 +136,7 @@ export function vatReturn(docs: readonly VatDoc[]) {
   return { grids: G, dueCents: xx, deductibleCents: yy, balanceCents: xx - yy };
 }
 
-const xe = (s: string) =>
+export const xe = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 export type Declarant = {
@@ -149,25 +149,9 @@ export type Declarant = {
   phone: string;
 };
 
-/** A draft Intervat VATConsignment file for one period. */
-export function intervatXml(period: string, grids: Map<string, number>, o: Declarant): string {
-  const [, y, part] = PERIOD.exec(period) ?? [];
-  if (!y) throw new Error(`Not a VAT period: ${period}`);
-  const when = part.startsWith("Q")
-    ? `<ns2:Quarter>${part[1]}</ns2:Quarter>`
-    : `<ns2:Month>${Number(part)}</ns2:Month>`;
-  const amounts = [...grids]
-    .filter(([, v]) => v !== 0)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(
-      ([k, v]) =>
-        `      <ns2:Amount GridNumber="${Number(k)}">${(Math.abs(v) / 100).toFixed(2)}</ns2:Amount>`,
-    );
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!-- DRAFT made by the ASASLINE office app — upload it to Intervat's check before filing -->
-<ns2:VATConsignment xmlns="http://www.minfin.fgov.be/InputCommon" xmlns:ns2="http://www.minfin.fgov.be/VATConsignment" VATDeclarationsNbr="1">
-  <ns2:VATDeclaration SequenceNumber="1" DeclarantReference="${xe(`ASAS-${period}`)}">
-    <ns2:Declarant>
+/** The declarant block every Intervat file carries. */
+export function declarantXml(o: Declarant): string {
+  return `<ns2:Declarant>
       <VATNumber>${xe(o.vat.replace(/\D/g, ""))}</VATNumber>
       <Name>${xe(o.name)}</Name>
       <Street>${xe(o.street)}</Street>
@@ -176,8 +160,35 @@ export function intervatXml(period: string, grids: Map<string, number>, o: Decla
       <CountryCode>BE</CountryCode>
       <EmailAddress>${xe(o.email)}</EmailAddress>
       <Phone>${xe(o.phone.replace(/\s/g, ""))}</Phone>
-    </ns2:Declarant>
-    <ns2:Period>${when}<ns2:Year>${y}</ns2:Year></ns2:Period>
+    </ns2:Declarant>`;
+}
+
+/** A month ("2026-08") or a quarter ("2026-Q3") as Intervat writes it. */
+export function periodXml(period: string): string {
+  const [, y, part] = PERIOD.exec(period) ?? [];
+  if (!y) throw new Error(`Not a VAT period: ${period}`);
+  const when = part.startsWith("Q")
+    ? `<ns2:Quarter>${part[1]}</ns2:Quarter>`
+    : `<ns2:Month>${Number(part)}</ns2:Month>`;
+  return `<ns2:Period>${when}<ns2:Year>${y}</ns2:Year></ns2:Period>`;
+}
+
+export const euros = (cents: number) => (cents / 100).toFixed(2);
+
+/** A draft Intervat VATConsignment file for one period. */
+export function intervatXml(period: string, grids: Map<string, number>, o: Declarant): string {
+  const amounts = [...grids]
+    .filter(([, v]) => v !== 0)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(
+      ([k, v]) => `      <ns2:Amount GridNumber="${Number(k)}">${euros(Math.abs(v))}</ns2:Amount>`,
+    );
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- DRAFT made by the ASASLINE office app — upload it to Intervat's check before filing -->
+<ns2:VATConsignment xmlns="http://www.minfin.fgov.be/InputCommon" xmlns:ns2="http://www.minfin.fgov.be/VATConsignment" VATDeclarationsNbr="1">
+  <ns2:VATDeclaration SequenceNumber="1" DeclarantReference="${xe(`ASAS-${period}`)}">
+    ${declarantXml(o)}
+    ${periodXml(period)}
     <ns2:Data>
 ${amounts.join("\n")}
     </ns2:Data>

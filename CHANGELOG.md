@@ -6,6 +6,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Fixed
 
+- A new contact could stay missing from the customer and supplier pickers for up to five minutes: a shorter-lived cached list sharing the `contacts` tag shortened the tag's life below the pickers' key, so creating a contact no longer cleared it. A tag set's expiry now only ever rises.
 - A bank line's de-duplication key now includes the payer's name: two payers sending the same amount with the same note on the same day were taken for one.
 - Forms lost everything typed after a validation error (React 19 resets `<form action>` once the action returns); all stateful forms now submit through `ActionForm`.
 - Success toasts never appeared when the action removed its own component (archive, cancel, remove container); toasts now fire when the result arrives (`useToastedAction`).
@@ -15,6 +16,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Accounting, step 6 — listings and the accountant's export: the annual listing of Belgian customers (over €250 net of credit notes) and the intra-community listing of reverse-charge services per VAT period, each with a draft Intervat XML; the journal of any period as a CSV for the accountant (";" separated, comma decimals, readable by Excel).
 - Accounting, step 5 — VAT and closed periods: the Belgian VAT return (form 625) per quarter or month, from the documents dated in it — sales per rate in 00/01/03, exempt export in 47, EU reverse charge in 44 and 48, credit notes in 49/64, purchases in 82/83 with deductible VAT in 59, and the reverse charge on services bought (88/55 from the EU, 87/56 from elsewhere) — with its deadline, a draft Intervat XML, and "Mark as filed", which keeps the grids as sent and closes the books through the period's end. Closing the books (only through a past day, only forward) refuses anything dated in a closed period: issuing, crediting, recording a bill, booking or reversing a payment. Migration 0007.
 - Accounting, step 4 — the books: a journal derived from every numbered document and payment (sales invoices and credit notes on 400000/70x/451000, supplier bills on 440000/60x-61x/411000 with both sides of the reverse charge, payments on 550000 with write-offs, reversals as their own entry), never typed in and refused if it does not balance; Journal, Reports (profit and loss, balance sheet, trial balance with drill-down to each account's ledger), Aged receivables and payables, and Margins per shipment, each over a chosen period.
 - Accounting, step 3 — supplier bills: record a supplier's invoice (for the office or as a cost of a booking, lines on purchase accounts 604000/61x/230000) in our own BILL/YYYY/NNNNN series with their number; the same supplier number cannot be recorded twice; from €5,000 a second person approves before payment (four eyes, refused for the one who recorded it); bills are paid by hand or from outgoing bank lines matched by our number, their number or their IBAN + amount; a booking's Billing tab shows its costs and margin. Migration 0006.
