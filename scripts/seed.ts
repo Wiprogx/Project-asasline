@@ -11,7 +11,8 @@ async function main() {
   const { sql } = await import("drizzle-orm");
   const { db } = await import("../src/server/db/client");
   const { configTables, contacts, users } = await import("../src/server/db/schema");
-  const { hashPassword, MIN_PASSWORD_LENGTH } = await import("../src/server/auth/password");
+  const { hashPassword } = await import("../src/server/auth/password");
+  const { MIN_PASSWORD_LENGTH } = await import("../src/domain/people");
   const { DEFAULT_CANCEL_REASONS } = await import("../src/domain/shipments");
   const { DEFAULT_PAYMENT_TERMS } = await import("../src/domain/accounting");
   const { ADDRESS_TYPES } = await import("../src/domain/contacts");

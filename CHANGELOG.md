@@ -6,6 +6,8 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Settings: People (add, change role, switch off/on; nobody switches themselves off and one active Admin always remains), Lists editor over `config_tables` with optimistic versions, Audit log viewer, and My account (change password, other sessions signed out).
+- GitHub Actions workflow running the same gate as the pre-push hook (`abatty ci`), plus database and build jobs.
 - Next.js 16 app (App Router, Turbopack) replacing the legacy single-file TMS, strangler-style.
 - Postgres schema via Drizzle (14 tables: identity, contacts, quotations, bookings, containers, activities, config tables, sequences, audit) and the initial migration.
 - Redis read-through cache with tag invalidation and a Redis-backed login rate limiter, both degrading gracefully without Redis.

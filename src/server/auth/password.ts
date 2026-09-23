@@ -4,8 +4,6 @@ import bcrypt from "bcryptjs";
  * bcrypt, as the PHP server used: existing `$2y$` hashes from the legacy users table verify
  * unchanged, so staff keep their passwords through the migration.
  */
-export const MIN_PASSWORD_LENGTH = 10;
-
 export const hashPassword = (plain: string) => bcrypt.hash(plain, 12);
 
 export const verifyPassword = (plain: string, hash: string) =>

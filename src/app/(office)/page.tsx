@@ -34,11 +34,13 @@ export default async function HomePage() {
       <Card className="mt-6 max-w-2xl">
         <CardHeader>
           <CardTitle>Migration in progress</CardTitle>
-          <CardDescription>Quotations, Bookings and Contacts run on the new stack.</CardDescription>
+          <CardDescription>
+            Quotations, Bookings, Contacts and Settings run on the new stack.
+          </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Activity, Discuss, Accounting and Settings are still served by the legacy app; see
-          docs/MIGRATION.md for the order of work.
+          Activity, Discuss and Accounting are still served by the legacy app; see docs/MIGRATION.md
+          for the order of work.
         </CardContent>
       </Card>
     </>

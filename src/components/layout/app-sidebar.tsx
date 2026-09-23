@@ -64,10 +64,13 @@ export function AppSidebar({ allowed, user, logout }: Props) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="px-2 text-xs group-data-[collapsible=icon]:hidden">
+        <Link
+          href="/account"
+          className="rounded-md px-2 py-1 text-xs group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent"
+        >
           <div className="truncate font-medium">{user.name}</div>
-          <div className="text-muted-foreground">{user.roleLabel}</div>
-        </div>
+          <div className="text-muted-foreground">{user.roleLabel} · My account</div>
+        </Link>
         <form action={logout}>
           <SidebarMenuButton type="submit" tooltip="Sign out">
             <LogOutIcon />

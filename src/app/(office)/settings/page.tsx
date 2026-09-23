@@ -1,20 +1,10 @@
-import type { Metadata } from "next";
-import { ModulePending } from "@/components/shared/module-pending";
-import { requirePagePermission } from "@/server/auth/dal";
-
-export const metadata: Metadata = { title: "Settings" };
+import { redirect } from "next/navigation";
+import { can } from "@/domain/permissions";
+import { requireUser } from "@/server/auth/dal";
 
 export default async function SettingsPage() {
-  await requirePagePermission("app.settings");
-  return (
-    <ModulePending
-      title="Settings"
-      legacy="demo.html lines 10236–11550 and 14742–15360"
-      scope={[
-        "Every editable list as a row in config_tables (ports, cut-offs, document rules…)",
-        "People: add, set role, switch off (never delete; at least one Admin remains)",
-        "Permission matrix, audit trail, links report, integrations",
-      ]}
-    />
-  );
+  const user = await requireUser();
+  if (can(user.role, "app.settings")) redirect("/settings/people");
+  if (can(user.role, "audit.view")) redirect("/settings/audit");
+  redirect("/");
 }

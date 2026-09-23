@@ -1,9 +1,9 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, ne } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { env } from "@/env";
-import { db } from "../db/client";
+import { db, type DbOrTx } from "../db/client";
 import { sessions, users } from "../db/schema";
 
 export const SESSION_COOKIE = "asl_session";
@@ -66,4 +66,22 @@ export async function revokeSession(): Promise<void> {
       .where(eq(sessions.id, hashToken(token)));
   }
   jar.delete(SESSION_COOKIE);
+}
+
+/** After a password change: every other device is signed out; this one stays. */
+export async function revokeOtherSessions(userId: string): Promise<void> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const keep = token ? hashToken(token) : "";
+  await db
+    .update(sessions)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt), ne(sessions.id, keep)));
+}
+
+/** When someone is switched off: all their sessions end now, not at expiry. */
+export async function revokeAllSessionsOf(db_: DbOrTx, userId: string): Promise<void> {
+  await db_
+    .update(sessions)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
 }

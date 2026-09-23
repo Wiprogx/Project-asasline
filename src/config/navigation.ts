@@ -69,6 +69,6 @@ export const NAV: NavItem[] = [
     label: "Settings",
     icon: SettingsIcon,
     permission: "app.settings",
-    migrated: false,
+    migrated: true,
   },
 ];
