@@ -54,7 +54,7 @@ export const CHART: Record<string, string> = {
 
 export const accountName = (a: string) => CHART[a] ?? "";
 
-export type JournalCode = "SAL" | "PUR" | "BNK";
+export type JournalCode = "SAL" | "PUR" | "BNK" | "MISC";
 export type EntryLine = { account: string; cents: number; label?: string };
 export type Entry = {
   date: string;
@@ -62,7 +62,7 @@ export type Entry = {
   ref: string;
   label: string;
   partner: string | null;
-  source: { kind: "invoice" | "payment"; id: string };
+  source: { kind: "invoice" | "payment" | "asset"; id: string };
   lines: EntryLine[];
 };
 
@@ -94,7 +94,7 @@ export type LedgerPayment = {
 const REVERSE_CHARGE_RATE = 21;
 
 /** Drops empty lines and fails loudly on an entry that does not balance — never a silent fix. */
-function entry(e: Entry): Entry {
+export function entry(e: Entry): Entry {
   const lines = e.lines.filter((l) => l.cents !== 0);
   const sum = lines.reduce((s, l) => s + l.cents, 0);
   if (sum !== 0) throw new Error(`Entry ${e.ref} does not balance (${sum} cents)`);
@@ -182,9 +182,13 @@ export function paymentEntries(p: LedgerPayment): Entry[] {
 }
 
 /** The whole journal, oldest first; the same day keeps documents before payments. */
-export function journal(docs: readonly LedgerDoc[], pays: readonly LedgerPayment[]): Entry[] {
-  const order: Record<JournalCode, number> = { SAL: 0, PUR: 1, BNK: 2 };
-  return [...docs.map(docEntry), ...pays.flatMap(paymentEntries)].sort(
+export function journal(
+  docs: readonly LedgerDoc[],
+  pays: readonly LedgerPayment[],
+  other: readonly Entry[] = [],
+): Entry[] {
+  const order: Record<JournalCode, number> = { SAL: 0, PUR: 1, BNK: 2, MISC: 3 };
+  return [...docs.map(docEntry), ...pays.flatMap(paymentEntries), ...other].sort(
     (a, b) =>
       a.date.localeCompare(b.date) ||
       order[a.journal] - order[b.journal] ||

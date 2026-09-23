@@ -45,3 +45,26 @@ export const invoiceReminders = pgTable(
   },
   (t) => [index("invoice_reminders_invoice_idx").on(t.invoiceId, t.sentOn)],
 );
+
+/**
+ * Equipment bought on a bill line of class 2, depreciated month by month (domain/assets). The
+ * depreciation is never stored: the journal derives it from these rows, like everything else.
+ */
+export const fixedAssets = pgTable(
+  "fixed_assets",
+  {
+    ...recordColumns,
+    name: text().notNull(),
+    invoiceId: uuid()
+      .notNull()
+      .references(() => invoices.id),
+    invoiceLineId: uuid(),
+    acquiredOn: date({ mode: "string" }).notNull(),
+    costCents: cents().notNull(),
+    years: integer().notNull(),
+    account: text().notNull(),
+    disposedOn: date({ mode: "string" }),
+    disposeNote: text(),
+  },
+  (t) => [index("fixed_assets_invoice_idx").on(t.invoiceId)],
+);

@@ -1,18 +1,27 @@
 import "server-only";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { cache } from "react";
+import { assetEntries, lastMonthEnd } from "@/domain/assets";
 import { agedBalance, journal, type LedgerPayment } from "@/domain/ledger";
 import { openCents } from "@/domain/payments";
 import { requirePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookings, contacts, invoices, paymentAllocations, payments } from "@/server/db/schema";
+import {
+  bookings,
+  contacts,
+  fixedAssets,
+  invoices,
+  paymentAllocations,
+  payments,
+} from "@/server/db/schema";
 import { issuedDocs } from "./ledger-store";
 import { creditedSql, settledSql } from "./money";
 
 /** The journal, derived from the documents and payments each time it is read (see domain/ledger). */
 export const readJournal = cache(async () => {
   await requirePermission("app.accounting");
-  const [docs, pays] = await Promise.all([
+  const [docs, pays, assets] = await Promise.all([
     issuedDocs(),
     db
       .select({
@@ -32,12 +41,18 @@ export const readJournal = cache(async () => {
       .leftJoin(contacts, eq(contacts.id, payments.contactId))
       .leftJoin(paymentAllocations, eq(paymentAllocations.paymentId, payments.id))
       .leftJoin(invoices, eq(invoices.id, paymentAllocations.invoiceId)),
+    db.select().from(fixedAssets).where(isNull(fixedAssets.archivedAt)),
   ]);
   const ledgerPays: LedgerPayment[] = pays.map((p) => ({
     ...p,
     reversedOn: p.status === "reversed" ? (p.reversedOn ?? p.date) : null,
   }));
-  return journal(docs, ledgerPays);
+  const upTo = lastMonthEnd(officeToday());
+  return journal(
+    docs,
+    ledgerPays,
+    assets.flatMap((a) => assetEntries(a, upTo)),
+  );
 });
 
 /** What customers owe (receivables) or what is owed to suppliers (payables), by age. */

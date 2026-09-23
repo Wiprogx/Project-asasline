@@ -131,3 +131,16 @@ export const sepaCancelSchema = z.object({
   id: z.uuid(),
   reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
 });
+
+export const assetYearsSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  years: z.coerce.number().int().min(1, "At least one year").max(50, "At most 50 years"),
+});
+
+export const assetDisposeSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  disposedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date"),
+  note: z.string().trim().min(3, "What happened to it?").max(300),
+});

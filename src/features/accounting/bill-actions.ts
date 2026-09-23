@@ -3,11 +3,12 @@
 import { and, eq, ne } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { approvalProblem, needsApproval } from "@/domain/accounting";
+import { defaultYears } from "@/domain/assets";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { bookings, invoices } from "@/server/db/schema";
+import { bookings, fixedAssets, invoices } from "@/server/db/schema";
 import { nextInvoiceNumber } from "@/server/sequences";
 import { updateVersioned } from "@/server/versioned";
 import { assertOpen } from "./books-store";
@@ -63,8 +64,8 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
       const bill = await draftOf(tx, id);
       await assertOpen(tx, billDate);
       if (bill.kind !== "bill") throw new Refused("This is not a supplier bill.");
-      if ((await liveLines(tx, id)).length === 0)
-        throw new Refused("A bill needs at least one line.");
+      const lines = await liveLines(tx, id);
+      if (lines.length === 0) throw new Refused("A bill needs at least one line.");
       const [twice] = await tx
         .select({ number: invoices.number })
         .from(invoices)
@@ -89,6 +90,21 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
         { status: "issued", number, supplierRef, issueDate: billDate, dueDate, updatedBy: user.id },
         "This bill",
       );
+      // Equipment (class 2) is an asset, depreciated month by month — not a cost of the month.
+      const equipment = lines.filter((l) => l.account.startsWith("2"));
+      if (equipment.length)
+        await tx.insert(fixedAssets).values(
+          equipment.map((l) => ({
+            name: l.description,
+            invoiceId: id,
+            invoiceLineId: l.id,
+            acquiredOn: billDate,
+            costCents: Math.round(l.qty * l.unitCents),
+            years: defaultYears(l.description),
+            account: l.account,
+            createdBy: user.id,
+          })),
+        );
       await audit(tx, {
         action: "bill.record",
         userId: user.id,
