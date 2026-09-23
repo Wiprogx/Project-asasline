@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_ESCALATE_MINUTES, DEFAULT_ROUTES, type Route } from "@/domain/messages";
 import { ROLES } from "@/domain/permissions";
+import { DEFAULT_TEMPLATES, TEMPLATE_CHANNELS, type Template } from "@/domain/templates";
 import { cached } from "./cache/cache";
 import { db, type DbOrTx } from "./db/client";
 import { bookings, configTables, quotations } from "./db/schema";
@@ -50,4 +51,24 @@ export async function resolveRef(
     return q ? { kind: "quotation", id: q.id, ref: r } : null;
   }
   return null;
+}
+
+const templatesSchema = z.array(
+  z.object({
+    code: z.string(),
+    name: z.string(),
+    channel: z.enum(TEMPLATE_CHANNELS),
+    subject: z.string(),
+    body: z.string(),
+    active: z.boolean(),
+  }),
+);
+
+/** The message templates (a Settings table with the legacy letters as default). */
+export function readTemplates(): Promise<Template[]> {
+  return cached("config:templates", { ttlSeconds: 600, tags: ["config:templates"] }, async () => {
+    const [row] = await db.select().from(configTables).where(eq(configTables.name, "templates"));
+    const parsed = row ? templatesSchema.safeParse(row.value) : null;
+    return parsed?.success ? parsed.data : DEFAULT_TEMPLATES;
+  });
 }

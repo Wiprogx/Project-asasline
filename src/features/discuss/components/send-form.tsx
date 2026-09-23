@@ -21,17 +21,49 @@ export type Recipient = {
  * Write to a party on the file. The message is recorded with its subject key
  * ([SB2609001/MSG]) so the reply finds its way back, then opened in the mail or WhatsApp app.
  */
-export function SendForm({ linkRef, recipients }: { linkRef: string; recipients: Recipient[] }) {
+export type FilledTemplate = {
+  code: string;
+  name: string;
+  channel: "email" | "whatsapp" | "both";
+  subject: string;
+  body: string;
+};
+
+export function SendForm({
+  linkRef,
+  recipients,
+  templates = [],
+}: {
+  linkRef: string;
+  recipients: Recipient[];
+  templates?: FilledTemplate[];
+}) {
   const form = useRef<HTMLFormElement>(null);
   const [channel, setChannel] = useState<"email" | "whatsapp">("email");
   const [to, setTo] = useState("");
   const [contactId, setContactId] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [template, setTemplate] = useState("");
   const [state, run, pending] = useToastedAction(sendMessage, (data) => {
     if (data?.href) window.open(data.href, "_blank", "noopener");
     form.current?.reset();
     setTo("");
     setContactId("");
+    setSubject("");
+    setBody("");
+    setTemplate("");
   });
+
+  // A template writes the subject and the text, filled from the file; they stay editable.
+  const applyTemplate = (code: string) => {
+    setTemplate(code);
+    const t = templates.find((x) => x.code === code);
+    if (!t) return;
+    setSubject(t.subject);
+    setBody(t.body);
+    if (t.channel !== "both" && t.channel !== channel) setChannel(t.channel);
+  };
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   const pick = (id: string) => {
@@ -44,6 +76,17 @@ export function SendForm({ linkRef, recipients }: { linkRef: string; recipients:
     <ActionForm ref={form} action={run} className="grid gap-3">
       <input type="hidden" name="linkRef" value={linkRef} />
       <input type="hidden" name="contactId" value={contactId} />
+      {templates.length > 0 && (
+        <Field id="s-template" label="Template">
+          <NativeSelect
+            id="s-template"
+            value={template}
+            onChange={(e) => applyTemplate(e.target.value)}
+            placeholder="— write it yourself —"
+            options={templates.map((t) => ({ value: t.code, label: t.name }))}
+          />
+        </Field>
+      )}
       <div className="grid gap-3 sm:grid-cols-3">
         <Field id="s-channel" label="By">
           <NativeSelect
@@ -86,11 +129,23 @@ export function SendForm({ linkRef, recipients }: { linkRef: string; recipients:
           label="Subject"
           hint={`The key [${linkRef}/MSG] is added so the reply comes back here`}
         >
-          <Input id="s-subject" name="subject" />
+          <Input
+            id="s-subject"
+            name="subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+          />
         </Field>
       )}
       <Field id="s-body" label="Message" error={fe?.body}>
-        <Textarea id="s-body" name="body" rows={4} required />
+        <Textarea
+          id="s-body"
+          name="body"
+          rows={template ? 10 : 4}
+          required
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        />
       </Field>
       <div>
         <Button type="submit" disabled={pending}>

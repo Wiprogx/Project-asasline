@@ -7,7 +7,12 @@ import { contactOptions } from "@/features/contacts/queries";
 import { LogIncomingDialog } from "@/features/discuss/components/log-incoming-dialog";
 import { MessageItem } from "@/features/discuss/components/message-item";
 import { SendForm } from "@/features/discuss/components/send-form";
-import { bookingRecipients, messagesForRecord, routingTable } from "@/features/discuss/queries";
+import {
+  bookingRecipients,
+  bookingTemplates,
+  messagesForRecord,
+  routingTable,
+} from "@/features/discuss/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export const metadata: Metadata = { title: "Booking messages" };
@@ -16,15 +21,16 @@ export const metadata: Metadata = { title: "Booking messages" };
 export default async function BookingMessagesPage({
   params,
 }: PageProps<"/bookings/[id]/messages">) {
-  await requirePagePermission("app.discuss");
+  const user = await requirePagePermission("app.discuss");
   const { id } = await params;
   const b = await getBooking(id);
   if (!b) notFound();
-  const [rows, recipients, contacts, routes] = await Promise.all([
+  const [rows, recipients, contacts, routes, templates] = await Promise.all([
     messagesForRecord("booking", id),
     bookingRecipients(id),
     contactOptions(),
     routingTable(),
+    bookingTemplates(id, user.name),
   ]);
 
   return (
@@ -35,7 +41,7 @@ export default async function BookingMessagesPage({
           <CardTitle>Write</CardTitle>
         </CardHeader>
         <CardContent>
-          <SendForm linkRef={b.ref} recipients={recipients} />
+          <SendForm linkRef={b.ref} recipients={recipients} templates={templates} />
         </CardContent>
       </Card>
       <Card>

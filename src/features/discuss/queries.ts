@@ -4,11 +4,12 @@ import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { type Channel, routeCodeOf, routeRole, inQueueOf, waitedMinutes } from "@/domain/messages";
 import type { Role } from "@/domain/permissions";
+import { fillTemplate } from "@/domain/templates";
 import { requirePermission } from "@/server/auth/dal";
 import { now } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookings, configTables, contacts, messages, users } from "@/server/db/schema";
-import { readEscalateMinutes, readRoutes } from "@/server/messaging";
+import { bookings, configTables, contacts, containers, messages, users } from "@/server/db/schema";
+import { readEscalateMinutes, readRoutes, readTemplates } from "@/server/messaging";
 
 const claimer = alias(users, "claimer");
 
@@ -204,4 +205,55 @@ export async function routingForEdit() {
     minutes,
     escalationVersion: of("escalation")?.version ?? 0,
   };
+}
+
+/** The booking's templates, filled from the file: choosing one fills the subject and the text. */
+export async function bookingTemplates(bookingId: string, me: string) {
+  await requirePermission("app.discuss");
+  if (!z.uuid().safeParse(bookingId).success) return [];
+  const [row] = await db
+    .select({ b: bookings, client: contacts.name })
+    .from(bookings)
+    .leftJoin(contacts, eq(contacts.id, bookings.clientId))
+    .where(eq(bookings.id, bookingId));
+  if (!row) return [];
+  const boxes = await db
+    .select({ number: containers.number, type: containers.type })
+    .from(containers)
+    .where(and(eq(containers.bookingId, bookingId), isNull(containers.archivedAt)));
+  const { b } = row;
+  const vars = {
+    client: row.client,
+    ref: b.ref,
+    pol: b.pol,
+    dest: b.pod,
+    containers: boxes.map((c) => c.number ?? c.type).join(", "),
+    vessel: b.vesselName,
+    voyage: b.voyage,
+    etd: b.etd,
+    eta: b.eta,
+    docName: b.docType,
+    customs: b.customsClosing,
+    portcut: b.portCutOff,
+    loadDate: b.loadDate,
+    loadTime: b.loadTime,
+    loadAddress: b.loadAddress,
+    me,
+  };
+  return (await readTemplates())
+    .filter((t) => t.active)
+    .map((t) => ({
+      code: t.code,
+      name: t.name,
+      channel: t.channel,
+      subject: fillTemplate(t.subject, vars),
+      body: fillTemplate(t.body, vars),
+    }));
+}
+
+/** The templates as the editor needs them, with their version. */
+export async function templatesForEdit() {
+  await requirePermission("app.settings");
+  const [row] = await db.select().from(configTables).where(eq(configTables.name, "templates"));
+  return { templates: await readTemplates(), version: row?.version ?? 0 };
 }
