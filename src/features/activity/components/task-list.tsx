@@ -17,7 +17,14 @@ function TaskItem({ t, today, staff }: { t: TaskRow; today: string; staff: Staff
   return (
     <li className="flex flex-wrap items-start justify-between gap-3 border-b py-3 last:border-0">
       <div className="grid min-w-0 gap-1">
-        <span className="font-medium [overflow-wrap:anywhere]">{t.title}</span>
+        <span className="font-medium [overflow-wrap:anywhere]">
+          {t.blocking && t.state === "open" && (
+            <span className="mr-1" title="Stops the shipment if missed" aria-label="Blocking">
+              ⛔
+            </span>
+          )}
+          {t.title}
+        </span>
         <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {t.state === "open" && (
             <ToneBadge tone={BUCKET_META[bucket].tone}>{t.due ?? "no date"}</ToneBadge>

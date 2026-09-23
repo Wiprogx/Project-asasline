@@ -22,6 +22,7 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
   const tabs = [
     { href: base, label: "Summary", exact: true },
     ...(editable ? [{ href: `${base}/edit`, label: "Edit" }] : []),
+    { href: `${base}/documents`, label: "Documents" },
     { href: `${base}/containers`, label: `Containers (${b.containers.length})` },
     ...(can(user.role, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
     { href: `${base}/history`, label: "History" },

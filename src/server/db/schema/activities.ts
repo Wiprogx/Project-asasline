@@ -1,4 +1,4 @@
-import { date, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { recordColumns } from "./_columns";
 import { activityStateEnum, roleEnum } from "./enums";
 import { users } from "./identity";
@@ -16,6 +16,7 @@ export const activities = pgTable(
     role: roleEnum(),
     due: date({ mode: "string" }),
     ruleCode: text(),
+    blocking: boolean().notNull().default(false),
     state: activityStateEnum().notNull().default("open"),
     withdrawReason: text(),
     note: text(),

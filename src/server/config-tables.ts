@@ -55,34 +55,45 @@ export function configProblem(name: ConfigName, values: string[]): string | null
   return r.success ? null : "A list needs at least one entry, each under 200 characters.";
 }
 
-/** Optimistic write: the first save inserts (version 0), later saves need the version read. */
-export async function writeConfig(
+/**
+ * Optimistic write of any Settings table: the first save inserts (version 0), later saves
+ * need the version the editor read. A stale version is a ConflictError, never an overwrite.
+ */
+export async function writeTable(
   tx: Tx,
-  name: ConfigName,
-  values: string[],
+  name: string,
+  value: unknown,
   expectedVersion: number,
   userId: string,
 ): Promise<void> {
   if (expectedVersion === 0) {
     const rows = await tx
       .insert(configTables)
-      .values({ name, value: values, updatedBy: userId })
+      .values({ name, value, updatedBy: userId })
       .onConflictDoNothing()
       .returning({ name: configTables.name });
-    if (rows.length === 0) throw new ConflictError("This list");
+    if (rows.length === 0) throw new ConflictError("This table");
     return;
   }
   const rows = await tx
     .update(configTables)
     .set({
-      value: values,
+      value,
       version: sql`${configTables.version} + 1`,
       updatedAt: new Date(),
       updatedBy: userId,
     })
     .where(and(eq(configTables.name, name), eq(configTables.version, expectedVersion)))
     .returning({ name: configTables.name });
-  if (rows.length === 0) throw new ConflictError("This list");
+  if (rows.length === 0) throw new ConflictError("This table");
 }
+
+export const writeConfig = (
+  tx: Tx,
+  name: ConfigName,
+  values: string[],
+  version: number,
+  userId: string,
+) => writeTable(tx, name, values, version, userId);
 
 export const invalidateConfig = (name: ConfigName) => invalidateTags(tag(name));

@@ -93,6 +93,11 @@ export const bookings = pgTable(
     voyage: text(),
     etd: day(),
     eta: day(),
+    // Closings the document rules anchor on (legacy vessel cut-offs, kept on the booking for now).
+    customsClosing: day(),
+    vgmClosing: day(),
+    siClosing: day(),
+    portCutOff: day(),
     commodity: text(),
     cancelReason: text(),
     statusBeforeCancel: bookingStatusEnum("status_before_cancel"),

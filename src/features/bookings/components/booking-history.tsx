@@ -17,6 +17,15 @@ const LABEL: Record<string, (d: Record<string, unknown>) => string> = {
   "container.add": (d) => `Container added (${d.type})`,
   "container.edit": (d) => `Container saved${d.number ? ` · ${d.number}` : ""}`,
   "container.remove": (d) => `Container removed — ${d.reason}`,
+  "rules.sync": (d) => {
+    const opened = (d.opened as string[] | undefined) ?? [];
+    const parts = [
+      opened.length && `opened ${opened.join(", ")}`,
+      d.redated && `${d.redated} redated`,
+      d.withdrawn && `${d.withdrawn} withdrawn`,
+    ].filter(Boolean);
+    return `Document chain updated — ${parts.join(" · ")}`;
+  },
 };
 
 /** The booking's own audit trail in plain words (legacy "hist" tab). */

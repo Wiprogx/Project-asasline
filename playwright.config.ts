@@ -11,6 +11,8 @@ config({ path: ".env.local" });
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
+  // One at a time: Settings tests change office-wide tables (rules, holidays, lists).
+  workers: 1,
   retries: 0,
   reporter: [["list"]],
   use: {

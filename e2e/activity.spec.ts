@@ -88,5 +88,11 @@ test("cancelling a booking withdraws its open tasks with the reason", async ({ p
   await page.getByRole("dialog").getByRole("button", { name: "Cancel booking" }).click();
   await expectToast(page, "Booking cancelled");
   await page.reload();
-  await expect(page.getByText("withdrawn — Booking cancelled: Goods not ready")).toBeVisible();
+  // Our own task, and the engine's open steps with it (every one says why).
+  await expect(row(page, `Send VGM ${t}`)).toContainText(
+    "withdrawn — Booking cancelled: Goods not ready",
+  );
+  await expect(
+    page.getByText("withdrawn — Booking cancelled: Goods not ready").nth(1),
+  ).toBeVisible();
 });

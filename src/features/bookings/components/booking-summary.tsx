@@ -72,6 +72,17 @@ export function BookingSummary({ b }: { b: Booking }) {
             <Row k="Notify" v={party(b.notify)} />
             <Row k="Vessel / voyage" v={[b.vesselName, b.voyage].filter(Boolean).join(" · ")} />
             <Row k="ETD → ETA" v={b.etd || b.eta ? `${b.etd ?? "?"} → ${b.eta ?? "?"}` : null} />
+            <Row
+              k="Closings"
+              v={[
+                b.customsClosing && `customs ${b.customsClosing}`,
+                b.vgmClosing && `VGM ${b.vgmClosing}`,
+                b.siClosing && `SI ${b.siClosing}`,
+                b.portCutOff && `port ${b.portCutOff}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            />
             <Row k="Carrier booking" v={b.carrierBookingNo} />
             <Row k="B/L" v={b.blNo} />
           </dl>

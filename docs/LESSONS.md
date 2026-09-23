@@ -61,3 +61,12 @@ prefer the editor tool for multi-line edits.
 same email. A later race matched the previous save's toast instead of the new one.
 **Rule.** E2E data is unique per run (`tag()`); wait for the server action's response
 (`submit()`), not for a toast that may be left over.
+
+## 2026-09-23 · Re-plan after the commit, not inside it
+
+**What happened.** Designing "save a rule, then re-plan every booking" in one transaction
+would have re-planned against the old rule book.
+**Why.** The sync reads the rule book through the Redis cache and the shared pool — another
+connection, which cannot see rows the saving transaction has not committed yet.
+**Rule.** Write in one transaction, invalidate the cache, then run the sync in a second one
+(`saveAndReplan` in `src/features/rules/actions.ts`).

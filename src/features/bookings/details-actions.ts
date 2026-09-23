@@ -6,6 +6,7 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
+import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { bookingDetailsSchema, CLEARABLE_DETAILS } from "./schemas";
 import { guarded, Refused } from "./settle";
@@ -61,6 +62,7 @@ export async function updateBookingDetails(_p: ActionResult, fd: FormData): Prom
           entityId: id,
           detail: { fields: changed },
         });
+        await syncBookingRules(tx, id, user.id);
       }),
     "Saved",
   );

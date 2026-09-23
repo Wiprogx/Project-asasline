@@ -61,6 +61,10 @@ export const bookingDetailsSchema = z
     voyage: optional,
     etd: day.optional(),
     eta: day.optional(),
+    customsClosing: day.optional(),
+    vgmClosing: day.optional(),
+    siClosing: day.optional(),
+    portCutOff: day.optional(),
   })
   .superRefine((v, ctx) => {
     const p = sailingProblem(v.etd ?? null, v.eta ?? null);
@@ -85,6 +89,10 @@ export const CLEARABLE_DETAILS = [
   "voyage",
   "etd",
   "eta",
+  "customsClosing",
+  "vgmClosing",
+  "siClosing",
+  "portCutOff",
 ] as const;
 
 const kg = z.coerce.number().int().min(0, "Kilograms, 0 or more").max(100_000).optional();

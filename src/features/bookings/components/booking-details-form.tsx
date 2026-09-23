@@ -33,6 +33,10 @@ const TEXT = (
     ["voyage", "Voyage", "text"],
     ["etd", "ETD", "date"],
     ["eta", "ETA", "date"],
+    ["customsClosing", "Customs closing", "date"],
+    ["vgmClosing", "VGM closing", "date"],
+    ["siClosing", "SI & doc closing", "date"],
+    ["portCutOff", "Port cut-off", "date"],
   ] as const
 ).map(([name, label, type]) => ({ name, label, type }));
 

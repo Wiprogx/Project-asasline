@@ -35,6 +35,10 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
     voyage: b.voyage,
     etd: b.etd,
     eta: b.eta,
+    customsClosing: b.customsClosing,
+    vgmClosing: b.vgmClosing,
+    siClosing: b.siClosing,
+    portCutOff: b.portCutOff,
   };
   return <BookingDetailsForm values={values} contacts={contacts} />;
 }

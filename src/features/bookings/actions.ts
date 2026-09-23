@@ -8,6 +8,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { activities, bookings, containers } from "@/server/db/schema";
+import { syncBookingRules } from "@/server/rules-sync";
 import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
@@ -41,6 +42,7 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
       entityId: row.id,
       detail: { ref },
     });
+    await syncBookingRules(tx, row.id, user.id);
     return row.id;
   });
   await settle(id);
@@ -163,6 +165,7 @@ export async function restoreBooking(_p: ActionResult, fd: FormData): Promise<Ac
           entity: "booking",
           entityId: id,
         });
+        await syncBookingRules(tx, id, user.id);
       }),
     "Booking put back",
   );

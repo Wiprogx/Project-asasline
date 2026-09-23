@@ -8,6 +8,7 @@ import { audit } from "@/server/audit";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { activities, bookings } from "@/server/db/schema";
+import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { handOverSchema, newTaskSchema, taskRef, withdrawTaskSchema } from "./schemas";
 
@@ -94,6 +95,8 @@ async function move(
       entityId: id,
       detail,
     });
+    if (cur.linkKind === "booking" && cur.linkId && cur.ruleCode)
+      await syncBookingRules(tx, cur.linkId, user.id);
     return { linkKind: cur.linkKind, linkId: cur.linkId };
   });
 }

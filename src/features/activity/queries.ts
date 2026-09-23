@@ -21,6 +21,7 @@ function baseQuery() {
       role: activities.role,
       note: activities.note,
       withdrawReason: activities.withdrawReason,
+      blocking: activities.blocking,
       assigneeId: activities.assigneeId,
       assigneeName: users.name,
       linkKind: activities.linkKind,

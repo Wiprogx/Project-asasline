@@ -16,6 +16,7 @@ import {
   quotationRoutes,
   quotations,
 } from "@/server/db/schema";
+import { syncBookingRules } from "@/server/rules-sync";
 import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { newQuotationSchema, quotationRef } from "./schemas";
@@ -125,6 +126,7 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
         entityId: id,
         detail: { booking: ref },
       });
+      await syncBookingRules(tx, b.id, user.id);
       return b.id;
     });
   } catch (e) {
