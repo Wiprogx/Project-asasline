@@ -1,0 +1,3 @@
+#!/bin/sh
+# One implementation, two callers: this hook and `npm run gate`. Installed by `npm run hooks:install`.
+npm run -s gate

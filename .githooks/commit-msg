@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuses a commit message that names a tool where scrub.enabled is on (a no-op otherwise), and a
+# source commit whose changelog line is not staged with it (CHANGE.1; `no-changelog: <reason>` in the message excuses it).
+npx abatty scrub --message "$1" && npx abatty changelog --message "$1"

@@ -1,0 +1,9 @@
+legacy/
+drizzle/
+.next/
+node_modules/
+package-lock.json
+src/components/ui/
+.abatty/
+.dependency-cruiser-known-violations.json
+.claude/night/

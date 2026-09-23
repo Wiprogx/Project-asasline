@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: asasline
+      POSTGRES_PASSWORD: asasline
+      POSTGRES_DB: asasline
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asasline"]
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:8-alpine
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+volumes:
+  pgdata:
+  redisdata:
