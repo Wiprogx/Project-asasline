@@ -47,7 +47,7 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Hand over" }));
   await expectToast(page, "Handed over");
   await expect(page.getByText(title)).toHaveCount(0);
-  await page.goto("/activity?who=all");
+  await page.goto(`/activity?who=all&q=${encodeURIComponent(title)}`);
   await expect(row(page, title).getByText("Accountant · anyone")).toBeVisible();
 });
 

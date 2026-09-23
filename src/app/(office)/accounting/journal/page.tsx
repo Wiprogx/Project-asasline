@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { searchEntries } from "@/domain/ledger";
 import { LATEST, pageOf, periodOf } from "@/domain/period";
 import { JournalList } from "@/features/accounting/components/journal-list";
-import { Pager } from "@/features/accounting/components/pager";
+import { Pager } from "@/components/shared/pager";
 import { PeriodPicker } from "@/features/accounting/components/period-picker";
 import { readJournal } from "@/features/accounting/ledger-queries";
 import { requirePagePermission } from "@/server/auth/dal";

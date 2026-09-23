@@ -47,6 +47,7 @@ test("an invoice and its payment land in the journal, the ledger and the margins
   // The customers' ledger: debited then credited by the same amount.
   await page.getByRole("link", { name: "400000" }).first().click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("400000 Customers");
+  await page.goto(`${page.url()}&q=${encodeURIComponent(number)}`);
   const rows = page.getByRole("row").filter({ hasText: number });
   await expect(rows).toHaveCount(2);
 

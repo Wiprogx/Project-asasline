@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
+import { Pager } from "@/components/shared/pager";
 import { SearchInput } from "@/components/shared/search-input";
 import { Button } from "@/components/ui/button";
+import { pageOf } from "@/domain/period";
 import { ContactsTable } from "@/features/contacts/components/contacts-table";
 import { listContacts } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
@@ -15,6 +17,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const archived = sp.archived === "1";
   const rows = await listContacts({ q, archived });
+  const shown = pageOf(rows, sp.page, 100);
 
   return (
     <>
@@ -39,7 +42,19 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
       <div className="mb-4">
         <SearchInput placeholder="Search name, email, VAT, city, child address…" />
       </div>
-      <ContactsTable rows={rows} />
+      <div className="grid gap-3">
+        <ContactsTable rows={shown.items} />
+        <Pager
+          path="/contacts"
+          params={Object.fromEntries(
+            Object.entries({ q, archived: archived ? "1" : undefined }).filter(
+              (e): e is [string, string] => !!e[1],
+            ),
+          )}
+          noun="contacts"
+          {...shown}
+        />
+      </div>
     </>
   );
 }

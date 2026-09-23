@@ -45,6 +45,9 @@ function TaskItem({ t, today, staff }: { t: TaskRow; today: string; staff: Staff
   );
 }
 
+/** A bucket draws its first tasks only: each carries its own controls, and "Everyone" is long. */
+const BUCKET_SHOWN = 50;
+
 /** Open tasks grouped Overdue · Today · Upcoming · No date; done or withdrawn ones flat. */
 export function TaskList({
   rows,
@@ -79,10 +82,18 @@ export function TaskList({
             {BUCKET_META[b].label}
           </h2>
           <ul>
-            {groups.get(b)!.map((t) => (
-              <TaskItem key={t.id} t={t} today={today} staff={staff} />
-            ))}
+            {groups
+              .get(b)!
+              .slice(0, BUCKET_SHOWN)
+              .map((t) => (
+                <TaskItem key={t.id} t={t} today={today} staff={staff} />
+              ))}
           </ul>
+          {groups.get(b)!.length > BUCKET_SHOWN && (
+            <p className="pt-1 text-sm text-muted-foreground">
+              and {groups.get(b)!.length - BUCKET_SHOWN} more — search, or pick a person, to narrow.
+            </p>
+          )}
         </section>
       ))}
     </div>
