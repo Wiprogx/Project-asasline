@@ -39,8 +39,8 @@ jobs:
         run: "git fetch --no-tags origin main && npx abatty secrets --range origin/main..HEAD"
       - name: audit (SEC.1)
         run: npm audit --audit-level=high --omit=dev
-      - name: no trace of the tools (scrub)
-        run: npx abatty scrub .
+      # The scrub step is omitted: abatty.config.json has scrub.enabled = false (provenance is
+      # kept), and the generated step ran the scan unconditionally, failing on every push.
       - name: publish the report to the dashboard
         if: ${{ env.ABATTY_DASHBOARD != '' }}
         env:
