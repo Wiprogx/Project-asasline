@@ -9,6 +9,7 @@ import {
   dueOf,
   fillStep,
   missingPrerequisites,
+  soldOnQuote,
 } from "./engine";
 import { planChain, syncDiff } from "./plan";
 
@@ -170,5 +171,21 @@ describe("plan and sync", () => {
     const diff = syncDiff(plan, done);
     expect(diff.redate).toEqual([]);
     expect(diff.create.map((c) => c.ruleCode)).toContain("INVOICE"); // unblocked by the done step
+  });
+});
+
+describe("sold on the quotation", () => {
+  it("keeps a rule whose service the quotation sold, words or a pattern", () => {
+    expect(soldOnQuote("certiweight", ["Ocean freight", "Certiweight weighing"])).toBe(true);
+    expect(soldOnQuote("vgm|certiweight", ["VGM declaration"])).toBe(true);
+  });
+
+  it("drops it when nothing on the quotation matches", () => {
+    expect(soldOnQuote("certiweight", ["Ocean freight"])).toBe(false);
+  });
+
+  it("assumes a booking with no quotation behind it is ours, and reads a broken pattern as words", () => {
+    expect(soldOnQuote("certiweight", null)).toBe(true);
+    expect(soldOnQuote("(vgm", ["Service (VGM"])).toBe(true);
   });
 });

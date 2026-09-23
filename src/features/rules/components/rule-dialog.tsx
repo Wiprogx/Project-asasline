@@ -180,6 +180,14 @@ export function RuleDialog({
             <Field id="r-note" label="Why (shown to the team)" className="sm:col-span-2">
               <Input id="r-note" name="note" defaultValue={r?.note} />
             </Field>
+            <Field
+              id="r-sold"
+              label="Only if sold"
+              className="sm:col-span-2"
+              hint="A word (or pattern like vgm|certiweight) a quotation line must contain; empty = always"
+            >
+              <Input id="r-sold" name="sold" defaultValue={r?.sold} />
+            </Field>
           </div>
           <div className="flex flex-wrap gap-4">
             <Check name="workingDays" label="Working days" checked={r?.workingDays ?? false} />

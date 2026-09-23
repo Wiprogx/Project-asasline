@@ -5,9 +5,9 @@ import type { DocRule } from "./engine";
  * The legacy rule book (demo.html DOC_RULES), ported as the default for the `docRules`
  * Settings table. Once Settings saves the table, the saved rows win.
  *
- * Not ported yet — they need modules that are not migrated: CERTIWEIGHT (per-container and
- * "between" anchor), RELEASE_OK (release mode on the quotation), the "sold on the quotation"
- * filter and the weights-ready check on VGM. Loading ports use UN/LOCODEs (Rotterdam NLRTM,
+ * Not ported yet: CERTIWEIGHT (one step per container, and a "between" anchor), RELEASE_OK
+ * (release mode on the quotation) and the weights-ready check on VGM. The "sold on the
+ * quotation" filter is a field of every rule (`sold`). Loading ports use UN/LOCODEs (Rotterdam NLRTM,
  * Leixões PTLEI) instead of the legacy port names.
  */
 const r = (

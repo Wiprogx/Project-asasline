@@ -164,3 +164,55 @@ test("a rule whose prerequisite exists nowhere is refused", async ({ page }) => 
   await submit(page, d.getByRole("button", { name: "Save rule" }));
   await expect(d.getByText("No rule has the code NO_SUCH_CODE")).toBeVisible();
 });
+
+test("a rule for a service applies only where the quotation sold it", async ({ page }) => {
+  const t = tag();
+  const code = `E2E_S${t.toUpperCase().slice(0, 8)}`;
+  const service = `certiweight-${t}`;
+  await login(page);
+  await page.goto("/settings/rules");
+  await page.getByRole("button", { name: "Add rule" }).click();
+  const d = page.getByRole("dialog");
+  await d.getByLabel("Code", { exact: true }).fill(code);
+  await d.getByLabel("Document").fill(`Weight certificate ${t}`);
+  await d.getByLabel("Step (what the person does)").fill(`Send the weight certificate ${t}`);
+  await d.getByLabel("Only if sold").fill(service);
+  await submit(page, d.getByRole("button", { name: "Save rule" }));
+  await expectToast(page, /re-planned/);
+
+  const bookingSelling = async (what: string) => {
+    const client = `E2E Sold Client ${t} ${what.length}`;
+    await page.goto("/contacts/new");
+    await page.getByLabel("Name").fill(client);
+    await page.getByRole("button", { name: "Create contact" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
+    await page.goto("/quotations/new");
+    await page.getByLabel("Customer").selectOption({ label: client });
+    await page.getByLabel("Port of loading").fill("BEANR");
+    await page.getByLabel("Port of discharge").fill("TRMER");
+    await page.getByLabel("Service").fill(what);
+    await page.getByLabel("Sell (EUR)").fill("900");
+    await page.getByRole("button", { name: "Create quotation" }).click();
+    await page.getByRole("button", { name: "Accept → create booking" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
+    await page.goto(`${page.url()}/documents`);
+  };
+
+  // Not sold: not our job.
+  await bookingSelling("Ocean freight");
+  await expect(stepRow(page, code)).toHaveCount(0);
+  // Sold: the step is there.
+  await bookingSelling(`Ocean freight + ${service}`);
+  await expect(stepRow(page, code)).toBeVisible();
+
+  // Out of the rule book again.
+  await page.goto("/settings/rules");
+  await submit(
+    page,
+    page
+      .getByRole("row")
+      .filter({ hasText: `${code} ·` })
+      .getByRole("button", { name: "Switch off" }),
+  );
+  await expectToast(page, /re-planned/);
+});

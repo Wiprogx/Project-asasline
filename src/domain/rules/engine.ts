@@ -49,6 +49,11 @@ export type DocRule = {
   needs: string[];
   active: boolean;
   note?: string;
+  /**
+   * "What we didn't sell is not our job" (invariant 6): when set, the rule applies only if a
+   * line of the booking's quotation matches it (words, or a pattern such as "vgm|certiweight").
+   */
+  sold?: string;
 };
 
 export type BookingFacts = {
@@ -58,7 +63,25 @@ export type BookingFacts = {
   pod: string | null;
   docType: string;
   anchors: Partial<Record<Anchor, string | null>>;
+  /** The quotation's line descriptions; null when no quotation is behind the booking. */
+  soldLines?: readonly string[] | null;
 };
+
+/** Whether the quotation sold what a rule needs. No quotation behind it: assume it is ours. */
+export function soldOnQuote(
+  pattern: string | undefined,
+  soldLines: readonly string[] | null | undefined,
+) {
+  if (!pattern?.trim() || !soldLines) return true;
+  let re: RegExp;
+  try {
+    re = new RegExp(pattern, "i");
+  } catch {
+    // Not a valid pattern: read it as plain words.
+    re = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  }
+  return soldLines.some((l) => re.test(l));
+}
 
 /** UN/LOCODE "TRMER" → "TR". A port that is not a LOCODE gives no country (fail closed). */
 export const countryOfPort = (port: string | null) =>
@@ -77,6 +100,7 @@ export function applicableRules(rules: readonly DocRule[], b: BookingFacts): Doc
     if (r.country !== "*" && r.country !== country) continue;
     if (r.pol !== "*" && r.pol.toUpperCase() !== pol) continue;
     if (r.kind !== "*" && !sides(b.kind).includes(r.kind)) continue;
+    if (!soldOnQuote(r.sold, b.soldLines)) continue;
     const seen = out.get(r.code);
     if (!seen || (seen.pol === "*" && r.pol !== "*")) out.set(r.code, r);
   }

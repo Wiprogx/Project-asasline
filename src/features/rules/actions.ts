@@ -57,7 +57,11 @@ export async function saveRule(_p: ActionResult, fd: FormData): Promise<ActionRe
   const form = ruleFormSchema.safeParse(formToObject(fd));
   if (!form.success) return invalid(form.error);
   const { index, version, ...fields } = form.data;
-  const rule = docRuleSchema.safeParse({ ...fields, note: fields.note || undefined });
+  const rule = docRuleSchema.safeParse({
+    ...fields,
+    note: fields.note || undefined,
+    sold: fields.sold || undefined,
+  });
   if (!rule.success) return invalid(rule.error);
 
   const { value: book } = await readRuleBookForEdit();

@@ -1,16 +1,17 @@
 import "server-only";
-import { and, eq, isNotNull, ne, sql } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import type { BookingFacts } from "@/domain/rules/engine";
 import { planChain, type PlanStep, syncDiff } from "@/domain/rules/plan";
 import { audit } from "./audit";
 import type { DbOrTx } from "./db/client";
-import { activities, bookings } from "./db/schema";
+import { activities, bookings, quotationLines, quotationRoutes } from "./db/schema";
 import { readHolidays, readRuleBook } from "./rule-book";
 
 type BookingRow = typeof bookings.$inferSelect;
 
-export function factsOf(b: BookingRow): BookingFacts {
+export function factsOf(b: BookingRow, soldLines: readonly string[] | null = null): BookingFacts {
   return {
+    soldLines,
     ref: b.ref,
     kind: b.kind,
     pol: b.pol,
@@ -26,6 +27,23 @@ export function factsOf(b: BookingRow): BookingFacts {
       eta: b.eta,
     },
   };
+}
+
+/** What the booking's quotation sold: its lines' descriptions (declined routes left out). */
+async function soldLinesOf(tx: DbOrTx, quotationId: string | null): Promise<string[] | null> {
+  if (!quotationId) return null;
+  const rows = await tx
+    .select({ description: quotationLines.description })
+    .from(quotationLines)
+    .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
+    .where(
+      and(
+        eq(quotationRoutes.quotationId, quotationId),
+        eq(quotationRoutes.declined, false),
+        isNull(quotationLines.archivedAt),
+      ),
+    );
+  return rows.map((r) => r.description);
 }
 
 async function ruleTasks(tx: DbOrTx, bookingId: string) {
@@ -48,13 +66,14 @@ async function ruleTasks(tx: DbOrTx, bookingId: string) {
 
 /** The chain of one booking as it stands (for the Documents tab). */
 export async function bookingChain(tx: DbOrTx, b: BookingRow): Promise<PlanStep[]> {
-  const [book, holidays, tasks] = await Promise.all([
+  const [book, holidays, tasks, sold] = await Promise.all([
     readRuleBook(),
     readHolidays(),
     ruleTasks(tx, b.id),
+    soldLinesOf(tx, b.quotationId),
   ]);
   const settled = new Set(tasks.filter((t) => t.state !== "open").map((t) => t.ruleCode!));
-  return planChain(book, factsOf(b), holidays, settled);
+  return planChain(book, factsOf(b, sold), holidays, settled);
 }
 
 /**

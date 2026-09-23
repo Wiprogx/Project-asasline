@@ -32,6 +32,7 @@ export const docRuleSchema = z.object({
   needs: z.array(z.string()).max(20),
   active: z.boolean(),
   note: z.string().max(500).optional(),
+  sold: z.string().max(100).optional(),
 }) satisfies z.ZodType<DocRule>;
 
 export const holidaySchema = z.object({

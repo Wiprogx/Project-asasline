@@ -38,6 +38,7 @@ export const ruleFormSchema = z.object({
         .filter(Boolean),
     ),
   note: z.string().max(500).optional(),
+  sold: z.string().trim().max(100).optional(),
 });
 
 export const toggleRuleSchema = z.object({
