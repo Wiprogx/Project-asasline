@@ -10,6 +10,7 @@ import { listInvoices } from "@/features/accounting/queries";
 import { listFilterSchema } from "@/features/accounting/schemas";
 import { contactOptions } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Invoices" };
@@ -57,7 +58,7 @@ export default async function InvoicesPage({ searchParams }: PageProps<"/account
       <SearchInput placeholder="Search number, customer or SB ref…" />
       <Card>
         <CardContent className="pt-2">
-          <InvoicesTable rows={rows} />
+          <InvoicesTable rows={rows} today={officeToday()} />
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
 import { toCents } from "@/domain/money";
+import { DIFF_ACCOUNTS, type DiffAccount, PAYMENT_METHODS } from "@/domain/payments";
 
 const ref = z.object({ id: z.uuid(), version: z.coerce.number().int().positive() });
 
@@ -57,4 +58,30 @@ export const listFilterSchema = z.object({
   status: z.enum(["draft", "issued", "discarded"]).optional().catch(undefined),
   kind: z.enum(["invoice", "credit"]).optional().catch(undefined),
   q: z.string().max(100).optional().catch(undefined),
+});
+
+export const registerPaymentSchema = z.object({
+  invoiceId: z.uuid(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date as YYYY-MM-DD"),
+  amount: z.string().transform((v, ctx) => {
+    const c = toCents(v);
+    if (c === null || c <= 0) ctx.addIssue({ code: "custom", message: "An amount above zero" });
+    return c ?? 0;
+  }),
+  method: z.enum(PAYMENT_METHODS).default("bank"),
+  reference: z.string().max(200).optional(),
+  writeOff: z.enum(Object.keys(DIFF_ACCOUNTS) as [DiffAccount, ...DiffAccount[]]).optional(),
+});
+
+export const reversePaymentSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  reason: z.string().min(3, "Say why the payment is reversed").max(500),
+});
+
+export const matchLineSchema = z.object({ lineId: z.uuid(), invoiceId: z.uuid() });
+
+export const ignoreLineSchema = z.object({
+  lineId: z.uuid(),
+  reason: z.string().min(3, "Say why the line needs no match").max(300),
 });

@@ -6,7 +6,13 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
   await requirePagePermission("app.accounting");
   return (
     <>
-      <SubNav items={[{ href: "/accounting", label: "Invoices" }]} />
+      <SubNav
+        items={[
+          { href: "/accounting", label: "Invoices", exact: true },
+          { href: "/accounting/payments", label: "Payments" },
+          { href: "/accounting/bank", label: "Bank" },
+        ]}
+      />
       {children}
     </>
   );

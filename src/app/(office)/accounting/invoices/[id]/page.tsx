@@ -10,18 +10,46 @@ import { AddLineForm, RemoveLine } from "@/features/accounting/components/draft-
 import { InvoiceActions } from "@/features/accounting/components/invoice-actions";
 import { InvoiceBadge } from "@/features/accounting/components/invoice-badge";
 import { InvoiceView } from "@/features/accounting/components/invoice-view";
-import { getInvoice, paymentTerms } from "@/features/accounting/queries";
+import { PayStateBadge } from "@/features/accounting/components/pay-state-badge";
+import { PaymentHistory } from "@/features/accounting/components/payment-history";
+import { RegisterPayment } from "@/features/accounting/components/register-payment";
+import {
+  getInvoice,
+  invoiceSettlement,
+  paymentsOfInvoice,
+  paymentTerms,
+} from "@/features/accounting/queries";
+import { formatCents } from "@/domain/money";
+import { openCents, payState } from "@/domain/payments";
+import { officeToday } from "@/server/clock";
+import { CardHeader, CardTitle } from "@/components/ui/card";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export const metadata: Metadata = { title: "Invoice" };
 
 export default async function InvoicePage({ params }: PageProps<"/accounting/invoices/[id]">) {
   const user = await requirePagePermission("app.accounting");
-  const [inv, terms] = await Promise.all([getInvoice((await params).id), paymentTerms()]);
+  const { id } = await params;
+  const [inv, terms, money, paid] = await Promise.all([
+    getInvoice(id),
+    paymentTerms(),
+    invoiceSettlement(id),
+    paymentsOfInvoice(id),
+  ]);
   if (!inv) notFound();
   const i = inv.invoice;
   const editable = i.status === "draft" && can(user.role, "accounting.issue");
   const credited = inv.credits.some((c) => c.status === "issued");
+  const today = officeToday();
+  const payable = i.status === "issued" && i.kind === "invoice";
+  const open = openCents(i.grossCents ?? 0, money.settled, money.credited);
+  const state = payState({
+    grossCents: i.grossCents ?? 0,
+    settledCents: money.settled,
+    creditedCents: money.credited,
+    dueDate: i.dueDate,
+    today,
+  });
 
   return (
     <>
@@ -86,6 +114,24 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
           )}
         </CardContent>
       </Card>
+      {payable && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center gap-2">
+              Payments <PayStateBadge state={state} />
+              <span className="text-sm font-normal text-muted-foreground">
+                {formatCents(open)} open of {formatCents(i.grossCents)}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <PaymentHistory rows={paid} canReverse={can(user.role, "accounting.bank")} />
+            {open > 0 && can(user.role, "accounting.bank") && (
+              <RegisterPayment invoiceId={i.id} openCents={open} today={today} />
+            )}
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

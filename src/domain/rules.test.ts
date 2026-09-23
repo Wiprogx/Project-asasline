@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultSaleVat } from "./accounting";
+import { COMPANY } from "./company";
+import { ibanOk } from "./iban";
 import { lettermark } from "./contacts";
 import { can, PERMISSIONS, ROLES } from "./permissions";
 
@@ -36,5 +38,12 @@ describe("lettermark", () => {
     expect(lettermark("Os Textile SPRL")).toBe("OT");
     expect(lettermark("maersk")).toBe("MA");
     expect(lettermark("  ")).toBe("?");
+  });
+});
+
+describe("letterhead", () => {
+  it("prints an IBAN that passes its own check, and a Belgian VAT number", () => {
+    expect(ibanOk(COMPANY.iban)).toBe(true);
+    expect(COMPANY.vat).toMatch(/^BE0\d{9}$/);
   });
 });

@@ -8,10 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCents } from "@/domain/money";
+import { openCents, payState } from "@/domain/payments";
 import type { InvoiceRow } from "../queries";
 import { InvoiceBadge } from "./invoice-badge";
+import { PayStateBadge } from "./pay-state-badge";
 
-export function InvoicesTable({ rows }: { rows: InvoiceRow[] }) {
+export function InvoicesTable({ rows, today }: { rows: InvoiceRow[]; today: string }) {
   if (rows.length === 0)
     return <p className="py-10 text-center text-sm text-muted-foreground">No invoices match.</p>;
   return (
@@ -49,7 +51,26 @@ export function InvoicesTable({ rows }: { rows: InvoiceRow[] }) {
               {formatCents(i.grossCents)}
             </TableCell>
             <TableCell>
-              <InvoiceBadge kind={i.kind} status={i.status} />
+              {i.status === "issued" && i.kind === "invoice" ? (
+                <span className="flex flex-wrap items-center gap-1">
+                  <PayStateBadge
+                    state={payState({
+                      grossCents: i.grossCents ?? 0,
+                      settledCents: i.settled,
+                      creditedCents: i.credited,
+                      dueDate: i.dueDate,
+                      today,
+                    })}
+                  />
+                  {openCents(i.grossCents ?? 0, i.settled, i.credited) > 0 && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      open {formatCents(openCents(i.grossCents ?? 0, i.settled, i.credited))}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <InvoiceBadge kind={i.kind} status={i.status} />
+              )}
             </TableCell>
           </TableRow>
         ))}

@@ -8,13 +8,19 @@ import { requirePermission } from "@/server/auth/dal";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { db } from "@/server/db/client";
 import {
+  bankLines,
   bookings,
+  contactBankAccounts,
   contacts,
   invoiceLines,
   invoices,
+  paymentAllocations,
+  payments,
   quotationLines,
   quotationRoutes,
 } from "@/server/db/schema";
+import { proposals } from "@/domain/matching";
+import { creditedSql, invoiceMoney, openInvoices, settledSql } from "./money";
 
 const isUuid = (id: string) => z.uuid().safeParse(id).success;
 const original = alias(invoices, "original");
@@ -39,6 +45,8 @@ export async function listInvoices(opts: { status?: string; kind?: string; q?: s
       issueDate: invoices.issueDate,
       dueDate: invoices.dueDate,
       grossCents: invoices.grossCents,
+      settled: settledSql,
+      credited: creditedSql,
       customer: contacts.name,
       bookingRef: bookings.ref,
       createdAt: invoices.createdAt,
@@ -190,4 +198,88 @@ export async function bookingBilling(bookingId: string) {
 export async function paymentTerms() {
   await requirePermission("app.accounting");
   return readPaymentTerms();
+}
+
+/** IBAN → the contact it belongs to (contact bank accounts), for the bank matcher. */
+export async function contactOfIbanLookup() {
+  await requirePermission("app.accounting");
+  const rows = await db
+    .select({ iban: contactBankAccounts.iban, contactId: contactBankAccounts.contactId })
+    .from(contactBankAccounts)
+    .where(isNull(contactBankAccounts.archivedAt));
+  const byIban = new Map(rows.map((r) => [r.iban.replace(/\s/g, "").toUpperCase(), r.contactId]));
+  return (iban: string) => byIban.get(iban.replace(/\s/g, "").toUpperCase()) ?? null;
+}
+
+/** An invoice's payments, newest first, with reversals kept in view. */
+export async function paymentsOfInvoice(invoiceId: string) {
+  await requirePermission("app.accounting");
+  if (!isUuid(invoiceId)) return [];
+  return db
+    .select({ payment: payments, settled: paymentAllocations.amountCents })
+    .from(paymentAllocations)
+    .innerJoin(payments, eq(payments.id, paymentAllocations.paymentId))
+    .where(eq(paymentAllocations.invoiceId, invoiceId))
+    .orderBy(desc(payments.date), desc(payments.createdAt));
+}
+
+export async function listPayments() {
+  await requirePermission("app.accounting");
+  return db
+    .select({
+      payment: payments,
+      customer: contacts.name,
+      invoiceId: invoices.id,
+      invoiceNumber: invoices.number,
+    })
+    .from(payments)
+    .leftJoin(contacts, eq(contacts.id, payments.contactId))
+    .leftJoin(paymentAllocations, eq(paymentAllocations.paymentId, payments.id))
+    .leftJoin(invoices, eq(invoices.id, paymentAllocations.invoiceId))
+    .orderBy(desc(payments.date), desc(payments.createdAt))
+    .limit(500);
+}
+
+/** Statement lines, open ones first, each open line with what it probably pays. */
+export async function bankLinesWithProposals() {
+  await requirePermission("app.accounting");
+  const [lines, open, ibanOf] = await Promise.all([
+    db
+      .select()
+      .from(bankLines)
+      .where(isNull(bankLines.archivedAt))
+      .orderBy(sql`case ${bankLines.state} when 'open' then 0 else 1 end`, desc(bankLines.date))
+      .limit(500),
+    openInvoices(db),
+    contactOfIbanLookup(),
+  ]);
+  const numberOf = new Map(open.map((i) => [i.id, i]));
+  return lines.map((l) => ({
+    line: l,
+    proposals:
+      l.state === "open"
+        ? proposals(
+            {
+              amountCents: l.amountCents,
+              comm: l.comm ?? "",
+              ogm: l.ogm ?? "",
+              name: l.name ?? "",
+              iban: l.iban ?? "",
+            },
+            open,
+            ibanOf,
+          ).map((p) => ({
+            ...p,
+            number: numberOf.get(p.invoiceId)?.number ?? "",
+            openCents: numberOf.get(p.invoiceId)?.openCents ?? 0,
+          }))
+        : [],
+  }));
+}
+
+/** What payments settled and credit notes took on one invoice. */
+export async function invoiceSettlement(invoiceId: string) {
+  await requirePermission("app.accounting");
+  if (!isUuid(invoiceId)) return { settled: 0, credited: 0 };
+  return (await invoiceMoney(db, [invoiceId])).get(invoiceId) ?? { settled: 0, credited: 0 };
 }

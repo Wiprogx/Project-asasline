@@ -14,6 +14,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Accounting, step 2 (work in progress, on branch feat/payments): payments with allocations, write-offs and reversals; CODA and CSV bank statement import with de-duplication; matching by OGM, invoice number, IBAN + exact amount; auto-match of certain matches; Payments and Bank screens. Migration 0005. Unit-tested; the browser test is not green yet.
 - Accounting, step 1 — sales invoices and credit notes: invoice a booking from its quotation lines (partially, to any party on the booking; over-billing refused again at issue), drafts with extra lines, issue with the unbroken yearly series INV/YYYY/NNNNN taken in the issuing transaction, due date from the payment term, +++OGM+++ reference, VAT per rate with the legal mention of each exempt code, credit notes in their own series with an optional corrected draft, discarding drafts with a reason, a printable invoice, and a Billing tab on each booking. Migration 0004.
 
 ### Fixed
