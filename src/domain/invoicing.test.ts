@@ -9,6 +9,7 @@ import {
   remainingQty,
   vatMentions,
 } from "./invoicing";
+import { approvalProblem, needsApproval, payProblem } from "./accounting";
 
 describe("numbering", () => {
   it("formats the Odoo-shaped number per kind and year", () => {
@@ -80,5 +81,20 @@ describe("billing", () => {
   it("only invoices a party on the booking (legacy 10.3)", () => {
     expect(payerProblem("c1", ["c1", null])).toBeNull();
     expect(payerProblem("c9", ["c1", "c2"])).toMatch(/party on the booking/);
+  });
+});
+
+describe("supplier bills", () => {
+  it("number in their own series", () => {
+    expect(formatInvoiceNumber("bill", "2026-09-23", 7)).toBe("BILL/2026/00007");
+  });
+  it("need four eyes from €5,000", () => {
+    expect(needsApproval(499_999)).toBe(false);
+    expect(needsApproval(500_000)).toBe(true);
+    expect(approvalProblem("u1", "u1")).toMatch(/second person/);
+    expect(approvalProblem("u1", "u2")).toBeNull();
+    expect(payProblem({ grossCents: 600_000, approvedAt: null })).toMatch(/approve/);
+    expect(payProblem({ grossCents: 600_000, approvedAt: new Date() })).toBeNull();
+    expect(payProblem({ grossCents: 10_000, approvedAt: null })).toBeNull();
   });
 });

@@ -76,11 +76,9 @@ export async function matchLine(_p: ActionResult, fd: FormData): Promise<ActionR
         .for("update");
       if (!line || line.state !== "open")
         throw new Refused("This line is already matched or ignored.");
-      if (line.amountCents <= 0)
-        throw new Refused("Money going out is matched against supplier bills (next step).");
       return bookPayment(tx, {
         invoiceId: parsed.data.invoiceId,
-        amountCents: line.amountCents,
+        amountCents: Math.abs(line.amountCents),
         date: line.date,
         method: "bank",
         reference: line.ogm ?? line.comm,
@@ -143,7 +141,7 @@ export async function autoMatch(): Promise<ActionResult> {
       db.transaction((tx) =>
         bookPayment(tx, {
           invoiceId: best.invoiceId,
-          amountCents: line.amountCents,
+          amountCents: Math.abs(line.amountCents),
           date: line.date,
           method: "bank",
           reference: line.ogm ?? line.comm,

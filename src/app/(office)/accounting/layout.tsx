@@ -9,6 +9,7 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
       <SubNav
         items={[
           { href: "/accounting", label: "Invoices", exact: true },
+          { href: "/accounting/bills", label: "Bills" },
           { href: "/accounting/payments", label: "Payments" },
           { href: "/accounting/bank", label: "Bank" },
         ]}

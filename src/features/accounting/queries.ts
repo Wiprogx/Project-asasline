@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, ilike, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, ne, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cache } from "react";
 import { z } from "zod";
@@ -29,7 +29,9 @@ export async function listInvoices(opts: { status?: string; kind?: string; q?: s
   await requirePermission("app.accounting");
   const where: (SQL | undefined)[] = [];
   if (opts.status) where.push(eq(invoices.status, opts.status as "draft"));
+  // Supplier bills have their own tab; the sales list never mixes them in.
   if (opts.kind) where.push(eq(invoices.kind, opts.kind as InvoiceKind));
+  else where.push(ne(invoices.kind, "bill"));
   if (opts.q) {
     const like = `%${opts.q}%`;
     where.push(
@@ -130,6 +132,7 @@ export async function bookingBilling(bookingId: string) {
       and(
         eq(invoices.bookingId, bookingId),
         eq(invoices.status, "issued"),
+        ne(invoices.kind, "bill"),
         isNull(invoiceLines.archivedAt),
       ),
     );
@@ -181,10 +184,22 @@ export async function bookingBilling(bookingId: string) {
     })
     .from(invoices)
     .innerJoin(contacts, eq(contacts.id, invoices.customerId))
-    .where(eq(invoices.bookingId, bookingId))
+    .where(and(eq(invoices.bookingId, bookingId), ne(invoices.kind, "bill")))
     .orderBy(desc(invoices.createdAt));
+  // What the shipment cost: supplier bills recorded against it (net, VAT is recovered).
+  const [cost] = await db
+    .select({ net: sql<number>`coalesce(sum(${invoices.netCents}), 0)::int` })
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.bookingId, bookingId),
+        eq(invoices.kind, "bill"),
+        eq(invoices.status, "issued"),
+      ),
+    );
 
   return {
+    costCents: cost.net,
     booking: b,
     lines,
     totalCents: total,

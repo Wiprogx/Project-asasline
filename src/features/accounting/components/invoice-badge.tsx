@@ -4,6 +4,7 @@ import type { InvoiceKind, InvoiceStatus } from "@/domain/invoicing";
 export function InvoiceBadge({ kind, status }: { kind: InvoiceKind; status: InvoiceStatus }) {
   if (status === "draft") return <ToneBadge tone="neutral">Draft</ToneBadge>;
   if (status === "discarded") return <ToneBadge tone="neutral">Discarded</ToneBadge>;
+  if (kind === "bill") return <ToneBadge tone="warning">Recorded</ToneBadge>;
   return kind === "credit" ? (
     <ToneBadge tone="info">Credit note</ToneBadge>
   ) : (

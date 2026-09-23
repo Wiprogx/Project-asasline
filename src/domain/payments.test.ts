@@ -185,6 +185,7 @@ describe("matching", () => {
   const open: OpenInvoice[] = [
     {
       id: "a",
+      kind: "invoice",
       number: "INV/2026/00017",
       ogm: ogmMake("INV/2026/00017"),
       customerId: "c1",
@@ -192,6 +193,7 @@ describe("matching", () => {
     },
     {
       id: "b",
+      kind: "invoice",
       number: "INV/2026/00018",
       ogm: ogmMake("INV/2026/00018"),
       customerId: "c2",
@@ -199,6 +201,7 @@ describe("matching", () => {
     },
     {
       id: "c",
+      kind: "invoice",
       number: "INV/2026/00019",
       ogm: ogmMake("INV/2026/00019"),
       customerId: "c2",
@@ -238,8 +241,34 @@ describe("matching", () => {
       confidence: 1,
     });
   });
-  it("proposes nothing for money going out", () => {
-    expect(proposals(line({ amountCents: -500 }), open, noIban)).toEqual([]);
+  it("never offers a customer invoice for money going out", () => {
+    expect(proposals(line({ amountCents: -125000, ogm: open[0].ogm! }), open, noIban)).toEqual([]);
+  });
+  it("matches money going out to a supplier bill by its reference or IBAN", () => {
+    const bills: OpenInvoice[] = [
+      ...open,
+      {
+        id: "s",
+        kind: "bill",
+        number: "BILL/2026/00003",
+        supplierRef: "F-88213",
+        ogm: null,
+        customerId: "sup",
+        openCents: 48000,
+      },
+    ];
+    expect(
+      proposals(line({ amountCents: -48000, comm: "facture F-88213" }), bills, noIban)[0],
+    ).toMatchObject({ invoiceId: "s", confidence: 3 });
+    expect(
+      proposals(line({ amountCents: -48000, iban: "BE99" }), bills, (i) =>
+        i === "BE99" ? "sup" : null,
+      )[0],
+    ).toMatchObject({ invoiceId: "s", confidence: 3 });
+    const pay = line({ amountCents: -48000, comm: "F-88213" });
+    expect(certainMatch(pay.amountCents, proposals(pay, bills, noIban), bills)?.invoiceId).toBe(
+      "s",
+    );
   });
   it("never auto-applies more than is open", () => {
     const over = line({ amountCents: 200000, ogm: open[0].ogm! });

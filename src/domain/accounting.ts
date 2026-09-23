@@ -80,3 +80,39 @@ export const DEFAULT_PAYMENT_TERMS = [
     rule: "before_arrival",
   },
 ] as const;
+
+/**
+ * Where a supplier's bill line goes (legacy GL_ITEMS and the shipment cost category). A cost
+ * bought for a shipment is 604000; the office's own costs have their own accounts; equipment
+ * is an asset, depreciated, not a cost.
+ */
+export const PURCHASE_ACCOUNTS = [
+  { account: "604000", label: "Shipment costs (bought for resale)" },
+  { account: "610000", label: "Rent and charges" },
+  { account: "611000", label: "IT and software" },
+  { account: "612000", label: "Office supplies" },
+  { account: "613000", label: "Accountant and legal fees" },
+  { account: "614000", label: "Telephone and internet" },
+  { account: "617000", label: "Vehicle costs" },
+  { account: "619000", label: "Other services" },
+  { account: "230000", label: "Equipment — to depreciate" },
+] as const;
+
+/** A bill from this amount (gross) needs a second person's approval before it is paid. */
+export const APPROVAL_LIMIT_CENTS = 500_000;
+
+export const needsApproval = (grossCents: number) => grossCents >= APPROVAL_LIMIT_CENTS;
+
+/** Four eyes: whoever recorded a bill cannot be the one who approves it. */
+export function approvalProblem(recordedBy: string | null, approverId: string): string | null {
+  return recordedBy && recordedBy === approverId
+    ? "A second person must approve this bill — not the one who recorded it."
+    : null;
+}
+
+/** Paying a bill that needs approval and has none is refused. */
+export function payProblem(bill: { grossCents: number; approvedAt: unknown }): string | null {
+  return needsApproval(bill.grossCents) && !bill.approvedAt
+    ? "This bill is €5,000 or more: a second person must approve it before it is paid."
+    : null;
+}

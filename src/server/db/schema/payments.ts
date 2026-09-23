@@ -6,6 +6,7 @@ import { invoices } from "./invoices";
 
 export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS);
 export const paymentStatusEnum = pgEnum("payment_status", ["posted", "reversed"]);
+export const paymentDirectionEnum = pgEnum("payment_direction", ["in", "out"]);
 export const bankLineStateEnum = pgEnum("bank_line_state", ["open", "matched", "ignored"]);
 
 const day = () => date({ mode: "string" });
@@ -19,6 +20,8 @@ export const payments = pgTable(
   {
     ...recordColumns,
     status: paymentStatusEnum().notNull().default("posted"),
+    // in = from a customer, out = to a supplier.
+    direction: paymentDirectionEnum().notNull().default("in"),
     contactId: uuid().references(() => contacts.id),
     date: day().notNull(),
     amountCents: cents().notNull(),

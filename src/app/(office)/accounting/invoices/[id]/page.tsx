@@ -2,24 +2,22 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { defaultSaleVat } from "@/domain/accounting";
 import { can } from "@/domain/permissions";
-import { AddLineForm, RemoveLine } from "@/features/accounting/components/draft-editor";
-import { InvoiceActions } from "@/features/accounting/components/invoice-actions";
-import { InvoiceStatusLine } from "@/features/accounting/components/invoice-status-line";
+import { DocumentActions, DocumentBody } from "@/features/accounting/components/document-parts";
 import { InvoicePayments } from "@/features/accounting/components/invoice-payments";
-import { InvoiceView } from "@/features/accounting/components/invoice-view";
+import { InvoiceStatusLine } from "@/features/accounting/components/invoice-status-line";
 import {
   getInvoice,
   invoiceSettlement,
   paymentsOfInvoice,
   paymentTerms,
 } from "@/features/accounting/queries";
-import { officeToday } from "@/server/clock";
 import { requirePagePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Invoice" };
 
+/** A sales invoice, a credit note or a supplier bill: one screen, the parts decide by kind. */
 export default async function InvoicePage({ params }: PageProps<"/accounting/invoices/[id]">) {
   const user = await requirePagePermission("app.accounting");
   const { id } = await params;
@@ -31,13 +29,13 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
   ]);
   if (!inv) notFound();
   const i = inv.invoice;
-  const editable = i.status === "draft" && can(user.role, "accounting.issue");
-  const payable = i.status === "issued" && i.kind === "invoice";
+  const today = officeToday();
+  const draftTitle = `${i.kind === "bill" ? "Bill from" : "Draft for"} ${inv.customer.name}`;
 
   return (
     <>
       <PageHeader
-        title={<span className="font-mono">{i.number ?? `Draft for ${inv.customer.name}`}</span>}
+        title={<span className="font-mono">{i.number ?? draftTitle}</span>}
         description={
           <InvoiceStatusLine
             kind={i.kind}
@@ -47,45 +45,33 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
           />
         }
         actions={
-          <InvoiceActions
-            id={i.id}
-            version={i.version}
-            status={i.status}
-            kind={i.kind}
-            credited={inv.credits.some((c) => c.status === "issued")}
-            termId={i.paymentTermId}
+          <DocumentActions
+            inv={inv}
             terms={terms}
-            canIssue={can(user.role, "accounting.issue")}
+            today={today}
+            can={{
+              issue: can(user.role, "accounting.issue"),
+              approve: can(user.role, "accounting.approve"),
+            }}
           />
         }
       />
       <Card>
         <CardContent className="grid gap-6 pt-4">
-          <InvoiceView
+          <DocumentBody
             inv={inv}
-            lineAction={
-              editable
-                ? (lineId) => <RemoveLine id={i.id} version={i.version} lineId={lineId} />
-                : undefined
-            }
+            editable={i.status === "draft" && can(user.role, "accounting.issue")}
           />
-          {editable && (
-            <AddLineForm
-              id={i.id}
-              version={i.version}
-              defaultVat={defaultSaleVat(inv.customer.country)}
-            />
-          )}
         </CardContent>
       </Card>
-      {payable && (
+      {i.status === "issued" && i.kind !== "credit" && (
         <InvoicePayments
           invoiceId={i.id}
           grossCents={i.grossCents ?? 0}
           dueDate={i.dueDate}
           money={money}
           payments={paid}
-          today={officeToday()}
+          today={today}
           canPay={can(user.role, "accounting.bank")}
         />
       )}

@@ -5,6 +5,7 @@ import {
   pgEnum,
   pgTable,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -45,6 +46,10 @@ export const invoices = pgTable(
     netCents: cents(),
     vatCents: cents(),
     grossCents: cents(),
+    // Supplier bills: the supplier's own number, and the second person who approved it.
+    supplierRef: text(),
+    approvedBy: uuid(),
+    approvedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
     uniqueIndex("invoices_number_uq").on(t.number),

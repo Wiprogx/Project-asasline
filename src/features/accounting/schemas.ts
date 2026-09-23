@@ -85,3 +85,24 @@ export const ignoreLineSchema = z.object({
   lineId: z.uuid(),
   reason: z.string().min(3, "Say why the line needs no match").max(300),
 });
+
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date as YYYY-MM-DD");
+
+export const newBillSchema = z.object({
+  supplierId: z.uuid("Choose the supplier"),
+  bookingId: z.uuid().optional(),
+});
+
+/** Recording a supplier's bill: their own number, the date on it, when it is due. */
+export const recordBillSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  supplierRef: z.string().min(1, "The supplier's invoice number").max(60),
+  billDate: isoDay,
+  dueDate: isoDay,
+});
+
+export const approveBillSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+});

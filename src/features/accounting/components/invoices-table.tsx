@@ -51,7 +51,7 @@ export function InvoicesTable({ rows, today }: { rows: InvoiceRow[]; today: stri
               {formatCents(i.grossCents)}
             </TableCell>
             <TableCell>
-              {i.status === "issued" && i.kind === "invoice" ? (
+              {i.status === "issued" && i.kind !== "credit" ? (
                 <span className="flex flex-wrap items-center gap-1">
                   <PayStateBadge
                     state={payState({

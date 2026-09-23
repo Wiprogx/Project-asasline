@@ -28,7 +28,9 @@ export function InvoiceView({
     <div className="grid gap-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="text-sm">
-          <div className="text-xs text-muted-foreground uppercase">Invoiced to</div>
+          <div className="text-xs text-muted-foreground uppercase">
+            {i.kind === "bill" ? "From" : "Invoiced to"}
+          </div>
           <div className="font-medium">{c.name}</div>
           {address && <div>{address}</div>}
           {c.vat && <div className="font-mono text-xs">VAT {c.vat}</div>}
@@ -42,6 +44,12 @@ export function InvoiceView({
             <>
               <dt className="text-muted-foreground">Shipment</dt>
               <dd className="font-mono">{inv.bookingRef}</dd>
+            </>
+          )}
+          {i.supplierRef && (
+            <>
+              <dt className="text-muted-foreground">Their number</dt>
+              <dd className="font-mono">{i.supplierRef}</dd>
             </>
           )}
           {inv.creditOfNumber && (

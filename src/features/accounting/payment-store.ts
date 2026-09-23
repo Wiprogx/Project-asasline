@@ -1,6 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { payProblem } from "@/domain/accounting";
 import { type DiffAccount, openCents, type PaymentMethod, settlement } from "@/domain/payments";
 import { audit } from "@/server/audit";
 import type { Tx } from "@/server/db/client";
@@ -26,8 +27,12 @@ export type PaymentInput = {
  */
 export async function bookPayment(tx: Tx, p: PaymentInput) {
   const [inv] = await tx.select().from(invoices).where(eq(invoices.id, p.invoiceId)).for("update");
-  if (!inv || inv.kind !== "invoice" || inv.status !== "issued")
-    throw new Refused("Only an issued invoice can be paid.");
+  if (!inv || inv.kind === "credit" || inv.status !== "issued")
+    throw new Refused("Only an issued invoice or a recorded bill can be paid.");
+  if (inv.kind === "bill") {
+    const problem = payProblem({ grossCents: inv.grossCents ?? 0, approvedAt: inv.approvedAt });
+    if (problem) throw new Refused(problem);
+  }
   const money = (await invoiceMoney(tx, [inv.id])).get(inv.id)!;
   const open = openCents(inv.grossCents ?? 0, money.settled, money.credited);
   const s = settlement(p.amountCents, open, p.writeOff);
@@ -36,6 +41,7 @@ export async function bookPayment(tx: Tx, p: PaymentInput) {
   const [pay] = await tx
     .insert(payments)
     .values({
+      direction: inv.kind === "bill" ? "out" : "in",
       contactId: inv.customerId,
       date: p.date,
       amountCents: p.amountCents,

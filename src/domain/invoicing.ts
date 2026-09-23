@@ -6,13 +6,14 @@ import { addDays } from "./dates";
  * number; issuing takes the next number of an unbroken yearly sequence and freezes the
  * invoice for ever — it is corrected by a credit note, never edited (invariant 7).
  */
-export const INVOICE_KINDS = ["invoice", "credit"] as const;
+/** A `bill` is a supplier's invoice to us: same lines, VAT and payments, money going out. */
+export const INVOICE_KINDS = ["invoice", "credit", "bill"] as const;
 export type InvoiceKind = (typeof INVOICE_KINDS)[number];
 
 export const INVOICE_STATUSES = ["draft", "issued", "discarded"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
-const PREFIX: Record<InvoiceKind, string> = { invoice: "INV", credit: "CN" };
+const PREFIX: Record<InvoiceKind, string> = { invoice: "INV", credit: "CN", bill: "BILL" };
 
 /** The sequence a number is taken from: one per kind and year ("INV2026"). */
 export const invoiceSequenceKey = (kind: InvoiceKind, day: string) =>

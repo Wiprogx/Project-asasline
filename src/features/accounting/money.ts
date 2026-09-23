@@ -27,12 +27,14 @@ export async function invoiceMoney(db: DbOrTx, ids: string[]) {
   return new Map(rows.map((r) => [r.id, { settled: r.settled, credited: r.credited }]));
 }
 
-/** Issued sales invoices with something still open — what a bank line can pay. */
+/** Issued customer invoices and supplier bills with something still open — what a bank line can settle. */
 export async function openInvoices(db: DbOrTx): Promise<OpenInvoice[]> {
   const rows = await db
     .select({
       id: invoices.id,
       number: invoices.number,
+      kind: invoices.kind,
+      supplierRef: invoices.supplierRef,
       ogm: invoices.ogm,
       customerId: invoices.customerId,
       gross: invoices.grossCents,
@@ -41,11 +43,17 @@ export async function openInvoices(db: DbOrTx): Promise<OpenInvoice[]> {
     })
     .from(invoices)
     .where(
-      and(eq(invoices.kind, "invoice"), eq(invoices.status, "issued"), gt(invoices.grossCents, 0)),
+      and(
+        inArray(invoices.kind, ["invoice", "bill"]),
+        eq(invoices.status, "issued"),
+        gt(invoices.grossCents, 0),
+      ),
     );
   return rows
     .map((r) => ({
       id: r.id,
+      kind: r.kind as "invoice" | "bill",
+      supplierRef: r.supplierRef,
       number: r.number ?? "",
       ogm: r.ogm,
       customerId: r.customerId,
