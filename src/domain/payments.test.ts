@@ -177,6 +177,7 @@ describe("bank CSV", () => {
     };
     expect(dedupKey("BE41", m, 0)).toBe(dedupKey("BE41", { ...m }, 0));
     expect(dedupKey("BE41", m, 0)).not.toBe(dedupKey("BE41", { ...m, amountCents: 101 }, 0));
+    expect(dedupKey("BE41", m, 0)).not.toBe(dedupKey("BE41", { ...m, name: "Another payer" }, 0));
   });
 });
 

@@ -161,6 +161,10 @@ export function parseStatement(text: string): Statement | null {
   return csv?.moves.length ? csv : null;
 }
 
-/** The same movement imported twice (two exports that overlap) is recognised and skipped. */
+/**
+ * The same movement imported twice (two exports that overlap) is recognised and skipped. The
+ * payer's name is part of the key: two payers sending the same amount with the same note on the
+ * same day are two payments, not one.
+ */
 export const dedupKey = (account: string, m: Move, index: number) =>
-  [account, m.date, m.amountCents, m.ogm || m.comm, m.iban, m.ref || `#${index}`].join("|");
+  [account, m.date, m.amountCents, m.ogm || m.comm, m.iban, m.name, m.ref || `#${index}`].join("|");

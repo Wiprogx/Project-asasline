@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ActionForm } from "@/components/shared/action-form";
 import { NativeSelect } from "@/components/shared/native-select";
@@ -108,7 +109,14 @@ export function InvoiceActions(p: {
   credited: boolean;
   termId: string | null;
   terms: Term[];
+  canIssue: boolean;
 }) {
+  const print = p.status === "issued" && (
+    <Button variant="outline" render={<Link href={`/print/invoices/${p.id}`} target="_blank" />}>
+      Print / PDF
+    </Button>
+  );
+  if (!p.canIssue) return print || null;
   if (p.status === "draft")
     return (
       <div className="flex flex-wrap items-center gap-2">
@@ -123,7 +131,12 @@ export function InvoiceActions(p: {
         />
       </div>
     );
-  if (p.status === "issued" && p.kind === "invoice" && !p.credited)
-    return <Credit id={p.id} version={p.version} />;
-  return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {print}
+      {p.status === "issued" && p.kind === "invoice" && !p.credited && (
+        <Credit id={p.id} version={p.version} />
+      )}
+    </div>
+  );
 }

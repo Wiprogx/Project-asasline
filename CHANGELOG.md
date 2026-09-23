@@ -6,6 +6,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Fixed
 
+- A bank line's de-duplication key now includes the payer's name: two payers sending the same amount with the same note on the same day were taken for one.
 - Forms lost everything typed after a validation error (React 19 resets `<form action>` once the action returns); all stateful forms now submit through `ActionForm`.
 - Success toasts never appeared when the action removed its own component (archive, cancel, remove container); toasts now fire when the result arrives (`useToastedAction`).
 - Emptying an optional field (contact phone, booking vessel…) did not clear it, because Drizzle skips `undefined`; updates now send null (`nullMissing`).
@@ -14,7 +15,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
-- Accounting, step 2 (work in progress, on branch feat/payments): payments with allocations, write-offs and reversals; CODA and CSV bank statement import with de-duplication; matching by OGM, invoice number, IBAN + exact amount; auto-match of certain matches; Payments and Bank screens. Migration 0005. Unit-tested; the browser test is not green yet.
+- Accounting, step 2 — payments and the bank: register payments against an invoice (never more than is open; a shortfall can be written off to 657000/658000/758000), reverse them with a reason and a date (never deleted); the invoice's paid / partly paid / overdue state is read from the ledger each time. Import CODA or bank CSV statements (EN/FR/NL headers, both decimal conventions; overlapping exports skipped by a de-duplication key); each line proposes the invoice it pays — structured communication, invoice number in the text, known IBAN with the exact open amount, or the amount alone — and auto-match books only the certain ones. Payments and Bank screens. Migration 0005.
 - Accounting, step 1 — sales invoices and credit notes: invoice a booking from its quotation lines (partially, to any party on the booking; over-billing refused again at issue), drafts with extra lines, issue with the unbroken yearly series INV/YYYY/NNNNN taken in the issuing transaction, due date from the payment term, +++OGM+++ reference, VAT per rate with the legal mention of each exempt code, credit notes in their own series with an optional corrected draft, discarding drafts with a reason, a printable invoice, and a Billing tab on each booking. Migration 0004.
 
 ### Fixed
