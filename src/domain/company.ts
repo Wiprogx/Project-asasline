@@ -11,3 +11,14 @@ export const COMPANY = {
   iban: "BE41 0689 4162 5810",
   bic: "GKCCBEBB",
 } as const;
+
+/** The office as the VAT administration knows it (the Intervat declarant). */
+export const DECLARANT = {
+  vat: COMPANY.vat,
+  name: COMPANY.name,
+  street: "Rue de Douvres 115",
+  postCode: "1070",
+  city: "Bruxelles",
+  email: COMPANY.email,
+  phone: COMPANY.tel,
+} as const;

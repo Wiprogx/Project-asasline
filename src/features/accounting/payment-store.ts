@@ -1,4 +1,5 @@
 import "server-only";
+import { assertOpen } from "./books-store";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { payProblem } from "@/domain/accounting";
@@ -26,6 +27,7 @@ export type PaymentInput = {
  * The allocation carries what the payment settles — the amount, plus any write-off.
  */
 export async function bookPayment(tx: Tx, p: PaymentInput) {
+  await assertOpen(tx, p.date);
   const [inv] = await tx.select().from(invoices).where(eq(invoices.id, p.invoiceId)).for("update");
   if (!inv || inv.kind === "credit" || inv.status !== "issued")
     throw new Refused("Only an issued invoice or a recorded bill can be paid.");

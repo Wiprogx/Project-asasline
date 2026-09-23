@@ -6,4 +6,5 @@ export * from "./activities";
 export * from "./messages";
 export * from "./invoices";
 export * from "./payments";
+export * from "./books";
 export * from "./relations";

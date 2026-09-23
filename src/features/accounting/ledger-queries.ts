@@ -1,49 +1,19 @@
 import "server-only";
-import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { cache } from "react";
-import { agedBalance, journal, type LedgerDoc, type LedgerPayment } from "@/domain/ledger";
+import { agedBalance, journal, type LedgerPayment } from "@/domain/ledger";
 import { openCents } from "@/domain/payments";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import {
-  bookings,
-  contacts,
-  invoiceLines,
-  invoices,
-  paymentAllocations,
-  payments,
-} from "@/server/db/schema";
+import { bookings, contacts, invoices, paymentAllocations, payments } from "@/server/db/schema";
+import { issuedDocs } from "./ledger-store";
 import { creditedSql, settledSql } from "./money";
 
-/**
- * The journal, derived from the documents each time it is read (see domain/ledger). Only what
- * has a number counts: drafts and discarded drafts are not in the books.
- */
+/** The journal, derived from the documents and payments each time it is read (see domain/ledger). */
 export const readJournal = cache(async () => {
   await requirePermission("app.accounting");
-  const [docs, lines, pays] = await Promise.all([
-    db
-      .select({
-        id: invoices.id,
-        kind: invoices.kind,
-        number: invoices.number,
-        date: invoices.issueDate,
-        partner: contacts.name,
-      })
-      .from(invoices)
-      .innerJoin(contacts, eq(contacts.id, invoices.customerId))
-      .where(and(eq(invoices.status, "issued"), isNotNull(invoices.number))),
-    db
-      .select({
-        invoiceId: invoiceLines.invoiceId,
-        qty: invoiceLines.qty,
-        unitCents: invoiceLines.unitCents,
-        vatCode: invoiceLines.vatCode,
-        account: invoiceLines.account,
-      })
-      .from(invoiceLines)
-      .innerJoin(invoices, eq(invoices.id, invoiceLines.invoiceId))
-      .where(and(eq(invoices.status, "issued"), isNull(invoiceLines.archivedAt))),
+  const [docs, pays] = await Promise.all([
+    issuedDocs(),
     db
       .select({
         id: payments.id,
@@ -63,21 +33,11 @@ export const readJournal = cache(async () => {
       .leftJoin(paymentAllocations, eq(paymentAllocations.paymentId, payments.id))
       .leftJoin(invoices, eq(invoices.id, paymentAllocations.invoiceId)),
   ]);
-  const linesOf = Map.groupBy(lines, (l) => l.invoiceId);
-  const ledgerDocs: LedgerDoc[] = docs.map((d) => ({
-    id: d.id,
-    side: d.kind === "bill" ? "purchase" : "sale",
-    credit: d.kind === "credit",
-    number: d.number ?? "",
-    date: d.date ?? "",
-    partner: d.partner,
-    lines: linesOf.get(d.id) ?? [],
-  }));
   const ledgerPays: LedgerPayment[] = pays.map((p) => ({
     ...p,
     reversedOn: p.status === "reversed" ? (p.reversedOn ?? p.date) : null,
   }));
-  return journal(ledgerDocs, ledgerPays);
+  return journal(docs, ledgerPays);
 });
 
 /** What customers owe (receivables) or what is owed to suppliers (payables), by age. */

@@ -15,6 +15,7 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
           { href: "/accounting/journal", label: "Journal" },
           { href: "/accounting/reports", label: "Reports" },
           { href: "/accounting/aged", label: "Aged" },
+          { href: "/accounting/vat", label: "VAT" },
           { href: "/accounting/margins", label: "Margins" },
         ]}
       />

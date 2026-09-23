@@ -9,6 +9,7 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { officeToday } from "@/server/clock";
+import { assertOpen } from "./books-store";
 import { db, type Tx } from "@/server/db/client";
 import { invoiceLines, invoices, quotationLines } from "@/server/db/schema";
 import { nextInvoiceNumber } from "@/server/sequences";
@@ -76,6 +77,7 @@ export async function issueInvoice(_p: ActionResult, fd: FormData): Promise<Acti
       if (inv.bookingId) await checkNotOverBilled(tx, inv.bookingId, id);
       const totals = await storeTotals(tx, id);
       const today = officeToday();
+      await assertOpen(tx, today);
       const termId = parsed.data.paymentTermId ?? inv.paymentTermId;
       const number = await nextInvoiceNumber(tx, inv.kind, today);
       await updateVersioned(
@@ -165,6 +167,7 @@ export async function creditInvoice(_p: ActionResult, fd: FormData): Promise<Act
 
       const lines = await liveLines(tx, id);
       const today = officeToday();
+      await assertOpen(tx, today);
       const number = await nextInvoiceNumber(tx, "credit", today);
       const base = {
         customerId: orig.customerId,

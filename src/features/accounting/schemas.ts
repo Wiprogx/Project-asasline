@@ -106,3 +106,11 @@ export const approveBillSchema = z.object({
   id: z.uuid(),
   version: z.coerce.number().int().positive(),
 });
+
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date");
+
+export const fileVatSchema = z.object({
+  period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2]|Q[1-4])$/, "A VAT period"),
+});
+
+export const closeBooksSchema = z.object({ through: day });

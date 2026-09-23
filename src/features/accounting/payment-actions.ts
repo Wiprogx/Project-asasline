@@ -8,6 +8,7 @@ import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { bankLines, paymentAllocations, payments } from "@/server/db/schema";
 import { updateVersioned } from "@/server/versioned";
+import { assertOpen } from "./books-store";
 import { guarded, Refused } from "./invoice-store";
 import { bookPayment, refreshMoney } from "./payment-store";
 import { registerPaymentSchema, reversePaymentSchema } from "./schemas";
@@ -50,6 +51,7 @@ export async function reversePayment(_p: ActionResult, fd: FormData): Promise<Ac
     db.transaction(async (tx) => {
       const [pay] = await tx.select().from(payments).where(eq(payments.id, id));
       if (!pay || pay.status !== "posted") throw new Refused("This payment is already reversed.");
+      await assertOpen(tx, officeToday());
       await updateVersioned(
         tx,
         payments,

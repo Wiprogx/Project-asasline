@@ -10,6 +10,7 @@ import { db } from "@/server/db/client";
 import { bookings, invoices } from "@/server/db/schema";
 import { nextInvoiceNumber } from "@/server/sequences";
 import { updateVersioned } from "@/server/versioned";
+import { assertOpen } from "./books-store";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import { approveBillSchema, newBillSchema, recordBillSchema } from "./schemas";
 
@@ -60,6 +61,7 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
   const r = await guarded(() =>
     db.transaction(async (tx) => {
       const bill = await draftOf(tx, id);
+      await assertOpen(tx, billDate);
       if (bill.kind !== "bill") throw new Refused("This is not a supplier bill.");
       if ((await liveLines(tx, id)).length === 0)
         throw new Refused("A bill needs at least one line.");
