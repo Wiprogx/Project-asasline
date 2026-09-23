@@ -196,6 +196,16 @@ export function journal(
   );
 }
 
+/** Entries whose reference, label or partner contain the words (any case). */
+export function searchEntries(entries: readonly Entry[], q: string | undefined): Entry[] {
+  const words = (q ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [...entries];
+  return entries.filter((e) => {
+    const text = `${e.ref} ${e.label} ${e.partner ?? ""}`.toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+}
+
 export type AccountTotal = {
   account: string;
   name: string;

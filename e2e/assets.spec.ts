@@ -42,7 +42,7 @@ test("equipment on a bill becomes an asset, depreciated, and leaves the books wh
   await expect(row).toContainText("Stolen from the car");
 
   // The journal books the disposal on its day: the whole cost as a loss.
-  await page.goto("/accounting/journal");
+  await page.goto(`/accounting/journal?q=${encodeURIComponent(laptop)}`);
   const head = page.getByRole("row").filter({ hasText: `Disposed · ${laptop}` });
   await expect(head).toBeVisible();
 });

@@ -32,8 +32,9 @@ export function DocumentActions({
         approved={!!i.approvedAt}
         canIssue={can.issue}
         canApprove={can.approve}
-        today={today}
-        due={addDays(today, 30)}
+        billDate={i.issueDate ?? today}
+        due={i.dueDate ?? addDays(i.issueDate ?? today, 30)}
+        supplierRef={i.supplierRef}
       />
     );
   return (
@@ -57,6 +58,11 @@ export function DocumentBody({ inv, editable }: { inv: Doc; editable: boolean })
   const costAccount = i.bookingId ? "604000" : "619000";
   return (
     <>
+      {bill && i.note && (
+        <p role="status" className="text-sm text-amber-700 dark:text-amber-400">
+          {i.note}
+        </p>
+      )}
       <InvoiceView
         inv={inv}
         lineAction={

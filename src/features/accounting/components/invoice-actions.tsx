@@ -112,9 +112,14 @@ export function InvoiceActions(p: {
   canIssue: boolean;
 }) {
   const print = p.status === "issued" && (
-    <Button variant="outline" render={<Link href={`/print/invoices/${p.id}`} target="_blank" />}>
-      Print / PDF
-    </Button>
+    <>
+      <Button variant="outline" render={<Link href={`/print/invoices/${p.id}`} target="_blank" />}>
+        Print / PDF
+      </Button>
+      <Button variant="outline" render={<a href={`/accounting/invoices/${p.id}/ubl`} download />}>
+        Peppol file (UBL)
+      </Button>
+    </>
   );
   if (!p.canIssue) return print || null;
   if (p.status === "draft")

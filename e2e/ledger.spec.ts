@@ -39,7 +39,7 @@ test("an invoice and its payment land in the journal, the ledger and the margins
   await expectToast(page, `Payment booked on ${number}`);
 
   // The journal: the invoice debits the customer and credits sales; the payment settles it.
-  await page.goto("/accounting/journal");
+  await page.goto(`/accounting/journal?q=${encodeURIComponent(client)}`);
   const invoiceHead = page.getByRole("row").filter({ hasText: `Invoice · ${client}` });
   await expect(invoiceHead).toContainText(number);
   await expect(page.getByRole("row").filter({ hasText: `Received from ${client}` })).toHaveCount(1);

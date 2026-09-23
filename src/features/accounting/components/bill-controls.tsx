@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { discardDraft } from "../actions";
 import { approveBill, newBill, recordBill } from "../bill-actions";
+import { importUbl } from "../peppol-actions";
 
 type Option = { id: string; name: string };
 
@@ -42,13 +43,15 @@ export function NewBillForm({ suppliers, bookingId }: { suppliers: Option[]; boo
 function RecordBill({
   id,
   version,
-  today,
+  billDate,
   due,
+  supplierRef,
 }: {
   id: string;
   version: number;
-  today: string;
+  billDate: string;
   due: string;
+  supplierRef: string | null;
 }) {
   const [state, run, pending] = useToastedAction(recordBill);
   const fe = !state.ok ? state.fieldErrors : undefined;
@@ -60,10 +63,10 @@ function RecordBill({
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="version" value={version} />
       <Field id="b-ref" label="Supplier's number" error={fe?.supplierRef}>
-        <Input id="b-ref" name="supplierRef" required />
+        <Input id="b-ref" name="supplierRef" defaultValue={supplierRef ?? ""} required />
       </Field>
       <Field id="b-date" label="Bill date" error={fe?.billDate}>
-        <Input id="b-date" name="billDate" type="date" defaultValue={today} required />
+        <Input id="b-date" name="billDate" type="date" defaultValue={billDate} required />
       </Field>
       <Field id="b-due" label="Due" error={fe?.dueDate}>
         <Input id="b-due" name="dueDate" type="date" defaultValue={due} required />
@@ -97,13 +100,20 @@ export function BillActions(p: {
   approved: boolean;
   canIssue: boolean;
   canApprove: boolean;
-  today: string;
+  billDate: string;
   due: string;
+  supplierRef: string | null;
 }) {
   if (p.status === "draft" && p.canIssue)
     return (
       <div className="flex flex-wrap items-end gap-2">
-        <RecordBill id={p.id} version={p.version} today={p.today} due={p.due} />
+        <RecordBill
+          id={p.id}
+          version={p.version}
+          billDate={p.billDate}
+          due={p.due}
+          supplierRef={p.supplierRef}
+        />
         <ReasonDialog
           action={discardDraft}
           hidden={{ id: p.id, version: p.version }}
@@ -121,5 +131,25 @@ export function BillActions(p: {
       <ToneBadge tone="warning">Needs a second person&apos;s approval</ToneBadge>
       {p.canApprove && <Approve id={p.id} version={p.version} />}
     </div>
+  );
+}
+
+/** A supplier's Peppol (UBL) XML file becomes a draft bill to check and record. */
+export function ImportUblForm() {
+  const [, run, pending] = useToastedAction(importUbl);
+  return (
+    <ActionForm action={run} className="flex flex-wrap items-center gap-2">
+      <Input
+        name="file"
+        type="file"
+        accept=".xml"
+        required
+        aria-label="Peppol invoice (UBL XML)"
+        className="max-w-xs"
+      />
+      <Button type="submit" size="sm" variant="outline" disabled={pending}>
+        {pending ? "Reading…" : "Import Peppol file"}
+      </Button>
+    </ActionForm>
   );
 }

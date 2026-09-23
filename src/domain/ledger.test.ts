@@ -10,6 +10,7 @@ import {
   type LedgerPayment,
   paymentEntries,
   profitAndLoss,
+  searchEntries,
   trialBalance,
 } from "./ledger";
 
@@ -160,6 +161,16 @@ describe("reports", () => {
     expect(l.openCents).toBe(131_000);
     expect(l.rows.map((r) => r.balanceCents)).toEqual([0]);
     expect(l.closeCents).toBe(0);
+  });
+});
+
+describe("searchEntries", () => {
+  const entries = journal([sale, bill], [pay]);
+
+  it("finds entries by reference, label or partner, every word", () => {
+    expect(searchEntries(entries, "bill/2026").map((e) => e.journal)).toEqual(["PUR"]);
+    expect(searchEntries(entries, "acme received")).toHaveLength(1);
+    expect(searchEntries(entries, "  ")).toHaveLength(3);
   });
 });
 

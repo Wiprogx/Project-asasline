@@ -35,3 +35,13 @@ export function presets(today: string): { label: string; period: Period }[] {
     { label: "Last year", period: { from: `${y - 1}-01-01`, to: `${y - 1}-12-31` } },
   ];
 }
+
+/** One page of a long list (1-based); a page past the end shows the last one. */
+export function pageOf<T>(items: readonly T[], page: unknown, size: number) {
+  const pages = Math.max(1, Math.ceil(items.length / size));
+  const n = Math.min(pages, Math.max(1, Math.floor(Number(page)) || 1));
+  return { items: items.slice((n - 1) * size, n * size), page: n, pages, total: items.length };
+}
+
+/** Opens a chronological list on its last page: the newest lines are the ones looked for. */
+export const LATEST = Number.MAX_SAFE_INTEGER;
