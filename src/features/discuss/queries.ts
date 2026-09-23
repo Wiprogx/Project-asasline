@@ -2,12 +2,13 @@ import "server-only";
 import { and, asc, desc, eq, ilike, inArray, isNull, ne, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
-import { type Channel, routeCodeOf, routeRole } from "@/domain/messages";
+import { type Channel, routeCodeOf, routeRole, inQueueOf, waitedMinutes } from "@/domain/messages";
 import type { Role } from "@/domain/permissions";
 import { requirePermission } from "@/server/auth/dal";
+import { now } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookings, contacts, messages, users } from "@/server/db/schema";
-import { readRoutes } from "@/server/messaging";
+import { bookings, configTables, contacts, messages, users } from "@/server/db/schema";
+import { readEscalateMinutes, readRoutes } from "@/server/messaging";
 
 const claimer = alias(users, "claimer");
 
@@ -81,7 +82,8 @@ export async function roomMessages(room: string) {
  */
 export async function waitingQueue(role: Role | null) {
   await requirePermission("app.discuss");
-  const routes = await readRoutes();
+  const [routes, escalateAfter] = await Promise.all([readRoutes(), readEscalateMinutes()]);
+  const at = now();
   const rows = await base()
     .where(
       and(
@@ -95,8 +97,16 @@ export async function waitingQueue(role: Role | null) {
     .orderBy(asc(messages.at))
     .limit(300);
   return rows
-    .map((m) => ({ ...m, routeRole: routeRole(routeCodeOf(m, routes), routes) }))
-    .filter((m) => role === null || m.routeRole === role);
+    .map((m) => {
+      const waited = waitedMinutes(m.at.getTime(), at.getTime());
+      return {
+        ...m,
+        routeRole: routeRole(routeCodeOf(m, routes), routes),
+        waited,
+        escalated: waited >= escalateAfter,
+      };
+    })
+    .filter((m) => role === null || inQueueOf(m, role, escalateAfter));
 }
 
 export async function messagesForRecord(linkKind: "booking" | "quotation", id: string) {
@@ -177,4 +187,21 @@ export async function bookingRecipients(bookingId: string) {
 export async function routingTable() {
   await requirePermission("app.discuss");
   return readRoutes();
+}
+
+/** The routing table and the escalation delay as the editor needs them, with their versions. */
+export async function routingForEdit() {
+  await requirePermission("app.settings");
+  const rows = await db
+    .select()
+    .from(configTables)
+    .where(inArray(configTables.name, ["routes", "escalation"]));
+  const of = (name: string) => rows.find((r) => r.name === name);
+  const [routes, minutes] = await Promise.all([readRoutes(), readEscalateMinutes()]);
+  return {
+    routes,
+    version: of("routes")?.version ?? 0,
+    minutes,
+    escalationVersion: of("escalation")?.version ?? 0,
+  };
 }

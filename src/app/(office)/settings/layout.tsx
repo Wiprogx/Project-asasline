@@ -9,6 +9,7 @@ const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/rules", label: "Document rules", permission: "app.settings" },
   { href: "/settings/holidays", label: "Holidays", permission: "app.settings" },
   { href: "/settings/vessels", label: "Vessels", permission: "bookings.edit" },
+  { href: "/settings/routing", label: "Routing", permission: "app.settings" },
   { href: "/settings/audit", label: "Audit log", permission: "audit.view" },
 ];
 

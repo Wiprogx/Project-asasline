@@ -121,3 +121,22 @@ export function outwardProblem(channel: Channel): string | null {
 
 /** Internal chat channels: one per role, plus the whole office. Generated, so no typo'd queue. */
 export const OFFICE_CHANNEL = "office";
+
+/** A message nobody took for this long goes to the Team lead as well (legacy ROUTE_CLAIM_MIN). */
+export const DEFAULT_ESCALATE_MINUTES = 30;
+
+/** Whole minutes a message has waited: from its arrival to now, both in epoch milliseconds. */
+export const waitedMinutes = (atMs: number, nowMs: number) =>
+  Math.max(0, Math.floor((nowMs - atMs) / 60_000));
+
+/**
+ * Whose queue a waiting message is in: the role its topic routes to — and, once it has waited
+ * past the limit, the Team lead's too (escalated: the role had its chance).
+ */
+export function inQueueOf(
+  m: { routeRole: Role; waited: number },
+  role: Role,
+  escalateAfter: number,
+): boolean {
+  return m.routeRole === role || (role === "team_lead" && m.waited >= escalateAfter);
+}

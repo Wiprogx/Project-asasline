@@ -28,3 +28,6 @@ export function officeNow(now: Date = new Date()): string {
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
   return `${officeToday(now)}T${get("hour")}:${get("minute")}:${get("second")}`;
 }
+
+/** The current instant, for "how long ago" questions (a message waiting, a session's age). */
+export const now = (): Date => new Date();

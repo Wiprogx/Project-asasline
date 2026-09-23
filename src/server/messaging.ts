@@ -1,7 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { DEFAULT_ROUTES, type Route } from "@/domain/messages";
+import { DEFAULT_ESCALATE_MINUTES, DEFAULT_ROUTES, type Route } from "@/domain/messages";
 import { ROLES } from "@/domain/permissions";
 import { cached } from "./cache/cache";
 import { db, type DbOrTx } from "./db/client";
@@ -17,6 +17,17 @@ export function readRoutes(): Promise<Route[]> {
     const [row] = await db.select().from(configTables).where(eq(configTables.name, "routes"));
     const parsed = row ? routeSchema.safeParse(row.value) : null;
     return parsed?.success ? parsed.data : DEFAULT_ROUTES;
+  });
+}
+
+const escalationSchema = z.object({ minutes: z.number().int().min(5).max(1440) });
+
+/** Minutes a message may wait unclaimed before the Team lead sees it too (a Settings value). */
+export function readEscalateMinutes(): Promise<number> {
+  return cached("config:escalation", { ttlSeconds: 600, tags: ["config:routes"] }, async () => {
+    const [row] = await db.select().from(configTables).where(eq(configTables.name, "escalation"));
+    const parsed = row ? escalationSchema.safeParse(row.value) : null;
+    return parsed?.success ? parsed.data.minutes : DEFAULT_ESCALATE_MINUTES;
   });
 }
 

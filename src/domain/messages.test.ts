@@ -10,6 +10,8 @@ import {
   routeRole,
   threadIdOf,
   withKey,
+  inQueueOf,
+  waitedMinutes,
 } from "./messages";
 
 describe("subject key", () => {
@@ -83,5 +85,21 @@ describe("outward", () => {
   it("never lets an internal message leave the office", () => {
     expect(outwardProblem("internal")).toMatch(/cannot be sent/);
     expect(outwardProblem("email")).toBeNull();
+  });
+});
+
+describe("escalation", () => {
+  it("counts whole minutes waited", () => {
+    const arrived = 1_000_000;
+    expect(waitedMinutes(arrived, arrived + 45.5 * 60_000)).toBe(45);
+    expect(waitedMinutes(arrived + 60_000, arrived)).toBe(0);
+  });
+
+  it("puts a message in its role's queue, and in the Team lead's once it waited too long", () => {
+    const m = { routeRole: "accountant" as const, waited: 10 };
+    expect(inQueueOf(m, "accountant", 30)).toBe(true);
+    expect(inQueueOf(m, "team_lead", 30)).toBe(false);
+    expect(inQueueOf({ ...m, waited: 30 }, "team_lead", 30)).toBe(true);
+    expect(inQueueOf({ ...m, waited: 90 }, "docs_clerk", 30)).toBe(false);
   });
 });

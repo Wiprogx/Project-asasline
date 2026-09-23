@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ToneBadge } from "@/components/shared/tone-badge";
 import { ROLE_LABEL } from "@/domain/permissions";
 import { contactOptions } from "@/features/contacts/queries";
 import { ClaimButton } from "@/features/discuss/components/claim-button";
@@ -51,7 +52,10 @@ export default async function QueuePage({ searchParams }: PageProps<"/discuss/qu
                 m={m}
                 actions={
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {all && ROLE_LABEL[m.routeRole]}
+                    {m.escalated && (
+                      <ToneBadge tone="warning">Nobody took it — {m.waited} min</ToneBadge>
+                    )}
+                    {(all || m.routeRole !== user.role) && ROLE_LABEL[m.routeRole]}
                     <ClaimButton id={m.id} />
                   </span>
                 }
