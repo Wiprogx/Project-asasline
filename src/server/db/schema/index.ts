@@ -3,4 +3,5 @@ export * from "./identity";
 export * from "./contacts";
 export * from "./shipments";
 export * from "./activities";
+export * from "./messages";
 export * from "./relations";

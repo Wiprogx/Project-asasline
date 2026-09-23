@@ -1,0 +1,42 @@
+import "server-only";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { DEFAULT_ROUTES, type Route } from "@/domain/messages";
+import { ROLES } from "@/domain/permissions";
+import { cached } from "./cache/cache";
+import { db, type DbOrTx } from "./db/client";
+import { bookings, configTables, quotations } from "./db/schema";
+
+const routeSchema = z.array(
+  z.object({ code: z.string(), subject: z.string(), role: z.enum(ROLES), active: z.boolean() }),
+);
+
+/** The routing table (topic → role), a Settings table with the legacy rows as default. */
+export function readRoutes(): Promise<Route[]> {
+  return cached("config:routes", { ttlSeconds: 600, tags: ["config:routes"] }, async () => {
+    const [row] = await db.select().from(configTables).where(eq(configTables.name, "routes"));
+    const parsed = row ? routeSchema.safeParse(row.value) : null;
+    return parsed?.success ? parsed.data : DEFAULT_ROUTES;
+  });
+}
+
+/** An SB/QT number → the record it names, or null when nothing carries it. */
+export async function resolveRef(
+  tx: DbOrTx,
+  ref: string | null | undefined,
+): Promise<{ kind: "booking" | "quotation"; id: string; ref: string } | null> {
+  if (!ref) return null;
+  const r = ref.toUpperCase();
+  if (r.startsWith("SB")) {
+    const [b] = await tx.select({ id: bookings.id }).from(bookings).where(eq(bookings.ref, r));
+    return b ? { kind: "booking", id: b.id, ref: r } : null;
+  }
+  if (r.startsWith("QT")) {
+    const [q] = await tx
+      .select({ id: quotations.id })
+      .from(quotations)
+      .where(eq(quotations.ref, r));
+    return q ? { kind: "quotation", id: q.id, ref: r } : null;
+  }
+  return null;
+}

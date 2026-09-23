@@ -55,7 +55,7 @@ export const NAV: NavItem[] = [
     label: "Discuss",
     icon: MessagesSquareIcon,
     permission: "app.discuss",
-    migrated: false,
+    migrated: true,
   },
   {
     href: "/accounting",
