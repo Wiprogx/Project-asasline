@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import type { accountLedger } from "@/domain/ledger";
 import { formatCents } from "@/domain/money";
+import { sourceHref } from "./journal-list";
 
 const num = "text-right tabular-nums";
 
@@ -35,14 +36,7 @@ export function LedgerTable({ rows }: { rows: ReturnType<typeof accountLedger>["
           <TableRow key={`${e.source.id}-${e.ref}-${i}`}>
             <TableCell className="font-mono text-xs">{e.date}</TableCell>
             <TableCell>
-              <Link
-                className="font-mono hover:underline"
-                href={
-                  e.source.kind === "invoice"
-                    ? `/accounting/invoices/${e.source.id}`
-                    : "/accounting/payments"
-                }
-              >
+              <Link className="font-mono hover:underline" href={sourceHref(e)}>
                 {e.ref}
               </Link>
             </TableCell>

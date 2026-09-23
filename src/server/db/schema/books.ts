@@ -9,6 +9,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { cents, recordColumns } from "./_columns";
 import { invoices } from "./invoices";
 import { messages } from "./messages";
@@ -67,4 +68,24 @@ export const fixedAssets = pgTable(
     disposeNote: text(),
   },
   (t) => [index("fixed_assets_invoice_idx").on(t.invoiceId)],
+);
+
+/**
+ * Costs to receive booked at a month's end (domain/accruals): the shipments and amounts as
+ * booked, so the entry never shifts when bills arrive later. One live run per day; a run is
+ * cancelled with a reason (archived) to book it again.
+ */
+export const accrualRuns = pgTable(
+  "accrual_runs",
+  {
+    ...recordColumns,
+    onDate: date({ mode: "string" }).notNull(),
+    totalCents: cents().notNull(),
+    lines: jsonb().$type<{ bookingId: string; ref: string; cents: number }[]>().notNull(),
+  },
+  (t) => [
+    uniqueIndex("accrual_runs_live_uq")
+      .on(t.onDate)
+      .where(sql`archived_at is null`),
+  ],
 );

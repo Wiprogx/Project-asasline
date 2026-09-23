@@ -20,6 +20,7 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
           { href: "/accounting/vat", label: "VAT" },
           { href: "/accounting/listings", label: "Listings" },
           { href: "/accounting/assets", label: "Assets" },
+          { href: "/accounting/accruals", label: "Accruals" },
           { href: "/accounting/margins", label: "Margins" },
         ]}
       />

@@ -144,3 +144,12 @@ export const assetDisposeSchema = z.object({
   disposedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date"),
   note: z.string().trim().min(3, "What happened to it?").max(300),
 });
+
+export const accrualBookSchema = z.object({
+  onDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date"),
+});
+
+export const accrualCancelSchema = z.object({
+  id: z.uuid(),
+  reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
+});

@@ -14,10 +14,17 @@ import { AccountLink } from "./report-tables";
 
 const num = "text-right tabular-nums";
 
-function sourceHref(e: Entry) {
+const SOURCE_PAGE = {
+  payment: "/accounting/payments",
+  asset: "/accounting/assets",
+  accrual: "/accounting/accruals",
+} as const;
+
+/** Where an entry comes from: its document, or the screen that made it. */
+export function sourceHref(e: Entry) {
   return e.source.kind === "invoice"
     ? `/accounting/invoices/${e.source.id}`
-    : "/accounting/payments";
+    : SOURCE_PAGE[e.source.kind];
 }
 
 /** The journal as the accountant reads it: one block per entry, debit and credit columns. */
