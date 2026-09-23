@@ -17,3 +17,4 @@ Every document under docs/ is listed here (DOC.3): what it is for, its category 
 | `ADOPTION_DECISIONS.md` | The decisions an unattended adoption night takes alone: date, phase, default taken, the alternative | governance | living |
 | `INVARIANTS.md`         | The legacy business invariants and what holds each one (probe, graph rule, review)                  | reference  | living |
 | `MIGRATION.md`          | Legacy single file → Next.js: architecture mapping, module status, data migration                   | plan       | living |
+| `LESSONS.md`            | What went wrong, why, and the rule it left; every line added to CLAUDE.md traces here               | governance | living |
