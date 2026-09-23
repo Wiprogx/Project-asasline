@@ -32,6 +32,7 @@ export const PERMISSIONS = {
   "accounting.bank": [1, 0, 1, 0],
   "accounting.approve": [1, 0, 1, 0],
   "accounting.closePeriods": [1, 0, 1, 0],
+  "activity.cover": [1, 0, 0, 1],
 } as const satisfies Record<string, Grant>;
 
 export type Permission = keyof typeof PERMISSIONS;

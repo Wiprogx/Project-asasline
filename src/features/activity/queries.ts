@@ -4,8 +4,9 @@ import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import type { TaskState } from "@/domain/tasks";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { activities, bookings, users } from "@/server/db/schema";
+import { activities, bookings, covers, users } from "@/server/db/schema";
 
 const doneBy = alias(users, "done_by_user");
 
@@ -41,12 +42,20 @@ function baseQuery() {
 
 export type TaskRow = Awaited<ReturnType<ReturnType<typeof baseQuery>["execute"]>>[number];
 
-/** Mine = assigned to me, or to my role and not yet taken (domain `isMine`, in SQL). */
-const mineWhere = (me: CurrentUser) =>
-  or(
+/**
+ * Mine = assigned to me, or to my role and not yet taken (domain `isMine`, in SQL) — and,
+ * while I cover for somebody away, their tasks too (domain `coveredBy`).
+ */
+const mineWhere = (me: CurrentUser) => {
+  const today = officeToday();
+  return or(
     eq(activities.assigneeId, me.id),
     and(isNull(activities.assigneeId), eq(activities.role, me.role)),
+    sql`${activities.assigneeId} in (select c.absent_id from covers c
+      where c.cover_id = ${me.id} and c.ended_at is null and c.archived_at is null
+      and c.from_date <= ${today} and (c.to_date is null or c.to_date >= ${today}))`,
   )!;
+};
 
 function whoWhere(who: string, me: CurrentUser): SQL | undefined {
   if (who === "mine") return mineWhere(me);
@@ -114,4 +123,34 @@ export async function myTaskCounts(today: string) {
     .from(activities)
     .where(and(eq(activities.state, "open"), mineWhere(me)));
   return row;
+}
+
+const absent = alias(users, "absent_user");
+const coverer = alias(users, "cover_user");
+
+/** Covers running or to come, with how many open tasks each absent person holds. */
+export async function coversNow() {
+  await requirePermission("app.activity");
+  const today = officeToday();
+  return db
+    .select({
+      id: covers.id,
+      absentId: covers.absentId,
+      absent: absent.name,
+      cover: coverer.name,
+      fromDate: covers.fromDate,
+      toDate: covers.toDate,
+      open: sql<number>`(select count(*) from activities a where a.assignee_id = ${covers.absentId} and a.state = 'open')::int`,
+    })
+    .from(covers)
+    .innerJoin(absent, eq(absent.id, covers.absentId))
+    .innerJoin(coverer, eq(coverer.id, covers.coverId))
+    .where(
+      and(
+        isNull(covers.endedAt),
+        isNull(covers.archivedAt),
+        or(isNull(covers.toDate), gte(covers.toDate, today)),
+      ),
+    )
+    .orderBy(asc(covers.fromDate));
 }

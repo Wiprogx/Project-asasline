@@ -32,3 +32,24 @@ export const activities = pgTable(
     index("activities_due_idx").on(t.due),
   ],
 );
+
+/**
+ * Somebody away and who covers (domain/cover): for those days the absent person's tasks show in
+ * the cover's list; nothing moves. `endedAt` ends it early ("back now") — kept, never deleted.
+ */
+export const covers = pgTable(
+  "covers",
+  {
+    ...recordColumns,
+    absentId: uuid()
+      .notNull()
+      .references(() => users.id),
+    coverId: uuid()
+      .notNull()
+      .references(() => users.id),
+    fromDate: date({ mode: "string" }).notNull(),
+    toDate: date({ mode: "string" }),
+    endedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index("covers_cover_idx").on(t.coverId), index("covers_absent_idx").on(t.absentId)],
+);
