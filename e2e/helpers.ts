@@ -32,3 +32,11 @@ export async function submit(page: Page, button: Locator) {
   await button.click();
   await done;
 }
+
+/** A VAT number no other contact has: a Belgian one with valid check digits (97 − first eight mod 97). */
+export function uniqueVat(country: "BE" | "DE"): string {
+  const seven = String(Date.now()).slice(-7);
+  if (country === "DE") return `DE${seven}${Math.floor(Math.random() * 90 + 10)}`;
+  const base = `0${seven}`;
+  return `BE${base}${String(97 - (Number(base) % 97)).padStart(2, "0")}`;
+}

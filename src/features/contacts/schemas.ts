@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CONTACT_TYPES, LANGUAGES } from "@/domain/contacts";
+import { CONTACT_TYPES, idClean, idProblem, LANGUAGES } from "@/domain/contacts";
 import { ibanOk } from "@/domain/iban";
 import { toCents } from "@/domain/money";
 
@@ -14,8 +14,8 @@ export const contactSchema = z.object({
     .transform((c) => c.toUpperCase())
     .optional(),
   lang: z.enum(LANGUAGES).default("en"),
-  vat: optional,
-  eori: optional,
+  vat: optional.transform((v) => (v === undefined ? v : idClean(v) || undefined)),
+  eori: optional.transform((v) => (v === undefined ? v : idClean(v) || undefined)),
   phone: optional,
   mobile: optional,
   whatsapp: optional,
@@ -43,6 +43,14 @@ export const contactSchema = z.object({
 
 export type ContactInput = z.infer<typeof contactSchema>;
 
+/** The contact with its VAT and EORI numbers checked against its country's formats. */
+export const checkedContactSchema = contactSchema.superRefine((c, ctx) => {
+  for (const kind of ["vat", "eori"] as const) {
+    const problem = idProblem(c[kind], c.country, kind);
+    if (problem) ctx.addIssue({ code: "custom", path: [kind], message: problem });
+  }
+});
+
 export const versionRef = z.object({
   id: z.uuid(),
   version: z.coerce.number().int().positive(),
@@ -68,6 +76,43 @@ export const bankAccountSchema = z.object({
 });
 
 export const bankAccountArchiveSchema = z.object({
+  id: z.uuid(),
+  contactId: z.uuid(),
+  reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
+});
+
+const opt = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => v || null);
+
+export const addressSchema = z.object({
+  contactId: z.uuid(),
+  type: z.string().trim().min(1, "What kind of address").max(100),
+  name: opt(200),
+  street: opt(300),
+  zip: opt(20),
+  city: opt(100),
+  country: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v.toUpperCase() : null))
+    .refine((v) => v === null || /^[A-Z]{2}$/.test(v), "Two-letter ISO code, e.g. BE"),
+  phone: opt(50),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => v || null)
+    .refine((v) => v === null || z.email().safeParse(v).success, "Not a valid email"),
+  note: opt(1000),
+});
+
+export const addressArchiveSchema = z.object({
   id: z.uuid(),
   contactId: z.uuid(),
   reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),

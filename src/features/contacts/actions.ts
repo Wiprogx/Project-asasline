@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, ne, or } from "drizzle-orm";
+import { and, eq, isNull, ne, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type ActionResult, fail, formToObject, invalid, nullMissing } from "@/lib/action-result";
@@ -10,7 +10,13 @@ import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
-import { archiveSchema, type ContactInput, contactSchema, versionRef } from "./schemas";
+import {
+  archiveSchema,
+  type ContactInput,
+  checkedContactSchema,
+  contactSchema,
+  versionRef,
+} from "./schemas";
 
 // Optional contact fields a person may empty; creditLimit is already mapped to null.
 const CLEARABLE = Object.keys(contactSchema.shape).filter((k) => k !== "creditLimit");
@@ -20,6 +26,29 @@ const toRow = ({ creditLimit, ...rest }: ContactInput) => ({
   creditLimitCents: creditLimit,
 });
 
+/** The same VAT number twice is two files for one company: refused, naming the other one. */
+async function vatTaken(vat: string | undefined, exceptId: string | null) {
+  if (!vat) return null;
+  const [other] = await db
+    .select({ name: contacts.name })
+    .from(contacts)
+    .where(
+      and(
+        eq(contacts.vat, vat),
+        isNull(contacts.archivedAt),
+        exceptId ? ne(contacts.id, exceptId) : undefined,
+      ),
+    )
+    .limit(1);
+  if (!other) return null;
+  const message = `Already on ${other.name}`;
+  return {
+    ok: false as const,
+    error: `This VAT number is already on ${other.name} — one company, one contact.`,
+    fieldErrors: { vat: [message] },
+  };
+}
+
 async function settle(id: string) {
   await invalidateTags(tags.contacts, tags.contact(id));
   revalidatePath("/contacts");
@@ -28,8 +57,10 @@ async function settle(id: string) {
 
 export async function createContact(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.contacts");
-  const parsed = contactSchema.safeParse(formToObject(fd));
+  const parsed = checkedContactSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
+  const taken = await vatTaken(parsed.data.vat, null);
+  if (taken) return taken;
 
   const id = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -52,9 +83,11 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
   const user = await requirePermission("app.contacts");
   const raw = formToObject(fd);
   const ref = versionRef.safeParse(raw);
-  const parsed = contactSchema.safeParse(raw);
+  const parsed = checkedContactSchema.safeParse(raw);
   if (!ref.success) return invalid(ref.error);
   if (!parsed.success) return invalid(parsed.error);
+  const taken = await vatTaken(parsed.data.vat, ref.data.id);
+  if (taken) return taken;
   try {
     await db.transaction(async (tx) => {
       await updateVersioned(

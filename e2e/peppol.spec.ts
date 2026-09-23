@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, submit, tag, uniqueVat } from "./helpers";
 
 test("an issued invoice gives its Peppol file; a customer without VAT number cannot", async ({
   page,
@@ -9,7 +9,8 @@ test("an issued invoice gives its Peppol file; a customer without VAT number can
   await login(page);
   await page.goto("/contacts/new");
   await page.getByLabel("Name").fill(client);
-  await page.getByLabel("VAT number").fill("BE0123456749");
+  const vat = uniqueVat("BE");
+  await page.getByLabel("VAT number").fill(vat);
   await page.getByLabel("Street").fill("Kaai 12");
   await page.getByLabel("Postcode").fill("2000");
   await page.getByLabel("City").fill("Antwerpen");
@@ -35,7 +36,7 @@ test("an issued invoice gives its Peppol file; a customer without VAT number can
   expect(res.status()).toBe(200);
   const xml = await res.text();
   expect(xml).toContain(`<cbc:ID>${number}</cbc:ID>`);
-  expect(xml).toContain('<cbc:EndpointID schemeID="0208">0123456749</cbc:EndpointID>');
+  expect(xml).toContain(`<cbc:EndpointID schemeID="0208">${vat.slice(2)}</cbc:EndpointID>`);
   expect(xml).toContain('<cbc:PayableAmount currencyID="EUR">242.00</cbc:PayableAmount>');
 });
 

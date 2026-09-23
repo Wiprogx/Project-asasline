@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login, submit, tag } from "./helpers";
+import { login, submit, tag, uniqueVat } from "./helpers";
 
 test("a service to an EU business is on the intra-community listing and in the CSV export", async ({
   page,
@@ -10,7 +10,8 @@ test("a service to an EU business is on the intra-community listing and in the C
   await page.goto("/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Country (ISO-2)").fill("DE");
-  await page.getByLabel("VAT number").fill("DE811907980");
+  const vat = uniqueVat("DE");
+  await page.getByLabel("VAT number").fill(vat);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
@@ -29,14 +30,14 @@ test("a service to an EU business is on the intra-community listing and in the C
 
   await page.goto("/accounting/listings");
   const row = page.getByRole("row").filter({ hasText: client });
-  await expect(row).toContainText("DE811907980");
+  await expect(row).toContainText(vat);
   await expect(row).toContainText("€300.00");
   const period = (await page
     .getByRole("heading", { name: /^Intra-community listing/ })
     .textContent())!.slice(-7);
   const xml = await (await page.request.get(`/accounting/listings/intra/${period}`)).text();
   expect(xml).toContain(
-    'issuedBy="DE">811907980</ns2:CompanyVATNumber><ns2:Code>S</ns2:Code><ns2:Amount>300.00',
+    `issuedBy="DE">${vat.slice(2)}</ns2:CompanyVATNumber><ns2:Code>S</ns2:Code><ns2:Amount>300.00`,
   );
 
   await page.goto("/accounting/journal");
