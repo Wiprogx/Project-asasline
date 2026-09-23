@@ -11,7 +11,12 @@ import {
 } from "drizzle-orm/pg-core";
 import { cents, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
-import { bookingStatusEnum, quotationStatusEnum, shipmentKindEnum } from "./enums";
+import {
+  bookingStatusEnum,
+  quotationStatusEnum,
+  shipmentKindEnum,
+  vesselStatusEnum,
+} from "./enums";
 
 /** Dates are stored as `date` and read as "YYYY-MM-DD" strings — never as instants. */
 const day = () => date({ mode: "string" });
@@ -66,6 +71,30 @@ export const quotationLines = pgTable("quotation_lines", {
   priceSource: text(),
 });
 
+/**
+ * A sailing of the vessel register: one ship on one voyage between two ports. Bookings on it
+ * take their dates and closings from here (domain/vessels); moving it moves them.
+ */
+export const vessels = pgTable(
+  "vessels",
+  {
+    ...recordColumns,
+    name: text().notNull(),
+    imo: text(),
+    carrier: text(),
+    service: text(),
+    voyage: text().notNull(),
+    pol: text(),
+    pod: text(),
+    etd: day(),
+    eta: day(),
+    atd: day(),
+    ata: day(),
+    status: vesselStatusEnum().notNull().default("scheduled"),
+  },
+  (t) => [index("vessels_etd_idx").on(t.etd)],
+);
+
 export const bookings = pgTable(
   "bookings",
   {
@@ -89,6 +118,7 @@ export const bookings = pgTable(
     carrierBookingNo: text(),
     blNo: text(),
     docType: text().notNull().default("SEA WAYBILL"),
+    vesselId: uuid().references(() => vessels.id),
     vesselName: text(),
     voyage: text(),
     etd: day(),

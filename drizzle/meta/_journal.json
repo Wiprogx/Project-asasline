@@ -92,6 +92,13 @@
       "when": 1790192710163,
       "tag": "0012_odoo",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790194319789,
+      "tag": "0013_vessels",
+      "breakpoints": true
     }
   ]
 }

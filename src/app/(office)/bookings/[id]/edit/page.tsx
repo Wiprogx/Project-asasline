@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BookingDetailsForm } from "@/features/bookings/components/booking-details-form";
 import { getBooking } from "@/features/bookings/queries";
 import { contactOptions } from "@/features/contacts/queries";
+import { BookingSailing } from "@/features/vessels/components/booking-sailing";
+import { sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Edit booking" };
 
@@ -13,6 +17,7 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
   const [b, contacts] = await Promise.all([getBooking(id), contactOptions()]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);
+  const sailings = await sailingOptions(officeToday(), { pol: b.pol, pod: b.pod });
 
   const values = {
     id: b.id,
@@ -40,5 +45,17 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
     siClosing: b.siClosing,
     portCutOff: b.portCutOff,
   };
-  return <BookingDetailsForm values={values} contacts={contacts} />;
+  return (
+    <div className="grid gap-4">
+      <Card>
+        <CardHeader>
+          <h2 className="font-heading text-base font-medium">Sailing</h2>
+        </CardHeader>
+        <CardContent>
+          <BookingSailing bookingId={b.id} vesselId={b.vesselId} options={sailings} />
+        </CardContent>
+      </Card>
+      <BookingDetailsForm key={b.version} values={values} contacts={contacts} />
+    </div>
+  );
 }
