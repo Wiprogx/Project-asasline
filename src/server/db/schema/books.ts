@@ -89,3 +89,21 @@ export const accrualRuns = pgTable(
       .where(sql`archived_at is null`),
   ],
 );
+
+/**
+ * The balances Odoo's trial balance gave on the cut-over day (domain/odoo), booked as one
+ * opening entry. One live row; archived with a reason to load a corrected one.
+ */
+export const openingBalances = pgTable(
+  "opening_balances",
+  {
+    ...recordColumns,
+    onDate: date({ mode: "string" }).notNull(),
+    lines: jsonb().$type<{ account: string; cents: number }[]>().notNull(),
+  },
+  (t) => [
+    uniqueIndex("opening_balances_live_uq")
+      .on(t.onDate)
+      .where(sql`archived_at is null`),
+  ],
+);

@@ -8,11 +8,17 @@ import { contacts, invoiceLines, invoices } from "@/server/db/schema";
  * Every issued document with its live lines, its partner's name and country. Only what has a
  * number counts: drafts and discarded drafts are not in the books.
  */
-export async function issuedDocs(range?: { from: string; to: string }) {
+export async function issuedDocs(range?: { from: string; to: string }, opts = { opening: false }) {
   const inRange = range
     ? sql`${invoices.issueDate} between ${range.from} and ${range.to}`
     : undefined;
-  const issued = and(eq(invoices.status, "issued"), isNotNull(invoices.number), inRange);
+  // Odoo's opening documents are in the books but not in a VAT return or a listing.
+  const issued = and(
+    eq(invoices.status, "issued"),
+    isNotNull(invoices.number),
+    inRange,
+    opts.opening ? undefined : eq(invoices.opening, false),
+  );
   const [docs, lines] = await Promise.all([
     db
       .select({

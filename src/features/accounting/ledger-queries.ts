@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { cache } from "react";
 import { accrualEntries } from "@/domain/accruals";
+import { openingEntry } from "@/domain/odoo";
 import { assetEntries, lastMonthEnd } from "@/domain/assets";
 import { agedBalance, journal, type LedgerPayment } from "@/domain/ledger";
 import { openCents } from "@/domain/payments";
@@ -14,6 +15,7 @@ import {
   contacts,
   fixedAssets,
   invoices,
+  openingBalances,
   paymentAllocations,
   payments,
 } from "@/server/db/schema";
@@ -23,8 +25,8 @@ import { creditedSql, settledSql } from "./money";
 /** The journal, derived from the documents and payments each time it is read (see domain/ledger). */
 export const readJournal = cache(async () => {
   await requirePermission("app.accounting");
-  const [docs, pays, assets, accruals] = await Promise.all([
-    issuedDocs(),
+  const [docs, pays, assets, accruals, openings] = await Promise.all([
+    issuedDocs(undefined, { opening: true }),
     db
       .select({
         id: payments.id,
@@ -45,6 +47,7 @@ export const readJournal = cache(async () => {
       .leftJoin(invoices, eq(invoices.id, paymentAllocations.invoiceId)),
     db.select().from(fixedAssets).where(isNull(fixedAssets.archivedAt)),
     db.select().from(accrualRuns).where(isNull(accrualRuns.archivedAt)),
+    db.select().from(openingBalances).where(isNull(openingBalances.archivedAt)),
   ]);
   const ledgerPays: LedgerPayment[] = pays.map((p) => ({
     ...p,
@@ -54,6 +57,7 @@ export const readJournal = cache(async () => {
   return journal(docs, ledgerPays, [
     ...assets.flatMap((a) => assetEntries(a, upTo)),
     ...accruals.flatMap(accrualEntries),
+    ...openings.map(openingEntry),
   ]);
 });
 

@@ -70,7 +70,7 @@ export function parseCoda(text: string): Statement | null {
   return out;
 }
 
-function splitCsv(line: string, sep: string): string[] {
+export function splitCsv(line: string, sep: string): string[] {
   const out: string[] = [];
   let cell = "";
   let quoted = false;
@@ -85,7 +85,7 @@ function splitCsv(line: string, sep: string): string[] {
   return out;
 }
 
-const csvDate = (s: string) => {
+export const csvDate = (s: string) => {
   const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
   if (iso) return iso[0];
   const eu = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})/.exec(s);

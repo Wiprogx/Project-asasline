@@ -85,6 +85,13 @@
       "when": 1790189331911,
       "tag": "0011_accruals",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790192710163,
+      "tag": "0012_odoo",
+      "breakpoints": true
     }
   ]
 }

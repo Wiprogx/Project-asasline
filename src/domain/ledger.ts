@@ -62,7 +62,7 @@ export type Entry = {
   ref: string;
   label: string;
   partner: string | null;
-  source: { kind: "invoice" | "payment" | "asset" | "accrual"; id: string };
+  source: { kind: "invoice" | "payment" | "asset" | "accrual" | "opening"; id: string };
   lines: EntryLine[];
 };
 

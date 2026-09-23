@@ -18,6 +18,7 @@ const SOURCE_PAGE = {
   payment: "/accounting/payments",
   asset: "/accounting/assets",
   accrual: "/accounting/accruals",
+  opening: "/accounting/odoo",
 } as const;
 
 /** Where an entry comes from: its document, or the screen that made it. */

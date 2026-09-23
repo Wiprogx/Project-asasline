@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   index,
   integer,
@@ -50,6 +51,9 @@ export const invoices = pgTable(
     supplierRef: text(),
     approvedBy: uuid(),
     approvedAt: timestamp({ withTimezone: true }),
+    // Brought over from Odoo at the cut-over: only the open part, against 499000; its revenue
+    // and VAT were Odoo's, so it stays out of the VAT return and the listings.
+    opening: boolean().notNull().default(false),
   },
   (t) => [
     uniqueIndex("invoices_number_uq").on(t.number),
