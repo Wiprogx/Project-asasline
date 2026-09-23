@@ -57,6 +57,13 @@
       "when": 1790185524646,
       "tag": "0007_vat_filings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790186947371,
+      "tag": "0008_reminders",
+      "breakpoints": true
     }
   ]
 }

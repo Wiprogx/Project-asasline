@@ -8,13 +8,17 @@ import { ContactForm } from "@/features/contacts/components/contact-form";
 import { toContactFormValues } from "@/features/contacts/form-values";
 import { getContact } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { can } from "@/domain/permissions";
+import { CreditLine } from "@/features/accounting/components/credit-line";
+import { creditStanding } from "@/features/accounting/reminder-queries";
 
 export default async function ContactPage({ params }: PageProps<"/contacts/[id]">) {
-  await requirePagePermission("app.contacts");
+  const user = await requirePagePermission("app.contacts");
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
   const c = await getContact(id.data);
   if (!c) notFound();
+  const credit = can(user.role, "app.accounting") ? await creditStanding(c.id) : null;
 
   return (
     <>
@@ -27,6 +31,7 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
         }
         actions={<ContactArchive id={c.id} version={c.version} archived={!!c.archivedAt} />}
       />
+      {credit && <CreditLine {...credit} />}
       <ContactForm action={updateContact} values={toContactFormValues(c)} submitLabel="Save" />
     </>
   );

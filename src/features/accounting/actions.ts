@@ -4,6 +4,7 @@ import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { dueDateOf, remainingQty } from "@/domain/invoicing";
 import { ogmMake } from "@/domain/ogm";
+import { creditProblem } from "@/domain/reminders";
 import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
@@ -11,10 +12,11 @@ import { readPaymentTerms } from "@/server/accounting-config";
 import { officeToday } from "@/server/clock";
 import { assertOpen } from "./books-store";
 import { db, type Tx } from "@/server/db/client";
-import { invoiceLines, invoices, quotationLines } from "@/server/db/schema";
+import { contacts, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
 import { nextInvoiceNumber } from "@/server/sequences";
 import { updateVersioned } from "@/server/versioned";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
+import { exposureOf } from "./reminder-store";
 import { creditSchema, discardSchema, issueSchema } from "./schemas";
 
 /**
@@ -103,12 +105,18 @@ export async function issueInvoice(_p: ActionResult, fd: FormData): Promise<Acti
         entityId: id,
         detail: { number, grossCents: totals.grossCents },
       });
-      return { bookingId: inv.bookingId, number };
+      const [c] = await tx
+        .select({ limit: contacts.creditLimitCents })
+        .from(contacts)
+        .where(eq(contacts.id, inv.customerId));
+      const credit = creditProblem(c?.limit ?? null, await exposureOf(tx, inv.customerId));
+      return { bookingId: inv.bookingId, number, credit };
     }),
   );
   if (!r.ok) return r;
   refreshInvoice(id, r.value.bookingId);
-  return { ok: true, data: undefined, message: `Issued as ${r.value.number}` };
+  const warn = r.value.credit ? ` — ⚠ ${r.value.credit}` : "";
+  return { ok: true, data: undefined, message: `Issued as ${r.value.number}${warn}` };
 }
 
 /** A draft that should not go out: kept with its reason, never deleted, never numbered. */

@@ -114,3 +114,10 @@ export const fileVatSchema = z.object({
 });
 
 export const closeBooksSchema = z.object({ through: day });
+
+export const reminderSchema = z.object({
+  id: z.uuid(),
+  toText: z.string().trim().min(3, "Who it goes to").max(300),
+  subject: z.string().trim().min(1, "A subject").max(300),
+  body: z.string().trim().min(1, "The message").max(10_000),
+});
