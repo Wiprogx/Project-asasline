@@ -26,6 +26,7 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
     { href: `${base}/containers`, label: `Containers (${b.containers.length})` },
     ...(can(user.role, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
     ...(can(user.role, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),
+    ...(can(user.role, "app.accounting") ? [{ href: `${base}/billing`, label: "Billing" }] : []),
     { href: `${base}/history`, label: "History" },
   ];
 

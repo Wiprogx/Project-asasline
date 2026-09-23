@@ -62,7 +62,7 @@ export const NAV: NavItem[] = [
     label: "Accounting",
     icon: CalculatorIcon,
     permission: "app.accounting",
-    migrated: false,
+    migrated: true,
   },
   {
     href: "/settings",
