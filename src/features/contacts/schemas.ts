@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CONTACT_TYPES, LANGUAGES } from "@/domain/contacts";
+import { ibanOk } from "@/domain/iban";
 import { toCents } from "@/domain/money";
 
 const optional = z.string().max(500).optional();
@@ -49,4 +50,25 @@ export const versionRef = z.object({
 
 export const archiveSchema = versionRef.extend({
   reason: z.string().min(3, "Say why — it stays on the record").max(500),
+});
+
+export const bankAccountSchema = z.object({
+  contactId: z.uuid(),
+  iban: z
+    .string()
+    .transform((v) => v.replace(/\s+/g, "").toUpperCase())
+    .refine(ibanOk, "Not a valid IBAN"),
+  bic: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9]{8}([A-Za-z0-9]{3})?$/, "8 or 11 letters and digits")
+    .transform((v) => v.toUpperCase())
+    .optional(),
+  label: z.string().trim().max(100).optional(),
+});
+
+export const bankAccountArchiveSchema = z.object({
+  id: z.uuid(),
+  contactId: z.uuid(),
+  reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
 });

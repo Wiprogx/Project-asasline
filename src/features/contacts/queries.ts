@@ -3,7 +3,7 @@ import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, type SQL } from "d
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
-import { contactAddresses, contacts } from "@/server/db/schema";
+import { contactAddresses, contactBankAccounts, contacts } from "@/server/db/schema";
 
 export type ContactRow = {
   id: string;
@@ -73,7 +73,10 @@ export async function getContact(id: string) {
   await requirePermission("app.contacts");
   return db.query.contacts.findFirst({
     where: eq(contacts.id, id),
-    with: { addresses: { where: isNull(contactAddresses.archivedAt) }, bankAccounts: true },
+    with: {
+      addresses: { where: isNull(contactAddresses.archivedAt) },
+      bankAccounts: { where: isNull(contactBankAccounts.archivedAt) },
+    },
   });
 }
 

@@ -121,3 +121,13 @@ export const reminderSchema = z.object({
   subject: z.string().trim().min(1, "A subject").max(300),
   body: z.string().trim().min(1, "The message").max(10_000),
 });
+
+export const sepaFileSchema = z.object({
+  ids: z.array(z.uuid()).min(1, "Tick at least one bill"),
+  executionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date"),
+});
+
+export const sepaCancelSchema = z.object({
+  id: z.uuid(),
+  reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
+});

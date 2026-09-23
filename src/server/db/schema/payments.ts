@@ -78,3 +78,39 @@ export const bankLines = pgTable(
     index("bank_lines_state_idx").on(t.state, t.date),
   ],
 );
+
+/**
+ * A SEPA file made to pay suppliers: the file as sent, so it can be downloaded again. A bill in
+ * a live batch is not offered for another file; cancelling the batch (archived with a reason,
+ * when the bank refused it) releases its bills.
+ */
+export const sepaBatches = pgTable(
+  "sepa_batches",
+  {
+    ...recordColumns,
+    msgId: text().notNull(),
+    executionDate: date({ mode: "string" }).notNull(),
+    totalCents: cents().notNull(),
+    xml: text().notNull(),
+  },
+  (t) => [uniqueIndex("sepa_batches_msg_uq").on(t.msgId)],
+);
+
+export const sepaBatchItems = pgTable(
+  "sepa_batch_items",
+  {
+    ...recordColumns,
+    batchId: uuid()
+      .notNull()
+      .references(() => sepaBatches.id),
+    invoiceId: uuid()
+      .notNull()
+      .references(() => invoices.id),
+    amountCents: cents().notNull(),
+    iban: text().notNull(),
+  },
+  (t) => [
+    index("sepa_items_batch_idx").on(t.batchId),
+    index("sepa_items_invoice_idx").on(t.invoiceId),
+  ],
+);

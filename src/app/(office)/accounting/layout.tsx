@@ -12,6 +12,7 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
           { href: "/accounting/bills", label: "Bills" },
           { href: "/accounting/payments", label: "Payments" },
           { href: "/accounting/bank", label: "Bank" },
+          { href: "/accounting/sepa", label: "Pay suppliers" },
           { href: "/accounting/reminders", label: "Reminders" },
           { href: "/accounting/journal", label: "Journal" },
           { href: "/accounting/reports", label: "Reports" },

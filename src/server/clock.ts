@@ -15,3 +15,16 @@ export function officeToday(now: Date = new Date()): string {
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
+
+/** The office's local date and time, "YYYY-MM-DDTHH:mm:ss" (for file headers such as SEPA). */
+export function officeNow(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: env.APP_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return `${officeToday(now)}T${get("hour")}:${get("minute")}:${get("second")}`;
+}
