@@ -58,3 +58,19 @@ export const DEFAULT_CANCEL_REASONS = [
 
 export const QUOTATION_STATUSES = ["draft", "sent", "accepted", "declined", "cancelled"] as const;
 export type QuotationStatus = (typeof QUOTATION_STATUSES)[number];
+
+/** Arrival before departure is a typo, not a fast ship; the form refuses it. */
+export function sailingProblem(etd: string | null, eta: string | null): string | null {
+  if (!etd || !eta) return null;
+  return eta < etd ? "ETA is before ETD" : null;
+}
+
+/** Transport document kinds a booking can carry (legacy docType). */
+export const DOC_TYPES = [
+  "SEA WAYBILL",
+  "ORIGINAL BL",
+  "EXPRESS RELEASE",
+  "TELEX RELEASE",
+  "AIR WAYBILL",
+  "CMR",
+] as const;

@@ -1,12 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { NativeSelect } from "@/components/shared/native-select";
 import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Button } from "@/components/ui/button";
 import { BOOKING_FLOW, BOOKING_STATUS_META, type BookingStatus } from "@/domain/shipments";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { cancelBooking, restoreBooking, setBookingStatus } from "../actions";
 
 type Props = {
@@ -19,27 +18,25 @@ type Props = {
 };
 
 export function BookingControls({ id, version, status, canEdit, canCancel, cancelReasons }: Props) {
-  const [statusState, statusAction, statusPending] = useActionState(setBookingStatus, IDLE);
-  const [restoreState, restoreAction, restorePending] = useActionState(restoreBooking, IDLE);
-  useActionToast(statusState);
-  useActionToast(restoreState);
+  const [, statusAction, statusPending] = useToastedAction(setBookingStatus);
+  const [, restoreAction, restorePending] = useToastedAction(restoreBooking);
 
   if (status === "cancelled") {
     return canCancel ? (
-      <form action={restoreAction}>
+      <ActionForm action={restoreAction}>
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="version" value={version} />
         <Button type="submit" variant="outline" size="sm" disabled={restorePending}>
           Put back
         </Button>
-      </form>
+      </ActionForm>
     ) : null;
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {canEdit && (
-        <form action={statusAction} className="flex items-center gap-2">
+        <ActionForm action={statusAction} className="flex items-center gap-2">
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="version" value={version} />
           <NativeSelect
@@ -53,7 +50,7 @@ export function BookingControls({ id, version, status, canEdit, canCancel, cance
           <Button type="submit" size="sm" disabled={statusPending}>
             Set
           </Button>
-        </form>
+        </ActionForm>
       )}
       {canCancel && (
         <ReasonDialog

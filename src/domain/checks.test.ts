@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containerCheckDigit, containerNumberOk } from "./container";
+import { containerCheckDigit, containerNumberOk, vgm } from "./container";
 import { ibanOk, ibanPretty } from "./iban";
 import { formatCents, toCents } from "./money";
 import { ogmMake, ogmOk } from "./ogm";
@@ -75,5 +75,32 @@ describe("money", () => {
     expect(toCents("1 200.99")).toBe(120099);
     expect(toCents("abc")).toBeNull();
     expect(toCents("1.234")).toBeNull();
+  });
+});
+
+describe("vgm", () => {
+  it("adds cargo and the type's tare", () => {
+    expect(vgm({ type: "40HC", cargoKg: 20000, tareKg: null })).toEqual({
+      state: "ok",
+      grossKg: 23900,
+      maxGrossKg: 32500,
+      tareFrom: "type",
+    });
+  });
+  it("prefers the tare typed for the box", () => {
+    expect(vgm({ type: "40HC", cargoKg: 20000, tareKg: 3800 })).toMatchObject({
+      grossKg: 23800,
+      tareFrom: "box",
+    });
+  });
+  it("is over when gross passes the type's maximum", () => {
+    expect(vgm({ type: "20dv", cargoKg: 29000, tareKg: null })).toMatchObject({
+      state: "over",
+      grossKg: 31250,
+    });
+  });
+  it("is unknown, never zero, without cargo weight or any tare", () => {
+    expect(vgm({ type: "40HC", cargoKg: null, tareKg: null }).state).toBe("unknown");
+    expect(vgm({ type: "ZZZZ", cargoKg: 1000, tareKg: null }).state).toBe("unknown");
   });
 });

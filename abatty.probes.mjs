@@ -151,12 +151,15 @@ export const probes = [
     why: "The proxy's cookie check is only a redirect. Every exported query and server action must call requirePermission / requireUser before it touches data, or a role sees what the matrix forbids.",
     scan: (c) => {
       const files = c.sourceFiles.filter((f) =>
-        /^src\/features\/(?!auth\/)[^/]+\/(?:queries|actions)\.ts$/.test(f),
+        /^src\/features\/(?!auth\/)[^/]+\/(?:[\w-]+-)?(?:queries|actions)\.ts$/.test(f),
       );
       const findings = [];
+      // An exported async function, or an exported const holding one (possibly in React cache()).
+      const EXPORTED =
+        /^export\s+(?:async\s+function\s+(\w+)|const\s+(\w+)\s*=\s*(?:cache\()?async\b)/gm;
       for (const f of files) {
         const text = c.read(f);
-        const starts = [...text.matchAll(/^export\s+async\s+function\s+(\w+)/gm)];
+        const starts = [...text.matchAll(EXPORTED)];
         starts.forEach((m, i) => {
           const body = text.slice(m.index, starts[i + 1]?.index ?? text.length);
           if (
@@ -167,7 +170,7 @@ export const probes = [
             findings.push({
               path: f,
               line: lineAt(text, m.index ?? 0),
-              detail: `${m[1]} has no permission check`,
+              detail: `${m[1] ?? m[2]} has no permission check`,
             });
         });
       }
@@ -180,6 +183,15 @@ export const probes = [
           "src/features/x/actions.ts": "export async function a() {\n  return db.select();\n}\n",
         },
         expect: 1,
+      },
+      {
+        name: "a cached const query and a *-actions.ts file are scanned too",
+        files: {
+          "src/features/x/queries.ts":
+            "export const q = cache(async (id: string) => {\n  return db.select();\n});\n",
+          "src/features/x/container-actions.ts": "export async function a() {\n  return 1;\n}\n",
+        },
+        expect: 2,
       },
       {
         name: "a guarded query holds",

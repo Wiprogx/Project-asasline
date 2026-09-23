@@ -28,3 +28,14 @@ export function formToObject(fd: FormData): Record<string, string | undefined> {
   }
   return out;
 }
+
+/**
+ * For updates: an optional field the person emptied arrives as `undefined`, which Drizzle
+ * silently skips — the old value would survive. Every listed key missing from `data` becomes
+ * null, so clearing a field really clears it.
+ */
+export function nullMissing(data: Record<string, unknown>, keys: readonly string[]) {
+  const out: Record<string, unknown> = { ...data };
+  for (const k of keys) if (out[k] === undefined) out[k] = null;
+  return out;
+}

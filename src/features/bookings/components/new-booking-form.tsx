@@ -1,13 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipments";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { createBooking } from "../actions";
 
 type Option = { id: string; name: string };
@@ -19,12 +18,11 @@ export function NewBookingForm({
   clients: Option[];
   containerTypes: string[];
 }) {
-  const [state, action, pending] = useActionState(createBooking, IDLE);
-  useActionToast(state);
+  const [state, action, pending] = useToastedAction(createBooking);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
-    <form action={action} className="grid max-w-3xl gap-4">
+    <ActionForm action={action} className="grid max-w-3xl gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="clientId" label="Customer" error={fe?.clientId}>
           <NativeSelect
@@ -87,6 +85,6 @@ export function NewBookingForm({
           {pending ? "Creating…" : "Create booking"}
         </Button>
       </div>
-    </form>
+    </ActionForm>
   );
 }

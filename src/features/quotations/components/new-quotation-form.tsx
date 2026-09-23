@@ -1,13 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { createQuotation } from "../actions";
 
 type Option = { id: string; name: string };
@@ -19,12 +18,11 @@ export function NewQuotationForm({
   clients: Option[];
   containerTypes: string[];
 }) {
-  const [state, action, pending] = useActionState(createQuotation, IDLE);
-  useActionToast(state);
+  const [state, action, pending] = useToastedAction(createQuotation);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
-    <form action={action} className="grid max-w-3xl gap-4">
+    <ActionForm action={action} className="grid max-w-3xl gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="clientId" label="Customer" error={fe?.clientId}>
           <NativeSelect
@@ -90,6 +88,6 @@ export function NewQuotationForm({
           {pending ? "Creating…" : "Create quotation"}
         </Button>
       </div>
-    </form>
+    </ActionForm>
   );
 }

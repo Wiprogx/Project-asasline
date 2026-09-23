@@ -1,40 +1,17 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
+import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
-import { invalidateTags, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { activities, bookings, containers } from "@/server/db/schema";
 import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
-
-async function settle(id: string) {
-  await invalidateTags(tags.bookings, tags.booking(id), tags.dashboard);
-  revalidatePath("/bookings");
-  revalidatePath(`/bookings/${id}`);
-  revalidatePath("/");
-}
-
-async function guarded(
-  id: string,
-  fn: () => Promise<void>,
-  message: string,
-): Promise<ActionResult> {
-  try {
-    await fn();
-  } catch (e) {
-    if (e instanceof ConflictError) return fail(e.message);
-    throw e;
-  }
-  await settle(id);
-  return { ok: true, data: undefined, message };
-}
+import { guarded, settle } from "./settle";
 
 /** The SB number is issued inside the insert's transaction: no gaps from failed saves. */
 export async function createBooking(_p: ActionResult, fd: FormData): Promise<ActionResult> {

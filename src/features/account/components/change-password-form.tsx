@@ -1,22 +1,21 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { ActionForm } from "@/components/shared/action-form";
+import { useRef } from "react";
 import { Field } from "@/components/shared/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MIN_PASSWORD_LENGTH } from "@/domain/people";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { changePassword } from "../actions";
 
 export function ChangePasswordForm() {
   const form = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useActionState(changePassword, IDLE);
-  useActionToast(state, () => form.current?.reset());
+  const [state, action, pending] = useToastedAction(changePassword, () => form.current?.reset());
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
-    <form ref={form} action={action} className="grid max-w-sm gap-4">
+    <ActionForm ref={form} action={action} className="grid max-w-sm gap-4">
       <Field id="current" label="Current password" error={fe?.current}>
         <Input
           id="current"
@@ -49,6 +48,6 @@ export function ChangePasswordForm() {
           {pending ? "Changing…" : "Change password"}
         </Button>
       </div>
-    </form>
+    </ActionForm>
   );
 }

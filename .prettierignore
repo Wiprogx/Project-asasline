@@ -7,3 +7,5 @@ src/components/ui/
 .abatty/
 .dependency-cruiser-known-violations.json
 .claude/night/
+test-results/
+playwright-report/

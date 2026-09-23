@@ -100,9 +100,25 @@ jobs:
   browser:
     needs: checks
     runs-on: ubuntu-latest
-    # src/env.ts validates the environment at startup, so the build needs a URL (never connected to).
+    # The browser suite drives the production build against a real Postgres and Redis.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
     env:
-      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/e2e
+      REDIS_URL: redis://localhost:6379
+      SEED_ADMIN_EMAIL: admin@e2e.test
+      SEED_ADMIN_PASSWORD: e2e-admin-password
+      E2E_SERVER_CMD: npm run start
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,7 +128,16 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps
+      - run: npx playwright install --with-deps chromium
+      - name: migrate and seed the test database
+        run: npm run -s db:migrate && npm run -s db:seed
       - name: "build (the browser suite serves the production output) · build + browser suite + axe (TEST.3, A11Y.1)"
         run: npm run -s build
-      # E2E + axe · build + browser suite + axe (TEST.3, A11Y.1): no "e2e" script in package.json; the gap analysis names it
+      - name: "E2E · build + browser suite + axe (TEST.3, A11Y.1)"
+        run: npm run -s e2e
+      - name: keep the report of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test-results/

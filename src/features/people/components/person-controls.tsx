@@ -1,11 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { type Role, ROLE_LABEL, ROLES } from "@/domain/permissions";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { changeRole, setActive } from "../actions";
 
 const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }));
@@ -21,14 +20,12 @@ export function PersonControls({
   active: boolean;
   isSelf: boolean;
 }) {
-  const [roleState, roleAction, rolePending] = useActionState(changeRole, IDLE);
-  const [activeState, activeAction, activePending] = useActionState(setActive, IDLE);
-  useActionToast(roleState);
-  useActionToast(activeState);
+  const [, roleAction, rolePending] = useToastedAction(changeRole);
+  const [, activeAction, activePending] = useToastedAction(setActive);
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
-      <form action={roleAction} className="flex items-center gap-2">
+      <ActionForm action={roleAction} className="flex items-center gap-2">
         <input type="hidden" name="id" value={id} />
         <NativeSelect
           key={role}
@@ -47,8 +44,8 @@ export function PersonControls({
         >
           Set
         </Button>
-      </form>
-      <form action={activeAction}>
+      </ActionForm>
+      <ActionForm action={activeAction}>
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="active" value={String(!active)} />
         <Button
@@ -59,7 +56,7 @@ export function PersonControls({
         >
           {active ? "Switch off" : "Switch on"}
         </Button>
-      </form>
+      </ActionForm>
     </div>
   );
 }

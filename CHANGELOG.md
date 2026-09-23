@@ -4,8 +4,19 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ## [Unreleased]
 
+### Fixed
+
+- Forms lost everything typed after a validation error (React 19 resets `<form action>` once the action returns); all stateful forms now submit through `ActionForm`.
+- Success toasts never appeared when the action removed its own component (archive, cancel, remove container); toasts now fire when the result arrives (`useToastedAction`).
+- Emptying an optional field (contact phone, booking vessel…) did not clear it, because Drizzle skips `undefined`; updates now send null (`nullMissing`).
+- CI ran the opt-in scrub scan that abatty.config.json disables, failing every push; the step is removed.
+- The generated CI workflow had an invalid YAML line (bypass-rate step), now a block scalar.
+
 ### Added
 
+- Bookings: Edit tab (parties by contact id, route, loading, vessel/voyage, ETD/ETA guard, carrier and B/L numbers), Containers tab (ISO 6346 numbers, seals, tare/cargo, VGM against the type maximum, add/remove with a reason) and History tab.
+- Playwright browser suite (smoke, booking journey, settings), run locally against the dev database and in CI against a fresh Postgres and Redis.
+- The unguarded-server-function probe also scans cached const queries and `*-actions.ts` files.
 - Settings: People (add, change role, switch off/on; nobody switches themselves off and one active Admin always remains), Lists editor over `config_tables` with optimistic versions, Audit log viewer, and My account (change password, other sessions signed out).
 - GitHub Actions workflow running the same gate as the pre-push hook (`abatty ci`), plus database and build jobs.
 - Next.js 16 app (App Router, Turbopack) replacing the legacy single-file TMS, strangler-style.

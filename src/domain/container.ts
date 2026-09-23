@@ -45,3 +45,43 @@ export function containerNumberOk(s: string): boolean {
   const v = s.replace(/\s+/g, "").toUpperCase();
   return /^[A-Z]{4}\d{7}$/.test(v) && containerCheckDigit(v) === Number(v[10]);
 }
+
+/**
+ * Empty weight and maximum gross per ISO type (legacy CONTAINER_TARE / CONTAINER_MAX). Seed
+ * values: the line's own figure on the box wins when the clerk types one in.
+ */
+export const CONTAINER_SPECS: Record<string, { tareKg: number; maxGrossKg: number }> = {
+  "20DV": { tareKg: 2250, maxGrossKg: 30480 },
+  "40DV": { tareKg: 3750, maxGrossKg: 32500 },
+  "40HC": { tareKg: 3900, maxGrossKg: 32500 },
+  "45HC": { tareKg: 4800, maxGrossKg: 32500 },
+  "20RF": { tareKg: 3000, maxGrossKg: 30480 },
+  "40RF": { tareKg: 4800, maxGrossKg: 32500 },
+  "20OT": { tareKg: 2400, maxGrossKg: 30480 },
+  "40OT": { tareKg: 4100, maxGrossKg: 32500 },
+  "40FR": { tareKg: 5000, maxGrossKg: 45000 },
+};
+
+export type Vgm =
+  | { state: "unknown"; reason: string }
+  | { state: "ok" | "over"; grossKg: number; maxGrossKg: number | null; tareFrom: "box" | "type" };
+
+/**
+ * Verified gross mass = cargo + tare. Fail closed: no cargo weight, or no tare from either
+ * the box or its type, is "unknown" — never a reassuring zero. Over the type's maximum the
+ * line refuses the VGM, so the booking shows it red.
+ */
+export function vgm(box: { type: string; cargoKg: number | null; tareKg: number | null }): Vgm {
+  const spec = CONTAINER_SPECS[box.type.toUpperCase()];
+  if (box.cargoKg === null) return { state: "unknown", reason: "cargo weight missing" };
+  const tare = box.tareKg ?? spec?.tareKg ?? null;
+  if (tare === null) return { state: "unknown", reason: "tare unknown for this type" };
+  const grossKg = box.cargoKg + tare;
+  const maxGrossKg = spec?.maxGrossKg ?? null;
+  return {
+    state: maxGrossKg !== null && grossKg > maxGrossKg ? "over" : "ok",
+    grossKg,
+    maxGrossKg,
+    tareFrom: box.tareKg !== null ? "box" : "type",
+  };
+}

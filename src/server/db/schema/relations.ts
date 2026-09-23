@@ -47,6 +47,26 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
     relationName: "client",
   }),
   quotation: one(quotations, { fields: [bookings.quotationId], references: [quotations.id] }),
+  payer: one(contacts, {
+    fields: [bookings.payerId],
+    references: [contacts.id],
+    relationName: "payer",
+  }),
+  shipper: one(contacts, {
+    fields: [bookings.shipperId],
+    references: [contacts.id],
+    relationName: "shipper",
+  }),
+  consignee: one(contacts, {
+    fields: [bookings.consigneeId],
+    references: [contacts.id],
+    relationName: "consignee",
+  }),
+  notify: one(contacts, {
+    fields: [bookings.notifyId],
+    references: [contacts.id],
+    relationName: "notify",
+  }),
   containers: many(containers),
 }));
 

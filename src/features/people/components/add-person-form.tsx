@@ -1,24 +1,23 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { ActionForm } from "@/components/shared/action-form";
+import { useRef } from "react";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MIN_PASSWORD_LENGTH } from "@/domain/people";
 import { ROLE_LABEL, ROLES } from "@/domain/permissions";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { addPerson } from "../actions";
 
 export function AddPersonForm() {
   const form = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useActionState(addPerson, IDLE);
-  useActionToast(state, () => form.current?.reset());
+  const [state, action, pending] = useToastedAction(addPerson, () => form.current?.reset());
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
-    <form
+    <ActionForm
       ref={form}
       action={action}
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start"
@@ -57,6 +56,6 @@ export function AddPersonForm() {
           {pending ? "Adding…" : "Add person"}
         </Button>
       </div>
-    </form>
+    </ActionForm>
   );
 }

@@ -4,6 +4,7 @@ import {
   BOOKING_STATUS_META,
   BOOKING_STATUSES,
   DEFAULT_CANCEL_REASONS,
+  sailingProblem,
 } from "./shipments";
 
 describe("shipment vocabulary", () => {
@@ -16,5 +17,16 @@ describe("shipment vocabulary", () => {
   });
   it("offers 'Other' as the last cancel reason", () => {
     expect(DEFAULT_CANCEL_REASONS.at(-1)).toBe("Other");
+  });
+});
+
+describe("sailingProblem", () => {
+  it("refuses an arrival before the departure", () => {
+    expect(sailingProblem("2026-10-10", "2026-10-01")).toMatch(/before/);
+  });
+  it("accepts same-day, later, or missing dates", () => {
+    expect(sailingProblem("2026-10-10", "2026-10-10")).toBeNull();
+    expect(sailingProblem("2026-10-10", "2026-11-02")).toBeNull();
+    expect(sailingProblem(null, "2026-11-02")).toBeNull();
   });
 });

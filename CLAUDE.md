@@ -67,7 +67,8 @@ start with `import "server-only"` so a mistake fails the build.
   use the global `PageProps<"/route">` / `LayoutProps` helpers. Read `node_modules/next/dist/docs/`.
 - shadcn here is the **base-nova** style on **Base UI**: no `asChild`, use `render={<Link/>}`.
 - Plain forms use `NativeSelect` (posts with FormData); server actions return `ActionResult`
-  and forms read it with `useActionState` + `useActionToast`.
+  and forms use `useToastedAction` + `<ActionForm>` (never `<form action>` with state: React 19
+  resets it when the action returns, wiping input after a validation error).
 - Redis is an accelerator, never the truth: `cached()` and the rate limiter fall back when it
   is down or unset. Every write path calls `invalidateTags()` **and** `revalidatePath()`.
 - Seed/reference constants in `src/domain` are defaults; the running app reads `config_tables`.
@@ -111,4 +112,4 @@ Unattended runs take the default below and record it in `docs/ADOPTION_DECISIONS
 ## 10. Known gaps between docs and code, and deviations from the standard
 
 - No integration test suite against a real Postgres yet (database suite is skipped by the gate).
-- No Playwright/axe browser suite yet (the build + e2e suite is skipped by the gate).
+- Browser suite (`npm run e2e`, Playwright) covers smoke, bookings and settings journeys; no axe yet.

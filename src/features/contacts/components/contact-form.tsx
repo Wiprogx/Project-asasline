@@ -1,14 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CONTACT_TYPES, LANGUAGES } from "@/domain/contacts";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { type ActionResult, IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
+import type { ActionResult } from "@/lib/action-result";
 import type { ContactFormValues } from "../form-values";
 
 type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
@@ -37,12 +37,11 @@ export function ContactForm({
   values?: ContactFormValues;
   submitLabel: string;
 }) {
-  const [state, formAction, pending] = useActionState(action, IDLE);
-  useActionToast(state);
+  const [state, formAction, pending] = useToastedAction(action);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <ActionForm action={formAction} className="grid gap-4">
       {values.id && <input type="hidden" name="id" value={values.id} />}
       {values.version && <input type="hidden" name="version" value={values.version} />}
       <div className="grid gap-4 sm:grid-cols-[1fr_10rem_8rem]">
@@ -101,6 +100,6 @@ export function ContactForm({
           {pending ? "Saving…" : submitLabel}
         </Button>
       </div>
-    </form>
+    </ActionForm>
   );
 }

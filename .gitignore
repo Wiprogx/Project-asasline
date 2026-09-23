@@ -44,3 +44,7 @@ next-env.d.ts
 .abatty/reports/
 .claude/night/
 .abatty/
+
+# playwright
+/test-results/
+/playwright-report/

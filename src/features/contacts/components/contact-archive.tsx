@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Button } from "@/components/ui/button";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { archiveContact, restoreContact } from "../actions";
 
 export function ContactArchive({
@@ -16,18 +15,17 @@ export function ContactArchive({
   version: number;
   archived: boolean;
 }) {
-  const [state, restore, pending] = useActionState(restoreContact, IDLE);
-  useActionToast(state);
+  const [, restore, pending] = useToastedAction(restoreContact);
 
   if (archived) {
     return (
-      <form action={restore}>
+      <ActionForm action={restore}>
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="version" value={version} />
         <Button type="submit" variant="outline" size="sm" disabled={pending}>
           Put back
         </Button>
-      </form>
+      </ActionForm>
     );
   }
   return (

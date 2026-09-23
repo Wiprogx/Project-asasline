@@ -3,7 +3,7 @@
 import { and, eq, ne, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
+import { type ActionResult, fail, formToObject, invalid, nullMissing } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
@@ -11,6 +11,9 @@ import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { archiveSchema, type ContactInput, contactSchema, versionRef } from "./schemas";
+
+// Optional contact fields a person may empty; creditLimit is already mapped to null.
+const CLEARABLE = Object.keys(contactSchema.shape).filter((k) => k !== "creditLimit");
 
 const toRow = ({ creditLimit, ...rest }: ContactInput) => ({
   ...rest,
@@ -59,7 +62,7 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
         contacts,
         ref.data.id,
         ref.data.version,
-        { ...toRow(parsed.data), updatedBy: user.id },
+        { ...nullMissing(toRow(parsed.data), CLEARABLE), updatedBy: user.id },
         "This contact",
       );
       await audit(tx, {

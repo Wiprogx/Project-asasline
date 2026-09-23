@@ -1,11 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionForm } from "@/components/shared/action-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
 import { saveList } from "../actions";
 import { LIST_META } from "../schemas";
 
@@ -19,8 +18,7 @@ export function ListEditor({
   values: string[];
   version: number;
 }) {
-  const [state, action, pending] = useActionState(saveList, IDLE);
-  useActionToast(state);
+  const [, action, pending] = useToastedAction(saveList);
   const meta = LIST_META[name] ?? { title: name, description: "" };
 
   return (
@@ -30,7 +28,7 @@ export function ListEditor({
         <CardDescription>{meta.description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={action} className="grid gap-3">
+        <ActionForm action={action} className="grid gap-3">
           <input type="hidden" name="name" value={name} />
           <input type="hidden" name="version" value={version} />
           <Textarea
@@ -50,7 +48,7 @@ export function ListEditor({
               {pending ? "Saving…" : "Save"}
             </Button>
           </div>
-        </form>
+        </ActionForm>
       </CardContent>
     </Card>
   );

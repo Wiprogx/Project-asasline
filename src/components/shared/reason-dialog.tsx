@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { ActionForm } from "./action-form";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,8 +13,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useActionToast } from "@/hooks/use-action-toast";
-import { type ActionResult, IDLE } from "@/lib/action-result";
+import { useToastedAction } from "@/hooks/use-action-toast";
+import type { ActionResult } from "@/lib/action-result";
 import { NativeSelect } from "./native-select";
 
 type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
@@ -40,14 +41,13 @@ export function ReasonDialog({
   reasons?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction, pending] = useActionState(action, IDLE);
-  useActionToast(state, () => setOpen(false));
+  const [, formAction, pending] = useToastedAction(action, () => setOpen(false));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" size="sm" />}>{trigger}</DialogTrigger>
       <DialogContent>
-        <form action={formAction} className="grid gap-4">
+        <ActionForm action={formAction} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -75,7 +75,7 @@ export function ReasonDialog({
               {pending ? "Working…" : confirmLabel}
             </Button>
           </DialogFooter>
-        </form>
+        </ActionForm>
       </DialogContent>
     </Dialog>
   );
