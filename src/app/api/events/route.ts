@@ -13,18 +13,39 @@ export async function GET(request: Request) {
 
   const sub = base.duplicate();
   const encoder = new TextEncoder();
+  // The browser leaving can close the stream (cancel) before the request aborts, and a message
+  // can arrive in between: every path ends here once, and nothing is written after it.
+  let closed = false;
+  let ping: ReturnType<typeof setInterval> | undefined;
+  const stop = (controller?: ReadableStreamDefaultController) => {
+    if (closed) return;
+    closed = true;
+    clearInterval(ping);
+    sub.disconnect();
+    try {
+      controller?.close();
+    } catch {
+      // Already closed by the runtime.
+    }
+  };
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (line: string) => controller.enqueue(encoder.encode(line));
+      const send = (line: string) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(line));
+        } catch {
+          stop(controller);
+        }
+      };
       sub.on("message", (_channel, payload) => send(`data: ${payload}\n\n`));
+      request.signal.addEventListener("abort", () => stop(controller));
       await sub.subscribe(EVENTS_CHANNEL);
       send(": connected\n\n");
-      const ping = setInterval(() => send(": ping\n\n"), 25_000);
-      request.signal.addEventListener("abort", () => {
-        clearInterval(ping);
-        sub.disconnect();
-        controller.close();
-      });
+      ping = setInterval(() => send(": ping\n\n"), 25_000);
+    },
+    cancel() {
+      stop();
     },
   });
 

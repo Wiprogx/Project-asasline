@@ -24,7 +24,7 @@ test("a VAT number is checked for its country and never given to two contacts", 
   await page.getByLabel("Name").fill(`E2E Twin ${t}`);
   await page.getByLabel("VAT number").fill(vat);
   await page.getByRole("button", { name: "Create contact" }).click();
-  await expect(page.getByText(`Already on E2E Checked ${t}`)).toBeVisible();
+  await expect(page.getByText(`Already on E2E Checked ${t}`).first()).toBeVisible();
 });
 
 test("a contact's addresses are added and removed, and it can be called in one tap", async ({

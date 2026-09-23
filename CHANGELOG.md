@@ -6,6 +6,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Fixed
 
+- The live-updates stream threw "Controller is already closed" (an uncaught exception on the server) when a browser left while a message was on its way: the stream now stops once, whatever ends it first, and writes nothing after.
 - The Journal drew a whole year at once and took 6–15 s to open; it now shows 100 entries a page, opening on the latest (the account ledger 200 lines a page, searchable too, each line keeping its true running balance), and can be searched by number, partner or label. Other long lists are bounded the same way: Contacts 100 a page, and each Activity bucket draws its first 50 tasks with the count of the rest.
 - A new contact could stay missing from the customer and supplier pickers for up to five minutes: a shorter-lived cached list sharing the `contacts` tag shortened the tag's life below the pickers' key, so creating a contact no longer cleared it. A tag set's expiry now only ever rises.
 - A bank line's de-duplication key now includes the payer's name: two payers sending the same amount with the same note on the same day were taken for one.
