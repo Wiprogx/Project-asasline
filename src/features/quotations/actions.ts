@@ -20,9 +20,7 @@ import { syncBookingRules } from "@/server/rules-sync";
 import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { acceptRouteSchema, newQuotationSchema } from "./schemas";
-
-/** A refusal the person can act on, as opposed to a conflict with a colleague. */
-class Refused extends Error {}
+import { Refused } from "./editor-store";
 
 export async function createQuotation(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.quotations");
