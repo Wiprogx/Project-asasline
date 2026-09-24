@@ -15,6 +15,14 @@ export const tag = () => `${Date.now().toString(36)}${Math.floor(Math.random() *
 export async function open(page: Page, path: string) {
   await page.goto(path);
   await page.locator("html[data-hydrated='1']").waitFor({ state: "attached" });
+  // The office's pages stream behind a loading boundary and hydrate after the shell: wait until
+  // every form control in the main region carries its React fiber, i.e. is hydrated.
+  await page.waitForFunction(() => {
+    const main = document.querySelector("main");
+    if (!main) return true;
+    const nodes = [main, ...main.querySelectorAll("form, textarea, input, select, button")];
+    return nodes.every((n) => Object.keys(n).some((k) => k.startsWith("__reactFiber")));
+  });
 }
 
 export async function login(page: Page, who = ADMIN) {
