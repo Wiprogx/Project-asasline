@@ -69,6 +69,9 @@ export function readTemplates(): Promise<Template[]> {
   return cached("config:templates", { ttlSeconds: 600, tags: ["config:templates"] }, async () => {
     const [row] = await db.select().from(configTables).where(eq(configTables.name, "templates"));
     const parsed = row ? templatesSchema.safeParse(row.value) : null;
-    return parsed?.success ? parsed.data : DEFAULT_TEMPLATES;
+    if (!parsed?.success) return DEFAULT_TEMPLATES;
+    // A letter added to the defaults later still reaches an office that saved its table before.
+    const missing = DEFAULT_TEMPLATES.filter((d) => !parsed.data.some((t) => t.code === d.code));
+    return [...parsed.data, ...missing];
   });
 }

@@ -12,6 +12,7 @@ import { formatCents } from "@/domain/money";
 import { PRICE_SOURCE_LABEL, type PriceSource, PRICE_SOURCES } from "@/domain/pricing";
 import type { getQuotation } from "../queries";
 import { LineControls } from "./line-controls";
+import { ListedToggle } from "./presentation-switch";
 
 type Route = NonNullable<Awaited<ReturnType<typeof getQuotation>>>["routes"][number];
 
@@ -28,10 +29,13 @@ export function RouteLines({
   route: r,
   showCost,
   edit,
+  inclusive,
 }: {
   route: Route;
   showCost: boolean;
   edit: { quotationId: string; version: number } | null;
+  /** All-inclusive: show and switch which services the document names. */
+  inclusive: boolean;
 }) {
   const { sell, cost } = routeTotals(r);
   return (
@@ -41,6 +45,7 @@ export function RouteLines({
           <TableHead>Service</TableHead>
           <TableHead>Price</TableHead>
           <TableHead>VAT</TableHead>
+          {inclusive && <TableHead>On the document</TableHead>}
           <TableHead className="text-right">Sell</TableHead>
           {showCost && <TableHead className="text-right">Cost</TableHead>}
           {edit && <TableHead />}
@@ -61,6 +66,17 @@ export function RouteLines({
               )}
             </TableCell>
             <TableCell className="font-mono text-xs">{l.vatCode}</TableCell>
+            {inclusive && (
+              <TableCell>
+                {edit ? (
+                  <ListedToggle {...edit} lineId={l.id} listed={l.listed} />
+                ) : l.listed ? (
+                  "Named"
+                ) : (
+                  "Not named"
+                )}
+              </TableCell>
+            )}
             <TableCell className="text-right tabular-nums">{formatCents(l.sellCents)}</TableCell>
             {showCost && (
               <TableCell className="text-right tabular-nums">{formatCents(l.costCents)}</TableCell>
@@ -75,7 +91,7 @@ export function RouteLines({
       </TableBody>
       <TableFooter>
         <TableRow>
-          <TableCell colSpan={3}>
+          <TableCell colSpan={inclusive ? 4 : 3}>
             Total{showCost && ` · margin ${formatCents(sell - cost)}`}
           </TableCell>
           <TableCell className="text-right tabular-nums">{formatCents(sell)}</TableCell>

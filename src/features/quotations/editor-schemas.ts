@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
 import { toCents } from "@/domain/money";
+import { QUOTATION_DISPLAYS } from "@/domain/quotation-doc";
 
 /** Every editor action names the quotation and the version the person read (invariant 6). */
 const onQuotation = {
@@ -91,3 +92,15 @@ export const updateLineSchema = z.object({
 });
 
 export const removeLineSchema = z.object({ ...onQuotation, lineId: z.uuid(), reason });
+
+export const displaySchema = z.object({ ...onQuotation, display: z.enum(QUOTATION_DISPLAYS) });
+export const listedSchema = z.object({ ...onQuotation, lineId: z.uuid() });
+
+/** The letter as the person left it: who to, how, and the text they read before sending. */
+export const sendSchema = z.object({
+  ...onQuotation,
+  channel: z.enum(["email", "whatsapp"]),
+  toText: z.string().trim().min(3, "Who it goes to").max(200),
+  subject: z.string().trim().min(1, "A subject").max(200),
+  body: z.string().trim().min(1, "The message").max(5000),
+});

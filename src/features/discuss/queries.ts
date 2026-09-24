@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { type Channel, routeCodeOf, routeRole, inQueueOf, waitedMinutes } from "@/domain/messages";
 import type { Role } from "@/domain/permissions";
-import { fillTemplate } from "@/domain/templates";
+import { fillTemplate, templateScope } from "@/domain/templates";
 import { requirePermission } from "@/server/auth/dal";
 import { now } from "@/server/clock";
 import { db } from "@/server/db/client";
@@ -241,7 +241,7 @@ export async function bookingTemplates(bookingId: string, me: string) {
     me,
   };
   return (await readTemplates())
-    .filter((t) => t.active)
+    .filter((t) => t.active && templateScope(t.code) === "booking")
     .map((t) => ({
       code: t.code,
       name: t.name,

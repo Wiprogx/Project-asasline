@@ -127,6 +127,13 @@
       "when": 1790273078637,
       "tag": "0017_route_decline_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790274165669,
+      "tag": "0018_quotation_send",
+      "breakpoints": true
     }
   ]
 }

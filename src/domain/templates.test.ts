@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TEMPLATES, fillTemplate, placeholdersOf } from "./templates";
+import {
+  DEFAULT_TEMPLATES,
+  fillTemplate,
+  placeholdersOf,
+  TEMPLATE_PLACEHOLDERS,
+  templateScope,
+} from "./templates";
 
 describe("fillTemplate", () => {
   it("fills every placeholder from the file", () => {
@@ -17,7 +23,18 @@ describe("fillTemplate", () => {
 });
 
 describe("the default templates", () => {
-  it("use only placeholders the booking screen fills", () => {
+  it("use only placeholders their record fills", () => {
+    for (const t of DEFAULT_TEMPLATES) {
+      const known = new Set<string>(TEMPLATE_PLACEHOLDERS[templateScope(t.code)]);
+      expect(placeholdersOf(t.subject + t.body).filter((p) => !known.has(p))).toEqual([]);
+    }
+  });
+
+  it("include the quotation letter, scoped to quotations", () => {
+    expect(DEFAULT_TEMPLATES.filter((t) => templateScope(t.code) === "quotation")).toHaveLength(1);
+  });
+
+  it("use only placeholders the booking screen fills (booking ones)", () => {
     const known = new Set([
       "client",
       "ref",
@@ -36,7 +53,7 @@ describe("the default templates", () => {
       "loadAddress",
       "me",
     ]);
-    for (const t of DEFAULT_TEMPLATES)
+    for (const t of DEFAULT_TEMPLATES.filter((x) => templateScope(x.code) === "booking"))
       expect(placeholdersOf(t.subject + t.body).filter((p) => !known.has(p))).toEqual([]);
   });
 });
