@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { type FileStage, requirementsOf } from "@/domain/files";
 import { requirePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { bookingFiles, users } from "@/server/db/schema";
 import { readFileHints } from "@/server/file-config";
@@ -42,7 +43,12 @@ export async function bookingDocuments(id: string) {
   return {
     booking: b,
     steps,
-    files: files.map((f) => ({ ...f, by: byUser.get(f.createdBy ?? "") ?? "—" })),
+    // The day it was filed, as the office counts days (invariant 4), never the UTC instant's.
+    files: files.map((f) => ({
+      ...f,
+      by: byUser.get(f.createdBy ?? "") ?? "—",
+      filedOn: officeToday(f.createdAt),
+    })),
     requirements,
     codes,
     openSteps: steps
