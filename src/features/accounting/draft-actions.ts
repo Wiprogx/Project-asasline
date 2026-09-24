@@ -7,14 +7,7 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import {
-  bookings,
-  contacts,
-  invoiceLines,
-  invoices,
-  quotationLines,
-  quotationRoutes,
-} from "@/server/db/schema";
+import { bookings, contacts, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
 import { updateVersioned } from "@/server/versioned";
 import { draftOf, guarded, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import {
@@ -49,16 +42,18 @@ export async function draftFromBooking(_p: ActionResult, fd: FormData): Promise<
         b.notifyId,
       ]);
       if (problem) throw new Refused(problem);
-      if (!b.quotationId)
+      if (!b.quotationRouteId)
         throw new Refused(
           "This booking has no quotation to invoice from; start a blank invoice instead.",
         );
 
+      // Only the booking's own destination, and never a line taken off the quotation.
       const source = await tx
         .select({ line: quotationLines })
         .from(quotationLines)
-        .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
-        .where(eq(quotationRoutes.quotationId, b.quotationId));
+        .where(
+          and(eq(quotationLines.routeId, b.quotationRouteId), isNull(quotationLines.archivedAt)),
+        );
       const billed = await tx
         .select({ key: invoiceLines.sourceKey, qty: invoiceLines.qty, kind: invoices.kind })
         .from(invoiceLines)

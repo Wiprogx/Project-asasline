@@ -113,6 +113,13 @@
       "when": 1790269281383,
       "tag": "0015_catalogue",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790271405649,
+      "tag": "0016_booking_route",
+      "breakpoints": true
     }
   ]
 }

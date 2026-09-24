@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNotNull, isNull, lte, ne, sql } from "drizzle-orm";
 import { accrualLines } from "@/domain/accruals";
 import type { DbOrTx } from "@/server/db/client";
-import { bookings, contacts, invoices, quotationLines, quotationRoutes } from "@/server/db/schema";
+import { bookings, contacts, invoices, quotationLines } from "@/server/db/schema";
 
 // Internal: read by the accruals screen (permission-checked) and the booking action.
 
@@ -12,7 +12,7 @@ export async function accrualCandidates(db: DbOrTx, upTo: string) {
     .select({
       id: bookings.id,
       ref: bookings.ref,
-      quotationId: bookings.quotationId,
+      routeId: bookings.quotationRouteId,
       etd: bookings.etd,
       client: contacts.name,
     })
@@ -24,29 +24,27 @@ export async function accrualCandidates(db: DbOrTx, upTo: string) {
         lte(bookings.etd, upTo),
         ne(bookings.status, "cancelled"),
         isNull(bookings.archivedAt),
-        isNotNull(bookings.quotationId),
+        isNotNull(bookings.quotationRouteId),
       ),
     );
   if (sailed.length === 0) return [];
   const [expected, billed] = await Promise.all([
     db
       .select({
-        quotationId: quotationRoutes.quotationId,
+        routeId: quotationLines.routeId,
         cents: sql<number>`coalesce(sum(${quotationLines.qty} * ${quotationLines.costCents}), 0)::int`,
       })
       .from(quotationLines)
-      .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
       .where(
         and(
           inArray(
-            quotationRoutes.quotationId,
-            sailed.map((b) => b.quotationId!),
+            quotationLines.routeId,
+            sailed.map((b) => b.routeId!),
           ),
-          eq(quotationRoutes.declined, false),
           isNull(quotationLines.archivedAt),
         ),
       )
-      .groupBy(quotationRoutes.quotationId),
+      .groupBy(quotationLines.routeId),
     db
       .select({
         bookingId: invoices.bookingId,
@@ -69,7 +67,7 @@ export async function accrualCandidates(db: DbOrTx, upTo: string) {
     sailed.map((b) => ({
       bookingId: b.id,
       ref: b.ref,
-      expectedCents: expected.find((e) => e.quotationId === b.quotationId)?.cents ?? 0,
+      expectedCents: expected.find((e) => e.routeId === b.routeId)?.cents ?? 0,
       billedCents: billed.find((x) => x.bookingId === b.id)?.cents ?? 0,
     })),
   );

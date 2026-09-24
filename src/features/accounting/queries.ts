@@ -17,7 +17,6 @@ import {
   paymentAllocations,
   payments,
   quotationLines,
-  quotationRoutes,
 } from "@/server/db/schema";
 import { proposals } from "@/domain/matching";
 import { creditedSql, invoiceMoney, openInvoices, settledSql } from "./money";
@@ -104,19 +103,14 @@ export async function bookingBilling(bookingId: string) {
   const [b] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
   if (!b) return null;
 
-  const source = b.quotationId
+  const source = b.quotationRouteId
     ? await db
         .select({ line: quotationLines })
         .from(quotationLines)
-        .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
         .where(
-          and(
-            eq(quotationRoutes.quotationId, b.quotationId),
-            eq(quotationRoutes.declined, false),
-            isNull(quotationLines.archivedAt),
-          ),
+          and(eq(quotationLines.routeId, b.quotationRouteId), isNull(quotationLines.archivedAt)),
         )
-        .orderBy(asc(quotationRoutes.position), asc(quotationLines.position))
+        .orderBy(asc(quotationLines.position), asc(quotationLines.createdAt))
     : [];
 
   const billed = await db

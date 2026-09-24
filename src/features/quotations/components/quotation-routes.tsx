@@ -8,13 +8,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import Link from "next/link";
 import { formatCents } from "@/domain/money";
 import type { getQuotation } from "../queries";
+import { AcceptQuotation } from "./accept-quotation";
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 
+/** The booking a destination became, or the button that books it. */
+function RouteBooking({
+  q,
+  routeId,
+  canBook,
+}: {
+  q: Quotation;
+  routeId: string;
+  canBook: boolean;
+}) {
+  const b = q.bookings.find((x) => x.quotationRouteId === routeId && x.status !== "cancelled");
+  if (b)
+    return (
+      <Link className="font-mono text-sm hover:underline" href={`/bookings/${b.id}`}>
+        → {b.ref}
+      </Link>
+    );
+  return canBook ? <AcceptQuotation id={q.id} version={q.version} routeId={routeId} /> : null;
+}
+
 /** Costs are shown only to roles with `costs.view` (legacy "Internal cost" permission). */
-export function QuotationRoutes({ q, showCost }: { q: Quotation; showCost: boolean }) {
+export function QuotationRoutes({
+  q,
+  showCost,
+  canBook,
+}: {
+  q: Quotation;
+  showCost: boolean;
+  canBook: boolean;
+}) {
   return (
     <div className="grid gap-4">
       {q.routes.map((r) => {
@@ -22,7 +52,7 @@ export function QuotationRoutes({ q, showCost }: { q: Quotation; showCost: boole
         const cost = r.lines.reduce((s, l) => s + (l.costCents ?? 0) * l.qty, 0);
         return (
           <Card key={r.id} className={r.declined ? "opacity-60" : undefined}>
-            <CardHeader>
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
               <CardTitle className="font-mono">
                 {r.pol} → {r.pod}
                 {r.finalPlace && (
@@ -32,6 +62,11 @@ export function QuotationRoutes({ q, showCost }: { q: Quotation; showCost: boole
                   {r.containerType}
                 </span>
               </CardTitle>
+              {r.declined ? (
+                <span className="text-sm text-muted-foreground">Declined</span>
+              ) : (
+                <RouteBooking q={q} routeId={r.id} canBook={canBook} />
+              )}
             </CardHeader>
             <CardContent>
               <Table>

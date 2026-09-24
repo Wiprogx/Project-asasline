@@ -2,13 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { openCents } from "@/domain/payments";
 import type { DbOrTx } from "@/server/db/client";
-import {
-  bookings,
-  invoiceLines,
-  invoices,
-  quotationLines,
-  quotationRoutes,
-} from "@/server/db/schema";
+import { bookings, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
 import { creditedSql, settledSql } from "./money";
 
 // Internal: read by the reminder screen and the contact page (permission-checked there) and by
@@ -36,7 +30,7 @@ export async function exposureOf(db: DbOrTx, customerId: string): Promise<number
       ),
     );
   const live = await db
-    .select({ id: bookings.id, quotationId: bookings.quotationId })
+    .select({ id: bookings.id, routeId: bookings.quotationRouteId })
     .from(bookings)
     .where(
       and(
@@ -46,21 +40,19 @@ export async function exposureOf(db: DbOrTx, customerId: string): Promise<number
       ),
     );
   let toBill = 0;
-  const quoted = live.filter((b) => b.quotationId);
+  const quoted = live.filter((b) => b.routeId);
   if (quoted.length) {
     const [sold] = await db
       .select({
         cents: sql<number>`coalesce(sum(${quotationLines.qty} * ${quotationLines.sellCents}), 0)::int`,
       })
       .from(quotationLines)
-      .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
       .where(
         and(
           inArray(
-            quotationRoutes.quotationId,
-            quoted.map((b) => b.quotationId!),
+            quotationLines.routeId,
+            quoted.map((b) => b.routeId!),
           ),
-          eq(quotationRoutes.declined, false),
           isNull(quotationLines.archivedAt),
         ),
       );

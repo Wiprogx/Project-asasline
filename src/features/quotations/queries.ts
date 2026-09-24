@@ -45,7 +45,7 @@ export async function getQuotation(id: string) {
     where: eq(quotations.id, id),
     with: {
       client: { columns: { id: true, name: true } },
-      bookings: { columns: { id: true, ref: true } },
+      bookings: { columns: { id: true, ref: true, status: true, quotationRouteId: true } },
       routes: {
         orderBy: asc(quotationRoutes.position),
         with: { lines: { orderBy: asc(quotationLines.position) } },
