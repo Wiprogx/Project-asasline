@@ -30,8 +30,12 @@ export async function bookingDocuments(id: string) {
   );
   const requirements = requirementsOf({
     destinationDocs: docs,
-    steps: steps.map((s) => ({ code: s.rule.code, doc: s.rule.doc, status: s.status })),
-    files: files.map((f) => ({ code: f.code, stage: f.stage as FileStage })),
+    steps: steps.map((s) => ({
+      code: s.key,
+      doc: s.box ? `${s.rule.doc} — ${s.box.label}` : s.rule.doc,
+      status: s.status,
+    })),
+    files: files.map((f) => ({ code: f.code, ruleCode: f.ruleCode, stage: f.stage as FileStage })),
   });
   const codes = [
     ...new Set([
@@ -53,7 +57,7 @@ export async function bookingDocuments(id: string) {
     codes,
     openSteps: steps
       .filter((s) => s.status !== "done")
-      .map((s) => ({ code: s.rule.code, doc: s.rule.doc })),
+      .map((s) => ({ code: s.key, doc: s.box ? `${s.rule.doc} — ${s.box.label}` : s.rule.doc })),
   };
 }
 

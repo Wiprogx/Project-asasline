@@ -39,6 +39,8 @@ export const ruleFormSchema = z.object({
     ),
   note: z.string().max(500).optional(),
   sold: z.string().trim().max(100).optional(),
+  perBox: checkbox,
+  ready: checkbox.transform((v) => (v ? ("weights" as const) : undefined)),
 });
 
 export const toggleRuleSchema = z.object({

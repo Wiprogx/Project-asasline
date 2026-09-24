@@ -4,14 +4,19 @@ import type { BookingFacts } from "@/domain/rules/engine";
 import { planChain, type PlanStep, syncDiff } from "@/domain/rules/plan";
 import { type AuditEntry, auditMany } from "./audit";
 import type { DbOrTx } from "./db/client";
-import { activities, bookings, quotationLines } from "./db/schema";
+import { activities, bookings, containers, quotationLines } from "./db/schema";
 import { readHolidays, readRuleBook } from "./rule-book";
 
 type BookingRow = typeof bookings.$inferSelect;
 
-export function factsOf(b: BookingRow, soldLines: readonly string[] | null = null): BookingFacts {
+export function factsOf(
+  b: BookingRow,
+  soldLines: readonly string[] | null = null,
+  boxes: BookingFacts["boxes"] = [],
+): BookingFacts {
   return {
     soldLines,
+    boxes,
     ref: b.ref,
     kind: b.kind,
     pol: b.pol,
@@ -85,6 +90,30 @@ async function soldLinesByRoute(tx: DbOrTx, routeIds: readonly string[]) {
   return byRoute;
 }
 
+type Box = NonNullable<BookingFacts["boxes"]>[number];
+
+/** The live boxes of each booking: a per-box rule makes one step per box, and VGM waits on their weights. */
+async function boxesByBooking(tx: DbOrTx, bookingIds: readonly string[]) {
+  const byBooking = new Map<string, Box[]>();
+  for (const ids of chunks(bookingIds)) {
+    const rows = await tx
+      .select()
+      .from(containers)
+      .where(and(inArray(containers.bookingId, ids), isNull(containers.archivedAt)))
+      .orderBy(containers.position);
+    for (const c of rows) {
+      const list = byBooking.get(c.bookingId) ?? [];
+      list.push({
+        id: c.id,
+        label: c.number ?? `box ${list.length + 1}`,
+        weightsIn: c.cargoKg !== null,
+      });
+      byBooking.set(c.bookingId, list);
+    }
+  }
+  return byBooking;
+}
+
 /** A booking with no quotation keeps every rule (null); a destination with no line sold nothing. */
 const soldOf = (b: BookingRow, byRoute: Map<string, string[]>) =>
   b.quotationRouteId ? (byRoute.get(b.quotationRouteId) ?? []) : null;
@@ -92,9 +121,11 @@ const soldOf = (b: BookingRow, byRoute: Map<string, string[]>) =>
 const routesOf = (bs: readonly BookingRow[]) =>
   bs.flatMap((b) => (b.quotationRouteId ? [b.quotationRouteId] : []));
 
-function chainOf(b: BookingRow, rules: Rules, tasks: readonly Task[], sold: string[] | null) {
-  const settled = new Set(tasks.filter((t) => t.state !== "open").map((t) => t.ruleCode!));
-  return planChain(rules.book, factsOf(b, sold), rules.holidays, settled);
+type ChainInput = { rules: Rules; tasks: readonly Task[]; sold: string[] | null; boxes: Box[] };
+
+function chainOf(b: BookingRow, c: ChainInput) {
+  const settled = new Set(c.tasks.filter((t) => t.state !== "open").map((t) => t.ruleCode!));
+  return planChain(c.rules.book, factsOf(b, c.sold, c.boxes), c.rules.holidays, settled);
 }
 
 async function readRules(): Promise<Rules> {
@@ -104,12 +135,13 @@ async function readRules(): Promise<Rules> {
 
 /** The chain of one booking as it stands (for the Documents tab). */
 export async function bookingChain(tx: DbOrTx, b: BookingRow): Promise<PlanStep[]> {
-  const [rules, tasks, sold] = await Promise.all([
+  const [rules, tasks, sold, boxes] = await Promise.all([
     readRules(),
     ruleTasksOf(tx, [b.id]),
     soldLinesByRoute(tx, routesOf([b])),
+    boxesByBooking(tx, [b.id]),
   ]);
-  return chainOf(b, rules, tasks, soldOf(b, sold));
+  return chainOf(b, { rules, tasks, sold: soldOf(b, sold), boxes: boxes.get(b.id) ?? [] });
 }
 
 type Plan = {
@@ -119,18 +151,12 @@ type Plan = {
   audit: AuditEntry | null;
 };
 
-type SyncInput = {
-  b: BookingRow;
-  rules: Rules;
-  tasks: Task[];
-  sold: string[] | null;
-  userId: string | null;
-};
+type SyncInput = ChainInput & { b: BookingRow; tasks: Task[]; userId: string | null };
 
-function planSync({ b, rules, tasks, sold, userId }: SyncInput): Plan {
+function planSync({ b, userId, ...c }: SyncInput): Plan {
   const diff = syncDiff(
-    chainOf(b, rules, tasks, sold),
-    tasks.map((t) => ({ ...t, ruleCode: t.ruleCode! })),
+    chainOf(b, c),
+    c.tasks.map((t) => ({ ...t, ruleCode: t.ruleCode! })),
   );
   const changed = diff.create.length + diff.redate.length + diff.withdraw.length > 0;
   return {
@@ -197,12 +223,15 @@ async function applyPlans(tx: DbOrTx, plans: readonly Plan[]) {
 export async function syncBookingRules(tx: DbOrTx, bookingId: string, userId: string | null) {
   const [b] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
   if (!b || b.status === "cancelled") return;
-  const [rules, tasks, sold] = await Promise.all([
+  const [rules, tasks, sold, boxes] = await Promise.all([
     readRules(),
     ruleTasksOf(tx, [b.id]),
     soldLinesByRoute(tx, routesOf([b])),
+    boxesByBooking(tx, [b.id]),
   ]);
-  await applyPlans(tx, [planSync({ b, rules, tasks, sold: soldOf(b, sold), userId })]);
+  await applyPlans(tx, [
+    planSync({ b, rules, tasks, sold: soldOf(b, sold), boxes: boxes.get(b.id) ?? [], userId }),
+  ]);
 }
 
 /**
@@ -212,20 +241,26 @@ export async function syncBookingRules(tx: DbOrTx, bookingId: string, userId: st
 export async function syncAllBookings(tx: DbOrTx, userId: string | null) {
   const live = await tx.select().from(bookings).where(ne(bookings.status, "cancelled"));
   if (live.length === 0) return 0;
-  const [rules, tasks, sold] = await Promise.all([
+  const ids = live.map((b) => b.id);
+  const [rules, tasks, sold, boxes] = await Promise.all([
     readRules(),
-    ruleTasksOf(
-      tx,
-      live.map((b) => b.id),
-    ),
+    ruleTasksOf(tx, ids),
     soldLinesByRoute(tx, routesOf(live)),
+    boxesByBooking(tx, ids),
   ]);
   const tasksOf = new Map<string, Task[]>();
   for (const t of tasks) tasksOf.set(t.linkId ?? "", [...(tasksOf.get(t.linkId ?? "") ?? []), t]);
   await applyPlans(
     tx,
     live.map((b) =>
-      planSync({ b, rules, tasks: tasksOf.get(b.id) ?? [], sold: soldOf(b, sold), userId }),
+      planSync({
+        b,
+        rules,
+        tasks: tasksOf.get(b.id) ?? [],
+        sold: soldOf(b, sold),
+        boxes: boxes.get(b.id) ?? [],
+        userId,
+      }),
     ),
   );
   return live.length;

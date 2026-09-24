@@ -70,6 +70,7 @@ export function fileCodeOf(name: string, hints: readonly FileHint[]): string | n
 export type RequirementState = "missing" | "draft" | "final";
 
 export type Requirement = {
+  /** The rule's code, or `CODE#boxId` for a per-box step. */
   code: string;
   label: string;
   /** Where the requirement comes from: the destination country's papers, or a document step. */
@@ -87,10 +88,13 @@ export type Requirement = {
 export function requirementsOf(input: {
   destinationDocs: readonly { code: string; label: string }[];
   steps: readonly { code: string; doc: string; status: "done" | "open" | "waiting" }[];
-  files: readonly { code: string | null; stage: FileStage }[];
+  files: readonly { code: string | null; ruleCode?: string | null; stage: FileStage }[];
 }): Requirement[] {
+  // A file proves a step by the step it was filed against, or, for a step of no box, by its code.
   const stateOf = (code: string): RequirementState => {
-    const mine = input.files.filter((f) => f.code === code);
+    const mine = input.files.filter(
+      (f) => f.ruleCode === code || (!code.includes("#") && !f.ruleCode && f.code === code),
+    );
     if (mine.some((f) => f.stage === "final")) return "final";
     return mine.length ? "draft" : "missing";
   };

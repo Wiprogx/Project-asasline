@@ -59,6 +59,7 @@ export function RulesTable({ rules, version }: { rules: DocRule[]; version: numb
               </span>
               <span className="block font-mono text-xs text-muted-foreground">
                 {r.code} · {ROLE_LABEL[r.role]}
+                {r.perBox && " · per container"}
               </span>
             </TableCell>
             <TableCell className="font-mono text-xs">

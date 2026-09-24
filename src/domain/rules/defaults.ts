@@ -5,8 +5,10 @@ import type { DocRule } from "./engine";
  * The legacy rule book (demo.html DOC_RULES), ported as the default for the `docRules`
  * Settings table. Once Settings saves the table, the saved rows win.
  *
- * Not ported yet: CERTIWEIGHT (one step per container, and a "between" anchor), RELEASE_OK
- * (release mode on the quotation) and the weights-ready check on VGM. The "sold on the
+ * CERTIWEIGHT is one step per container (perBox), anchored on the loading day: the legacy
+ * "between LOADING and TERMINAL" anchor is that day, the port cut-off being its limit. VGM opens
+ * only once every box's weight is in (ready). Not ported yet: RELEASE_OK (release mode on
+ * the quotation). The "sold on the
  * quotation" filter is a field of every rule (`sold`). Loading ports use UN/LOCODEs (Rotterdam NLRTM,
  * Leixões PTLEI) instead of the legacy port names.
  */
@@ -78,12 +80,24 @@ export const DEFAULT_RULES: DocRule[] = [
     anchor: "vgm",
     offset: 0,
     blocking: true,
+    ready: "weights",
     note: "Cargo weight + tare, straight off the containers.",
   }),
   r("LOADING", "Confirm the container was loaded", "Container loaded", {
     party: "internal",
     anchor: "loading",
     offset: 0,
+  }),
+  // Certiweight is a service the customer buys: the box is weighed at the port after loading and
+  // the official certificate is the evidence — one per container, only where it was sold.
+  r("CERTIWEIGHT", "Send the Certiweight certificate to the customer", "Certiweight certificate", {
+    party: "customer",
+    anchor: "loading",
+    offset: 0,
+    needs: ["LOADING"],
+    sold: "certiweight",
+    perBox: true,
+    note: "Weighed at the port after loading — it must reach the customer before the box goes in.",
   }),
   r("SI", "Send the shipping instruction", "Shipping instruction", {
     party: "carrier",

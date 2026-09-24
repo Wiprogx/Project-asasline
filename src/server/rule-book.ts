@@ -33,6 +33,8 @@ export const docRuleSchema = z.object({
   active: z.boolean(),
   note: z.string().max(500).optional(),
   sold: z.string().max(100).optional(),
+  perBox: z.boolean().optional(),
+  ready: z.literal("weights").optional(),
 }) satisfies z.ZodType<DocRule>;
 
 export const holidaySchema = z.object({
@@ -57,7 +59,18 @@ async function readRow<T>(name: Name, schema: z.ZodType<T>, fallback: T) {
   return { value: fallback, version: row.version };
 }
 
-const readRules = () => readRow("docRules", TABLES.docRules.schema, TABLES.docRules.fallback);
+/**
+ * A rule the defaults gained after an office saved its book (CERTIWEIGHT, 2026-09-24) is
+ * appended to it, switched as the default says: rules are never deleted, only switched off,
+ * so a code missing from a saved book was never there. A changed default (VGM waiting on the
+ * weights) is not applied over a saved rule: that is the office's row to edit.
+ */
+const readRules = async () => {
+  const row = await readRow("docRules", TABLES.docRules.schema, TABLES.docRules.fallback);
+  const known = new Set(row.value.map((r) => r.code));
+  const missing = DEFAULT_RULES.filter((r) => !known.has(r.code));
+  return missing.length ? { ...row, value: [...row.value, ...missing] } : row;
+};
 const readDays = () => readRow("holidays", TABLES.holidays.schema, TABLES.holidays.fallback);
 
 export const readRuleBook = (): Promise<DocRule[]> =>
