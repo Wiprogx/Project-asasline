@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { AddContainer } from "@/features/bookings/components/add-container";
 import { ContainerRow } from "@/features/bookings/components/container-row";
 import { VgmBadge } from "@/features/bookings/components/vgm-badge";
@@ -15,7 +15,7 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
   const { id } = await params;
   const [b, types] = await Promise.all([getBooking(id), readConfig("containerTypes")]);
   if (!b) notFound();
-  const editable = can(user.role, "bookings.edit") && b.status !== "cancelled";
+  const editable = may(user, "bookings.edit") && b.status !== "cancelled";
 
   if (!editable) {
     return (

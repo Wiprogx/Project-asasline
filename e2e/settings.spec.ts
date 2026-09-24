@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, tag } from "./helpers";
+import { expectToast, login, open, tag } from "./helpers";
 
 test("an Admin adds a person, who signs in and cannot open Settings", async ({ page, browser }) => {
   const t = tag();
@@ -37,7 +37,7 @@ test("the Admin cannot switch themselves off", async ({ page }) => {
 test("a list saved in Settings is offered on the booking screen", async ({ page }) => {
   const t = tag();
   await login(page);
-  await page.goto("/settings/lists");
+  await open(page, "/settings/lists");
   const box = page.getByLabel("Container types, one per line");
   const before = await box.inputValue();
   await box.fill(`${before}\nE2E${t.slice(-4).toUpperCase()}`);
@@ -50,7 +50,7 @@ test("a list saved in Settings is offered on the booking screen", async ({ page 
       .locator("option", { hasText: `E2E${t.slice(-4).toUpperCase()}` }),
   ).toHaveCount(1);
   // Restore the list so repeated runs do not grow it.
-  await page.goto("/settings/lists");
+  await open(page, "/settings/lists");
   await page.getByLabel("Container types, one per line").fill(before);
   await page.getByRole("button", { name: "Save" }).nth(1).click();
   await expectToast(page, /Saved/);

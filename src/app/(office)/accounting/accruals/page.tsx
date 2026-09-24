@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { lastMonthEnd } from "@/domain/assets";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { accrualsScreen } from "@/features/accounting/accrual-queries";
 import { AccrualRuns, BookAccruals } from "@/features/accounting/components/accrual-parts";
 import { AccrualsTable } from "@/features/accounting/components/accruals-table";
@@ -21,7 +21,7 @@ export default async function AccrualsPage({ searchParams }: PageProps<"/account
   const onDate =
     typeof on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(on) ? on : lastMonthEnd(today);
   const { lines, runs } = await accrualsScreen(onDate);
-  const canBook = can(user.role, "accounting.closePeriods");
+  const canBook = may(user, "accounting.closePeriods");
   return (
     <div className="grid gap-4">
       <PageHeader

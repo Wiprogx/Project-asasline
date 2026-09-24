@@ -5,7 +5,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BILL_STATUS_LABEL } from "@/domain/invoicing";
 import { formatCents } from "@/domain/money";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { BillingPanel } from "@/features/accounting/components/billing-panel";
 import { InvoiceBadge } from "@/features/accounting/components/invoice-badge";
 import { bookingBilling } from "@/features/accounting/queries";
@@ -47,13 +47,13 @@ export default async function BookingBillingPage({ params }: PageProps<"/booking
           </CardTitle>
           <CardDescription className="flex flex-wrap items-center justify-between gap-2">
             Lines come from the quotation; credit notes give their quantities back.
-            {can(user.role, "accounting.issue") && (
+            {may(user, "accounting.issue") && (
               <NewBillForm suppliers={suppliers} bookingId={b.id} />
             )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {can(user.role, "accounting.issue") && b.status !== "cancelled" ? (
+          {may(user, "accounting.issue") && b.status !== "cancelled" ? (
             <BillingPanel
               bookingId={b.id}
               lines={billing.lines}

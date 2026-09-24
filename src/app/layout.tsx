@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { HydrationMark } from "@/components/layout/hydration-mark";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster theme="dark" position="bottom-right" richColors />
+        <HydrationMark />
       </body>
     </html>
   );

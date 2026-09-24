@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { addDays } from "@/domain/dates";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { SepaBatches } from "@/features/accounting/components/sepa-batches";
 import { SepaForm } from "@/features/accounting/components/sepa-form";
 import { sepaScreen } from "@/features/accounting/sepa-queries";
@@ -15,7 +15,7 @@ export default async function SepaPage() {
   const user = await requirePagePermission("app.accounting");
   const today = officeToday();
   const { bills, batches } = await sepaScreen();
-  const canPay = can(user.role, "accounting.bank");
+  const canPay = may(user, "accounting.bank");
   return (
     <div className="grid gap-4">
       <PageHeader

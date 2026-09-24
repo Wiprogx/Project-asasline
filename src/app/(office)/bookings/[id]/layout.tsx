@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { SubNav } from "@/components/layout/sub-nav";
 import { PageHeader } from "@/components/shared/page-header";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { BookingControls } from "@/features/bookings/components/booking-controls";
 import { BookingStatusBadge } from "@/features/bookings/components/booking-status-badge";
 import { getBooking } from "@/features/bookings/queries";
@@ -18,15 +18,15 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
   if (!b) notFound();
 
   const base = `/bookings/${b.id}`;
-  const editable = can(user.role, "bookings.edit") && b.status !== "cancelled";
+  const editable = may(user, "bookings.edit") && b.status !== "cancelled";
   const tabs = [
     { href: base, label: "Summary", exact: true },
     ...(editable ? [{ href: `${base}/edit`, label: "Edit" }] : []),
     { href: `${base}/documents`, label: "Documents" },
     { href: `${base}/containers`, label: `Containers (${b.containers.length})` },
-    ...(can(user.role, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
-    ...(can(user.role, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),
-    ...(can(user.role, "app.accounting") ? [{ href: `${base}/billing`, label: "Billing" }] : []),
+    ...(may(user, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
+    ...(may(user, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),
+    ...(may(user, "app.accounting") ? [{ href: `${base}/billing`, label: "Billing" }] : []),
     { href: `${base}/history`, label: "History" },
   ];
 
@@ -45,8 +45,8 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
             id={b.id}
             version={b.version}
             status={b.status}
-            canEdit={can(user.role, "bookings.edit")}
-            canCancel={can(user.role, "bookings.cancel")}
+            canEdit={may(user, "bookings.edit")}
+            canCancel={may(user, "bookings.cancel")}
             cancelReasons={cancelReasons}
           />
         }

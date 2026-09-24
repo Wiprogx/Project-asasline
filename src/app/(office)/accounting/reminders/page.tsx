@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { RemindersTable } from "@/features/accounting/components/reminders-table";
 import { remindersDue } from "@/features/accounting/reminder-queries";
 import { requirePagePermission } from "@/server/auth/dal";
@@ -22,7 +22,7 @@ export default async function RemindersPage() {
       />
       <Card>
         <CardContent className="pt-2">
-          <RemindersTable rows={rows} today={today} canWrite={can(user.role, "accounting.issue")} />
+          <RemindersTable rows={rows} today={today} canWrite={may(user, "accounting.issue")} />
         </CardContent>
       </Card>
     </div>

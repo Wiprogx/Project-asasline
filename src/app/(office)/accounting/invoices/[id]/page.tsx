@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { DocumentActions, DocumentBody } from "@/features/accounting/components/document-parts";
 import { InvoicePayments } from "@/features/accounting/components/invoice-payments";
 import { InvoiceStatusLine } from "@/features/accounting/components/invoice-status-line";
@@ -50,8 +50,8 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
             terms={terms}
             today={today}
             can={{
-              issue: can(user.role, "accounting.issue"),
-              approve: can(user.role, "accounting.approve"),
+              issue: may(user, "accounting.issue"),
+              approve: may(user, "accounting.approve"),
             }}
           />
         }
@@ -60,7 +60,7 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
         <CardContent className="grid gap-6 pt-4">
           <DocumentBody
             inv={inv}
-            editable={i.status === "draft" && can(user.role, "accounting.issue")}
+            editable={i.status === "draft" && may(user, "accounting.issue")}
           />
         </CardContent>
       </Card>
@@ -72,7 +72,7 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
           money={money}
           payments={paid}
           today={today}
-          canPay={can(user.role, "accounting.bank")}
+          canPay={may(user, "accounting.bank")}
         />
       )}
     </>

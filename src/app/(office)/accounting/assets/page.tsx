@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { assetsScreen } from "@/features/accounting/asset-queries";
 import { AssetsTable } from "@/features/accounting/components/assets-table";
 import { requirePagePermission } from "@/server/auth/dal";
@@ -21,7 +21,7 @@ export default async function AssetsPage() {
       />
       <Card>
         <CardContent className="pt-2">
-          <AssetsTable rows={rows} today={today} canEdit={can(user.role, "accounting.issue")} />
+          <AssetsTable rows={rows} today={today} canEdit={may(user, "accounting.issue")} />
         </CardContent>
       </Card>
     </div>

@@ -63,7 +63,12 @@ export function RouteControls({
               ] as const
             ).map(([name, label, value]) => (
               <Field key={name} id={`re-${r.id}-${name}`} label={label} error={fe?.[name]}>
-                <Input id={`re-${r.id}-${name}`} name={name} defaultValue={value ?? ""} />
+                <Input
+                  id={`re-${r.id}-${name}`}
+                  name={name}
+                  defaultValue={value ?? ""}
+                  list={name === "pol" || name === "pod" ? "ports" : undefined}
+                />
               </Field>
             ))}
           </>

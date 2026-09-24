@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { CreditLine } from "@/features/accounting/components/credit-line";
 import { creditStanding } from "@/features/accounting/reminder-queries";
 import { updateContact } from "@/features/contacts/actions";
@@ -25,10 +25,8 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
   if (!id.success) notFound();
   const [c, addressTypes] = await Promise.all([getContact(id.data), readConfig("addressTypes")]);
   if (!c) notFound();
-  const credit = can(user.role, "app.accounting") ? await creditStanding(c.id) : null;
-  const agreements = can(user.role, "catalogue.edit")
-    ? await listPriceLists({ contactId: c.id })
-    : null;
+  const credit = may(user, "app.accounting") ? await creditStanding(c.id) : null;
+  const agreements = may(user, "catalogue.edit") ? await listPriceLists({ contactId: c.id }) : null;
 
   return (
     <>

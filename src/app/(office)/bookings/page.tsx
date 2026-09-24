@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { Button } from "@/components/ui/button";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { BOOKING_STATUS_META, BOOKING_STATUSES, type BookingStatus } from "@/domain/shipments";
 import { BookingsTable } from "@/features/bookings/components/bookings-table";
 import { listBookings } from "@/features/bookings/queries";
@@ -35,7 +35,7 @@ export default async function BookingsPage({ searchParams }: PageProps<"/booking
             <Button variant="ghost" size="sm" render={<Link href="/bookings?status=cancelled" />}>
               Cancelled
             </Button>
-            {can(user.role, "bookings.edit") && (
+            {may(user, "bookings.edit") && (
               <Button size="sm" render={<Link href="/bookings/new" />}>
                 New booking
               </Button>

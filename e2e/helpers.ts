@@ -8,8 +8,17 @@ export const ADMIN = {
 /** A suffix that keeps records from different runs apart in a shared dev database. */
 export const tag = () => `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
 
+/**
+ * Opens a page and waits until React has hydrated it (`<HydrationMark>`): a field typed into
+ * before that is rewritten by hydration, and the test reads a value nobody typed.
+ */
+export async function open(page: Page, path: string) {
+  await page.goto(path);
+  await page.locator("html[data-hydrated='1']").waitFor({ state: "attached" });
+}
+
 export async function login(page: Page, who = ADMIN) {
-  await page.goto("/login");
+  await open(page, "/login");
   await page.getByLabel("Email").fill(who.email);
   await page.getByLabel("Password").fill(who.password);
   await page.getByRole("button", { name: "Sign in" }).click();
