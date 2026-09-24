@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import { type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag } from "./helpers";
 
 async function contact(page: Page, name: string, email?: string) {

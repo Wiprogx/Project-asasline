@@ -27,15 +27,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { HARNESS_DIR, ROOT_CONFIG, loadConfig, parseJsonText } from "./lib.mjs";
 
-const STRICT_FLAGS = [
-  "strict",
-  "noUncheckedIndexedAccess",
-  "exactOptionalPropertyTypes",
-  "noImplicitAny",
-  "strictNullChecks",
-  "checkJs",
-  "noImplicitOverride",
-];
+const STRICT_FLAGS = ["strict", "noUncheckedIndexedAccess", "exactOptionalPropertyTypes", "noImplicitAny", "strictNullChecks", "checkJs", "noImplicitOverride"];
 const GUARDED_SCRIPTS = ["gate", "gate:fast", "standards", "lint", "typecheck", "test"];
 const CI_FILE = /^\.woodpecker(\/.*\.ya?ml|\.ya?ml)$/;
 const INSTRUMENT_FILE = /^(\.githooks\/|\.husky\/|lefthook\.ya?ml$|scripts\/ci\/|scripts\/hooks\/)/;
@@ -48,15 +40,7 @@ const INSTRUMENT_FILE = /^(\.githooks\/|\.husky\/|lefthook\.ya?ml$|scripts\/ci\/
 export function checkDirection({ base, config = loadConfig(), cwd = process.cwd() } = {}) {
   const g = (...a) => {
     try {
-      return {
-        ok: true,
-        out: execFileSync("git", a, {
-          cwd,
-          encoding: "utf8",
-          stdio: ["ignore", "pipe", "ignore"],
-          maxBuffer: 64 * 1024 * 1024,
-        }),
-      };
+      return { ok: true, out: execFileSync("git", a, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 }) };
     } catch {
       return { ok: false, out: "" };
     }
@@ -76,71 +60,43 @@ export function checkDirection({ base, config = loadConfig(), cwd = process.cwd(
 
   // A. The harness. Tracked files under .claude/ that differ from the base: modified, deleted or
   // added to the index. The hooks that judge the run are not the run's to edit.
-  const harness = g("diff", "--name-only", base, "--", HARNESS_DIR, ROOT_CONFIG)
-    .out.split(/\r?\n/)
-    .filter(Boolean);
+  const harness = g("diff", "--name-only", base, "--", HARNESS_DIR).out.split(/\r?\n/).filter(Boolean);
   if (harness.length) {
-    add({
-      kind: "harness",
-      file: harness.join(", "),
-      hard: true,
-      detail: `${harness.length} file(s) under ${HARNESS_DIR} differ from ${base}`,
-      fix: `git checkout ${base} -- ${HARNESS_DIR} && git commit -m "chore(standards): restore the harness"`,
-    });
+    add({ kind: "harness", file: harness.join(", "), hard: true, detail: `${harness.length} file(s) under ${HARNESS_DIR} differ from ${base}`, fix: `git checkout ${base} -- ${HARNESS_DIR} && git commit -m "chore(standards): restore the harness"` });
+  }
+  // The root config, named as itself. At night it is read-only whatever the change. By day only a
+  // loosening is one: an adopter who enabled a probe was told a tightening was a loosening "under
+  // .claude/", with a command to restore the looser file.
+  if (g("diff", "--name-only", base, "--", ROOT_CONFIG).out.trim()) {
+    const loosened = configLoosenings(atBase(ROOT_CONFIG), inTree(ROOT_CONFIG));
+    if (process.env.ADOPTION_RUN === "1" || loosened.length)
+      add({
+        kind: "harness",
+        file: ROOT_CONFIG,
+        hard: true,
+        detail: process.env.ADOPTION_RUN === "1" ? `${ROOT_CONFIG} differs from ${base}; it is read-only to an unattended run` : `${ROOT_CONFIG} changed against ${base} beyond a tightening: ${loosened.join(", ")}`,
+        fix: `git checkout ${base} -- ${ROOT_CONFIG}, or record the change in the decisions file`,
+      });
   }
 
   // B. The baseline: no number under metrics or debt rises, no metric disappears.
-  const baselinePath = [
-    config.files?.baseline,
-    "scripts/ci/standards-baseline.json",
-    "docs/standards-baseline.json",
-  ]
-    .filter(Boolean)
-    .find((p) => baseFiles.includes(p));
+  const baselinePath = [config.files?.baseline, "scripts/ci/standards-baseline.json", "docs/standards-baseline.json"].filter(Boolean).find((p) => baseFiles.includes(p));
   if (baselinePath) {
     const bText = atBase(baselinePath);
     const tText = inTree(baselinePath);
     if (tText === null) {
-      add({
-        kind: "baseline",
-        file: baselinePath,
-        hard: true,
-        detail: "the baseline was deleted",
-        fix: `git checkout ${base} -- ${baselinePath}`,
-      });
+      add({ kind: "baseline", file: baselinePath, hard: true, detail: "the baseline was deleted", fix: `git checkout ${base} -- ${baselinePath}` });
     } else {
       try {
         const b = numericLeaves(pick(parseJsonText(bText), ["metrics", "debt"]));
         const t = numericLeaves(pick(parseJsonText(tText), ["metrics", "debt"]));
         for (const [key, bv] of b) {
           const tv = t.get(key);
-          if (tv === undefined && key.startsWith("metrics."))
-            add({
-              kind: "baseline",
-              file: baselinePath,
-              key,
-              hard: true,
-              detail: `${key} (${bv}) is gone from the baseline`,
-              fix: "A metric is never removed at night; restore it.",
-            });
-          else if (tv !== undefined && tv > bv)
-            add({
-              kind: "baseline",
-              file: baselinePath,
-              key,
-              hard: true,
-              detail: `${key} rose ${bv} → ${tv}`,
-              fix: "A floor never rises at night. Undo the step that needed it (decision: seam-unclear or behaviour-risk) and split differently.",
-            });
+          if (tv === undefined && key.startsWith("metrics.")) add({ kind: "baseline", file: baselinePath, key, hard: true, detail: `${key} (${bv}) is gone from the baseline`, fix: "A metric is never removed at night; restore it." });
+          else if (tv !== undefined && tv > bv) add({ kind: "baseline", file: baselinePath, key, hard: true, detail: `${key} rose ${bv} → ${tv}`, fix: "A floor never rises at night. Undo the step that needed it (decision: seam-unclear or behaviour-risk) and split differently." });
         }
       } catch (e) {
-        add({
-          kind: "baseline",
-          file: baselinePath,
-          hard: true,
-          detail: `the baseline is not valid JSON: ${e.message}`,
-          fix: "Restore a valid baseline.",
-        });
+        add({ kind: "baseline", file: baselinePath, hard: true, detail: `the baseline is not valid JSON: ${e.message}`, fix: "Restore a valid baseline." });
       }
     }
   }
@@ -148,81 +104,38 @@ export function checkDirection({ base, config = loadConfig(), cwd = process.cwd(
   // B2. The import graph's known violations (dependency-cruiser --baseline): the file is the
   // tool's own debt list and may only shrink. Grown or deleted is a loosening like a baseline
   // number that rose (CODE.5).
-  for (const file of baseFiles.filter((f) =>
-    /(^|\/)\.dependency-cruiser-known-violations\.json$/.test(f),
-  )) {
+  for (const file of baseFiles.filter((f) => /(^|\/)\.dependency-cruiser-known-violations\.json$/.test(f))) {
     const bText = atBase(file);
     const tText = inTree(file);
     if (tText === null) {
-      add({
-        kind: "baseline",
-        file,
-        hard: true,
-        detail: "the known-violations file of the import graph was deleted",
-        fix: `git checkout ${base} -- ${file}`,
-      });
+      add({ kind: "baseline", file, hard: true, detail: "the known-violations file of the import graph was deleted", fix: `git checkout ${base} -- ${file}` });
       continue;
     }
     const bList = safeJson(bText);
     const tList = safeJson(tText);
     if (!Array.isArray(tList)) {
-      add({
-        kind: "baseline",
-        file,
-        hard: true,
-        detail: "the known-violations file is not a JSON array",
-        fix: "Restore a valid file.",
-      });
+      add({ kind: "baseline", file, hard: true, detail: "the known-violations file is not a JSON array", fix: "Restore a valid file." });
       continue;
     }
     const bCount = Array.isArray(bList) ? bList.length : 0;
-    if (tList.length > bCount)
-      add({
-        kind: "baseline",
-        file,
-        hard: true,
-        detail: `known import-graph violations rose ${bCount} → ${tList.length}`,
-        fix: "A cycle, an orphan or a boundary arrow is fixed, never recorded as known at night. Undo the step and split differently.",
-      });
+    if (tList.length > bCount) add({ kind: "baseline", file, hard: true, detail: `known import-graph violations rose ${bCount} → ${tList.length}`, fix: "A cycle, an orphan or a boundary arrow is fixed, never recorded as known at night. Undo the step and split differently." });
   }
 
   // C. Coverage thresholds: per key, in order, a number never falls; autoUpdate never appears.
-  for (const file of baseFiles.filter((f) =>
-    /(^|\/)(vitest|jest)(\.[\w-]+)*\.config\.(ts|js|mjs|mts|cjs)$/.test(f),
-  )) {
+  for (const file of baseFiles.filter((f) => /(^|\/)(vitest|jest)(\.[\w-]+)*\.config\.(ts|js|mjs|mts|cjs)$/.test(f))) {
     const bText = atBase(file) || "";
     const tText = inTree(file);
     if (tText === null) continue;
     if (/autoUpdate\s*:\s*true/.test(tText) && !/autoUpdate\s*:\s*true/.test(bText)) {
-      add({
-        kind: "threshold",
-        file,
-        hard: true,
-        detail: "thresholds.autoUpdate: true appeared",
-        fix: "Remove it: a tool raising the floor erases who moved it and why (FLOW.3).",
-      });
+      add({ kind: "threshold", file, hard: true, detail: "thresholds.autoUpdate: true appeared", fix: "Remove it: a tool raising the floor erases who moved it and why (FLOW.3)." });
     }
     for (const key of ["lines", "branches", "functions", "statements"]) {
       const bn = thresholdNumbers(bText, key);
       const tn = thresholdNumbers(tText, key);
       if (!bn.length) continue;
-      if (tn.length < bn.length)
-        add({
-          kind: "threshold",
-          file,
-          key: `${file}:${key}`,
-          detail: `${key}: ${bn.length} threshold(s) on ${base}, ${tn.length} now`,
-          fix: `Restore the threshold, or record a decision naming ${file}:${key} with the reason.`,
-        });
+      if (tn.length < bn.length) add({ kind: "threshold", file, key: `${file}:${key}`, detail: `${key}: ${bn.length} threshold(s) on ${base}, ${tn.length} now`, fix: `Restore the threshold, or record a decision naming ${file}:${key} with the reason.` });
       bn.forEach((bv, i) => {
-        if (tn[i] !== undefined && tn[i] < bv)
-          add({
-            kind: "threshold",
-            file,
-            key: `${file}:${key}`,
-            detail: `${key} threshold #${i + 1} fell ${bv} → ${tn[i]}`,
-            fix: `Never lower a floor to go green. Restore it; if the figure flaps between runs, record a decision naming ${file}:${key} with both readings.`,
-          });
+        if (tn[i] !== undefined && tn[i] < bv) add({ kind: "threshold", file, key: `${file}:${key}`, detail: `${key} threshold #${i + 1} fell ${bv} → ${tn[i]}`, fix: `Never lower a floor to go green. Restore it; if the figure flaps between runs, record a decision naming ${file}:${key} with both readings.` });
       });
     }
   }
@@ -230,134 +143,49 @@ export function checkDirection({ base, config = loadConfig(), cwd = process.cwd(
   // D. ESLint: per rule, the count of blocks at error/warn never falls and the count at off never
   // rises; the ignores set never grows. Under --max-warnings=0 a warn is as blocking as an error.
   const rootPkgBase = safeJson(atBase("package.json"));
-  const warnIsOn = Object.values(rootPkgBase?.scripts || {}).some((v) =>
-    /max-warnings[= ]0/.test(String(v)),
-  );
-  for (const file of baseFiles.filter((f) =>
-    /(^|\/)eslint\.config\.(js|mjs|cjs|ts|mts)$/.test(f),
-  )) {
+  const warnIsOn = Object.values(rootPkgBase?.scripts || {}).some((v) => /max-warnings[= ]0/.test(String(v)));
+  for (const file of baseFiles.filter((f) => /(^|\/)eslint\.config\.(js|mjs|cjs|ts|mts)$/.test(f))) {
     const bText = atBase(file) || "";
     const tText = inTree(file);
     if (tText === null) {
-      add({
-        kind: "eslint",
-        file,
-        hard: true,
-        detail: "the ESLint config was deleted",
-        fix: `git checkout ${base} -- ${file}`,
-      });
+      add({ kind: "eslint", file, hard: true, detail: "the ESLint config was deleted", fix: `git checkout ${base} -- ${file}` });
       continue;
     }
     const b = ruleCounts(bText, warnIsOn);
     const t = ruleCounts(tText, warnIsOn);
     for (const [rule, bc] of b) {
       const tc = t.get(rule) || { on: 0, off: 0 };
-      if (tc.on < bc.on)
-        add({
-          kind: "eslint",
-          file,
-          key: rule,
-          detail: `${rule}: ${bc.on} block(s) at error/warn on ${base}, ${tc.on} now`,
-          fix: `Restore the rule, or record a decision that names "${rule}" and the reason (a deliberate per-directory exemption is allowed with one).`,
-        });
-      else if (tc.off > bc.off)
-        add({
-          kind: "eslint",
-          file,
-          key: rule,
-          detail: `${rule}: switched off in ${tc.off - bc.off} more block(s)`,
-          fix: `Restore it, or record a decision that names "${rule}" and the reason.`,
-        });
+      if (tc.on < bc.on) add({ kind: "eslint", file, key: rule, detail: `${rule}: ${bc.on} block(s) at error/warn on ${base}, ${tc.on} now`, fix: `Restore the rule, or record a decision that names "${rule}" and the reason (a deliberate per-directory exemption is allowed with one).` });
+      else if (tc.off > bc.off) add({ kind: "eslint", file, key: rule, detail: `${rule}: switched off in ${tc.off - bc.off} more block(s)`, fix: `Restore it, or record a decision that names "${rule}" and the reason.` });
     }
     const bi = ignoreEntries(bText);
     for (const entry of ignoreEntries(tText)) {
-      if (!bi.has(entry))
-        add({
-          kind: "eslint",
-          file,
-          key: entry,
-          detail: `"${entry}" was added to ignores`,
-          fix: `Lint it, or record a decision naming "${entry}" and why it is out of scope.`,
-        });
+      if (!bi.has(entry)) add({ kind: "eslint", file, key: entry, detail: `"${entry}" was added to ignores`, fix: `Lint it, or record a decision naming "${entry}" and why it is out of scope.` });
     }
   }
 
   // E. Lint scripts keep --max-warnings=0; the guarded scripts keep existing.
-  for (const file of [
-    "package.json",
-    ...baseFiles.filter((f) => /^(apps|packages|services)\/[^/]+\/package\.json$/.test(f)),
-  ]) {
+  for (const file of ["package.json", ...baseFiles.filter((f) => /^(apps|packages|services)\/[^/]+\/package\.json$/.test(f))]) {
     const b = safeJson(atBase(file));
     if (!b) continue;
     const t = safeJson(inTree(file));
     if (!t) {
-      add({
-        kind: "scripts",
-        file,
-        hard: true,
-        detail: "package.json is missing or unreadable",
-        fix: `git checkout ${base} -- ${file}`,
-      });
+      add({ kind: "scripts", file, hard: true, detail: "package.json is missing or unreadable", fix: `git checkout ${base} -- ${file}` });
       continue;
     }
     for (const [name, val] of Object.entries(b.scripts || {})) {
       const now = t.scripts?.[name];
-      if (/max-warnings[= ]0/.test(String(val)) && !/max-warnings[= ]0/.test(String(now || "")))
-        add({
-          kind: "scripts",
-          file,
-          key: name,
-          hard: true,
-          detail: `"${name}" no longer runs with --max-warnings=0`,
-          fix: "Put --max-warnings=0 back: a warning is a failure (CODE.4).",
-        });
-      else if (GUARDED_SCRIPTS.includes(name) && now === undefined)
-        add({
-          kind: "scripts",
-          file,
-          key: name,
-          hard: true,
-          detail: `script "${name}" was removed`,
-          fix: "Restore it.",
-        });
+      if (/max-warnings[= ]0/.test(String(val)) && !/max-warnings[= ]0/.test(String(now || ""))) add({ kind: "scripts", file, key: name, hard: true, detail: `"${name}" no longer runs with --max-warnings=0`, fix: "Put --max-warnings=0 back: a warning is a failure (CODE.4)." });
+      else if (GUARDED_SCRIPTS.includes(name) && now === undefined) add({ kind: "scripts", file, key: name, hard: true, detail: `script "${name}" was removed`, fix: "Restore it." });
       // knip (CODE.6): --max-issues only falls, --no-exit-code never appears. depcruise (CODE.5):
       // --ignore-known is the intended flag, a dropped --output-type err is not.
       if (/\bknip\b/.test(String(val)) && now !== undefined) {
         const was = maxIssues(String(val));
         const is = maxIssues(String(now));
-        if (is > was)
-          add({
-            kind: "scripts",
-            file,
-            key: name,
-            hard: true,
-            detail: `"${name}": knip --max-issues rose ${was} → ${is}`,
-            fix: "Dead code is removed, never allowed for. Delete the unused export or file (CODE.6).",
-          });
-        if (!/--no-exit-code/.test(String(val)) && /--no-exit-code/.test(String(now)))
-          add({
-            kind: "scripts",
-            file,
-            key: name,
-            hard: true,
-            detail: `"${name}": knip gained --no-exit-code`,
-            fix: "Remove it: a dead-code finding is a failure (CODE.6).",
-          });
+        if (is > was) add({ kind: "scripts", file, key: name, hard: true, detail: `"${name}": knip --max-issues rose ${was} → ${is}`, fix: "Dead code is removed, never allowed for. Delete the unused export or file (CODE.6)." });
+        if (!/--no-exit-code/.test(String(val)) && /--no-exit-code/.test(String(now))) add({ kind: "scripts", file, key: name, hard: true, detail: `"${name}": knip gained --no-exit-code`, fix: "Remove it: a dead-code finding is a failure (CODE.6)." });
       }
-      if (
-        /\bdepcruise\b/.test(String(val)) &&
-        now !== undefined &&
-        /--output-type err/.test(String(val)) &&
-        !/--output-type err/.test(String(now))
-      )
-        add({
-          kind: "scripts",
-          file,
-          key: name,
-          hard: true,
-          detail: `"${name}": depcruise no longer exits non-zero on a violation (--output-type err dropped)`,
-          fix: "Put --output-type err back (CODE.5).",
-        });
+      if (/\bdepcruise\b/.test(String(val)) && now !== undefined && /--output-type err/.test(String(val)) && !/--output-type err/.test(String(now))) add({ kind: "scripts", file, key: name, hard: true, detail: `"${name}": depcruise no longer exits non-zero on a violation (--output-type err dropped)`, fix: "Put --output-type err back (CODE.5)." });
     }
   }
 
@@ -366,78 +194,35 @@ export function checkDirection({ base, config = loadConfig(), cwd = process.cwd(
     const bText = atBase(file) || "";
     const tText = inTree(file);
     if (tText === null) {
-      add({
-        kind: "tsconfig",
-        file,
-        key: file,
-        detail: "the tsconfig was deleted",
-        fix: `Restore it, or record a decision naming ${file}.`,
-      });
+      add({ kind: "tsconfig", file, key: file, detail: "the tsconfig was deleted", fix: `Restore it, or record a decision naming ${file}.` });
       continue;
     }
     for (const flag of STRICT_FLAGS) {
-      if (lastFlag(bText, flag) === true && lastFlag(tText, flag) !== true)
-        add({
-          kind: "tsconfig",
-          file,
-          key: flag,
-          detail: `"${flag}" was true on ${base} and is not now`,
-          fix: `Restore "${flag}", or record a decision naming it (the standard migrates towards strict, never away).`,
-        });
+      if (lastFlag(bText, flag) === true && lastFlag(tText, flag) !== true) add({ kind: "tsconfig", file, key: flag, detail: `"${flag}" was true on ${base} and is not now`, fix: `Restore "${flag}", or record a decision naming it (the standard migrates towards strict, never away).` });
     }
   }
 
   // G. The instrument's files stay, and the pre-push hook still runs the gate.
   const gateFile = (String(config.commands?.gate || "").match(/^node\s+(\S+)/) || [])[1];
-  for (const file of baseFiles.filter(
-    (f) => INSTRUMENT_FILE.test(f) || CI_FILE.test(f) || f === gateFile,
-  )) {
+  for (const file of baseFiles.filter((f) => INSTRUMENT_FILE.test(f) || CI_FILE.test(f) || f === gateFile)) {
     if (inTree(file) !== null) continue;
     const hard = /pre-push$|gate\.(mjs|js|ts)$|standards/.test(file) || file === gateFile;
-    add({
-      kind: "instrument",
-      file,
-      key: file,
-      hard,
-      detail: `${file} was deleted`,
-      fix: hard
-        ? `git checkout ${base} -- ${file}`
-        : `Restore it, or record a decision naming ${file}.`,
-    });
+    add({ kind: "instrument", file, key: file, hard, detail: `${file} was deleted`, fix: hard ? `git checkout ${base} -- ${file}` : `Restore it, or record a decision naming ${file}.` });
   }
   for (const file of baseFiles.filter((f) => /(^|\/)pre-push$/.test(f))) {
     const bText = atBase(file) || "";
     const tText = inTree(file);
-    if (tText !== null && /gate/.test(bText) && !/gate/.test(tText))
-      add({
-        kind: "instrument",
-        file,
-        hard: true,
-        detail: "the pre-push hook no longer mentions the gate",
-        fix: `git checkout ${base} -- ${file}`,
-      });
+    if (tText !== null && /gate/.test(bText) && !/gate/.test(tText)) add({ kind: "instrument", file, hard: true, detail: "the pre-push hook no longer mentions the gate", fix: `git checkout ${base} -- ${file}` });
   }
   for (const file of baseFiles.filter((f) => CI_FILE.test(f))) {
     const b = ((atBase(file) || "").match(/failure\s*:\s*ignore/g) || []).length;
     const t = ((inTree(file) || "").match(/failure\s*:\s*ignore/g) || []).length;
-    if (t > b)
-      add({
-        kind: "ci",
-        file,
-        key: file,
-        detail: `"failure: ignore" appears ${t - b} more time(s)`,
-        fix: `A CI step made non-blocking is a lowered gate. Restore it, or record a decision naming ${file}.`,
-      });
+    if (t > b) add({ kind: "ci", file, key: file, detail: `"failure: ignore" appears ${t - b} more time(s)`, fix: `A CI step made non-blocking is a lowered gate. Restore it, or record a decision naming ${file}.` });
   }
 
   const decisions = inTree(config.files?.decisions || "docs/ADOPTION_DECISIONS.md") || "";
   const cured = (f) => !f.hard && Boolean(f.key) && decisions.includes(f.key);
-  return {
-    ok: true,
-    base,
-    blocking: findings.filter((f) => !cured(f)),
-    recorded: findings.filter(cured),
-  };
+  return { ok: true, base, blocking: findings.filter((f) => !cured(f)), recorded: findings.filter(cured) };
 }
 
 /** The lines the Stop gate puts on stderr and the runner prints. */
@@ -445,15 +230,11 @@ export function formatDirection(result) {
   const lines = [];
   if (!result.ok) return [`[direction] cannot judge: ${result.error}`];
   if (result.blocking.length) {
-    lines.push(
-      `[direction] ${result.blocking.length} loosening(s) against ${result.base} - a gate that is green this way is not green:`,
-    );
+    lines.push(`[direction] ${result.blocking.length} loosening(s) against ${result.base} - a gate that is green this way is not green:`);
     for (const f of result.blocking) lines.push(`- ${f.kind} · ${f.file} · ${f.detail}. ${f.fix}`);
   }
   if (result.recorded.length) {
-    lines.push(
-      `[direction] ${result.recorded.length} loosening(s) with a decision naming it (the morning reads them):`,
-    );
+    lines.push(`[direction] ${result.recorded.length} loosening(s) with a decision naming it (the morning reads them):`);
     for (const f of result.recorded) lines.push(`- ${f.kind} · ${f.file} · ${f.detail}`);
   }
   if (!lines.length) lines.push(`[direction] nothing loosened against ${result.base}`);
@@ -483,6 +264,33 @@ function safeJson(text) {
   } catch {
     return null;
   }
+}
+
+/**
+ * What a change to the root config loosened, by key: every change except a tightening of the
+ * ratchet (a probe enabled, a metric made HARD, a metric no longer held as a ratchet) is named.
+ * A file that does not parse on either side is named as unreadable rather than read as tight.
+ */
+function configLoosenings(baseText, treeText) {
+  const a = safeJson(baseText);
+  const b = safeJson(treeText);
+  if (!a || !b) return ["the file does not parse on one side"];
+  const list = (o, k) => (Array.isArray(o?.ratchet?.[k]) ? o.ratchet[k].map(String) : []);
+  const out = [];
+  // Growing: enable, hard. Shrinking: ratchet (a metric held as a ratchet instead of HARD).
+  if (list(a, "enable").some((x) => !list(b, "enable").includes(x))) out.push("ratchet.enable lost an entry");
+  if (list(a, "hard").some((x) => !list(b, "hard").includes(x))) out.push("ratchet.hard lost an entry");
+  if (list(b, "ratchet").some((x) => !list(a, "ratchet").includes(x))) out.push("ratchet.ratchet gained an entry");
+  const rest = (o) => {
+    const copy = JSON.parse(JSON.stringify(o));
+    if (copy.ratchet) for (const k of ["enable", "hard", "ratchet"]) delete copy.ratchet[k];
+    return copy;
+  };
+  const ra = rest(a);
+  const rb = rest(b);
+  for (const k of new Set([...Object.keys(ra), ...Object.keys(rb)]))
+    if (JSON.stringify(ra[k]) !== JSON.stringify(rb[k])) out.push(`${k} changed`);
+  return out;
 }
 
 /** Numbers for `key:` inside every `thresholds: { ... }` block, in file order. */

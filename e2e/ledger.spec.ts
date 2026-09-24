@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag } from "./helpers";
 
 test("an invoice and its payment land in the journal, the ledger and the margins", async ({

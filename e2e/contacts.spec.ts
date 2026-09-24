@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag, uniqueVat } from "./helpers";
 
 test("a VAT number is checked for its country and never given to two contacts", async ({

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { login, tag } from "./helpers";
 
 test("an anonymous visitor is sent to the login page", async ({ page }) => {

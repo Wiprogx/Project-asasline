@@ -3,6 +3,7 @@
 // stdout is read as a decision when it is JSON, stderr is the reason the model sees on exit 2.
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -49,14 +50,44 @@ export function configPath() {
 
 /** True for a path the worker never writes at night: the agent folder and the root config. */
 export function isHarnessPath(rel) {
-  return rel.startsWith(HARNESS_DIR) || rel === ROOT_CONFIG;
+  return rel.startsWith(HARNESS_DIR) || rel === ROOT_CONFIG || GIT_HOOKS_DIRS.some((d) => rel.startsWith(d));
+}
+
+/**
+ * The folders git runs its hooks from, the ones `init` writes and the common manager's. They are
+ * the gate's trigger: a night that deletes `pre-push` has switched the gate off as surely as a
+ * bypass flag, so they are harness too.
+ */
+export const GIT_HOOKS_DIRS = [".githooks/", ".husky/"];
+
+/**
+ * The commands a config that names none falls back to, in the words of the package manager whose
+ * lockfile is at the root. The fallback said npm everywhere, and a bun-only repository's Stop
+ * hook ran a gate through a manager it did not have. The hooks cannot import the package, so the
+ * lockfile is read here.
+ */
+export function defaultCommands() {
+  const has = (f) => existsSync(f);
+  const [run, lint] =
+    has("bun.lock") || has("bun.lockb")
+      ? ["bun run", "bun x eslint"]
+      : has("pnpm-lock.yaml")
+        ? ["pnpm run", "pnpm exec eslint"]
+        : has("yarn.lock")
+          ? ["yarn", "yarn eslint"]
+          : ["npm run", "npx eslint"];
+  return {
+    gate: `${run} gate:fast`,
+    gateFull: `${run} gate`,
+    standards: `${run} standards`,
+    lintFile: `${lint} --max-warnings=0`,
+  };
 }
 
 function withDefaults(fromFile) {
   return {
     baseBranch: "main",
     branchPrefix: "adopt/standards",
-    commands: { gate: "npm run gate:fast", lintFile: "npx eslint --max-warnings=0" },
     files: {
       changelog: "CHANGELOG.md",
       state: "docs/ADOPTION_STATE.json",
@@ -71,7 +102,7 @@ function withDefaults(fromFile) {
     ...fromFile,
     scrub: { enabled: false, ...(fromFile.scrub || {}) },
     provenance: { trailer: "", ...(fromFile.provenance || {}) },
-    commands: { ...(fromFile.commands || {}) },
+    commands: { ...defaultCommands(), ...(fromFile.commands || {}) },
     files: { ...(fromFile.files || {}) },
   };
 }
@@ -125,11 +156,7 @@ export function toRepoPath(p) {
 /** Run git and return trimmed stdout, or "" when it fails - a hook must never crash on git. */
 export function git(...args) {
   try {
-    return execFileSync("git", args, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      maxBuffer: 32 * 1024 * 1024,
-    }).trim();
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 32 * 1024 * 1024 }).trim();
   } catch {
     return "";
   }
@@ -143,11 +170,7 @@ export function currentBranch() {
 export function decide(permissionDecision, reason) {
   process.stdout.write(
     JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision,
-        permissionDecisionReason: reason,
-      },
+      hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision, permissionDecisionReason: reason },
     }) + "\n",
   );
 }
@@ -165,6 +188,43 @@ export function counter(name, sessionId) {
     },
   };
 }
+
+/**
+ * The uncommitted files as they are now, each with a hash of its content ("gone" when deleted):
+ * what a session found when it started. Several sessions share one worktree, and a night that
+ * judges the whole tree at its stop would be told to commit or delete files another session
+ * owns; with this taken at the start it judges only what it changed itself.
+ * @returns {Record<string, string>}
+ */
+export function treeSnapshot() {
+  const snap = {};
+  // Not through git(): it trims, and the first line's leading status column is part of the format.
+  let status = "";
+  try {
+    status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  } catch {
+    return snap;
+  }
+  for (const line of status.split("\n")) {
+    if (!line.trim()) continue;
+    const path = line.slice(3).replace(/^.* -> /, "").replace(/^"|"$/g, "");
+    let hash = "gone";
+    try {
+      hash = createHash("sha1").update(readFileSync(path)).digest("hex");
+    } catch {
+      /* deleted, or a folder: "gone" is the fact to compare */
+    }
+    snap[path] = hash;
+  }
+  return snap;
+}
+
+/** Where a session's starting snapshot is kept. @param {string | undefined} sessionId */
+export const snapshotFile = (sessionId) => join(NIGHT_DIR, `start-tree-${sessionId || "no-session"}.json`);
 
 /**
  * What a hook decided, written where the runner and the morning can read it: .claude/night/<name>.json.
@@ -208,9 +268,7 @@ export function agentCommand() {
 
 /** Last N lines of a command's combined output, for a reason the model can act on. */
 export function tail(text, lines = 60) {
-  const all = String(text || "")
-    .split(/\r?\n/)
-    .filter(Boolean);
+  const all = String(text || "").split(/\r?\n/).filter(Boolean);
   return all.slice(-lines).join("\n");
 }
 
@@ -222,17 +280,12 @@ export function tail(text, lines = 60) {
  */
 export function coupledOffenders(range, declared) {
   const pairs = (Array.isArray(declared) ? declared : [])
-    .map((d) => ({
-      when: [].concat(d?.when ?? []).map(String),
-      then: [].concat(d?.then ?? []).map(String),
-      why: String(d?.why || ""),
-    }))
+    .map((d) => ({ when: [].concat(d?.when ?? []).map(String), then: [].concat(d?.then ?? []).map(String), why: String(d?.why || "") }))
     .filter((p) => p.when.length && p.then.length);
   if (!pairs.length) return [];
   const matcher = (pattern) => {
     const p = String(pattern).replace(/\\/g, "/");
-    if (!/[*?]/.test(p))
-      return (path) => path === p || path.startsWith(p) || path.includes(`/${p}`);
+    if (!/[*?]/.test(p)) return (path) => path === p || path.startsWith(p) || path.includes(`/${p}`);
     let re = "^";
     for (let i = 0; i < p.length; i++) {
       const ch = p.charAt(i);
@@ -255,13 +308,7 @@ export function coupledOffenders(range, declared) {
     .filter(Boolean)
     .map((l) => {
       const [sha, subject] = l.split("\0");
-      return {
-        sha,
-        subject: subject || "",
-        files: git("diff-tree", "--no-commit-id", "--name-only", "-r", sha)
-          .split("\n")
-          .filter(Boolean),
-      };
+      return { sha, subject: subject || "", files: git("diff-tree", "--no-commit-id", "--name-only", "-r", sha).split("\n").filter(Boolean) };
     });
   const out = [];
   for (const pair of pairs) {
@@ -274,10 +321,7 @@ export function coupledOffenders(range, declared) {
         continue;
       }
       const hit = c.files.filter((f) => whenHit.some((m) => m(f)));
-      if (hit.length)
-        pending.push(
-          `${c.sha} ${c.subject}: ${hit[0]} changed, ${pair.then.join(" or ")} not touched after it${pair.why ? ` (${pair.why})` : ""}`,
-        );
+      if (hit.length) pending.push(`${c.sha} ${c.subject}: ${hit[0]} changed, ${pair.then.join(" or ")} not touched after it${pair.why ? ` (${pair.why})` : ""}`);
     }
     out.push(...pending);
   }

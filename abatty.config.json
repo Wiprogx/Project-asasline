@@ -63,13 +63,17 @@
     "local": "abatty.probes.mjs",
     "exclude": [],
     "hard": [],
-    "ratchet": []
+    "ratchet": [],
+    "enable": []
   },
   "lintOnEdit": true,
   "lintExtensions": [".ts", ".tsx", ".js", ".jsx", ".mjs"],
   "maxStopBlocks": 6,
   "maxSessionsPerPhase": 2,
   "phases": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  "suiteEnv": {
+    "REDIS_URL": "redis://localhost:6379/1"
+  },
   "stack": "next",
-  "abatty": "0.4.0"
+  "abatty": "0.6.0"
 }

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag } from "./helpers";
 
 test("the routing table sends a topic to a role, takes new topics, and keeps OTHER on", async ({

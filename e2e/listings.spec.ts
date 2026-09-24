@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { login, submit, tag, uniqueVat } from "./helpers";
 
 test("a service to an EU business is on the intra-community listing and in the CSV export", async ({

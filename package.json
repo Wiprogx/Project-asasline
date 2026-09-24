@@ -26,6 +26,7 @@
     "gate": "abatty gate",
     "gate:fast": "abatty gate --fast",
     "hooks:install": "git config core.hooksPath .githooks",
+    "pree2e": "npm run -s db:migrate && npm run -s db:seed",
     "e2e": "playwright test"
   },
   "dependencies": {
@@ -55,7 +56,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^5.0.1",
-    "abatty": "^0.4.0",
+    "abatty": "^0.6.0",
     "dependency-cruiser": "^18.4.0",
     "dotenv": "^18.0.3",
     "drizzle-kit": "^0.31.11",

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag } from "./helpers";
 
 test("the VAT return shows the quarter's grids and gives the Intervat file", async ({ page }) => {
