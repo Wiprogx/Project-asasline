@@ -134,6 +134,13 @@
       "when": 1790274165669,
       "tag": "0018_quotation_send",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790281928090,
+      "tag": "0019_booking_files",
+      "breakpoints": true
     }
   ]
 }
