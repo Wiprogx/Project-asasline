@@ -23,7 +23,7 @@ type FileRow = {
   stage: string;
   ruleCode: string | null;
   by: string;
-  createdAt: Date;
+  filedOn: string;
 };
 
 const size = (n: number) =>
@@ -80,7 +80,7 @@ export function BookingFiles({
             </TableCell>
             <TableCell className="font-mono text-xs">{f.ruleCode ?? "—"}</TableCell>
             <TableCell className="text-muted-foreground">
-              {f.by} · {new Date(f.createdAt).toISOString().slice(0, 10)}
+              {f.by} · {f.filedOn}
             </TableCell>
             {canEdit && (
               <TableCell>
