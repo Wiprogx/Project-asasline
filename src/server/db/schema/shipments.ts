@@ -174,6 +174,8 @@ export const bookings = pgTable(
     ...recordColumns,
     ref: text().notNull(),
     quotationId: uuid().references(() => quotations.id),
+    /** The destination of the quotation this booking ships; its lines are the booking's price. */
+    quotationRouteId: uuid().references(() => quotationRoutes.id),
     kind: shipmentKindEnum().notNull().default("export"),
     status: bookingStatusEnum().notNull().default("confirmed"),
     clientId: uuid()

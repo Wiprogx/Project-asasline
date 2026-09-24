@@ -4,7 +4,6 @@ import { z } from "zod";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { can } from "@/domain/permissions";
-import { AcceptQuotation } from "@/features/quotations/components/accept-quotation";
 import { QuotationRoutes } from "@/features/quotations/components/quotation-routes";
 import { QUOTATION_TONE } from "@/features/quotations/status";
 import { getQuotation } from "@/features/quotations/queries";
@@ -17,8 +16,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
   const q = await getQuotation(id.data);
   if (!q) notFound();
   const [label, tone] = QUOTATION_TONE[q.status];
-  const acceptable =
-    q.status !== "accepted" && q.status !== "cancelled" && can(user.role, "bookings.edit");
+  const canBook = q.status !== "cancelled" && can(user.role, "bookings.edit");
 
   return (
     <>
@@ -31,16 +29,10 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
               {q.client.name}
             </Link>
             {q.validUntil && <span>· valid until {q.validUntil}</span>}
-            {q.bookings.map((b) => (
-              <Link key={b.id} className="font-mono hover:underline" href={`/bookings/${b.id}`}>
-                → {b.ref}
-              </Link>
-            ))}
           </span>
         }
-        actions={acceptable && <AcceptQuotation id={q.id} version={q.version} />}
       />
-      <QuotationRoutes q={q} showCost={can(user.role, "costs.view")} />
+      <QuotationRoutes q={q} showCost={can(user.role, "costs.view")} canBook={canBook} />
     </>
   );
 }

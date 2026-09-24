@@ -32,3 +32,6 @@ export const quotationRef = z.object({
   id: z.uuid(),
   version: z.coerce.number().int().positive(),
 });
+
+/** Accepting one destination: it becomes its own booking. */
+export const acceptRouteSchema = quotationRef.extend({ routeId: z.uuid() });
