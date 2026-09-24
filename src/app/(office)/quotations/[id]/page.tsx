@@ -6,7 +6,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { can } from "@/domain/permissions";
 import { QuotationRoutes } from "@/features/quotations/components/quotation-routes";
 import { QUOTATION_TONE } from "@/features/quotations/status";
-import { getQuotation } from "@/features/quotations/queries";
+import { catalogueChoices, getQuotation } from "@/features/quotations/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export default async function QuotationPage({ params }: PageProps<"/quotations/[id]">) {
@@ -17,6 +17,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
   if (!q) notFound();
   const [label, tone] = QUOTATION_TONE[q.status];
   const canBook = q.status !== "cancelled" && can(user.role, "bookings.edit");
+  const choices = q.status === "cancelled" ? null : await catalogueChoices();
 
   return (
     <>
@@ -32,7 +33,12 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
           </span>
         }
       />
-      <QuotationRoutes q={q} showCost={can(user.role, "costs.view")} canBook={canBook} />
+      <QuotationRoutes
+        q={q}
+        showCost={can(user.role, "costs.view")}
+        canBook={canBook}
+        choices={choices}
+      />
     </>
   );
 }

@@ -42,6 +42,12 @@ export const RATE_TYPE_LABEL: Record<RateType, string> = {
 
 export const PRICE_SOURCES = ["agreement", "last", "catalogue", "manual"] as const;
 export type PriceSource = (typeof PRICE_SOURCES)[number];
+export const PRICE_SOURCE_LABEL: Record<PriceSource, string> = {
+  agreement: "Agreed",
+  last: "Last price",
+  catalogue: "Catalogue",
+  manual: "Typed",
+};
 
 export type RateItemFields = {
   category: string;

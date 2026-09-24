@@ -1,0 +1,1 @@
+ALTER TABLE "quotation_routes" ADD COLUMN "declined_reason" text;

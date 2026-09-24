@@ -124,6 +124,8 @@ export const quotationRoutes = pgTable("quotation_routes", {
   finalPlace: text(),
   containerType: text(),
   declined: boolean().notNull().default(false),
+  /** Why the customer declined this destination; it stays on the quotation for the record. */
+  declinedReason: text(),
 });
 
 export const quotationLines = pgTable("quotation_lines", {
