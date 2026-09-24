@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SearchInput } from "@/components/shared/search-input";
 import { Card, CardContent } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { CoverCard } from "@/features/activity/components/cover-card";
 import { NewTaskForm } from "@/features/activity/components/new-task-form";
 import { TaskFilters } from "@/features/activity/components/task-filters";
@@ -35,7 +35,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/activit
         covers={covers}
         staff={staff}
         today={today}
-        canManage={can(me.role, "activity.cover")}
+        canManage={may(me, "activity.cover")}
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <TaskFilters staff={staff} />

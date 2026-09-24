@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { myTaskCounts } from "@/features/activity/queries";
 import { AppTiles } from "@/features/home/components/app-tiles";
 import { MonthPanel } from "@/features/home/components/month-panel";
@@ -42,7 +42,7 @@ export default async function HomePage() {
   const user = await requireUser();
   const today = officeToday();
   const [tasks, tiles, month] = await Promise.all([
-    can(user.role, "app.activity") ? myTaskCounts(today) : null,
+    may(user, "app.activity") ? myTaskCounts(today) : null,
     appTiles(today),
     monthPanel(today),
   ]);
@@ -59,7 +59,7 @@ export default async function HomePage() {
           <Stat href="/activity?when=today" label="My tasks due today" value={tasks.today} />
         </div>
       )}
-      <AppTiles t={tiles} settings={can(user.role, "app.settings")} />
+      <AppTiles t={tiles} settings={may(user, "app.settings")} />
       {month && <MonthPanel now={month.now} before={month.before} showValue={month.showValue} />}
     </div>
   );

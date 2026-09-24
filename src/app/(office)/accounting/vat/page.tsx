@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import {
   isVatPeriod,
   vatDeadline,
@@ -30,7 +30,7 @@ export default async function VatPage({ searchParams }: PageProps<"/accounting/v
   const { from, to } = vatPeriodRange(period);
   const { computed, filed, closedThrough } = await vatScreen(period);
   const grids = filed ? new Map(Object.entries(filed.filing.grids)) : computed.grids;
-  const canClose = can(user.role, "accounting.closePeriods");
+  const canClose = may(user, "accounting.closePeriods");
   return (
     <div className="grid gap-4">
       <PageHeader

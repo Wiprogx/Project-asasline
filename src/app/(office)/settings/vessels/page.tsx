@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SearchInput } from "@/components/shared/search-input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { CutoffForm } from "@/features/vessels/components/cutoff-form";
 import { VesselForm } from "@/features/vessels/components/vessel-form";
 import { VesselsTable } from "@/features/vessels/components/vessels-table";
@@ -19,7 +19,7 @@ export default async function VesselsPage({ searchParams }: PageProps<"/settings
     q: typeof q === "string" ? q : undefined,
     today: officeToday(),
   });
-  const cutoffs = can(user.role, "app.settings") ? await cutoffRulesForEdit() : null;
+  const cutoffs = may(user, "app.settings") ? await cutoffRulesForEdit() : null;
   return (
     <div className="grid gap-4">
       <Card>

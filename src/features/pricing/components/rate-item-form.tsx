@@ -81,6 +81,7 @@ export function RateItemForm({
         type={type}
         step={type === "number" ? "0.01" : undefined}
         defaultValue={value ?? ""}
+        list={name === "pol" || name === "pod" ? "ports" : undefined}
       />
     </Field>
   );

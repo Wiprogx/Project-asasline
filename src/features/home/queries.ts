@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, eq, gte, inArray, isNotNull, isNull, lte, ne, sql } from "drizzle-orm";
 import { monthRange } from "@/domain/dates";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { requireUser } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
@@ -22,10 +22,9 @@ const n = (v: unknown) => Number(v ?? 0);
 /** The app launcher's counts (legacy vHome): what each app holds, for the apps the role opens. */
 export async function appTiles(today: string) {
   const user = await requireUser();
-  const role = user.role;
   const one = async <T>(allowed: boolean, q: () => Promise<T>) => (allowed ? q() : null);
   const [tasks, quotes, books, people, mail, bills] = await Promise.all([
-    one(can(role, "app.activity"), async () => {
+    one(may(user, "app.activity"), async () => {
       const [r] = await db
         .select({
           overdue: sql<number>`count(*) filter (where ${activities.due} < ${today})::int`,
@@ -36,7 +35,7 @@ export async function appTiles(today: string) {
         .where(eq(activities.state, "open"));
       return r;
     }),
-    one(can(role, "app.quotations"), async () => {
+    one(may(user, "app.quotations"), async () => {
       const [r] = await db
         .select({
           total: count(),
@@ -46,14 +45,14 @@ export async function appTiles(today: string) {
         .where(ne(quotations.status, "cancelled"));
       return r;
     }),
-    one(can(role, "app.bookings"), async () => {
+    one(may(user, "app.bookings"), async () => {
       const [r] = await db
         .select({ total: count() })
         .from(bookings)
         .where(and(ne(bookings.status, "cancelled"), isNull(bookings.archivedAt)));
       return r;
     }),
-    one(can(role, "app.contacts"), async () => {
+    one(may(user, "app.contacts"), async () => {
       const [c] = await db
         .select({ total: count() })
         .from(contacts)
@@ -64,11 +63,11 @@ export async function appTiles(today: string) {
         .where(isNull(contactAddresses.archivedAt));
       return { total: c.total, addresses: a.total };
     }),
-    one(can(role, "app.discuss"), async () => {
+    one(may(user, "app.discuss"), async () => {
       const [r] = await db.select({ total: count() }).from(messages);
       return r;
     }),
-    one(can(role, "app.accounting"), async () => {
+    one(may(user, "app.accounting"), async () => {
       const [r] = await db
         .select({ total: count() })
         .from(invoices)
@@ -168,7 +167,7 @@ async function statsBetween(
 /** The operational month (legacy bStatsPanel): this month against the last, by sailing date. */
 export async function monthPanel(today: string) {
   const user = await requireUser();
-  if (!can(user.role, "app.bookings")) return null;
+  if (!may(user, "app.bookings")) return null;
   // The figures are the office's (one cache for everyone); what the role may see is decided here.
   const months = await cached(
     `home:month:${today}`,
@@ -183,5 +182,5 @@ export async function monthPanel(today: string) {
       return { now, before };
     },
   );
-  return { ...months, showValue: can(user.role, "costs.view") };
+  return { ...months, showValue: may(user, "costs.view") };
 }

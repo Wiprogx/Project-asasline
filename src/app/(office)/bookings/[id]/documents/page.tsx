@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { missingCount } from "@/domain/files";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { BookingFiles } from "@/features/bookings/components/booking-files";
 import { DocumentChain } from "@/features/bookings/components/document-chain";
 import { FileUploadForm } from "@/features/bookings/components/file-upload-form";
@@ -20,7 +20,7 @@ export default async function BookingDocumentsPage({
   const user = await requirePagePermission("app.bookings");
   const d = await bookingDocuments((await params).id);
   if (!d) notFound();
-  const canEdit = can(user.role, "documents.upload") && d.booking.status !== "cancelled";
+  const canEdit = may(user, "documents.upload") && d.booking.status !== "cancelled";
   const missing = missingCount(d.requirements);
   return (
     <div className="grid gap-4">

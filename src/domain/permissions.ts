@@ -37,11 +37,32 @@ export const PERMISSIONS = {
 } as const satisfies Record<string, Grant>;
 
 export type Permission = keyof typeof PERMISSIONS;
+export type PermissionMatrix = Record<Permission, Grant>;
 
-/** Fail closed: an unknown role or permission is a "no", never a silent Admin fallback. */
-export function can(role: Role | null | undefined, permission: Permission): boolean {
+/**
+ * Fail closed: an unknown role or permission is a "no", never a silent Admin fallback. The
+ * matrix is the built-in one unless the office edited its own (Settings › Permissions).
+ */
+export function can(
+  role: Role | null | undefined,
+  permission: Permission,
+  matrix: PermissionMatrix = PERMISSIONS,
+): boolean {
   if (!role) return false;
   const i = ROLES.indexOf(role);
-  const grant: Grant | undefined = PERMISSIONS[permission];
+  const grant: Grant | undefined = matrix[permission];
   return i >= 0 && grant?.[i] === 1;
+}
+
+/** What a signed-in person may do, under the office's own matrix when it carries one. */
+export const may = (
+  user: { role: Role; matrix?: PermissionMatrix },
+  permission: Permission,
+): boolean => can(user.role, permission, user.matrix);
+
+/** The Admin must keep Settings, or nobody could ever put a permission back. */
+export function matrixProblem(matrix: PermissionMatrix): string | null {
+  return matrix["app.settings"]?.[0] === 1
+    ? null
+    : "The Admin must keep Settings: without it nobody could put a permission back.";
 }

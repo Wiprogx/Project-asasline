@@ -37,10 +37,10 @@ export function NewQuotationForm({
           <Input id="validUntil" name="validUntil" type="date" />
         </Field>
         <Field id="pol" label="Port of loading" error={fe?.pol}>
-          <Input id="pol" name="pol" placeholder="BEANR" required />
+          <Input id="pol" name="pol" placeholder="BEANR" required list="ports" />
         </Field>
         <Field id="pod" label="Port of discharge" error={fe?.pod}>
-          <Input id="pod" name="pod" placeholder="TRMER" required />
+          <Input id="pod" name="pod" placeholder="TRMER" required list="ports" />
         </Field>
         <Field id="finalPlace" label="Final delivery place">
           <Input id="finalPlace" name="finalPlace" />

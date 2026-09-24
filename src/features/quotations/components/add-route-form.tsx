@@ -34,10 +34,10 @@ export function AddRouteForm({
         <NativeSelect id="ar-lane" name="laneId" placeholder="— ports typed —" options={lanes} />
       </Field>
       <Field id="ar-pol" label="From" error={fe?.pol}>
-        <Input id="ar-pol" name="pol" placeholder="BEANR" />
+        <Input id="ar-pol" name="pol" placeholder="BEANR" list="ports" />
       </Field>
       <Field id="ar-pod" label="To" error={fe?.pod}>
-        <Input id="ar-pod" name="pod" placeholder="CMDLA" />
+        <Input id="ar-pod" name="pod" placeholder="CMDLA" list="ports" />
       </Field>
       <Field id="ar-final" label="Final place (optional)" error={fe?.finalPlace}>
         <Input id="ar-final" name="finalPlace" />

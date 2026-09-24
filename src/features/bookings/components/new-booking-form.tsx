@@ -42,10 +42,10 @@ export function NewBookingForm({
           />
         </Field>
         <Field id="pol" label="Port of loading" hint="UN/LOCODE, e.g. BEANR">
-          <Input id="pol" name="pol" />
+          <Input id="pol" name="pol" list="ports" />
         </Field>
         <Field id="pod" label="Port of discharge" hint="UN/LOCODE, e.g. TRMER">
-          <Input id="pod" name="pod" />
+          <Input id="pod" name="pod" list="ports" />
         </Field>
         <Field id="loadDate" label="Loading date" error={fe?.loadDate}>
           <Input id="loadDate" name="loadDate" type="date" />

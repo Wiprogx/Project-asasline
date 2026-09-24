@@ -65,6 +65,7 @@ export function VesselForm({ values }: { values?: Values }) {
             type={type}
             defaultValue={values?.[name] ?? ""}
             required={name === "name" || name === "voyage"}
+            list={name === "pol" || name === "pod" ? "ports" : undefined}
           />
         </Field>
       ))}

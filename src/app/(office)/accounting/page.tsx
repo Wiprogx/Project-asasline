@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { Card, CardContent } from "@/components/ui/card";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { NewInvoiceForm } from "@/features/accounting/components/new-invoice-form";
 import { InvoicesTable } from "@/features/accounting/components/invoices-table";
 import { listInvoices } from "@/features/accounting/queries";
@@ -53,7 +53,7 @@ export default async function InvoicesPage({ searchParams }: PageProps<"/account
             </Link>
           ))}
         </nav>
-        {can(user.role, "accounting.issue") && <NewInvoiceForm customers={customers} />}
+        {may(user, "accounting.issue") && <NewInvoiceForm customers={customers} />}
       </div>
       <SearchInput placeholder="Search number, customer or SB ref…" />
       <Card>

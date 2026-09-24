@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
-import { can } from "@/domain/permissions";
+import { may } from "@/domain/permissions";
 import { QuotationActions } from "@/features/quotations/components/quotation-actions";
 import { QuotationRoutes } from "@/features/quotations/components/quotation-routes";
 import { QUOTATION_TONE } from "@/features/quotations/status";
@@ -17,7 +17,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
   const q = await getQuotation(id.data);
   if (!q) notFound();
   const [label, tone] = QUOTATION_TONE[q.status];
-  const canBook = q.status !== "cancelled" && can(user.role, "bookings.edit");
+  const canBook = q.status !== "cancelled" && may(user, "bookings.edit");
   const open = q.status !== "cancelled";
   const [choices, letter] = open
     ? await Promise.all([catalogueChoices(), quotationLetter(q, user.name)])
@@ -45,7 +45,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
       />
       <QuotationRoutes
         q={q}
-        showCost={can(user.role, "costs.view")}
+        showCost={may(user, "costs.view")}
         canBook={canBook}
         choices={choices}
       />

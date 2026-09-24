@@ -96,6 +96,7 @@ export function BookingDetailsForm({ values, contacts }: { values: Values; conta
                 type={f.type}
                 defaultValue={values[f.name] ?? ""}
                 aria-invalid={!!fe?.[f.name]}
+                list={f.name === "pol" || f.name === "pod" ? "ports" : undefined}
               />
             </Field>
           ))}

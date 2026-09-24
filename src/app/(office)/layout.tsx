@@ -1,16 +1,18 @@
 import { cookies } from "next/headers";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { PortDatalist } from "@/components/shared/port-datalist";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { NAV } from "@/config/navigation";
-import { can, ROLE_LABEL } from "@/domain/permissions";
+import { may, ROLE_LABEL } from "@/domain/permissions";
 import { logout } from "@/features/auth/actions";
 import { requireUser } from "@/server/auth/dal";
+import { readPorts } from "@/server/port-config";
 
 export default async function OfficeLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
   const sidebarOpen = (await cookies()).get("sidebar_state")?.value !== "false";
-  const allowed = NAV.filter((i) => i.permission === null || can(user.role, i.permission)).map(
+  const allowed = NAV.filter((i) => i.permission === null || may(user, i.permission)).map(
     (i) => i.href,
   );
 
@@ -28,6 +30,7 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
           <span className="text-sm text-muted-foreground">ASASLINE S.A. · Brussels</span>
         </header>
         <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
+        <PortDatalist ports={await readPorts()} />
       </SidebarInset>
     </SidebarProvider>
   );

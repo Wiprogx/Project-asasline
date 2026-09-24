@@ -21,6 +21,15 @@ export const fileHintsSchema = z
   )
   .max(100);
 
+export async function readFileHintsForEdit() {
+  const [row] = await db.select().from(configTables).where(eq(configTables.name, NAME));
+  const parsed = row ? fileHintsSchema.safeParse(row.value) : null;
+  return {
+    hints: parsed?.success ? parsed.data : DEFAULT_FILE_HINTS.map((h) => ({ ...h })),
+    version: row?.version ?? 0,
+  };
+}
+
 /** The filing rules (legacy FILE_HINTS): words in a file's name → its code. A Settings table. */
 export function readFileHints(): Promise<FileHint[]> {
   return cached(NAME, { ttlSeconds: 600, tags: [FILE_HINTS_TAG] }, async () => {
