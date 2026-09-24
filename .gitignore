@@ -48,3 +48,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# the office's files (FILES_DIR)
+/var/

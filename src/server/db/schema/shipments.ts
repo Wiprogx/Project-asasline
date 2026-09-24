@@ -242,3 +242,31 @@ export const containers = pgTable(
   },
   (t) => [index("containers_booking_idx").on(t.bookingId)],
 );
+
+/**
+ * A file on a booking (legacy b.docs): the bytes live under FILES_DIR as `storedName`, the
+ * record says what it is — the code it is filed under, draft or final, the box and the
+ * document step it proves. Taken off with a reason, never deleted (invariant 1).
+ */
+export const bookingFiles = pgTable(
+  "booking_files",
+  {
+    ...recordColumns,
+    bookingId: uuid()
+      .notNull()
+      .references(() => bookings.id),
+    containerId: uuid().references(() => containers.id),
+    name: text().notNull(),
+    storedName: text().notNull(),
+    mime: text().notNull(),
+    sizeBytes: integer().notNull(),
+    code: text(),
+    stage: text().notNull().default("final"),
+    ruleCode: text(),
+    note: text(),
+  },
+  (t) => [
+    index("booking_files_booking_idx").on(t.bookingId),
+    uniqueIndex("booking_files_stored_uq").on(t.bookingId, t.storedName),
+  ],
+);

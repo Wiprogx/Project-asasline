@@ -10,6 +10,8 @@ const schema = z.object({
   REDIS_URL: z.url().optional(),
   APP_TIMEZONE: z.string().default("Europe/Brussels"),
   SESSION_HOURS: z.coerce.number().int().positive().default(12),
+  /** Where the office's files are stored (one folder per booking); relative to the working dir. */
+  FILES_DIR: z.string().min(1).default("var/files"),
 });
 
 export const env = schema.parse({
@@ -18,4 +20,5 @@ export const env = schema.parse({
   REDIS_URL: process.env.REDIS_URL || undefined,
   APP_TIMEZONE: process.env.APP_TIMEZONE,
   SESSION_HOURS: process.env.SESSION_HOURS,
+  FILES_DIR: process.env.FILES_DIR || undefined,
 });

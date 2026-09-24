@@ -6,7 +6,6 @@ import type { BookingStatus } from "@/domain/shipments";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
-import { bookingChain } from "@/server/rules-sync";
 import { auditLog, bookings, containers, contacts, users } from "@/server/db/schema";
 
 /** A malformed id is "not found", never a database error (pages render beside their layout). */
@@ -119,11 +118,4 @@ export async function bookingStats() {
       >;
     },
   );
-}
-
-/** The booking's document chain, planned by the rules engine against the live rule book. */
-export async function documentChain(id: string) {
-  await requirePermission("app.bookings");
-  const b = await getBooking(id);
-  return b ? bookingChain(db, b) : null;
 }
