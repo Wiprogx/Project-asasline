@@ -78,7 +78,12 @@ export function QuotationRoutes({
               </div>
             </CardHeader>
             <CardContent className="grid gap-3">
-              <RouteLines route={r} showCost={showCost} edit={r.declined ? null : edit} />
+              <RouteLines
+                route={r}
+                showCost={showCost}
+                edit={r.declined ? null : edit}
+                inclusive={q.display === "inclusive"}
+              />
               {edit && choices && !r.declined && (
                 <AddLineForm {...edit} routeId={r.id} items={choices.items} showCost={showCost} />
               )}

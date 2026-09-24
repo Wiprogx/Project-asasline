@@ -14,6 +14,7 @@ import { cents, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import {
   bookingStatusEnum,
+  quotationDisplayEnum,
   quotationStatusEnum,
   rateTypeEnum,
   shipmentKindEnum,
@@ -105,6 +106,10 @@ export const quotations = pgTable(
     paymentTermId: text(),
     currency: text().notNull().default("EUR"),
     note: text(),
+    /** Itemized, or one price per destination naming the listed services (domain/quotation-doc). */
+    display: quotationDisplayEnum().notNull().default("itemized"),
+    sentOn: day(),
+    sentVia: text(),
   },
   (t) => [
     uniqueIndex("quotations_ref_uq").on(t.ref),
@@ -144,6 +149,8 @@ export const quotationLines = pgTable("quotation_lines", {
   costCents: cents(),
   vatCode: text().notNull().default("EX41"),
   priceSource: text(),
+  /** Named on an all-inclusive quotation (without its price). */
+  listed: boolean().notNull().default(true),
 });
 
 /**

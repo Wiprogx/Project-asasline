@@ -19,6 +19,14 @@ const SIGN = "{me} — ASASLINE S.A.";
 
 export const DEFAULT_TEMPLATES: Template[] = [
   {
+    code: "QUOTE_OUT",
+    name: "Quotation",
+    channel: "both",
+    subject: "Quotation {ref} — {dest}",
+    body: `Dear {client},\n\nPlease find our quotation {ref}.\n\n{lines}\n\nTotal: {total} (excluding VAT where it applies)\nValid until: {validUntil}\n\nThe printed quotation, with our general terms, follows as a PDF.\n\n${SIGN}`,
+    active: true,
+  },
+  {
     code: "BK_CONFIRM",
     name: "Booking confirmation",
     channel: "both",
@@ -59,6 +67,36 @@ export const DEFAULT_TEMPLATES: Template[] = [
     active: true,
   },
 ];
+
+/**
+ * What a template is written for, read from its code so the Settings editor cannot lose it:
+ * QUOTE_… letters go with a quotation, every other one with a booking.
+ */
+export const templateScope = (code: string): "quotation" | "booking" =>
+  code.startsWith("QUOTE_") ? "quotation" : "booking";
+
+/** The placeholders each kind of record fills. */
+export const TEMPLATE_PLACEHOLDERS = {
+  booking: [
+    "client",
+    "ref",
+    "dest",
+    "pol",
+    "containers",
+    "vessel",
+    "voyage",
+    "etd",
+    "eta",
+    "docName",
+    "customs",
+    "portcut",
+    "loadDate",
+    "loadTime",
+    "loadAddress",
+    "me",
+  ],
+  quotation: ["client", "ref", "dest", "total", "validUntil", "lines", "me"],
+} as const;
 
 /** Fills {placeholders}; an unknown or empty one reads "—". */
 export function fillTemplate(

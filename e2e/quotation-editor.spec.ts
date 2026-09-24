@@ -9,7 +9,9 @@ test("a quotation with two destinations, priced from the agreement and the catal
 }) => {
   const t = tag();
   const pod = `Q${t.slice(-4).toUpperCase()}`;
-  const country = String.fromCharCode(81 + (t.charCodeAt(t.length - 1) % 9)) + "Z"; // QZ…YZ
+  // Other runs may have left documents for the same code, so totals are compared, not fixed.
+  const letter = (n: number) => String.fromCharCode(65 + (n % 26));
+  const country = letter(Date.now()) + letter(Math.floor(Math.random() * 26));
   const doc = `E2EDOC${t.slice(-4).toUpperCase()}`;
   await login(page);
 
@@ -76,7 +78,9 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await expect(docLine).toContainText("Typed");
   await expect(docLine).toContainText("€250.00");
 
-  // A typed line, then taken off with a reason.
+  // A typed line, then taken off with a reason: the total is as it was.
+  const footer = leg.locator("tfoot");
+  const before = await footer.textContent();
   await leg.getByLabel("Or a service typed").fill("Extra stop in Mechelen");
   await leg.getByLabel("Sell (EUR)").fill("150");
   await submit(page, leg.getByRole("button", { name: "Add line" }));
@@ -87,7 +91,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Remove" }));
   await expectToast(page, "Line removed");
   await expect(extra).toHaveCount(0);
-  await expect(leg.getByText("€3,050.00")).toBeVisible(); // 2,800 + 250
+  await expect(footer).toHaveText(before!);
 
   // The customer declines Mersin, and takes the other destination.
   const mersin = card(page, /BEANR → TRMER/);

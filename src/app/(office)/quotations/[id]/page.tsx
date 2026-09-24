@@ -4,9 +4,10 @@ import { z } from "zod";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { can } from "@/domain/permissions";
+import { QuotationActions } from "@/features/quotations/components/quotation-actions";
 import { QuotationRoutes } from "@/features/quotations/components/quotation-routes";
 import { QUOTATION_TONE } from "@/features/quotations/status";
-import { catalogueChoices, getQuotation } from "@/features/quotations/queries";
+import { catalogueChoices, getQuotation, quotationLetter } from "@/features/quotations/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export default async function QuotationPage({ params }: PageProps<"/quotations/[id]">) {
@@ -17,7 +18,10 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
   if (!q) notFound();
   const [label, tone] = QUOTATION_TONE[q.status];
   const canBook = q.status !== "cancelled" && can(user.role, "bookings.edit");
-  const choices = q.status === "cancelled" ? null : await catalogueChoices();
+  const open = q.status !== "cancelled";
+  const [choices, letter] = open
+    ? await Promise.all([catalogueChoices(), quotationLetter(q, user.name)])
+    : [null, null];
 
   return (
     <>
@@ -30,8 +34,14 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
               {q.client.name}
             </Link>
             {q.validUntil && <span>· valid until {q.validUntil}</span>}
+            {q.sentOn && (
+              <span>
+                · sent {q.sentOn} by {q.sentVia === "whatsapp" ? "WhatsApp" : "e-mail"}
+              </span>
+            )}
           </span>
         }
+        actions={letter && <QuotationActions q={q} letter={letter} />}
       />
       <QuotationRoutes
         q={q}
