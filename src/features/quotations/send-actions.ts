@@ -7,6 +7,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
+import { deliver, outcomeOf } from "@/server/delivery";
 import { quotationLines, quotations } from "@/server/db/schema";
 import { publish } from "@/server/events";
 import { ConflictError } from "@/server/versioned";
@@ -58,8 +59,9 @@ export async function sendQuotation(
   const parsed = sendSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const d = parsed.data;
+  let msgId: string;
   try {
-    await db.transaction((tx) => recordSending(tx, d, user.id, officeToday()));
+    msgId = await db.transaction((tx) => recordSending(tx, d, user.id, officeToday()));
   } catch (e) {
     if (e instanceof ConflictError || e instanceof Refused) return fail(e.message);
     throw e;
@@ -69,9 +71,7 @@ export async function sendQuotation(
   revalidatePath(`/quotations/${d.quotationId}`);
   revalidatePath("/quotations");
   revalidatePath("/activity");
-  const href =
-    d.channel === "email"
-      ? `mailto:${encodeURIComponent(d.toText)}?subject=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.body)}`
-      : `https://wa.me/${d.toText.replace(/\D/g, "")}?text=${encodeURIComponent(d.body)}`;
-  return { ok: true, data: { href }, message: "Recorded as sent — opening it to send" };
+  const letter = { channel: d.channel, to: d.toText, subject: d.subject, body: d.body };
+  const out = outcomeOf(await deliver(db, msgId, letter), letter, "Recorded as sent");
+  return { ok: true, data: { href: out.href ?? "" }, message: out.message };
 }

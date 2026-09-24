@@ -12,6 +12,12 @@ const schema = z.object({
   SESSION_HOURS: z.coerce.number().int().positive().default(12),
   /** Where the office's files are stored (one folder per booking); relative to the working dir. */
   FILES_DIR: z.string().min(1).default("var/files"),
+  /** Real sending: unset, an outgoing mail is recorded and opened in the mail app instead. */
+  SMTP_URL: z.url().optional(),
+  MAIL_FROM: z.string().min(3).optional(),
+  /** WhatsApp Business (Cloud API): unset, WhatsApp opens in the app instead. */
+  WHATSAPP_TOKEN: z.string().min(10).optional(),
+  WHATSAPP_PHONE_ID: z.string().min(3).optional(),
 });
 
 export const env = schema.parse({
@@ -21,4 +27,8 @@ export const env = schema.parse({
   APP_TIMEZONE: process.env.APP_TIMEZONE,
   SESSION_HOURS: process.env.SESSION_HOURS,
   FILES_DIR: process.env.FILES_DIR || undefined,
+  SMTP_URL: process.env.SMTP_URL || undefined,
+  MAIL_FROM: process.env.MAIL_FROM || undefined,
+  WHATSAPP_TOKEN: process.env.WHATSAPP_TOKEN || undefined,
+  WHATSAPP_PHONE_ID: process.env.WHATSAPP_PHONE_ID || undefined,
 });

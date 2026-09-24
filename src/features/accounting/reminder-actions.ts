@@ -9,6 +9,7 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
+import { deliver, outcomeOf } from "@/server/delivery";
 import { bookings, invoiceReminders, invoices, messages } from "@/server/db/schema";
 import { publish } from "@/server/events";
 import { guarded, Refused } from "./invoice-store";
@@ -91,16 +92,17 @@ export async function writeReminder(
         entityId: inv.id,
         detail: { level: step.level, message: msg.id },
       });
-      return { step, bookingId: b ? inv.bookingId : null };
+      return { step, bookingId: b ? inv.bookingId : null, msgId: msg.id };
     }),
   );
   if (!r.ok) return r;
   await publish({ type: "message", linkId: r.value.bookingId ?? undefined });
   revalidatePath("/accounting", "layout");
-  const href = `mailto:${encodeURIComponent(d.toText)}?subject=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.body)}`;
-  return {
-    ok: true,
-    data: { href },
-    message: `${r.value.step.name} recorded — opening it to send`,
-  };
+  const letter = { channel: "email" as const, to: d.toText, subject: d.subject, body: d.body };
+  const out = outcomeOf(
+    await deliver(db, r.value.msgId, letter),
+    letter,
+    `${r.value.step.name} recorded`,
+  );
+  return { ok: true, data: { href: out.href ?? "" }, message: out.message };
 }

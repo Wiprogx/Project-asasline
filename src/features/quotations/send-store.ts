@@ -27,20 +27,23 @@ export async function recordSending(tx: Tx, d: Letter, userId: string, today: st
     .update(quotations)
     .set({ status: q.status === "draft" ? "sent" : q.status, sentOn: today, sentVia: d.channel })
     .where(eq(quotations.id, q.id));
-  await tx.insert(messages).values({
-    channel: d.channel,
-    direction: "out",
-    toText: d.toText,
-    contactId: q.clientId,
-    subject: d.subject,
-    body: d.body,
-    linkKind: "quotation",
-    linkId: q.id,
-    linkRef: q.ref,
-    threadId: threadIdOf(q.ref),
-    authorId: userId,
-    createdBy: userId,
-  });
+  const [msg] = await tx
+    .insert(messages)
+    .values({
+      channel: d.channel,
+      direction: "out",
+      toText: d.toText,
+      contactId: q.clientId,
+      subject: d.subject,
+      body: d.body,
+      linkKind: "quotation",
+      linkId: q.id,
+      linkRef: q.ref,
+      threadId: threadIdOf(q.ref),
+      authorId: userId,
+      createdBy: userId,
+    })
+    .returning({ id: messages.id });
   await tx.insert(activities).values({
     title: `Ask ${client?.name ?? "the customer"} whether ${q.ref} is agreed`,
     assigneeId: userId,
@@ -57,4 +60,5 @@ export async function recordSending(tx: Tx, d: Letter, userId: string, today: st
     entityId: q.id,
     detail: { channel: d.channel, to: d.toText },
   });
+  return msg.id;
 }
