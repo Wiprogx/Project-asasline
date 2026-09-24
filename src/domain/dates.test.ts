@@ -8,6 +8,7 @@ import {
   fromDayNumber,
   isWeekend,
   monthLength,
+  monthRange,
   parseYmd,
   yymm,
 } from "./dates";
@@ -61,5 +62,21 @@ describe("dates", () => {
   it("gives the numbering month key", () => {
     expect(yymm("2026-09-23")).toBe("2609");
     expect(() => yymm("2026-13-01")).toThrow();
+  });
+});
+
+describe("monthRange", () => {
+  it("spans the month a day falls in, and the months before it", () => {
+    expect(monthRange("2026-09-24")).toEqual({
+      from: "2026-09-01",
+      to: "2026-09-30",
+      label: "September 2026",
+    });
+    expect(monthRange("2026-03-15", 1)).toEqual({
+      from: "2026-02-01",
+      to: "2026-02-28",
+      label: "February 2026",
+    });
+    expect(monthRange("2026-01-10", 1).label).toBe("December 2025");
   });
 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, ilike, isNull, ne, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, ne, or, type SQL } from "drizzle-orm";
 import { cache } from "react";
 import { z } from "zod";
 import type { BookingStatus } from "@/domain/shipments";
@@ -100,22 +100,4 @@ export async function bookingHistory(id: string) {
     .where(and(eq(auditLog.entity, "booking"), eq(auditLog.entityId, id)))
     .orderBy(desc(auditLog.id))
     .limit(300);
-}
-
-/** Counts per status for the home dashboard. */
-export async function bookingStats() {
-  await requirePermission("app.bookings");
-  return cached(
-    "bookings:stats",
-    { ttlSeconds: 60, tags: [tags.bookings, tags.dashboard] },
-    async () => {
-      const rows = await db
-        .select({ status: bookings.status, n: count() })
-        .from(bookings)
-        .groupBy(bookings.status);
-      return Object.fromEntries(rows.map((r) => [r.status, r.n])) as Partial<
-        Record<BookingStatus, number>
-      >;
-    },
-  );
 }

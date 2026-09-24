@@ -78,6 +78,29 @@ export function monthLength(y: number, m: number): number {
 }
 
 /** Adds months, clamping to the month's last day: 2026-01-31 + 1 → 2026-02-28. */
+/** The first and last day of the month a day falls in, shifted by `back` months. */
+export function monthRange(day: string, back = 0): { from: string; to: string; label: string } {
+  const first = addMonths(`${day.slice(0, 7)}-01`, -back);
+  const p = parseYmd(first)!;
+  const to = formatYmd({ ...p, d: monthLength(p.y, p.m) });
+  return { from: first, to, label: `${MONTHS[p.m - 1]} ${p.y}` };
+}
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 export function addMonths(s: string, n: number): string {
   const p = parseYmd(s);
   if (!p) return "";
