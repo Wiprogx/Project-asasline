@@ -14,6 +14,7 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { deliver, outcomeOf } from "@/server/delivery";
 import { messages } from "@/server/db/schema";
 import { publish } from "@/server/events";
 import { resolveRef } from "@/server/messaging";
@@ -89,9 +90,9 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
 }
 
 /**
- * Records an outgoing e-mail or WhatsApp with the subject key, and hands back the link that
- * opens it in the mail or WhatsApp app. Real sending comes with the mail server integration;
- * until then `deliveredAt` stays empty and the message says so.
+ * Records an outgoing e-mail or WhatsApp with the subject key and sends it where the server is
+ * configured to (SMTP_URL, WhatsApp Business); otherwise hands back the link that opens it in
+ * the person's own mail or WhatsApp app, and `deliveredAt` stays empty until then.
  */
 export async function sendMessage(
   _p: ActionResult<{ href: string }>,
@@ -125,14 +126,12 @@ export async function sendMessage(
     })
     .returning({ id: messages.id });
   await audit(db, { action: "message.out", userId: user.id, entity: "message", entityId: row.id });
+  const letter = { channel: d.channel, to: d.toText, subject, body: d.body };
+  const sent = await deliver(db, row.id, letter);
   await publish({ type: "message", linkId: link?.id });
   refresh(link?.id);
-
-  const href =
-    d.channel === "email"
-      ? `mailto:${encodeURIComponent(d.toText)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(d.body)}`
-      : `https://wa.me/${d.toText.replace(/\D/g, "")}?text=${encodeURIComponent(d.body)}`;
-  return { ok: true, data: { href }, message: "Recorded — opening it to send" };
+  const out = outcomeOf(sent, letter, "Recorded");
+  return { ok: true, data: { href: out.href ?? "" }, message: out.message };
 }
 
 /** First to open it takes it; a second person is told who already has it. */
