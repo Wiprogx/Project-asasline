@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag } from "./helpers";
 
 test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelled", async ({

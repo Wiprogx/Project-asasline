@@ -9,3 +9,6 @@ src/components/ui/
 .claude/night/
 test-results/
 playwright-report/
+# The Abatty harness, as the package ships it: reformatting it reads as drift to `abatty doctor`.
+.claude/hooks/
+.claude/bin/

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag, uniqueVat } from "./helpers";
 
 test("an issued invoice gives its Peppol file; a customer without VAT number cannot", async ({

@@ -4,6 +4,10 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ## [Unreleased]
 
+### Changed
+
+- Abatty 0.4.0 → 0.6.0: the hooks and harness brought to 0.6.0 (`abatty update`); the redefined `docs.behindCode` floor re-recorded (`abatty baseline`, every floor unchanged, three new metrics at 0); every browser spec now takes `test` from `e2e/fixtures.ts`, which fails a test whose page throws or does not hydrate (TEST-E2E-ERRORS). CI actions are pinned to commits, the findings and the conformance statement fail on a crash, and a new `floors` job wants a second approval for a loosened floor; the regenerated workflow is not used as is (its browser job has no database, its bypass step is not valid YAML, its scrub step fails with scrub off), so these changes are applied to ours by hand. The browser suite now runs on its own database (`TEST_DATABASE_URL`, migrated and seeded by `pree2e`; Redis index 1 via `suiteEnv`), never on the dev database, or is deferred to CI. The harness files are no longer reformatted by Prettier, which `abatty doctor` read as drift.
+
 ### Fixed
 
 - The quotation editor browser test hard-coded a destination total, which broke when an earlier run had left a document for the same random country code (one of 9); it now compares the total before and after, and draws the code from 676.

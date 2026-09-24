@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { expectToast, login, submit, tag } from "./helpers";
 
 test("equipment on a bill becomes an asset, depreciated, and leaves the books when disposed of", async ({
