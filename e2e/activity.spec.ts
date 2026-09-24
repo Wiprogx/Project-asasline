@@ -12,7 +12,7 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
   await login(page);
   await page.goto("/activity");
   await page.getByLabel("New task").fill(title);
-  await page.getByLabel("Due").fill(officeToday());
+  await page.getByLabel("Due", { exact: true }).fill(officeToday());
   await submit(page, page.getByRole("button", { name: "Add task" }));
   await expectToast(page, "Task added");
 

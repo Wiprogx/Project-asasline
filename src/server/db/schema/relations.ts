@@ -2,13 +2,37 @@ import { relations } from "drizzle-orm";
 import { activities } from "./activities";
 import { contactAddresses, contactBankAccounts, contacts } from "./contacts";
 import { users } from "./identity";
-import { bookings, containers, quotationLines, quotationRoutes, quotations } from "./shipments";
+import {
+  bookings,
+  containers,
+  priceListLines,
+  priceLists,
+  quotationLines,
+  quotationRoutes,
+  quotations,
+  rateItems,
+} from "./shipments";
 
 export const contactsRelations = relations(contacts, ({ many }) => ({
   addresses: many(contactAddresses),
   bankAccounts: many(contactBankAccounts),
   bookings: many(bookings, { relationName: "client" }),
   quotations: many(quotations),
+  priceLists: many(priceLists),
+}));
+
+export const rateItemsRelations = relations(rateItems, ({ many }) => ({
+  listLines: many(priceListLines),
+}));
+
+export const priceListsRelations = relations(priceLists, ({ one, many }) => ({
+  contact: one(contacts, { fields: [priceLists.contactId], references: [contacts.id] }),
+  lines: many(priceListLines),
+}));
+
+export const priceListLinesRelations = relations(priceListLines, ({ one }) => ({
+  list: one(priceLists, { fields: [priceListLines.priceListId], references: [priceLists.id] }),
+  item: one(rateItems, { fields: [priceListLines.itemId], references: [rateItems.id] }),
 }));
 
 export const contactAddressesRelations = relations(contactAddresses, ({ one }) => ({
@@ -38,6 +62,7 @@ export const quotationLinesRelations = relations(quotationLines, ({ one }) => ({
     fields: [quotationLines.routeId],
     references: [quotationRoutes.id],
   }),
+  item: one(rateItems, { fields: [quotationLines.itemId], references: [rateItems.id] }),
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({

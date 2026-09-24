@@ -10,12 +10,14 @@ config({ path: ".env.local" });
 async function main() {
   const { sql } = await import("drizzle-orm");
   const { db } = await import("../src/server/db/client");
-  const { configTables, contacts, users } = await import("../src/server/db/schema");
+  const { configTables, contacts, rateItems, users } = await import("../src/server/db/schema");
   const { hashPassword } = await import("../src/server/auth/password");
   const { MIN_PASSWORD_LENGTH } = await import("../src/domain/people");
   const { DEFAULT_CANCEL_REASONS } = await import("../src/domain/shipments");
   const { DEFAULT_PAYMENT_TERMS } = await import("../src/domain/accounting");
   const { ADDRESS_TYPES } = await import("../src/domain/contacts");
+  const { DEFAULT_RATE_CATEGORIES } = await import("../src/domain/pricing");
+  const { DEMO_RATE_ITEMS } = await import("./demo-catalogue");
 
   const email = process.env.SEED_ADMIN_EMAIL;
   const password = process.env.SEED_ADMIN_PASSWORD ?? "";
@@ -43,6 +45,7 @@ async function main() {
       { name: "containerTypes", value: ["20DV", "40DV", "40HC", "45HC", "20RF", "40RF"] },
       { name: "paymentTerms", value: DEFAULT_PAYMENT_TERMS },
       { name: "addressTypes", value: ADDRESS_TYPES },
+      { name: "rateCategories", value: DEFAULT_RATE_CATEGORIES },
     ])
     .onConflictDoNothing();
   console.log("✓ config tables present");
@@ -63,6 +66,11 @@ async function main() {
       ])
       .onConflictDoNothing();
     console.log("✓ demo contacts added");
+    const [{ items }] = await db.select({ items: sql<number>`count(*)::int` }).from(rateItems);
+    if (items === 0) {
+      await db.insert(rateItems).values(DEMO_RATE_ITEMS);
+      console.log(`✓ ${DEMO_RATE_ITEMS.length} demo catalogue items added`);
+    }
   }
   process.exit(0);
 }
