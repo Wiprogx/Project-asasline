@@ -13,7 +13,10 @@ import { ContactForm } from "@/features/contacts/components/contact-form";
 import { ContactReach } from "@/features/contacts/components/contact-reach";
 import { toContactFormValues } from "@/features/contacts/form-values";
 import { getContact } from "@/features/contacts/queries";
+import { ContactAgreements } from "@/features/pricing/components/contact-agreements";
+import { listPriceLists } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 import { readConfig } from "@/server/config-tables";
 
 export default async function ContactPage({ params }: PageProps<"/contacts/[id]">) {
@@ -23,6 +26,9 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
   const [c, addressTypes] = await Promise.all([getContact(id.data), readConfig("addressTypes")]);
   if (!c) notFound();
   const credit = can(user.role, "app.accounting") ? await creditStanding(c.id) : null;
+  const agreements = can(user.role, "catalogue.edit")
+    ? await listPriceLists({ contactId: c.id })
+    : null;
 
   return (
     <>
@@ -45,6 +51,7 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
       <div className="grid gap-4 pt-4">
         <ContactAddresses contactId={c.id} addresses={c.addresses} types={addressTypes} />
         <BankAccounts contactId={c.id} accounts={c.bankAccounts} />
+        {agreements && <ContactAgreements rows={agreements} today={officeToday()} />}
       </div>
     </>
   );

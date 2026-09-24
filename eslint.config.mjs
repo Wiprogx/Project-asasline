@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Coverage reports written by the gate's own coverage step.
+    "coverage/**",
     // Generated tooling: the Abatty harness is owned and tested by the package.
     ".abatty/**",
     ".claude/**",
