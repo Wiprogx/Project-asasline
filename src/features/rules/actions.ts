@@ -61,6 +61,7 @@ export async function saveRule(_p: ActionResult, fd: FormData): Promise<ActionRe
     ...fields,
     note: fields.note || undefined,
     sold: fields.sold || undefined,
+    perBox: fields.perBox || undefined,
   });
   if (!rule.success) return invalid(rule.error);
 

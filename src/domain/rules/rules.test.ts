@@ -189,3 +189,58 @@ describe("sold on the quotation", () => {
     expect(soldOnQuote("(vgm", ["Service (VGM"])).toBe(true);
   });
 });
+
+describe("per-container rules", () => {
+  const certi: DocRule = {
+    ...DEFAULT_RULES.find((r) => r.code === "CERTIWEIGHT")!,
+    sold: undefined,
+    needs: [],
+  };
+  const boxes = [
+    { id: "b1", label: "MSKU1234567", weightsIn: true },
+    { id: "b2", label: "box 2", weightsIn: false },
+  ];
+  it("makes one step per box, keyed by the box, and one for a booking with no box yet", () => {
+    const plan = planChain([certi], booking({ boxes }), DEFAULT_HOLIDAYS, new Set());
+    expect(plan.map((s) => s.key)).toEqual(["CERTIWEIGHT#b1", "CERTIWEIGHT#b2"]);
+    expect(plan[1].title).toBe(
+      "Send the Certiweight certificate to the customer — box 2 — SB2609001",
+    );
+    expect(planChain([certi], booking(), DEFAULT_HOLIDAYS, new Set()).map((s) => s.key)).toEqual([
+      "CERTIWEIGHT",
+    ]);
+  });
+  it("settles a per-box prerequisite only once every box's step is done", () => {
+    const after: DocRule = { ...certi, code: "AFTER", perBox: false, needs: ["CERTIWEIGHT"] };
+    const one = planChain(
+      [certi, after],
+      booking({ boxes }),
+      DEFAULT_HOLIDAYS,
+      new Set(["CERTIWEIGHT#b1"]),
+    );
+    expect(one.find((s) => s.key === "AFTER")?.status).toBe("waiting");
+    const both = planChain(
+      [certi, after],
+      booking({ boxes }),
+      DEFAULT_HOLIDAYS,
+      new Set(["CERTIWEIGHT#b1", "CERTIWEIGHT#b2"]),
+    );
+    expect(both.find((s) => s.key === "AFTER")?.status).toBe("open");
+  });
+  it("withdraws the step of a box that left the booking, saying so", () => {
+    const plan = planChain([certi], booking({ boxes: [boxes[0]] }), DEFAULT_HOLIDAYS, new Set());
+    const diff = syncDiff(plan, [
+      { id: "t1", ruleCode: "CERTIWEIGHT#b1", state: "open", due: null },
+      { id: "t2", ruleCode: "CERTIWEIGHT#b2", state: "open", due: null },
+    ]);
+    expect(diff.withdraw).toEqual([{ id: "t2", reason: "The container left the booking" }]);
+  });
+  it("holds the VGM until every box's weight is in", () => {
+    const vgm = DEFAULT_RULES.find((r) => r.code === "VGM")!;
+    const held = planChain([vgm], booking({ boxes }), DEFAULT_HOLIDAYS, new Set());
+    expect(held[0].status).toBe("waiting");
+    expect(held[0].waitingOn).toEqual(["the weight of box 2"]);
+    const ready = planChain([vgm], booking({ boxes: [boxes[0]] }), DEFAULT_HOLIDAYS, new Set());
+    expect(ready[0].status).toBe("open");
+  });
+});

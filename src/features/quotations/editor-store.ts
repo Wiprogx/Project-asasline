@@ -1,11 +1,12 @@
 import "server-only";
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull, like, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { remainingQty } from "@/domain/invoicing";
 import { type ActionResult, fail } from "@/lib/action-result";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import type { DbOrTx } from "@/server/db/client";
 import {
+  bookingFiles,
   bookings,
   invoiceLines,
   invoices,
@@ -82,6 +83,28 @@ export async function invoicedQty(tx: DbOrTx, line: { id: string; qty: number })
       ),
     );
   return line.qty - remainingQty(line.qty, billed);
+}
+
+/**
+ * Once a Certiweight certificate is filed on a booking of this destination, the weighing was
+ * done and will be invoiced: the line cannot be taken off the quotation (legacy certiLocked).
+ */
+export async function certificateFiled(tx: DbOrTx, routeId: string): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: bookingFiles.id })
+    .from(bookingFiles)
+    .innerJoin(bookings, eq(bookings.id, bookingFiles.bookingId))
+    .where(
+      and(
+        eq(bookings.quotationRouteId, routeId),
+        ne(bookings.status, "cancelled"),
+        isNull(bookingFiles.archivedAt),
+        eq(bookingFiles.stage, "final"),
+        like(bookingFiles.ruleCode, "CERTIWEIGHT%"),
+      ),
+    )
+    .limit(1);
+  return !!row;
 }
 
 /** What a booked destination sold may have changed: its "only if sold" steps follow. */

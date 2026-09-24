@@ -61,3 +61,31 @@ describe("requirementsOf", () => {
     expect(missingCount(reqs)).toBe(1); // EXA; BESC waits, SI is done
   });
 });
+
+describe("requirements per box", () => {
+  it("reads a paper filed against the box's step, not a same-coded paper of another box", () => {
+    const reqs = requirementsOf({
+      destinationDocs: [],
+      steps: [
+        { code: "CERTIWEIGHT#b1", doc: "Certiweight — box 1", status: "open" },
+        { code: "CERTIWEIGHT#b2", doc: "Certiweight — box 2", status: "open" },
+      ],
+      files: [{ code: "CERTIWEIGHT", ruleCode: "CERTIWEIGHT#b1", stage: "final" }],
+    });
+    expect(reqs.map((r) => r.state)).toEqual(["final", "missing"]);
+  });
+});
+
+describe("requirements per box", () => {
+  it("reads a paper filed against the box's step, not a same-coded paper of another box", () => {
+    const reqs = requirementsOf({
+      destinationDocs: [],
+      steps: [
+        { code: "CERTIWEIGHT#b1", doc: "Certiweight — box 1", status: "open" },
+        { code: "CERTIWEIGHT#b2", doc: "Certiweight — box 2", status: "open" },
+      ],
+      files: [{ code: "CERTIWEIGHT", ruleCode: "CERTIWEIGHT#b1", stage: "final" }],
+    });
+    expect(reqs.map((r) => r.state)).toEqual(["final", "missing"]);
+  });
+});

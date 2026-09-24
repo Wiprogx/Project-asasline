@@ -48,6 +48,12 @@ test("a booking's document chain follows the rules", async ({ page }) => {
     await page.getByLabel(label, { exact: true }).fill(day);
   await saveDetails(page);
 
+  // The VGM step waits on the box's weight (legacy weightsReady): give it one.
+  await page.goto(`${base}/containers`);
+  await page.getByLabel("Cargo kg").first().fill("18000");
+  await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
+  await expectToast(page, /saved/i);
+
   // The chain: Gabon's papers are in, the invoice waits on the request, a weekend is explained.
   await page.goto(`${base}/documents`);
   await expect(stepRow(page, "BIETC_FILE")).toBeVisible();

@@ -9,6 +9,7 @@ import { db, type Tx } from "@/server/db/client";
 import { quotationLines } from "@/server/db/schema";
 import { addLineSchema, removeLineSchema, updateLineSchema } from "./editor-schemas";
 import {
+  certificateFiled,
   editorResult,
   insertPricedLine,
   invoicedQty,
@@ -132,6 +133,10 @@ export async function removeLine(_p: ActionResult, fd: FormData): Promise<Action
       const { line, route } = await lineIn(tx, quotationId, lineId);
       if ((await invoicedQty(tx, line)) > 0)
         throw new Refused("This line is invoiced; credit it before taking it off.");
+      if (/certiweight/i.test(line.description) && (await certificateFiled(tx, route.id)))
+        throw new Refused(
+          "The Certiweight certificate is filed on the booking: the weighing was done, so the charge stays.",
+        );
       await tx
         .update(quotationLines)
         .set({ archivedAt: new Date(), archivedBy: user.id, archivedReason: reason })

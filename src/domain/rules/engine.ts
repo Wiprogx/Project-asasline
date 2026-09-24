@@ -54,6 +54,10 @@ export type DocRule = {
    * line of the booking's quotation matches it (words, or a pattern such as "vgm|certiweight").
    */
   sold?: string;
+  /** One step per container (legacy perBox): the Certiweight certificate of each box. */
+  perBox?: boolean;
+  /** The step opens only once every box's cargo weight is in (legacy VGM weightsReady). */
+  ready?: "weights";
 };
 
 export type BookingFacts = {
@@ -65,6 +69,8 @@ export type BookingFacts = {
   anchors: Partial<Record<Anchor, string | null>>;
   /** The quotation's line descriptions; null when no quotation is behind the booking. */
   soldLines?: readonly string[] | null;
+  /** The live boxes, for per-box rules and the weights check; their label is the number or "box n". */
+  boxes?: readonly { id: string; label: string; weightsIn: boolean }[];
 };
 
 /** Whether the quotation sold what a rule needs. No quotation behind it: assume it is ours. */

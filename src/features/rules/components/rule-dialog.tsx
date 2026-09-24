@@ -191,6 +191,12 @@ export function RuleDialog({
           </div>
           <div className="flex flex-wrap gap-4">
             <Check name="workingDays" label="Working days" checked={r?.workingDays ?? false} />
+            <Check name="perBox" label="One step per container" checked={r?.perBox ?? false} />
+            <Check
+              name="ready"
+              label="Only once every box's weight is in"
+              checked={r?.ready === "weights"}
+            />
             <Check
               name="blocking"
               label="⛔ Stops the shipment if missed"

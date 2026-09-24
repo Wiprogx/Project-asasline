@@ -62,13 +62,16 @@ export function DocumentChain({ steps, today }: { steps: PlanStep[]; today: stri
       </TableHeader>
       <TableBody>
         {steps.map((s) => (
-          <TableRow key={s.rule.code}>
+          <TableRow key={s.key}>
             <TableCell className="max-w-md whitespace-normal">
               <span className="font-medium">
                 {s.rule.blocking && <span title="Stops the shipment if missed">⛔ </span>}
                 {s.title.replace(/ — [^—]+$/, "")}
               </span>
-              <span className="block font-mono text-xs text-muted-foreground">{s.rule.code}</span>
+              <span className="block font-mono text-xs text-muted-foreground">
+                {s.rule.code}
+                {s.box && ` · ${s.box.label}`}
+              </span>
             </TableCell>
             <TableCell className="hidden md:table-cell">
               {PARTY_LABEL[s.rule.party] ?? s.rule.party}

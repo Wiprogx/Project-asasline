@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { ALLOWED_TYPES, extensionOf, fileCodeOf, fileProblem } from "@/domain/files";
+import { codeOfKey } from "@/domain/rules/plan";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
@@ -38,7 +39,10 @@ export async function uploadFile(_p: ActionResult, fd: FormData): Promise<Action
   if (b.status === "cancelled") return fail("Put the booking back before filing on it.");
 
   const ext = extensionOf(file.name);
-  const code = d.code ?? d.ruleCode ?? fileCodeOf(file.name, await readFileHints());
+  const code =
+    d.code ??
+    (d.ruleCode ? codeOfKey(d.ruleCode) : null) ??
+    fileCodeOf(file.name, await readFileHints());
   const storedName = `${randomUUID()}${ext}`;
   await storeFile(b.id, storedName, new Uint8Array(await file.arrayBuffer()));
   const [row] = await db
