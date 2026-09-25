@@ -56,7 +56,7 @@ export function QuotationRoutes({
           (b) => b.quotationRouteId === r.id && b.status !== "cancelled",
         );
         return (
-          <Card key={r.id} className={r.declined ? "opacity-60" : undefined}>
+          <Card key={r.id} className={r.declined ? "text-muted-foreground" : undefined}>
             <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
               <CardTitle className="font-mono">
                 {r.pol} → {r.pod}

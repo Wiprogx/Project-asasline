@@ -1,9 +1,9 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 async function addPerson(page: Page, name: string, email: string, password: string) {
-  await page.goto("/settings/people");
+  await open(page, "/settings/people");
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Email").fill(email);
   await page.locator("#p-role").selectOption("docs_clerk");
@@ -25,7 +25,7 @@ test("a colleague covers somebody away: their tasks are in the colleague's list 
   await addPerson(page, cover, `cover.${t}@e2e.test`, password);
 
   const title = `E2E covered task ${t}`;
-  await page.goto("/activity");
+  await open(page, "/activity");
   await page.getByLabel("New task").fill(title);
   await page.getByLabel("Person").selectOption({ label: away });
   await submit(page, page.getByRole("button", { name: "Add task" }));
@@ -41,7 +41,7 @@ test("a colleague covers somebody away: their tasks are in the colleague's list 
   // The colleague sees it in "My tasks"; nothing was moved.
   const colleague = await (await browser.newContext()).newPage();
   await login(colleague, { email: `cover.${t}@e2e.test`, password });
-  await colleague.goto(`/activity?q=${encodeURIComponent(title)}`);
+  await open(colleague, `/activity?q=${encodeURIComponent(title)}`);
   await expect(colleague.getByText(title)).toBeVisible();
 
   // Back: it leaves the colleague's list at once.

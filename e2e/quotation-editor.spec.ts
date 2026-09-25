@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 const card = (page: Page, title: RegExp) =>
   page.locator("[data-slot=card]").filter({ has: page.getByText(title) });
@@ -17,7 +17,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await login(page);
 
   // The catalogue: an ocean leg and the document its country requires.
-  await page.goto("/settings/catalogue");
+  await open(page, "/settings/catalogue");
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill(pod);
   await page.getByLabel("Country").fill(country);
@@ -35,11 +35,11 @@ test("a quotation with two destinations, priced from the agreement and the catal
 
   // A customer with an agreed price for the leg.
   const client = `E2E Editor Client ${t}`;
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-  await page.goto("/settings/price-lists");
+  await open(page, "/settings/price-lists");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Agreement").fill("Editor deal");
   await page.getByRole("button", { name: "Add agreement" }).click();
@@ -50,7 +50,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await expectToast(page, "Agreed price saved");
 
   // A quotation with a first destination typed in.
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -107,7 +107,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
 
   // The booking bills its own destination only.
-  await page.goto(`${page.url()}/billing`);
+  await open(page, `${page.url()}/billing`);
   await expect(page.getByText(`BEANR › ${pod}`)).toBeVisible();
   await expect(page.getByText(`${doc} — ${country}`)).toBeVisible();
   await expect(page.getByText("Ocean freight to Mersin")).toHaveCount(0);

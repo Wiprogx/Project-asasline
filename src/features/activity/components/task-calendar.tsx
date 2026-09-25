@@ -56,7 +56,7 @@ export function TaskCalendar({
               aria-label={`${day}: ${list.length} task${list.length === 1 ? "" : "s"}`}
               className={cn(
                 "min-h-16 bg-card p-1.5 hover:bg-accent/40 sm:min-h-20",
-                !inMonth && "opacity-40",
+                !inMonth && "text-muted-foreground",
                 selected === day && "ring-2 ring-primary ring-inset",
               )}
             >

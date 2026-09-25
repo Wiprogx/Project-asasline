@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 /**
  * The booking journey end to end: a contact, a booking with a server-issued SB number, the
@@ -13,13 +13,13 @@ test("a booking from creation to history", async ({ page }) => {
   await login(page);
 
   for (const name of [client, consignee]) {
-    await page.goto("/contacts/new");
+    await open(page, "/contacts/new");
     await page.getByLabel("Name").fill(name);
     await page.getByRole("button", { name: "Create contact" }).click();
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   }
 
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -48,7 +48,7 @@ test("a booking from creation to history", async ({ page }) => {
   await page.getByLabel("Vessel").fill("");
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, "Saved");
-  await page.goto(bookingUrl);
+  await open(page, bookingUrl);
   await expect(page.getByText(consignee)).toBeVisible();
   await expect(page.getByText("MSC E2E")).toHaveCount(0);
 

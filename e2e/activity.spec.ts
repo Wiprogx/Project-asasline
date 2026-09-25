@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 /** The office's today, as the server computes it (Europe/Brussels). */
 const officeToday = () =>
@@ -11,7 +11,7 @@ const row = (page: Page, title: string) => page.getByRole("listitem").filter({ h
 test("a task from creation to done, withdrawn, put back and handed over", async ({ page }) => {
   const title = `E2E task ${tag()}`;
   await login(page);
-  await page.goto("/activity");
+  await open(page, "/activity");
   await page.getByLabel("New task").fill(title);
   await page.getByLabel("Due", { exact: true }).fill(officeToday());
   await submit(page, page.getByRole("button", { name: "Add task" }));
@@ -24,17 +24,17 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
   await submit(page, row(page, title).getByRole("button", { name: "Done" }));
   await expectToast(page, "Done");
   await expect(page.getByText(title)).toHaveCount(0);
-  await page.goto("/activity?state=done");
+  await open(page, "/activity?state=done");
   await expect(row(page, title).getByText(/done by/)).toBeVisible();
   await submit(page, row(page, title).getByRole("button", { name: "Reopen" }));
   await expectToast(page, "Reopened");
 
-  await page.goto("/activity");
+  await open(page, "/activity");
   await row(page, title).getByRole("button", { name: "Withdraw" }).click();
   await page.getByPlaceholder("Why? It stays on the record.").fill("Customer will send it himself");
   await page.getByRole("dialog").getByRole("button", { name: "Withdraw" }).click();
   await expectToast(page, "Withdrawn");
-  await page.goto("/activity?state=withdrawn");
+  await open(page, "/activity?state=withdrawn");
   await expect(
     row(page, title).getByText("withdrawn — Customer will send it himself"),
   ).toBeVisible();
@@ -42,13 +42,13 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
   await expectToast(page, "Put back");
 
   // Handed to a role: it leaves "mine" (Admin) unless the role is the Admin's own.
-  await page.goto("/activity");
+  await open(page, "/activity");
   await row(page, title).getByRole("button", { name: "Hand over" }).click();
   await page.getByRole("dialog").getByLabel("Or to a role").selectOption({ label: "Accountant" });
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Hand over" }));
   await expectToast(page, "Handed over");
   await expect(page.getByText(title)).toHaveCount(0);
-  await page.goto(`/activity?who=all&q=${encodeURIComponent(title)}`);
+  await open(page, `/activity?who=all&q=${encodeURIComponent(title)}`);
   await expect(row(page, title).getByText("Accountant · anyone")).toBeVisible();
 });
 
@@ -56,7 +56,7 @@ test("the calendar shows a task on its day", async ({ page }) => {
   const title = `E2E calendar ${tag()}`;
   const day = officeToday();
   await login(page);
-  await page.goto(`/activity/calendar?day=${day}`);
+  await open(page, `/activity/calendar?day=${day}`);
   await page.getByLabel("New task").fill(title);
   await submit(page, page.getByRole("button", { name: "Add task" }));
   await expectToast(page, "Task added");
@@ -70,11 +70,11 @@ test("cancelling a booking withdraws its open tasks with the reason", async ({ p
   const t = tag();
   const client = `E2E Task Client ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);

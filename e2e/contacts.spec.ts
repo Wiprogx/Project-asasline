@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag, uniqueVat } from "./helpers";
+import { expectToast, login, open, submit, tag, uniqueVat } from "./helpers";
 
 test("a VAT number is checked for its country and never given to two contacts", async ({
   page,
@@ -7,7 +7,7 @@ test("a VAT number is checked for its country and never given to two contacts", 
   const t = tag();
   const vat = uniqueVat("BE");
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(`E2E Checked ${t}`);
   await page.getByLabel("Country (ISO-2)").fill("BE");
   await page.getByLabel("VAT number").fill("BE0464648411");
@@ -20,7 +20,7 @@ test("a VAT number is checked for its country and never given to two contacts", 
   await expect(page.getByRole("heading", { level: 1, name: `E2E Checked ${t}` })).toBeVisible();
   await expect(page.getByLabel("VAT number")).toHaveValue(vat);
 
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(`E2E Twin ${t}`);
   await page.getByLabel("VAT number").fill(vat);
   await page.getByRole("button", { name: "Create contact" }).click();
@@ -32,7 +32,7 @@ test("a contact's addresses are added and removed, and it can be called in one t
 }) => {
   const t = tag();
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(`E2E Addresses ${t}`);
   await page.getByLabel("Mobile").fill("+32 470 12 34 56");
   await page.getByRole("button", { name: "Create contact" }).click();
@@ -55,7 +55,7 @@ test("a contact's addresses are added and removed, and it can be called in one t
   await expect(item).toContainText("Zeebrugge, BE");
 
   // Found by the contacts search through the child address.
-  await page.goto(`/contacts?q=${encodeURIComponent(`Warehouse ${t}`)}`);
+  await open(page, `/contacts?q=${encodeURIComponent(`Warehouse ${t}`)}`);
   await expect(page.getByRole("link", { name: `E2E Addresses ${t}` })).toBeVisible();
   await page.getByRole("link", { name: `E2E Addresses ${t}` }).click();
 

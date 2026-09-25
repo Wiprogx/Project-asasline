@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, tag } from "./helpers";
+import { login, open, tag } from "./helpers";
 
 test("the customer copy carries the price and the trucker copy does not", async ({ page }) => {
   const t = tag();
@@ -8,12 +8,12 @@ test("the customer copy carries the price and the trucker copy does not", async 
     window.print = () => undefined;
   });
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -26,14 +26,14 @@ test("the customer copy carries the price and the trucker copy does not", async 
   const base = page.url();
 
   await expect(page.getByRole("link", { name: "Customer copy (with price)" })).toBeVisible();
-  await page.goto(base.replace("/bookings/", "/print/bookings/") + "/customer");
+  await open(page, base.replace("/bookings/", "/print/bookings/") + "/customer");
   await expect(page.getByRole("heading", { name: "Booking confirmation" }).first()).toBeVisible();
   await expect(page.getByText(client)).toBeVisible();
   await expect(page.getByText("Ocean freight to Mersin")).toBeVisible();
   await expect(page.getByText("€1,900.00").first()).toBeVisible();
   await expect(page.getByText(/article 41/)).toBeVisible();
 
-  await page.goto(base.replace("/bookings/", "/print/bookings/") + "/trucker");
+  await open(page, base.replace("/bookings/", "/print/bookings/") + "/trucker");
   await expect(page.getByRole("heading", { name: "Loading order" }).first()).toBeVisible();
   await expect(page.getByText(ref).first()).toBeVisible();
   await expect(page.getByText("Container — number to follow")).toBeVisible();

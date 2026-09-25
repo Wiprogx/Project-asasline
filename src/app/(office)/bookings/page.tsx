@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { may } from "@/domain/permissions";
 import { BOOKING_STATUS_META, BOOKING_STATUSES, type BookingStatus } from "@/domain/shipments";
 import { BookingsTable } from "@/features/bookings/components/bookings-table";
@@ -28,17 +28,20 @@ export default async function BookingsPage({ searchParams }: PageProps<"/booking
         actions={
           <>
             {status && (
-              <Button variant="ghost" size="sm" render={<Link href="/bookings" />}>
+              <Link href="/bookings" className={buttonVariants({ variant: "ghost", size: "sm" })}>
                 All active
-              </Button>
+              </Link>
             )}
-            <Button variant="ghost" size="sm" render={<Link href="/bookings?status=cancelled" />}>
+            <Link
+              href="/bookings?status=cancelled"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
               Cancelled
-            </Button>
+            </Link>
             {may(user, "bookings.edit") && (
-              <Button size="sm" render={<Link href="/bookings/new" />}>
+              <Link href="/bookings/new" className={buttonVariants({ size: "sm" })}>
                 New booking
-              </Button>
+              </Link>
             )}
           </>
         }

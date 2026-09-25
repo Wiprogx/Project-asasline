@@ -1,12 +1,12 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 const officeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(new Date());
 
 async function contact(page: Page, name: string) {
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(name);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
@@ -35,7 +35,7 @@ test("a large bill needs a second person before it is paid, then the bank pays i
   await login(page);
   await contact(page, supplier);
 
-  await page.goto("/accounting/bills");
+  await open(page, "/accounting/bills");
   await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
@@ -54,7 +54,7 @@ test("a large bill needs a second person before it is paid, then the bank pays i
   // A second person — an Accountant — approves.
   const email = `acct.${t}@e2e.test`;
   const password = `pw-${t}-${t}`;
-  await page.goto("/settings/people");
+  await open(page, "/settings/people");
   await page.getByLabel("Name").fill(`Accountant ${t}`);
   await page.getByLabel("Email").fill(email);
   await page.locator("#p-role").selectOption("accountant"); // the add-person form, not a staff row
@@ -62,7 +62,7 @@ test("a large bill needs a second person before it is paid, then the bank pays i
   await submit(page, page.getByRole("button", { name: "Add person" }));
   const other = await (await browser.newContext()).newPage();
   await login(other, { email, password });
-  await other.goto(billUrl);
+  await open(other, billUrl);
   await submit(other, other.getByRole("button", { name: "Approve for payment" }));
   await expectToast(other, "Approved — it can be paid");
 
@@ -71,7 +71,7 @@ test("a large bill needs a second person before it is paid, then the bank pays i
     "Boekingsdatum;Bedrag;Naam tegenpartij;Mededeling",
     `${officeToday()};-7260,00;${supplier};Facture ${ref}`,
   ].join("\n");
-  await page.goto("/accounting/bank");
+  await open(page, "/accounting/bank");
   await page
     .getByLabel("Statement file (CODA or CSV)")
     .setInputFiles({ name: `out-${t}.csv`, mimeType: "text/csv", buffer: Buffer.from(csv) });
@@ -84,11 +84,11 @@ test("a large bill needs a second person before it is paid, then the bank pays i
       .getByText(/the supplier's number/),
   ).toBeVisible();
   await submit(page, page.getByRole("button", { name: "Match the sure ones" }));
-  await page.goto(billUrl);
+  await open(page, billUrl);
   await expect(page.getByRole("heading", { name: /^Payments/ })).toContainText("Paid");
 
   // The same supplier number cannot be recorded twice.
-  await page.goto("/accounting/bills");
+  await open(page, "/accounting/bills");
   await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
@@ -104,13 +104,13 @@ test("a supplier bill on a booking is its cost, and the margin follows", async (
   await login(page);
   await contact(page, client);
   await contact(page, haulier);
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const billing = `${page.url()}/billing`;
 
-  await page.goto(billing);
+  await open(page, billing);
   await page.getByLabel("Supplier", { exact: true }).selectOption({ label: haulier });
   await page.getByRole("button", { name: "Record a supplier bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${haulier}`);
@@ -119,6 +119,6 @@ test("a supplier bill on a booking is its cost, and the margin follows", async (
   await recordBill(page, `T-${t}`);
   await expectToast(page, /Recorded as BILL\//);
 
-  await page.goto(billing);
+  await open(page, billing);
   await expect(page.getByText(/costs €400\.00 · margin [−-]?€[−-]?400\.00/)).toBeVisible();
 });

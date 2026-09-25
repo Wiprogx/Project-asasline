@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** The printed copies of the booking: the customer's with the price, one per driver without. */
@@ -11,14 +11,15 @@ export function CopiesCard({
 }) {
   const base = `/print/bookings/${bookingId}`;
   const link = (href: string, label: string) => (
-    <Button
+    <a
       key={href}
-      variant="outline"
-      size="sm"
-      render={<a href={href} target="_blank" rel="noopener" />}
+      href={href}
+      target="_blank"
+      rel="noopener"
+      className={buttonVariants({ variant: "outline", size: "sm" })}
     >
       {label}
-    </Button>
+    </a>
   );
   return (
     <Card className="lg:col-span-2">

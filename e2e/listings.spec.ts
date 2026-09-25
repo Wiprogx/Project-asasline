@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, submit, tag, uniqueVat } from "./helpers";
+import { login, open, submit, tag, uniqueVat } from "./helpers";
 
 test("a service to an EU business is on the intra-community listing and in the CSV export", async ({
   page,
@@ -7,7 +7,7 @@ test("a service to an EU business is on the intra-community listing and in the C
   const t = tag();
   const client = `E2E Berlin GmbH ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Country (ISO-2)").fill("DE");
   const vat = uniqueVat("DE");
@@ -15,7 +15,7 @@ test("a service to an EU business is on the intra-community listing and in the C
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/accounting");
+  await open(page, "/accounting");
   await page.getByLabel("Customer", { exact: true }).selectOption({ label: client });
   await page.getByRole("button", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
@@ -28,7 +28,7 @@ test("a service to an EU business is on the intra-community listing and in the C
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INV\//);
   const number = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
 
-  await page.goto("/accounting/listings");
+  await open(page, "/accounting/listings");
   const row = page.getByRole("row").filter({ hasText: client });
   await expect(row).toContainText(vat);
   await expect(row).toContainText("€300.00");
@@ -40,7 +40,7 @@ test("a service to an EU business is on the intra-community listing and in the C
     `issuedBy="DE">${vat.slice(2)}</ns2:CompanyVATNumber><ns2:Code>S</ns2:Code><ns2:Amount>300.00`,
   );
 
-  await page.goto("/accounting/journal");
+  await open(page, "/accounting/journal");
   const href = await page
     .getByRole("link", { name: "Export for the accountant (CSV)" })
     .getAttribute("href");
