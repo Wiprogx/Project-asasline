@@ -1,9 +1,9 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 async function contact(page: Page, name: string, email?: string) {
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(name);
   if (email) await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Create contact" }).click();
@@ -11,7 +11,7 @@ async function contact(page: Page, name: string, email?: string) {
 }
 
 async function booking(page: Page, client: string) {
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   const heading = page.getByRole("heading", { level: 1 });
@@ -47,7 +47,7 @@ test("internal chat links a bare booking number", async ({ page }) => {
   await login(page);
   await contact(page, `E2E Chat Client ${t}`);
   const b = await booking(page, `E2E Chat Client ${t}`);
-  await page.goto("/discuss/room/office");
+  await open(page, "/discuss/room/office");
   await page
     .getByLabel("Message", { exact: true })
     .fill(`${b.ref.toLowerCase()} vgm 31200 kgs ${t}`);
@@ -61,7 +61,7 @@ test("a message waits in its role's queue until someone takes it", async ({ page
   const t = tag();
   const subject = `Payment question ${t}`;
   await login(page);
-  await page.goto("/discuss/queue");
+  await open(page, "/discuss/queue");
   await logIncoming(page, {
     from: "someone@example.com",
     topic: "An invoice or a payment",
@@ -71,7 +71,7 @@ test("a message waits in its role's queue until someone takes it", async ({ page
   // Routed to the Accountant role: not in the Admin's own queue, but in the all-roles view.
   await page.reload();
   await expect(page.getByText(subject)).toHaveCount(0);
-  await page.goto("/discuss/queue?all=1");
+  await open(page, "/discuss/queue?all=1");
   const item = page.getByRole("listitem").filter({ hasText: subject });
   await expect(item.getByText("Accountant")).toBeVisible();
   await submit(page, item.getByRole("button", { name: "Take it" }));
@@ -99,7 +99,7 @@ test("writing from a booking stamps the subject key, and a reply finds its way b
   await contact(page, stranger);
   const b = await booking(page, client);
 
-  await page.goto(`${b.url}/messages`);
+  await open(page, `${b.url}/messages`);
   await page
     .getByLabel("To a party on the file")
     .selectOption({ label: `${client} (Customer, Payer)` });
@@ -117,14 +117,14 @@ test("writing from a booking stamps the subject key, and a reply finds its way b
   await expect(page.getByText("Recorded — not sent by the app")).toBeVisible();
 
   // The reply carries the key: logged anywhere, it lands on this booking.
-  await page.goto("/discuss/queue");
+  await open(page, "/discuss/queue");
   await logIncoming(page, {
     from: `client.${t}@example.com`,
     contact: client,
     subject: `Re: [${b.ref}/MSG] Your booking`,
     body: `Invoice attached ${t}`,
   });
-  await page.goto(`${b.url}/messages`);
+  await open(page, `${b.url}/messages`);
   await expect(page.getByText(`Invoice attached ${t}`)).toBeVisible();
 
   // Message guard: a contact who is not a party on the booking is flagged.
@@ -146,10 +146,10 @@ test("a message appears on a colleague's open screen without a reload", async ({
   await login(page);
   const other = await (await browser.newContext()).newPage();
   await login(other);
-  await other.goto("/discuss/room/office");
+  await open(other, "/discuss/room/office");
   await expect(other.getByLabel("Message", { exact: true })).toBeVisible();
 
-  await page.goto("/discuss/room/office");
+  await open(page, "/discuss/room/office");
   await page.getByLabel("Message", { exact: true }).fill(`Live hello ${t}`);
   await submit(page, page.getByRole("button", { name: "Send" }));
 

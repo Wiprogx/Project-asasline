@@ -1,16 +1,16 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 test("the VAT return shows the quarter's grids and gives the Intervat file", async ({ page }) => {
   const t = tag();
   const client = `E2E VAT Client ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Country (ISO-2)").fill("BE");
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -18,13 +18,13 @@ test("the VAT return shows the quarter's grids and gives the Intervat file", asy
   await page.getByRole("button", { name: "Create quotation" }).click();
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
-  await page.goto(`${page.url()}/billing`);
+  await open(page, `${page.url()}/billing`);
   await page.getByRole("button", { name: "Create draft invoice" }).click();
   await submit(page, page.getByRole("button", { name: "Issue invoice" }));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INV\//);
 
   // This quarter: the export shipping (art. 41) is in grid 47. It is not over, so not fileable.
-  await page.goto("/accounting/vat");
+  await open(page, "/accounting/vat");
   await page.getByRole("link", { name: "Next ›" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^VAT return \d{4}-Q\d$/);
   await expect(page.getByRole("row").filter({ hasText: /^47/ })).toBeVisible();

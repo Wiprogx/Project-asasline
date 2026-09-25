@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 const stepRow = (page: import("@playwright/test").Page, code: string) =>
   page.getByRole("row").filter({ has: page.getByText(code, { exact: true }) });
@@ -10,12 +10,12 @@ test("a file is filed by its name, proves a document step, and is taken off with
   const t = tag();
   const client = `E2E Files Client ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("GALBV");
@@ -24,7 +24,7 @@ test("a file is filed by its name, proves a document step, and is taken off with
   const base = page.url();
 
   // Gabon asks for its BIETC; the invoice waits on the request for it.
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(page.getByRole("heading", { name: /Required papers · \d+ missing/ })).toBeVisible();
   await expect(stepRow(page, "INVOICE").getByText("Waits on ASK_INV")).toBeVisible();
 
@@ -58,11 +58,11 @@ test("a file is filed by its name, proves a document step, and is taken off with
   await expect(stepRow(page, "ASK_INV").getByText("Done")).toBeVisible();
   await expect(stepRow(page, "INVOICE").getByText("Open")).toBeVisible();
   // …and its task exists: the chain was re-planned, not only redrawn.
-  await page.goto(`${base}/tasks`);
+  await open(page, `${base}/tasks`);
   await expect(
     page.getByRole("listitem").filter({ hasText: "Get the export invoice from the customer" }),
   ).toBeVisible();
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
 
   // A kind of file the office does not keep is refused.
   await page.getByLabel("File", { exact: true }).setInputFiles({
@@ -79,6 +79,6 @@ test("a file is filed by its name, proves a document step, and is taken off with
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Take off" }));
   await expectToast(page, "Taken off the booking");
   await expect(row).toHaveCount(0);
-  await page.goto(`${base}/history`);
+  await open(page, `${base}/history`);
   await expect(page.getByText(/booking\.file\.archive|Wrong booking/)).toBeVisible();
 });

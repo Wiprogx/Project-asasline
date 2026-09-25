@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 const officeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(new Date());
@@ -11,13 +11,13 @@ const plusDays = (day: string, n: number) => {
 };
 
 async function bookingFromQuote(page: Page, client: string) {
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Country (ISO-2)").fill("BE");
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -36,7 +36,7 @@ test("a booking is invoiced, the invoice issued, credited and re-drafted", async
   const booking = await bookingFromQuote(page, `E2E Invoice Client ${t}`);
 
   // Billing: nothing invoiced yet; the quotation line is proposed in full.
-  await page.goto(`${booking}/billing`);
+  await open(page, `${booking}/billing`);
   await expect(page.getByText("Not invoiced")).toBeVisible();
   await expect(page.getByRole("cell", { name: "1 / 1" })).toBeVisible();
   await page.getByRole("button", { name: "Create draft invoice" }).click();
@@ -63,7 +63,7 @@ test("a booking is invoiced, the invoice issued, credited and re-drafted", async
   await expect(page.getByText(/\+\+\+\d{3}\/\d{4}\/\d{5}\+\+\+/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Add line" })).toHaveCount(0); // frozen
 
-  await page.goto(`${booking}/billing`);
+  await open(page, `${booking}/billing`);
   await expect(page.getByText("Invoiced", { exact: true })).toBeVisible();
   await expect(page.getByText("Everything on this booking is invoiced.")).toBeVisible();
 
@@ -73,7 +73,7 @@ test("a booking is invoiced, the invoice issued, credited and re-drafted", async
   await page.getByLabel("Reason").fill("Wrong customer reference");
   await page.getByRole("dialog").getByRole("button", { name: "Issue the credit note" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
-  await page.goto(`${booking}/billing`);
+  await open(page, `${booking}/billing`);
   await expect(page.getByText("Not invoiced")).toBeVisible();
   const cnLink = page.getByRole("link", { name: /^CN\/\d{4}\/\d{5}$/ });
   await expect(cnLink).toBeVisible();
@@ -86,13 +86,13 @@ test("a booking is invoiced, the invoice issued, credited and re-drafted", async
   await expectToast(page, "Draft discarded");
 
   // The original says who credited it; the credit note prints with the letterhead.
-  await page.goto(`${booking}/billing`);
+  await open(page, `${booking}/billing`);
   await page.getByRole("link", { name: number }).click();
   await expect(page.getByText(/credited by CN\//)).toBeVisible();
   await page.addInitScript(() => (window.print = () => undefined));
-  await page.goto(`${booking}/billing`);
+  await open(page, `${booking}/billing`);
   const cnHref = await page.getByRole("link", { name: /^CN\// }).getAttribute("href");
-  await page.goto(cnHref!.replace("/accounting/invoices/", "/print/invoices/"));
+  await open(page, cnHref!.replace("/accounting/invoices/", "/print/invoices/"));
   await expect(page.getByText("ASASLINE S.A.")).toBeVisible();
   await expect(page.getByText("Credit note", { exact: true })).toBeVisible();
   await expect(page.getByText("Reason: Wrong customer reference")).toBeVisible();
@@ -103,7 +103,7 @@ test("an invoice number is never reused: numbers only go up", async ({ page }) =
   await login(page);
   const numbers: string[] = [];
   for (const n of [1, 2]) {
-    await page.goto("/accounting");
+    await open(page, "/accounting");
     await page.getByLabel("Customer", { exact: true }).selectOption({ index: 1 });
     await page.getByRole("button", { name: "New invoice" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);

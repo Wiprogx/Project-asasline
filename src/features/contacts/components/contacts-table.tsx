@@ -28,7 +28,7 @@ export function ContactsTable({ rows }: { rows: ContactRow[] }) {
       </TableHeader>
       <TableBody>
         {rows.map((c) => (
-          <TableRow key={c.id} className={c.archived ? "opacity-60" : undefined}>
+          <TableRow key={c.id} className={c.archived ? "text-muted-foreground" : undefined}>
             <TableCell>
               <Link
                 href={`/contacts/${c.id}`}

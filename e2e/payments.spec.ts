@@ -1,18 +1,18 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 const officeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(new Date());
 
 /** An issued invoice of 1,250.00 (export, VAT-exempt), from a quotation → booking. */
 async function issuedInvoice(page: Page, client: string) {
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Country (ISO-2)").fill("BE");
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -20,7 +20,7 @@ async function issuedInvoice(page: Page, client: string) {
   await page.getByRole("button", { name: "Create quotation" }).click();
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
-  await page.goto(`${page.url()}/billing`);
+  await open(page, `${page.url()}/billing`);
   await page.getByRole("button", { name: "Create draft invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
   await submit(page, page.getByRole("button", { name: "Issue invoice" }));
@@ -64,7 +64,7 @@ test("an invoice is paid by hand and by the bank, and a reversal reopens it", as
   ].join("\n");
   const file = { name: `statement-${t}.csv`, mimeType: "text/csv", buffer: Buffer.from(csv) };
 
-  await page.goto("/accounting/bank");
+  await open(page, "/accounting/bank");
   await page.getByLabel("Statement file (CODA or CSV)").setInputFiles(file);
   await submit(page, page.getByRole("button", { name: "Import statement" }));
   await expectToast(page, "3 lines imported");
@@ -87,7 +87,7 @@ test("an invoice is paid by hand and by the bank, and a reversal reopens it", as
   await page.getByRole("dialog").getByRole("button", { name: "Set aside" }).click();
   await expectToast(page, "Line set aside");
 
-  await page.goto(inv.url);
+  await open(page, inv.url);
   await expect(payments(page)).toContainText("Paid");
   await expect(page.getByRole("button", { name: "Register payment" })).toHaveCount(0);
 
@@ -99,7 +99,7 @@ test("an invoice is paid by hand and by the bank, and a reversal reopens it", as
   await expectToast(page, "Payment reversed");
   await expect(payments(page)).toContainText("Partly paid");
   await expect(page.getByText("Reversed").first()).toBeVisible();
-  await page.goto("/accounting/bank");
+  await open(page, "/accounting/bank");
   await expect(
     page
       .getByRole("listitem")

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { parseYmd } from "@/domain/dates";
 import { monthGrid, shiftMonth } from "@/domain/tasks";
 import { NewTaskForm } from "@/features/activity/components/new-task-form";
@@ -47,21 +47,19 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
       <div className="flex flex-wrap items-center justify-between gap-2">
         <TaskFilters staff={staff} />
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            render={<Link href={href({ month: shiftMonth(month, -1) })} />}
+          <Link
+            href={href({ month: shiftMonth(month, -1) })}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             ‹
-          </Button>
+          </Link>
           <span className="w-20 text-center font-mono text-sm">{month}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            render={<Link href={href({ month: shiftMonth(month, 1) })} />}
+          <Link
+            href={href({ month: shiftMonth(month, 1) })}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             ›
-          </Button>
+          </Link>
         </div>
       </div>
       <TaskCalendar

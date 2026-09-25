@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelled", async ({
   page,
@@ -8,7 +8,7 @@ test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelle
   const t = tag();
   const supplier = `E2E SEPA Haulier ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(supplier);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: supplier })).toBeVisible();
@@ -22,7 +22,7 @@ test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelle
   await expectToast(page, "IBAN added");
   await expect(page.getByText("BE68 5390 0754 7034")).toBeVisible();
 
-  await page.goto("/accounting/bills");
+  await open(page, "/accounting/bills");
   await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
@@ -35,7 +35,7 @@ test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelle
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BILL\//);
   const number = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
 
-  await page.goto("/accounting/sepa");
+  await open(page, "/accounting/sepa");
   const pay = page.getByRole("checkbox", { name: `Pay ${number}` });
   await pay.check();
   const [download] = await Promise.all([

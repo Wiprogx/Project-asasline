@@ -24,7 +24,7 @@ export function PeopleTable({ rows, selfId }: { rows: PersonRow[]; selfId: strin
       </TableHeader>
       <TableBody>
         {rows.map((p) => (
-          <TableRow key={p.id} className={p.active ? undefined : "opacity-60"}>
+          <TableRow key={p.id} className={p.active ? undefined : "text-muted-foreground"}>
             <TableCell className="font-medium">
               {p.name}
               {p.id === selfId && <span className="text-muted-foreground"> (you)</span>}

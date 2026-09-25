@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 const digits = (v: string) => v.replace(/[^\d+]/g, "");
 
@@ -20,9 +20,12 @@ export function ContactReach({
   return (
     <div className="flex flex-wrap gap-2">
       {call && (
-        <Button variant="outline" size="sm" render={<a href={`tel:${digits(call)}`} />}>
+        <a
+          href={`tel:${digits(call)}`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
           Call {call}
-        </Button>
+        </a>
       )}
       {wa && (
         <Button
@@ -40,9 +43,9 @@ export function ContactReach({
         </Button>
       )}
       {email && (
-        <Button variant="outline" size="sm" render={<a href={`mailto:${email}`} />}>
+        <a href={`mailto:${email}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Email
-        </Button>
+        </a>
       )}
     </div>
   );

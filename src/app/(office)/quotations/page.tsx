@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { QuotationsTable } from "@/features/quotations/components/quotations-table";
 import { listQuotations } from "@/features/quotations/queries";
 import { requirePagePermission } from "@/server/auth/dal";
@@ -19,9 +19,9 @@ export default async function QuotationsPage({ searchParams }: PageProps<"/quota
         title="Quotations"
         description={`${rows.length} quotations`}
         actions={
-          <Button size="sm" render={<Link href="/quotations/new" />}>
+          <Link href="/quotations/new" className={buttonVariants({ size: "sm" })}>
             New quotation
-          </Button>
+          </Link>
         }
       />
       <div className="mb-4">

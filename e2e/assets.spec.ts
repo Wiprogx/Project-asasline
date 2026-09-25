@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 test("equipment on a bill becomes an asset, depreciated, and leaves the books when disposed of", async ({
   page,
@@ -8,12 +8,12 @@ test("equipment on a bill becomes an asset, depreciated, and leaves the books wh
   const supplier = `E2E IT Shop ${t}`;
   const laptop = `Dell laptop ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(supplier);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: supplier })).toBeVisible();
 
-  await page.goto("/accounting/bills");
+  await open(page, "/accounting/bills");
   await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
@@ -27,7 +27,7 @@ test("equipment on a bill becomes an asset, depreciated, and leaves the books wh
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BILL\//);
 
   // An asset, not a cost: IT over three years, nothing depreciated in the month it was bought.
-  await page.goto("/accounting/assets");
+  await open(page, "/accounting/assets");
   const row = page.getByRole("row").filter({ hasText: laptop });
   await expect(row).toContainText("€1,200.00");
   await expect(row.getByLabel("Years")).toHaveValue("3");
@@ -42,7 +42,7 @@ test("equipment on a bill becomes an asset, depreciated, and leaves the books wh
   await expect(row).toContainText("Stolen from the car");
 
   // The journal books the disposal on its day: the whole cost as a loss.
-  await page.goto(`/accounting/journal?q=${encodeURIComponent(laptop)}`);
+  await open(page, `/accounting/journal?q=${encodeURIComponent(laptop)}`);
   const head = page.getByRole("row").filter({ hasText: `Disposed · ${laptop}` });
   await expect(head).toBeVisible();
 });

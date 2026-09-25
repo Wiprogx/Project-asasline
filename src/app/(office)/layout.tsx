@@ -1,5 +1,8 @@
 import { cookies } from "next/headers";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { FocusHeading } from "@/components/layout/focus-heading";
+import { SkipLink } from "@/components/layout/skip-link";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { PortDatalist } from "@/components/shared/port-datalist";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -18,16 +21,21 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
+      <SkipLink />
+      <FocusHeading />
       <AppSidebar
         allowed={allowed}
         user={{ name: user.name, roleLabel: ROLE_LABEL[user.role] }}
         logout={logout}
       />
-      <SidebarInset>
+      <SidebarInset id="main">
         <header className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-4" />
           <span className="text-sm text-muted-foreground">ASASLINE S.A. · Brussels</span>
+          <span className="ml-auto">
+            <ThemeToggle />
+          </span>
         </header>
         <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
         <PortDatalist ports={await readPorts()} />

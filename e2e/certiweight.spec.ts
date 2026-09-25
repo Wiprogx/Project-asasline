@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 const stepRow = (page: Page, text: string | RegExp) =>
   page.getByRole("row").filter({ hasText: text });
@@ -12,13 +12,13 @@ test("Certiweight is one step per container, the VGM waits on the weights, and t
   const t = tag();
   const client = `E2E Certi Client ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // Sold on the quotation: the booking gets the steps.
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("GALBV");
@@ -31,12 +31,12 @@ test("Certiweight is one step per container, the VGM waits on the weights, and t
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const base = page.url();
 
-  await page.goto(`${base}/containers`);
+  await open(page, `${base}/containers`);
   await submit(page, page.getByRole("button", { name: "Add container" }));
   await expectToast(page, /added/i);
 
   // The VGM rule waits on the weights (the office ticks it; a saved rule book keeps its own VGM row).
-  await page.goto("/settings/rules");
+  await open(page, "/settings/rules");
   await page
     .getByRole("row")
     .filter({ hasText: "Confirm the VGM was sent" })
@@ -48,29 +48,29 @@ test("Certiweight is one step per container, the VGM waits on the weights, and t
   await expectToast(page, /re-planned/);
 
   // One Certiweight step per box; the VGM waits on both weights.
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, /CERTIWEIGHT · box 1/)).toBeVisible();
   await expect(stepRow(page, /CERTIWEIGHT · box 2/)).toBeVisible();
   await expect(stepRow(page, /Confirm the VGM was sent/)).toContainText("the weight of box 1");
 
-  await page.goto(`${base}/containers`);
+  await open(page, `${base}/containers`);
   await page.getByLabel("Cargo kg").nth(0).fill("18000");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).nth(0));
   await expectToast(page, /saved/i);
   await page.getByLabel("Cargo kg").nth(1).fill("19000");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).nth(1));
   await expectToast(page, /saved/i);
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, /Confirm the VGM was sent/).getByText("Open")).toBeVisible();
 
   // Loading confirmed: the Certiweight steps open, one per box.
-  await page.goto(`${base}/tasks`);
+  await open(page, `${base}/tasks`);
   await submit(
     page,
     taskRow(page, "Confirm the container was loaded").getByRole("button", { name: "Done" }),
   );
   await expectToast(page, "Done");
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, /CERTIWEIGHT · box 1/).getByText("Open")).toBeVisible();
 
   // The certificate of box 1 settles box 1's step only.
@@ -93,7 +93,7 @@ test("Certiweight is one step per container, the VGM waits on the weights, and t
   ).toContainText("Missing");
 
   // The weighing was done: the charge cannot leave the quotation.
-  await page.goto(quotation);
+  await open(page, quotation);
   await page
     .getByRole("row")
     .filter({ hasText: "Ocean freight + Certiweight" })
@@ -104,10 +104,10 @@ test("Certiweight is one step per container, the VGM waits on the weights, and t
   await expectToast(page, /the charge stays/);
 
   // A box that leaves the booking takes its step with it.
-  await page.goto(`${base}/containers`);
+  await open(page, `${base}/containers`);
   await page.getByRole("button", { name: "Remove" }).last().click();
   await page.getByPlaceholder("Why? It stays on the record.").fill("One box less");
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Remove" }));
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, /CERTIWEIGHT · box 2/)).toHaveCount(0);
 });
