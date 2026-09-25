@@ -112,4 +112,4 @@ Unattended runs take the default below and record it in `docs/ADOPTION_DECISIONS
 ## 10. Known gaps between docs and code, and deviations from the standard
 
 - No integration test suite against a real Postgres yet (database suite is skipped by the gate).
-- Browser suite (`npm run e2e`, Playwright) covers smoke, bookings and settings journeys; no axe yet.
+- Browser suite (`npm run e2e`, Playwright) covers every module's journeys and runs axe (WCAG 2.2 AA) over the office screens in both themes (`e2e/axe.spec.ts`).

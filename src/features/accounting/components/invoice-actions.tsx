@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ActionForm } from "@/components/shared/action-form";
 import { NativeSelect } from "@/components/shared/native-select";
 import { ReasonDialog } from "@/components/shared/reason-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -113,12 +113,20 @@ export function InvoiceActions(p: {
 }) {
   const print = p.status === "issued" && (
     <>
-      <Button variant="outline" render={<Link href={`/print/invoices/${p.id}`} target="_blank" />}>
+      <Link
+        href={`/print/invoices/${p.id}`}
+        target="_blank"
+        className={buttonVariants({ variant: "outline" })}
+      >
         Print / PDF
-      </Button>
-      <Button variant="outline" render={<a href={`/accounting/invoices/${p.id}/ubl`} download />}>
+      </Link>
+      <a
+        href={`/accounting/invoices/${p.id}/ubl`}
+        download
+        className={buttonVariants({ variant: "outline" })}
+      >
         Peppol file (UBL)
-      </Button>
+      </a>
     </>
   );
   if (!p.canIssue) return print || null;

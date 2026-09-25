@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 /**
  * The document rules engine end to end, on a Gabon export out of Antwerp:
@@ -30,12 +30,12 @@ test("a booking's document chain follows the rules", async ({ page }) => {
   const t = tag();
   const client = `E2E Rules Client ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("GALBV");
@@ -43,26 +43,26 @@ test("a booking's document chain follows the rules", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const base = page.url();
 
-  await page.goto(`${base}/edit`);
+  await open(page, `${base}/edit`);
   for (const [label, day] of Object.entries(CLOSINGS))
     await page.getByLabel(label, { exact: true }).fill(day);
   await saveDetails(page);
 
   // The VGM step waits on the box's weight (legacy weightsReady): give it one.
-  await page.goto(`${base}/containers`);
+  await open(page, `${base}/containers`);
   await page.getByLabel("Cargo kg").first().fill("18000");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
   await expectToast(page, /saved/i);
 
   // The chain: Gabon's papers are in, the invoice waits on the request, a weekend is explained.
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, "BIETC_FILE")).toBeVisible();
   await expect(stepRow(page, "INVOICE").getByText("Waits on ASK_INV")).toBeVisible();
   await expect(stepRow(page, "ASK_INV")).toContainText("2026-10-02");
   await expect(stepRow(page, "ASK_INV")).toContainText("moved: Saturday");
 
   // The first steps are tasks; doing the request opens the invoice step.
-  await page.goto(`${base}/tasks`);
+  await open(page, `${base}/tasks`);
   await expect(taskRow(page, "Request the export invoice")).toBeVisible();
   await expect(taskRow(page, "Get the export invoice")).toHaveCount(0);
   await submit(
@@ -74,25 +74,25 @@ test("a booking's document chain follows the rules", async ({ page }) => {
   await expect(taskRow(page, "Get the export invoice")).toBeVisible();
 
   // Dates follow the booking: a later VGM closing redates the open VGM step.
-  await page.goto(`${base}/edit`);
+  await open(page, `${base}/edit`);
   await page.getByLabel("VGM closing").fill("2026-10-07");
   await saveDetails(page);
-  await page.goto(`${base}/tasks`);
+  await open(page, `${base}/tasks`);
   await expect(taskRow(page, "Confirm the VGM was sent")).toContainText("2026-10-07");
 
   // Re-routed to Turkey: Gabon's open papers are withdrawn, with the reason.
-  await page.goto(`${base}/edit`);
+  await open(page, `${base}/edit`);
   await page.getByLabel("Port of discharge").fill("TRMER");
   await saveDetails(page);
-  await page.goto(`${base}/tasks`);
+  await open(page, `${base}/tasks`);
   await expect(taskRow(page, "Request the BIETC number")).toContainText(
     "The document rule no longer applies to this booking",
   );
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, "BIETC_FILE")).toHaveCount(0);
 
   // History records the engine's work.
-  await page.goto(`${base}/history`);
+  await open(page, `${base}/history`);
   await expect(page.getByText(/^Document chain updated — opened .*ASK_INV/).first()).toBeVisible();
 });
 
@@ -101,45 +101,45 @@ test("a holiday moves a deadline, and removing it moves it back", async ({ page 
   const client = `E2E Holiday Client ${t}`;
   const holiday = `E2E Holiday ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const base = page.url();
-  await page.goto(`${base}/edit`);
+  await open(page, `${base}/edit`);
   await page.getByLabel("VGM closing").fill("2026-10-21"); // a Wednesday
   await saveDetails(page);
 
-  await page.goto("/settings/holidays");
+  await open(page, "/settings/holidays");
   await page.getByLabel("Country").fill("BE");
   await page.getByLabel("Date").fill("2026-10-21");
   await page.getByLabel("Name").fill(holiday);
   await submit(page, page.getByRole("button", { name: "Add holiday" }));
   await expectToast(page, /re-planned/);
 
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, "VGM")).toContainText("2026-10-20");
   await expect(stepRow(page, "VGM")).toContainText(`moved: ${holiday}`);
 
-  await page.goto("/settings/holidays");
+  await open(page, "/settings/holidays");
   await submit(
     page,
     page.getByRole("listitem").filter({ hasText: holiday }).getByRole("button", { name: "Remove" }),
   );
   await expectToast(page, /re-planned/);
-  await page.goto(`${base}/documents`);
+  await open(page, `${base}/documents`);
   await expect(stepRow(page, "VGM")).toContainText("2026-10-21");
 });
 
 test("a rule switched off leaves every booking's chain, and comes back", async ({ page }) => {
   await login(page);
-  await page.goto("/settings/rules");
+  await open(page, "/settings/rules");
   const loading = page.getByRole("row").filter({ hasText: "LOADING ·" });
   await submit(page, loading.getByRole("button", { name: "Switch off" }));
   await expectToast(page, /re-planned/);
@@ -161,7 +161,7 @@ test("a rule switched off leaves every booking's chain, and comes back", async (
 
 test("a rule whose prerequisite exists nowhere is refused", async ({ page }) => {
   await login(page);
-  await page.goto("/settings/rules");
+  await open(page, "/settings/rules");
   await page.getByRole("button", { name: "Add rule" }).click();
   const d = page.getByRole("dialog");
   await d.getByLabel("Code", { exact: true }).fill(`E2E_${tag().toUpperCase().slice(0, 8)}`);
@@ -177,7 +177,7 @@ test("a rule for a service applies only where the quotation sold it", async ({ p
   const code = `E2E_S${t.toUpperCase().slice(0, 8)}`;
   const service = `certiweight-${t}`;
   await login(page);
-  await page.goto("/settings/rules");
+  await open(page, "/settings/rules");
   await page.getByRole("button", { name: "Add rule" }).click();
   const d = page.getByRole("dialog");
   await d.getByLabel("Code", { exact: true }).fill(code);
@@ -189,11 +189,11 @@ test("a rule for a service applies only where the quotation sold it", async ({ p
 
   const bookingSelling = async (what: string) => {
     const client = `E2E Sold Client ${t} ${what.length}`;
-    await page.goto("/contacts/new");
+    await open(page, "/contacts/new");
     await page.getByLabel("Name").fill(client);
     await page.getByRole("button", { name: "Create contact" }).click();
     await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-    await page.goto("/quotations/new");
+    await open(page, "/quotations/new");
     await page.getByLabel("Customer").selectOption({ label: client });
     await page.getByLabel("Port of loading").fill("BEANR");
     await page.getByLabel("Port of discharge").fill("TRMER");
@@ -202,7 +202,7 @@ test("a rule for a service applies only where the quotation sold it", async ({ p
     await page.getByRole("button", { name: "Create quotation" }).click();
     await page.getByRole("button", { name: "Accept → create booking" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
-    await page.goto(`${page.url()}/documents`);
+    await open(page, `${page.url()}/documents`);
   };
 
   // Not sold: not our job.
@@ -213,7 +213,7 @@ test("a rule for a service applies only where the quotation sold it", async ({ p
   await expect(stepRow(page, code)).toBeVisible();
 
   // Out of the rule book again.
-  await page.goto("/settings/rules");
+  await open(page, "/settings/rules");
   await submit(
     page,
     page

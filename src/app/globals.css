@@ -53,11 +53,52 @@
 }
 
 /*
- * ASASLINE palette, carried over from the legacy app (dark only, locked):
- * bg #0A121D · surface #121E2E / #1A2A3F / #22364F · border #243448 · text #E9EEF4 / #8FA0B5
- * accent #2DD4A7 · amber #F2A649 · red #EF5A5A · blue #4B9FE8 · purple #A78BFA · gold #C9A961
+ * The palette. Dark is the legacy ASASLINE look (bg #0A121D · surface #121E2E / #1A2A3F / #22364F
+ * · border #243448 · text #E9EEF4 / #8FA0B5 · accent #2DD4A7 · amber #F2A649 · red #EF5A5A ·
+ * blue #4B9FE8 · purple #A78BFA · gold #C9A961). Light is the same family on white, each text
+ * token at 4.5:1 or better on its surfaces (WCAG 2.2 AA). The theme toggle sets the class.
  */
 :root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0b7a61;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2f6;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #526277;
+  --accent: #e6ebf1;
+  --accent-foreground: #0f172a;
+  --destructive: #b71c1c;
+  --success: #0a6a54;
+  --warning: #8a5100;
+  --info: #1d5fb0;
+  --gold: #8a6d2f;
+  --border: #d5dce5;
+  --input: #d5dce5;
+  --ring: #0b7a61;
+  --chart-1: #0b7a61;
+  --chart-2: #1d5fb0;
+  --chart-3: #9a5b00;
+  --chart-4: #6d4fc2;
+  --chart-5: #8a6d2f;
+  --radius: 0.625rem;
+  --sidebar: #f5f7fa;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #0b7a61;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6ebf1;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #d5dce5;
+  --sidebar-ring: #0b7a61;
+}
+
+.dark {
   color-scheme: dark;
   --background: #0a121d;
   --foreground: #e9eef4;
@@ -73,7 +114,7 @@
   --muted-foreground: #8fa0b5;
   --accent: #22364f;
   --accent-foreground: #e9eef4;
-  --destructive: #ef5a5a;
+  --destructive: #f47474;
   --success: #2dd4a7;
   --warning: #f2a649;
   --info: #4b9fe8;
@@ -100,6 +141,20 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
   body {
     @apply bg-background text-foreground;

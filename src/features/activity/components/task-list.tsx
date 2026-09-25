@@ -19,7 +19,12 @@ function TaskItem({ t, today, staff }: { t: TaskRow; today: string; staff: Staff
       <div className="grid min-w-0 gap-1">
         <span className="font-medium [overflow-wrap:anywhere]">
           {t.blocking && t.state === "open" && (
-            <span className="mr-1" title="Stops the shipment if missed" aria-label="Blocking">
+            <span
+              className="mr-1"
+              role="img"
+              title="Stops the shipment if missed"
+              aria-label="Blocking"
+            >
               ⛔
             </span>
           )}

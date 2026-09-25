@@ -47,7 +47,7 @@ export function SepaForm({
         {bills.map((b) => (
           <li key={b.id}>
             <label
-              className={`flex items-start gap-3 rounded-md border p-2.5 ${b.problem ? "opacity-60" : ""}`}
+              className={`flex items-start gap-3 rounded-md border p-2.5 ${b.problem ? "text-muted-foreground" : ""}`}
             >
               <input
                 type="checkbox"

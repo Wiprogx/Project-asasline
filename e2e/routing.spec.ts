@@ -1,12 +1,12 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 test("the routing table sends a topic to a role, takes new topics, and keeps OTHER on", async ({
   page,
 }) => {
   const code = `T${tag()}`.toUpperCase().slice(0, 18);
   await login(page);
-  await page.goto("/settings/routing");
+  await open(page, "/settings/routing");
 
   await page.getByLabel("INVOICE goes to").selectOption("docs_clerk");
   await page.getByRole("button", { name: "+ Topic" }).click();

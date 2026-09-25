@@ -58,6 +58,7 @@ export function ReasonDialog({
           {reasons ? (
             <NativeSelect
               name="reason"
+              aria-label="Reason"
               required
               options={reasons.map((r) => ({ value: r, label: r }))}
               placeholder="Choose a reason…"
@@ -65,6 +66,7 @@ export function ReasonDialog({
           ) : (
             <Textarea
               name="reason"
+              aria-label="Reason"
               required
               minLength={3}
               placeholder="Why? It stays on the record."

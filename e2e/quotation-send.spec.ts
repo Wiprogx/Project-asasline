@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag } from "./helpers";
+import { expectToast, login, open, submit, tag } from "./helpers";
 
 test("an all-inclusive quotation is printed and sent, with a follow-up for tomorrow", async ({
   page,
@@ -17,13 +17,13 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   });
   await login(page);
 
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Email").fill(`send.${t}@example.com`);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/quotations/new");
+  await open(page, "/quotations/new");
   await page.getByLabel("Customer").selectOption({ label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
@@ -49,7 +49,7 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   await expectToast(page, "Saved");
   await expect(handling.getByRole("button", { name: "Not named" })).toBeVisible();
 
-  await page.goto(url.replace("/quotations/", "/print/quotations/"));
+  await open(page, url.replace("/quotations/", "/print/quotations/"));
   await expect(page.getByRole("heading", { name: "Quotation" })).toBeVisible();
   await expect(page.getByText("BEANR › TRMER")).toBeVisible();
   await expect(page.getByText("€2,110.00")).toBeVisible();
@@ -57,7 +57,7 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   await expect(page.getByText("Terminal handling")).toHaveCount(0);
 
   // Sent: recorded, opened in the mail app, a follow-up for tomorrow.
-  await page.goto(url);
+  await open(page, url);
   await page.getByRole("button", { name: "Send", exact: true }).click();
   const d = page.getByRole("dialog");
   await expect(d.getByLabel("To")).toHaveValue(`send.${t}@example.com`);
@@ -71,6 +71,6 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   );
   await expect(page.getByText("Sent", { exact: true })).toBeVisible();
   await expect(page.getByText(/sent \d{4}-\d{2}-\d{2} by e-mail/)).toBeVisible();
-  await page.goto("/activity?when=all");
+  await open(page, "/activity?when=all");
   await expect(page.getByText(`Ask ${client} whether ${ref} is agreed`)).toBeVisible();
 });

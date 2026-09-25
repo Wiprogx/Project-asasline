@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pager } from "@/components/shared/pager";
 import { SearchInput } from "@/components/shared/search-input";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { pageOf } from "@/domain/period";
 import { ContactsTable } from "@/features/contacts/components/contacts-table";
 import { listContacts } from "@/features/contacts/queries";
@@ -26,16 +26,15 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
         description={archived ? "Archived contacts" : `${rows.length} contacts`}
         actions={
           <>
-            <Button
-              variant="ghost"
-              size="sm"
-              render={<Link href={archived ? "/contacts" : "/contacts?archived=1"} />}
+            <Link
+              href={archived ? "/contacts" : "/contacts?archived=1"}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
             >
               {archived ? "Show active" : "Show archived"}
-            </Button>
-            <Button size="sm" render={<Link href="/contacts/new" />}>
+            </Link>
+            <Link href="/contacts/new" className={buttonVariants({ size: "sm" })}>
               New contact
-            </Button>
+            </Link>
           </>
         }
       />

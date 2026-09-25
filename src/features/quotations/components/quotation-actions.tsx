@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import type { getQuotation, quotationLetter } from "../queries";
 import { PresentationSwitch } from "./presentation-switch";
 import { SendQuotation } from "./send-quotation";
@@ -11,13 +11,14 @@ export function QuotationActions({ q, letter }: { q: Quotation; letter: Letter }
   return (
     <div className="flex flex-wrap items-center gap-2">
       <PresentationSwitch quotationId={q.id} version={q.version} display={q.display} />
-      <Button
-        variant="outline"
-        size="sm"
-        render={<a href={`/print/quotations/${q.id}`} target="_blank" rel="noopener" />}
+      <a
+        href={`/print/quotations/${q.id}`}
+        target="_blank"
+        rel="noopener"
+        className={buttonVariants({ variant: "outline", size: "sm" })}
       >
         Print / PDF
-      </Button>
+      </a>
       <SendQuotation
         quotationId={q.id}
         version={q.version}

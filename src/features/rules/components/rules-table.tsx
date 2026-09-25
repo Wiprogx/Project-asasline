@@ -51,7 +51,10 @@ export function RulesTable({ rules, version }: { rules: DocRule[]; version: numb
       </TableHeader>
       <TableBody>
         {rules.map((r, i) => (
-          <TableRow key={`${r.code}-${r.pol}-${i}`} className={cn(!r.active && "opacity-50")}>
+          <TableRow
+            key={`${r.code}-${r.pol}-${i}`}
+            className={cn(!r.active && "text-muted-foreground")}
+          >
             <TableCell className="max-w-sm whitespace-normal">
               <span className="font-medium">
                 {r.blocking && "⛔ "}

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, submit, tag, uniqueVat } from "./helpers";
+import { expectToast, login, open, submit, tag, uniqueVat } from "./helpers";
 
 test("an issued invoice gives its Peppol file; a customer without VAT number cannot", async ({
   page,
@@ -7,7 +7,7 @@ test("an issued invoice gives its Peppol file; a customer without VAT number can
   const t = tag();
   const client = `E2E Peppol Client ${t}`;
   await login(page);
-  await page.goto("/contacts/new");
+  await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   const vat = uniqueVat("BE");
   await page.getByLabel("VAT number").fill(vat);
@@ -18,7 +18,7 @@ test("an issued invoice gives its Peppol file; a customer without VAT number can
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await page.goto("/accounting");
+  await open(page, "/accounting");
   await page.getByLabel("Customer", { exact: true }).selectOption({ label: client });
   await page.getByRole("button", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
@@ -66,7 +66,7 @@ test("a supplier's Peppol file becomes a draft bill, and the same number twice i
     buffer: Buffer.from(ublBill(vat, name, `CL-${t}`)),
   };
   await login(page);
-  await page.goto("/accounting/bills");
+  await open(page, "/accounting/bills");
   await page.getByLabel("Peppol invoice (UBL XML)").setInputFiles(file);
   await page.getByRole("button", { name: "Import Peppol file" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${name}`);
@@ -74,7 +74,7 @@ test("a supplier's Peppol file becomes a draft bill, and the same number twice i
   await expect(page.getByLabel("Supplier's number")).toHaveValue(`CL-${t}`);
   await expect(page.getByLabel("Bill date")).toHaveValue("2026-09-10");
 
-  await page.goto("/accounting/bills");
+  await open(page, "/accounting/bills");
   await page.getByLabel("Peppol invoice (UBL XML)").setInputFiles(file);
   await submit(page, page.getByRole("button", { name: "Import Peppol file" }));
   await expectToast(page, `CL-${t} from ${name} is already in.`);

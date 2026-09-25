@@ -10,7 +10,7 @@ test("the ports table is edited and offered on the port fields", async ({ page }
   await box.fill(`${before}\n${code} Test port ZZ`);
   await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, /Saved · \d+ ports/);
-  await page.goto("/bookings/new");
+  await open(page, "/bookings/new");
   await expect(page.locator(`datalist#ports option[value="${code}"]`)).toHaveCount(1);
   await expect(page.getByLabel("Port of loading")).toHaveAttribute("list", "ports");
   // A bad line is refused, by number.
