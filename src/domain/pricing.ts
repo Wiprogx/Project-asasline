@@ -91,6 +91,30 @@ export function itemProblem(it: RateItemFields): string | null {
   return fields.every((f) => it[f] !== null && it[f] !== "") ? null : problem;
 }
 
+export type StarterItem = {
+  id: string;
+  category: string;
+  name: string | null;
+  scope: string | null;
+};
+
+/**
+ * The service lines a destination starts with (legacy fillRouteLines): the customs clearance
+ * of the shipment's direction, the VGM on an export, and the first demurrage and detention
+ * terms that serve that direction (or both). Each at most once, in that order.
+ */
+export function starterLines(items: readonly StarterItem[], kind: "export" | "import"): string[] {
+  const fits = (it: StarterItem) => !it.scope || it.scope === kind;
+  const first = (pick: (it: StarterItem) => boolean) => items.find((it) => fits(it) && pick(it));
+  const chosen = [
+    first((it) => it.category === "customs"),
+    kind === "export" ? first((it) => it.category === "vgm") : undefined,
+    first((it) => it.category === "freetime" && /demurrage/i.test(it.name ?? "")),
+    first((it) => it.category === "freetime" && /detention/i.test(it.name ?? "")),
+  ];
+  return [...new Set(chosen.filter((x): x is StarterItem => !!x).map((x) => x.id))];
+}
+
 type Dated = { validFrom: string | null; validUntil: string | null };
 
 /**

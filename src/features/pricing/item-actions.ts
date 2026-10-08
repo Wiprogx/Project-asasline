@@ -26,6 +26,7 @@ const OPTIONAL = [
   "toPlace",
   "docCode",
   "freeDays",
+  "scope",
   "validUntil",
   "note",
 ] as const;

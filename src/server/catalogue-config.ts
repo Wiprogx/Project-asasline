@@ -7,10 +7,11 @@ import { db } from "./db/client";
 import { configTables } from "./db/schema";
 
 const NAME = "rateCategories";
-const TAG = `config:${NAME}`;
+export const RATE_CATEGORIES_TAG = `config:${NAME}`;
+const TAG = RATE_CATEGORIES_TAG;
 
 const account = z.string().regex(/^\d{6}$/);
-const categoriesSchema = z
+export const categoriesSchema = z
   .array(
     z.object({
       code: z.string().regex(/^[a-z]{2,20}$/),
@@ -34,4 +35,13 @@ export function readRateCategories(): Promise<RateCategory[]> {
       console.error(`[config] ${NAME} has an invalid shape; using the default`);
     return parsed?.success ? parsed.data : DEFAULT_RATE_CATEGORIES.map((c) => ({ ...c }));
   });
+}
+
+export async function readRateCategoriesForEdit() {
+  const [row] = await db.select().from(configTables).where(eq(configTables.name, NAME));
+  const parsed = row ? categoriesSchema.safeParse(row.value) : null;
+  return {
+    categories: parsed?.success ? parsed.data : DEFAULT_RATE_CATEGORIES.map((c) => ({ ...c })),
+    version: row?.version ?? 0,
+  };
 }

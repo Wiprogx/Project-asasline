@@ -14,6 +14,7 @@ const amount = (label: string) =>
 /** A first quotation: one destination, one all-inclusive line. More routes/lines come in the editor. */
 export const newQuotationSchema = z.object({
   clientId: z.uuid("Choose the customer"),
+  kind: z.enum(["export", "import"]).default("export"),
   validUntil: z
     .string()
     .refine((s) => parseYmd(s) !== null, "Date as YYYY-MM-DD")

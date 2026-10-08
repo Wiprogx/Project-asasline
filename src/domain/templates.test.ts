@@ -30,8 +30,11 @@ describe("the default templates", () => {
     }
   });
 
-  it("include the quotation letter, scoped to quotations", () => {
-    expect(DEFAULT_TEMPLATES.filter((t) => templateScope(t.code) === "quotation")).toHaveLength(1);
+  it("include the quotation letter in English, French and Dutch, scoped to quotations", () => {
+    const codes = DEFAULT_TEMPLATES.filter((t) => templateScope(t.code) === "quotation").map(
+      (t) => t.code,
+    );
+    expect(codes).toEqual(["QUOTE_OUT", "QUOTE_OUT_FR", "QUOTE_OUT_NL"]);
   });
 
   it("use only placeholders the booking screen fills (booking ones)", () => {

@@ -27,6 +27,22 @@ export const DEFAULT_TEMPLATES: Template[] = [
     active: true,
   },
   {
+    code: "QUOTE_OUT_FR",
+    name: "Quotation (French)",
+    channel: "both",
+    subject: "Offre de prix {ref} — {dest}",
+    body: `Madame, Monsieur,\n\nVeuillez trouver ci-dessous notre offre de prix {ref}.\n\n{lines}\n\nTotal : {total} (hors TVA le cas échéant)\nValable jusqu'au : {validUntil}\n\nL'offre imprimée, avec nos conditions générales, suit en PDF.\n\n${SIGN}`,
+    active: true,
+  },
+  {
+    code: "QUOTE_OUT_NL",
+    name: "Quotation (Dutch)",
+    channel: "both",
+    subject: "Prijsofferte {ref} — {dest}",
+    body: `Geachte {client},\n\nHierbij onze prijsofferte {ref}.\n\n{lines}\n\nTotaal: {total} (exclusief btw waar van toepassing)\nGeldig tot: {validUntil}\n\nDe gedrukte offerte, met onze algemene voorwaarden, volgt als PDF.\n\n${SIGN}`,
+    active: true,
+  },
+  {
     code: "BK_CONFIRM",
     name: "Booking confirmation",
     channel: "both",

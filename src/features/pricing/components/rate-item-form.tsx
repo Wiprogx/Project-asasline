@@ -56,6 +56,7 @@ export type RateItemValues = Partial<
   buyCents?: number;
   vatCode?: string;
   rateType?: string;
+  scope?: string | null;
 };
 
 const euros = (c?: number) => (c === undefined ? "" : (c / 100).toFixed(2));
@@ -132,6 +133,20 @@ export function RateItemForm({
           options={RATE_TYPES.map((r) => ({ value: r, label: RATE_TYPE_LABEL[r] }))}
         />
       </Field>
+      {["customs", "freetime", "vgm", "other"].includes(category) && (
+        <Field id="ri-scope" label="Applies to" error={fe?.scope}>
+          <NativeSelect
+            id="ri-scope"
+            name="scope"
+            defaultValue={values?.scope ?? ""}
+            options={[
+              { value: "", label: "Export and import" },
+              { value: "export", label: "Export" },
+              { value: "import", label: "Import" },
+            ]}
+          />
+        </Field>
+      )}
       {input("validUntil", "Valid until", "date", values?.validUntil)}
       {input("note", "Note", "text", values?.note)}
       <Button type="submit" disabled={pending}>

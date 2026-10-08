@@ -35,6 +35,7 @@ export async function createQuotation(_p: ActionResult, fd: FormData): Promise<A
       .values({
         ref,
         clientId: d.clientId,
+        kind: d.kind,
         validUntil: d.validUntil,
         createdBy: user.id,
         updatedBy: user.id,
@@ -122,6 +123,7 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           ref,
           quotationId: id,
           quotationRouteId: routeId,
+          kind: q.kind,
           clientId: q.clientId,
           payerId: q.clientId,
           pol: route.pol,

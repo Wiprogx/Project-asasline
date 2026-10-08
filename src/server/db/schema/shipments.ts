@@ -50,6 +50,8 @@ export const rateItems = pgTable(
     buyCents: cents().notNull().default(0),
     vatCode: text().notNull().default("EX41"),
     rateType: rateTypeEnum().notNull().default("contract"),
+    /** Export, import, or null for both: which shipments a customs or free-time item serves. */
+    scope: text(),
     validUntil: day(),
     note: text(),
   },
@@ -102,6 +104,8 @@ export const quotations = pgTable(
       .notNull()
       .references(() => contacts.id),
     status: quotationStatusEnum().notNull().default("draft"),
+    /** Export or import: decides the customs, VGM and free-time lines a destination starts with. */
+    kind: shipmentKindEnum().notNull().default("export"),
     validUntil: day(),
     paymentTermId: text(),
     currency: text().notNull().default("EUR"),

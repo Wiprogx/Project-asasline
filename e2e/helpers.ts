@@ -30,7 +30,8 @@ export async function login(page: Page, who = ADMIN) {
   await page.getByLabel("Email").fill(who.email);
   await page.getByLabel("Password").fill(who.password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL("/");
+  // The first sign-in on a cold server compiles the office; bcrypt and the redirect add up.
+  await expect(page).toHaveURL("/", { timeout: 20_000 });
 }
 
 /** Sonner toasts: wait for the text, so a test reads the outcome the person reads. */
