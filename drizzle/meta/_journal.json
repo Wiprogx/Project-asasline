@@ -141,6 +141,13 @@
       "when": 1790281928090,
       "tag": "0019_booking_files",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791473004086,
+      "tag": "0020_quotation_kind_scope",
+      "breakpoints": true
     }
   ]
 }

@@ -2,13 +2,18 @@ import "server-only";
 import { and, asc, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
 import { itemLabel } from "@/domain/pricing";
 import { requirePermission } from "@/server/auth/dal";
-import { readRateCategories } from "@/server/catalogue-config";
+import { readRateCategories, readRateCategoriesForEdit } from "@/server/catalogue-config";
 import { db } from "@/server/db/client";
 import { contacts, priceListLines, priceLists, rateItems } from "@/server/db/schema";
 
 export async function rateCategories() {
   await requirePermission("catalogue.edit");
   return readRateCategories();
+}
+
+export async function rateCategoriesForEdit() {
+  await requirePermission("app.settings");
+  return readRateCategoriesForEdit();
 }
 
 /** The catalogue, by category then destination; archived items only when asked for. */

@@ -1,5 +1,6 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
+import { starterLines } from "@/domain/pricing";
 import { officeToday } from "@/server/clock";
 import type { DbOrTx } from "@/server/db/client";
 import { rateItems } from "@/server/db/schema";
@@ -17,12 +18,18 @@ export async function oceanLeg(tx: DbOrTx, id: string): Promise<Lane> {
 }
 
 /**
- * The lines a destination starts with (legacy fillRouteLines): the leg itself, then the
- * documents its country requires. Each is priced for the customer.
+ * The lines a destination starts with (legacy fillRouteLines): the leg itself, the documents
+ * its country requires, then the customs, VGM and free-time terms of the shipment's direction.
+ * Each is priced for the customer.
  */
 export async function fillFromLane(
   tx: DbOrTx,
-  p: { q: { id: string; clientId: string }; lane: Lane; routeId: string; userId: string },
+  p: {
+    q: { id: string; clientId: string; kind: "export" | "import" | "both" };
+    lane: Lane;
+    routeId: string;
+    userId: string;
+  },
 ) {
   const docs = p.lane.country
     ? await tx
@@ -36,8 +43,25 @@ export async function fillFromLane(
           ),
         )
     : [];
+  const services = await tx
+    .select({
+      id: rateItems.id,
+      category: rateItems.category,
+      name: rateItems.name,
+      scope: rateItems.scope,
+    })
+    .from(rateItems)
+    .where(
+      and(
+        inArray(rateItems.category, ["customs", "vgm", "freetime"]),
+        isNull(rateItems.archivedAt),
+      ),
+    )
+    .orderBy(rateItems.createdAt);
+  const kind = p.q.kind === "import" ? "import" : "export";
   const day = officeToday();
-  for (const [position, itemId] of [p.lane.id, ...docs.map((x) => x.id)].entries())
+  const ids = [p.lane.id, ...docs.map((x) => x.id), ...starterLines(services, kind)];
+  for (const [position, itemId] of ids.entries())
     await insertPricedLine(tx, {
       q: p.q,
       routeId: p.routeId,

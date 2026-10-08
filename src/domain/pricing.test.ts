@@ -7,6 +7,7 @@ import {
   periodsOverlap,
   priceFor,
   type RateItemFields,
+  starterLines,
 } from "./pricing";
 
 const blank: RateItemFields = {
@@ -134,5 +135,28 @@ describe("priceFor", () => {
       source: "catalogue",
       from: null,
     });
+  });
+});
+
+describe("starterLines", () => {
+  const items = [
+    { id: "cus-exp", category: "customs", name: "Export customs", scope: "export" },
+    { id: "cus-imp", category: "customs", name: "Import customs", scope: "import" },
+    { id: "vgm", category: "vgm", name: "VGM", scope: null },
+    { id: "dem-first", category: "freetime", name: "Demurrage at destination", scope: null },
+    { id: "dem-second", category: "freetime", name: "Demurrage, second term", scope: null },
+    { id: "det-imp", category: "freetime", name: "Detention", scope: "import" },
+    { id: "doc", category: "docs", name: "Certificate of origin", scope: null },
+  ];
+  it("gives an export its customs, the VGM and the first demurrage, never an import-only term", () => {
+    expect(starterLines(items, "export")).toEqual(["cus-exp", "vgm", "dem-first"]);
+  });
+  it("gives an import its customs, no VGM, and the detention that serves imports", () => {
+    expect(starterLines(items, "import")).toEqual(["cus-imp", "dem-first", "det-imp"]);
+  });
+  it("takes an item for both directions, and nothing twice", () => {
+    const both = [{ id: "cus", category: "customs", name: "Customs", scope: null }];
+    expect(starterLines(both, "import")).toEqual(["cus"]);
+    expect(starterLines([], "export")).toEqual([]);
   });
 });

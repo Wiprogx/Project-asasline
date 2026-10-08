@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { portLines } from "@/domain/ports";
 import { savePorts } from "@/features/settings-tables/actions";
-import { LinesEditor } from "@/features/settings-tables/components/lines-editor";
+import { LinesEditor } from "@/components/shared/lines-editor";
 import { portsForEdit } from "@/features/settings-tables/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 

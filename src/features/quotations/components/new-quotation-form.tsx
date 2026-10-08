@@ -33,6 +33,17 @@ export function NewQuotationForm({
             options={clients.map((c) => ({ value: c.id, label: c.name }))}
           />
         </Field>
+        <Field id="kind" label="Direction" error={fe?.kind}>
+          <NativeSelect
+            id="kind"
+            name="kind"
+            defaultValue="export"
+            options={[
+              { value: "export", label: "Export" },
+              { value: "import", label: "Import" },
+            ]}
+          />
+        </Field>
         <Field id="validUntil" label="Valid until" error={fe?.validUntil}>
           <Input id="validUntil" name="validUntil" type="date" />
         </Field>

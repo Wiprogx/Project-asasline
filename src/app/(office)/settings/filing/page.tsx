@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { saveFileHints } from "@/features/settings-tables/actions";
-import { LinesEditor } from "@/features/settings-tables/components/lines-editor";
+import { LinesEditor } from "@/components/shared/lines-editor";
 import { fileHintsForEdit } from "@/features/settings-tables/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 

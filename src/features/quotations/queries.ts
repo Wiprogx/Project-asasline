@@ -55,7 +55,9 @@ export async function getQuotation(id: string) {
   return db.query.quotations.findFirst({
     where: eq(quotations.id, id),
     with: {
-      client: { columns: { id: true, name: true, email: true, whatsapp: true, mobile: true } },
+      client: {
+        columns: { id: true, name: true, email: true, whatsapp: true, mobile: true, lang: true },
+      },
       bookings: { columns: { id: true, ref: true, status: true, quotationRouteId: true } },
       routes: {
         orderBy: asc(quotationRoutes.position),
@@ -85,13 +87,17 @@ export async function catalogueChoices() {
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 
 /**
- * The letter that goes with the quotation, from the QUOTE_OUT template (Settings › Templates),
+ * The letter that goes with the quotation, from the QUOTE_OUT template (Settings › Templates)
+ * in the contact's language when there is one (QUOTE_OUT_FR, QUOTE_OUT_NL…, invariant 9),
  * and where it can go: the customer's e-mail, or their WhatsApp.
  */
 export async function quotationLetter(q: Quotation, me: string) {
   await requirePermission("app.quotations");
+  const all = await readTemplates();
+  const inLang = `QUOTE_OUT_${(q.client.lang ?? "en").toUpperCase()}`;
   const t =
-    (await readTemplates()).find((x) => x.code === "QUOTE_OUT" && x.active) ??
+    all.find((x) => x.code === inLang && x.active) ??
+    all.find((x) => x.code === "QUOTE_OUT" && x.active) ??
     DEFAULT_TEMPLATES.find((x) => x.code === "QUOTE_OUT")!;
   const doc = quotationDoc(q.routes, q.display);
   const vars = {

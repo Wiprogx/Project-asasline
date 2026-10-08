@@ -53,6 +53,10 @@ export const rateItemSchema = z.object({
   buyCents: amount("Buy"),
   vatCode: z.enum(VAT_CODES.map((v) => v.code) as [string, ...string[]]).default("EX41"),
   rateType: z.enum(RATE_TYPES).default("contract"),
+  scope: z
+    .enum(["export", "import", ""])
+    .optional()
+    .transform((v) => v || null),
   validUntil: day,
   note: text(300),
 });

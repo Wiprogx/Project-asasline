@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RateItemForm } from "@/features/pricing/components/rate-item-form";
 import { RateItemsTable } from "@/features/pricing/components/rate-items-table";
-import { listRateItems, rateCategories } from "@/features/pricing/queries";
+import { LinesEditor } from "@/components/shared/lines-editor";
+import { may } from "@/domain/permissions";
+import { saveRateCategories } from "@/features/pricing/category-actions";
+import { listRateItems, rateCategories, rateCategoriesForEdit } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 
@@ -15,8 +18,9 @@ const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
 /** One catalogue for everything chargeable: a quotation line, a booking charge, an invoice line. */
 export default async function CataloguePage({ searchParams }: PageProps<"/settings/catalogue">) {
-  await requirePagePermission("catalogue.edit");
+  const user = await requirePagePermission("catalogue.edit");
   const sp = await searchParams;
+  const editable = may(user, "app.settings") ? await rateCategoriesForEdit() : null;
   const category = str(sp.category);
   const archived = sp.archived === "1";
   const [categories, rows] = await Promise.all([
@@ -58,6 +62,20 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
           <RateItemsTable rows={rows} categories={categories} today={officeToday()} />
         </CardContent>
       </Card>
+      {editable && (
+        <LinesEditor
+          action={saveRateCategories}
+          title="Categories & accounts"
+          description="Every item belongs to one; the category decides the sales account and the purchase account (to confirm with the accountant). One per line: code | Label | sales account | purchase account."
+          label="Categories, one per line"
+          submitLabel="Save categories"
+          lines={editable.categories
+            .map((c) => `${c.code} | ${c.label} | ${c.salesAccount} | ${c.purchaseAccount}`)
+            .join("\n")}
+          version={editable.version}
+          count={editable.categories.length}
+        />
+      )}
     </div>
   );
 }

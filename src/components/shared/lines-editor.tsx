@@ -18,6 +18,7 @@ export function LinesEditor({
   lines,
   version,
   count,
+  submitLabel = "Save",
 }: {
   action: Action;
   title: string;
@@ -26,6 +27,7 @@ export function LinesEditor({
   lines: string;
   version: number;
   count: number;
+  submitLabel?: string;
 }) {
   const [state, run, pending] = useToastedAction(action);
   return (
@@ -56,7 +58,7 @@ export function LinesEditor({
               {version === 0 ? "built-in defaults, not yet saved" : `version ${version}`}
             </span>
             <Button type="submit" size="sm" disabled={pending}>
-              {pending ? "Saving…" : "Save"}
+              {pending ? "Saving…" : submitLabel}
             </Button>
           </div>
         </ActionForm>
