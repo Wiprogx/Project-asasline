@@ -1,18 +1,18 @@
 {
-  "abatty": "0.6.0",
-  "installedAt": "2026-09-24",
+  "abatty": "0.8.1",
+  "installedAt": "2026-10-08",
   "files": {
     ".claude/hooks/check-direction.mjs": "33553875bf51bef3c1f9dfc92ed1ab467444ecaab0717fe71107cd3d718d8652",
-    ".claude/hooks/guard.mjs": "f7962c64c0a971ce47891f9a7eac340d5c4c705ce1210e8ece25545d489d36a0",
+    ".claude/hooks/guard.mjs": "9114773e1c9d6427eb27bd066f14a983511183ff2f4d2b5fcf20ed3445995e08",
     ".claude/hooks/lib.mjs": "dd6a8cd282f0cdfc9ef176736e5d1d4edd284db23b89690ee7e114b5e6cfd0e9",
     ".claude/hooks/lint-on-edit.mjs": "8ceaa8e15dd800811368857fac9f59535823919cfae63f2c19c00968ca213af3",
-    ".claude/hooks/protect.mjs": "f67bd4343eaaa51adf9d175883cf5abc1a51ed842e7bc21fd96576f8cf482e0b",
-    ".claude/hooks/self-test.mjs": "a0bde7fc0de6c669fdcf6e6539a485419f2da6d4171700267c89d2b25ff066a5",
+    ".claude/hooks/protect.mjs": "14e960a0d7661830e325164c57344ed5c1ca13fbbf7c21354370ad773ba84398",
+    ".claude/hooks/self-test.mjs": "4e326a29b0d1fc39cf5fbd672a1a5ed3fc0d7f9d3b6afe320c1f3ba88cdad9c1",
     ".claude/hooks/session-brief.mjs": "902ec654f198c5d3c2b8c4c90f34c5d36e09eea379a83593575e26f04b1d5808",
     ".claude/hooks/shell.mjs": "e9edf9201d3f6c1993ee12afef6a8d198a0a4fbd0c207b65c92f6fdb90b6ab05",
     ".claude/hooks/stop-gate.mjs": "26eb1f3bd60678119fa7098cf3d7ec895f1c399363e931e4d0c85f67604b9af9",
     ".claude/hooks/vocabulary.mjs": "cb3f80737b8124562321c816fc6679db84b241a901def3b346b7abd713d01b3d",
-    ".claude/skills/adopt-standards/SKILL.md": "edba13f3d2ef03766626bd49c3e46a6521d041d78d4aaf59a6fcf14cfcaea019",
+    ".claude/skills/adopt-standards/SKILL.md": "946d962c2e20a07a3432b700d3e421d67d6141f0dd8b6de538b3dfba239719ba",
     ".claude/agents/standards-reviewer.md": "fbd61a3e5baadca110547a06dd2e8ac4048ba92089d7a2519592792531475266",
     ".claude/agents/standards-adopter.md": "abbec418909a6fe4a65e06d859f2d726c907cab98373450e3f7f62599ebd3785",
     ".claude/bin/shim.mjs": "532f75997d80221bbf2db9dcd885198dec8616fee4ddbbc75ac11dd501e98661",
@@ -23,7 +23,6 @@
     ".claude/rules/testing.md": "7490d620208222b0f0b416b7db6179ff8f1c24877c07c79a59b6669de414f0dc",
     ".claude/rules/i18n.md": "6d1c80d6248afe15d088feb881b9159a767a7a9867e01f02b9b063ff407f057a",
     ".claude/rules/a11y.md": "ca1895c336dcd432310dac200d0f27e4b44a8ace4dba04c110b99bf5ac5d8dfb",
-    ".claude/rules/pwa.md": "039c95bb08a920785ce1aa791129e87fb4864a6825c52b989c1d6870c7824c1f",
     ".claude/rules/size-limits.md": "21def85fa82a7d3841b6dba7f5c91efb0ed5280515981ef45cf2f34ee668abc5"
   },
   "offered": {},
@@ -42,7 +41,7 @@
   ],
   "hooks": {
     ".githooks/pre-commit": "cee168e19d7114bff9bb59f85dc0a30ed304099129d308672ae36ba0f342c12b",
-    ".githooks/pre-push": "c64cbfd394acf95cfeaedd9d73b3a57ec164a31df39a46c848f9a6a5f0e1f1b2",
+    ".githooks/pre-push": "801521153d566abd6885c3fd0b564cdcbeaf9939d9e584de690ec0e48d901c6b",
     ".githooks/commit-msg": "7ddd7b5706c53025e7ae66da05911b6d6b5256dcb1366b30688449d7b75b00d8"
   }
 }

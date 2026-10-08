@@ -20,26 +20,13 @@
 // boundary on its own.
 
 import { basename } from "node:path";
-import {
-  HARNESS_DIR,
-  NIGHT,
-  appendLog,
-  decide,
-  isHarnessPath,
-  loadConfig,
-  readEvent,
-  toRepoPath,
-} from "./lib.mjs";
+import { NIGHT, appendLog, decide, isHarnessPath, loadConfig, readEvent, toRepoPath } from "./lib.mjs";
 
 if (!NIGHT) process.exit(0);
 
 // Fail closed: a crashed PreToolUse hook does not block, so at night an internal error denies.
 process.on("uncaughtException", (err) => {
-  if (NIGHT)
-    decide(
-      "deny",
-      `Unattended run: the guard hit an internal error and refuses by default (${err && err.message ? err.message : err}).`,
-    );
+  if (NIGHT) decide("deny", `Unattended run: the guard hit an internal error and refuses by default (${err && err.message ? err.message : err}).`);
   process.exit(0);
 });
 
@@ -60,10 +47,7 @@ function deny(target, reason) {
 function checkPath(target) {
   const rel = toRepoPath(target);
   if (rel === null) {
-    deny(
-      target,
-      `Unattended run: writing outside the repository (${target}) is not allowed. Record the need in the decisions file.`,
-    );
+    deny(target, `Unattended run: writing outside the repository (${target}) is not allowed. Record the need in the decisions file.`);
   }
   if (isHarnessPath(rel)) {
     deny(
@@ -73,9 +57,7 @@ function checkPath(target) {
   }
   const name = basename(rel);
   const hit = (config.protectedPaths || []).find((p) =>
-    p.endsWith("/")
-      ? ("/" + rel).includes("/" + p)
-      : name === p || (p.startsWith(".") && name.startsWith(p)) || rel.includes("/" + p),
+    p.endsWith("/") ? ("/" + rel).includes("/" + p) : name === p || (p.startsWith(".") && name.startsWith(p)) || rel.includes("/" + p),
   );
   if (hit) {
     deny(
@@ -100,17 +82,8 @@ if (isMcp) {
   // An allowed server's tool that names a path is held to the same rules as Edit and Write.
   const input = event.tool_input || {};
   const targets = [];
-  for (const key of [
-    "file_path",
-    "relative_path",
-    "path",
-    "notebook_path",
-    "target_path",
-    "new_path",
-  ])
-    if (input[key]) targets.push(String(input[key]));
-  for (const key of ["paths", "relative_paths", "file_paths"])
-    if (Array.isArray(input[key])) targets.push(...input[key].map(String));
+  for (const key of ["file_path", "relative_path", "path", "notebook_path", "target_path", "new_path"]) if (input[key]) targets.push(String(input[key]));
+  for (const key of ["paths", "relative_paths", "file_paths"]) if (Array.isArray(input[key])) targets.push(...input[key].map(String));
   for (const t of targets) checkPath(t);
   process.exit(0);
 }

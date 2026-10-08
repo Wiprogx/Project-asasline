@@ -64,9 +64,9 @@
     "tms.hardDelete": 366,
     "tms.refRewrite": 366,
     "tms.unguardedServerFn": 54,
-    "types.escapes": 368,
+    "types.escapes": 411,
     "valid.rawEnv": 367,
-    "valid.utcDay": 368
+    "valid.utcDay": 411
   },
   "debt": {
     "size.excessCode": {
@@ -82,9 +82,9 @@
     "code.barrels": 1,
     "context.overCap": 1,
     "context.unsourcedGrowth": 1,
-    "docs.behindCode": 3,
-    "docs.citations": 1,
-    "docs.danglingRefs": 1,
+    "docs.behindCode": 6,
+    "docs.citations": 2,
+    "docs.danglingRefs": 4,
     "docs.danglingSource": 1,
     "docs.frontMatter": 1,
     "docs.frontMatterSyntax": 1,
@@ -97,9 +97,9 @@
     "tms.hardDelete": 1,
     "tms.refRewrite": 1,
     "tms.unguardedServerFn": 1,
-    "types.escapes": 1,
+    "types.escapes": 2,
     "valid.rawEnv": 1,
-    "valid.utcDay": 1
+    "valid.utcDay": 2
   },
   "entries": {}
 }

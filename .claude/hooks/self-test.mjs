@@ -55,8 +55,14 @@ const ownConfig = (() => {
     return {};
   }
 })();
+// The migration cases prove the hooks deny a protected path. A preset whose repository has no
+// migrations (astro, docs) protects none, and doctor read red on a fresh install: the cases now
+// run with migrations/ added to the repository's own list, as they run with the push policy set.
+const protectedPaths = Array.isArray(ownConfig.protectedPaths)
+  ? [...new Set([...ownConfig.protectedPaths, "migrations/"])]
+  : undefined;
 const policyCfg = join(tmp, "policy.json");
-writeFileSync(policyCfg, JSON.stringify({ ...ownConfig, directPushToBase: false }));
+writeFileSync(policyCfg, JSON.stringify({ ...ownConfig, directPushToBase: false, ...(protectedPaths && { protectedPaths }) }));
 const directCfg = join(tmp, "direct.json");
 writeFileSync(directCfg, JSON.stringify({ ...ownConfig, directPushToBase: true }));
 const baseEnv = { ADOPTION_RUN: "", ADOPTION_BRANCH: "", ADOPTION_PHASE: "", ADOPTION_BASE: "", ADOPTION_NIGHT_DIR: nightDir, ADOPTION_CONFIG: policyCfg };
@@ -411,6 +417,25 @@ try {
   cases.push(["provenance, night: a commit without the disclosure trailer is refused", bash('git commit -m "feat: x\n\nwhy"'), { ...night, ...provOn }, "deny"]);
   cases.push(["provenance, night: a commit with the disclosure trailer passes", bash('git commit -m "feat: x\n\nwhy\n\nAssisted-by: an unattended run"'), { ...night, ...provOn }, "none"]);
   cases.push(["provenance, day: a human commit without the trailer is the human's decision", bash('git commit -m "feat: x"'), provOn, "none"]);
+  // A script is read as what it runs: an adopter's `pnpm db:setup` force-reset the live database
+  // and passed day and night, because the guard read the line typed, not the script it ran.
+  const withScripts = repoOnBranch("with-scripts", "feat/x");
+  writeFileSync(
+    join(withScripts, "package.json"),
+    JSON.stringify({ scripts: { "db:setup": "prisma db push --force-reset --accept-data-loss", setup: "pnpm db:setup", "db:push": "prisma db push", lint: "eslint ." } }),
+  );
+  cases.push(["night: a script that force-resets the database", bash("pnpm db:setup"), night, "deny", withScripts]);
+  cases.push(["night: a script that calls that script", bash("npm run setup"), night, "deny", withScripts]);
+  cases.push(["day: a script that force-resets the database is asked about", bash("pnpm db:setup"), {}, "ask", withScripts]);
+  cases.push(["day: a schema push is a migration, not a git push", bash("pnpm exec prisma db push"), {}, "ask", withScripts]);
+  cases.push(["day: an ordinary script is not", bash("pnpm lint"), {}, "none", withScripts]);
+  // On the base branch the misreading showed: a schema push was refused as a git push to main.
+  const onMain = repoOnBranch("with-scripts-main", "main");
+  cases.push(["day, on the base: a schema push is a migration, not a push to main", bash("pnpm exec prisma db push"), {}, "ask", onMain]);
+  // The hooks folder by its bare name, as well as with its slash.
+  for (const c of ["rm -rf .githooks", "rmdir .githooks", "git rm -r .githooks", "mv .githooks /tmp/x", "find .githooks -delete", "rm -rf ./.husky"])
+    cases.push([`night: remove the hooks folder (${c})`, bash(c), night, "deny"]);
+  cases.push(["night: list the hooks folder", bash("ls .githooks"), night, "none"]);
   // A case may name the directory it is judged from: the branch the guard reads is the branch of
   // the repository it runs in, and `HEAD` means a different thing on the base branch than off it.
   const guardRuns = await pooled(cases, ([, event, env, , cwd]) => hookAsync("guard.mjs", event, env, cwd || process.cwd()));
