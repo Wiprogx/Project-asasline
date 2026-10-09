@@ -10,6 +10,9 @@ import {
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { BookingRow } from "../queries";
 import { BookingStatusBadge } from "./booking-status-badge";
+import { BILL_STATUS_LABEL, BILL_STATUS_TONE } from "@/domain/invoicing";
+import { formatCents } from "@/domain/money";
+import { ToneBadge } from "@/components/shared/tone-badge";
 
 export function BookingsTable({ rows }: { rows: BookingRow[] }) {
   if (rows.length === 0) {
@@ -24,6 +27,8 @@ export function BookingsTable({ rows }: { rows: BookingRow[] }) {
           <TableHead className="hidden md:table-cell">Route</TableHead>
           <TableHead className="hidden lg:table-cell">Direction</TableHead>
           <TableHead className="hidden md:table-cell">Loading</TableHead>
+          <TableHead className="hidden text-right xl:table-cell">Value</TableHead>
+          <TableHead className="hidden lg:table-cell">Invoiced</TableHead>
           <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
@@ -44,6 +49,16 @@ export function BookingsTable({ rows }: { rows: BookingRow[] }) {
             </TableCell>
             <TableCell className="hidden font-mono text-xs md:table-cell">
               {b.loadDate ?? "—"}
+            </TableCell>
+            <TableCell className="hidden text-right tabular-nums xl:table-cell">
+              {b.valueCents ? formatCents(b.valueCents) : "—"}
+            </TableCell>
+            <TableCell className="hidden lg:table-cell">
+              {b.billing !== "none" && (
+                <ToneBadge tone={BILL_STATUS_TONE[b.billing]}>
+                  {BILL_STATUS_LABEL[b.billing]}
+                </ToneBadge>
+              )}
             </TableCell>
             <TableCell>
               <BookingStatusBadge status={b.status} />

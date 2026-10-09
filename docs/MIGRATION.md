@@ -47,9 +47,9 @@ editor, never a constant (invariant 8). Legacy refs: §n of `legacy/ASASLINE_TMS
 or Lnnnn of `legacy/asasline-demo.html`.
 
 - **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
-  (L1500) · SEAL_SOURCES · list with configurable columns, stats and an "Invoiced" filter ·
+  (L1500) · SEAL_SOURCES · the list's column picker and period comparison ·
   a Documents tab per side for a "Both" shipment.
-- **Quotations and pricing** — list analytics · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
+- **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
   "Rate sources" tab.
 - **Contacts** — documents tab · countries table · kanban view.
 - **Activity** — NEED_KINDS (what closes a step: file, ref, confirm, send, track) and checklists (L9444) ·

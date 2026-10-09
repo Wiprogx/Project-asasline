@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { formatCents } from "@/domain/money";
 import { itemLabel } from "@/domain/pricing";
 import { destinationsPhrase, letterLines, quotationDoc } from "@/domain/quotation-doc";
@@ -24,13 +24,25 @@ export type QuotationRow = {
   status: QuotationStatus;
   clientName: string;
   validUntil: string | null;
+  /** What its live destinations sell (legacy qSellAll): per-container lines × boxes, terms nothing. */
+  valueCents: number;
+  destinations: number;
 };
 
-export async function listQuotations(opts: { q?: string; clientId?: string } = {}) {
+const valueOf = sql<number>`(select coalesce(sum(ql.qty * (case when ql.per_box then greatest(1, qr.boxes) else 1 end) * ql.sell_cents), 0)
+  from quotation_lines ql join quotation_routes qr on qr.id = ql.route_id
+  where qr.quotation_id = ${quotations.id} and qr.declined = false and qr.archived_at is null
+  and ql.archived_at is null and ql.condition = false and ql.sell_cents > 0)::int`;
+const destinationsOf = sql<number>`(select count(*) from quotation_routes qr
+  where qr.quotation_id = ${quotations.id} and qr.archived_at is null)::int`;
+
+export async function listQuotations(
+  opts: { q?: string; clientId?: string; status?: QuotationStatus } = {},
+) {
   await requirePermission("app.quotations");
   const q = opts.q?.trim() ?? "";
   return cached(
-    `quotations:list:${opts.clientId ?? "*"}:${q.toLowerCase()}`,
+    `quotations:list:${opts.clientId ?? "*"}:${opts.status ?? "*"}:${q.toLowerCase()}`,
     { ttlSeconds: 30, tags: [tags.quotations] },
     (): Promise<QuotationRow[]> => {
       const like = `%${q}%`;
@@ -41,12 +53,15 @@ export async function listQuotations(opts: { q?: string; clientId?: string } = {
           status: quotations.status,
           clientName: contacts.name,
           validUntil: quotations.validUntil,
+          valueCents: valueOf,
+          destinations: destinationsOf,
         })
         .from(quotations)
         .innerJoin(contacts, eq(contacts.id, quotations.clientId))
         .where(
           and(
             opts.clientId ? eq(quotations.clientId, opts.clientId) : undefined,
+            opts.status ? eq(quotations.status, opts.status) : undefined,
             q ? or(ilike(quotations.ref, like), ilike(contacts.name, like)) : undefined,
           ),
         )

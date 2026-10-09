@@ -39,7 +39,7 @@ export async function newBill(_p: ActionResult, fd: FormData): Promise<ActionRes
       updatedBy: user.id,
     })
     .returning({ id: invoices.id });
-  refreshInvoice(bill.id, bookingId ?? null);
+  await refreshInvoice(bill.id, bookingId ?? null);
   redirect(`/accounting/invoices/${bill.id}`);
 }
 
@@ -121,7 +121,7 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value.bookingId);
+  await refreshInvoice(id, r.value.bookingId);
   return {
     ok: true,
     data: undefined,
@@ -156,6 +156,6 @@ export async function approveBill(_p: ActionResult, fd: FormData): Promise<Actio
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value);
+  await refreshInvoice(id, r.value);
   return { ok: true, data: undefined, message: "Approved — it can be paid" };
 }

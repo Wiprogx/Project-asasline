@@ -8,6 +8,8 @@ import { BOOKING_STATUS_META, BOOKING_STATUSES, type BookingStatus } from "@/dom
 import { BookingsTable } from "@/features/bookings/components/bookings-table";
 import { listBookings } from "@/features/bookings/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { BILL_FILTERS } from "@/domain/invoicing";
+import { BookingsFigures } from "@/features/bookings/components/bookings-figures";
 
 export const metadata: Metadata = { title: "Bookings" };
 
@@ -18,7 +20,8 @@ export default async function BookingsPage({ searchParams }: PageProps<"/booking
   const sp = await searchParams;
   const status = isStatus(sp.status) ? sp.status : undefined;
   const q = typeof sp.q === "string" ? sp.q : undefined;
-  const rows = await listBookings({ q, status });
+  const billing = BILL_FILTERS.find((b) => b === sp.billing);
+  const rows = await listBookings({ q, status, billing });
 
   return (
     <>
@@ -49,6 +52,7 @@ export default async function BookingsPage({ searchParams }: PageProps<"/booking
       <div className="mb-4">
         <SearchInput placeholder="Search SB ref, customer, carrier booking no, B/L, port…" />
       </div>
+      <BookingsFigures rows={rows} params={{ q, status }} billing={billing} />
       <BookingsTable rows={rows} />
     </>
   );

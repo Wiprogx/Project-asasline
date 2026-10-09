@@ -112,7 +112,7 @@ export async function draftFromBooking(_p: ActionResult, fd: FormData): Promise<
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(r.value, bookingId);
+  await refreshInvoice(r.value, bookingId);
   redirect(`/accounting/invoices/${r.value}`);
 }
 
@@ -134,7 +134,7 @@ export async function blankDraft(_p: ActionResult, fd: FormData): Promise<Action
       updatedBy: user.id,
     })
     .returning({ id: invoices.id });
-  refreshInvoice(inv.id, null);
+  await refreshInvoice(inv.id, null);
   redirect(`/accounting/invoices/${inv.id}`);
 }
 
@@ -163,7 +163,7 @@ export async function addLine(_p: ActionResult, fd: FormData): Promise<ActionRes
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value);
+  await refreshInvoice(id, r.value);
   return { ok: true, data: undefined, message: "Line added" };
 }
 
@@ -190,6 +190,6 @@ export async function removeLine(_p: ActionResult, fd: FormData): Promise<Action
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value);
+  await refreshInvoice(id, r.value);
   return { ok: true, data: undefined, message: "Line removed" };
 }

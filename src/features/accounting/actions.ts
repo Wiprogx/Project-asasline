@@ -127,7 +127,7 @@ export async function issueInvoice(_p: ActionResult, fd: FormData): Promise<Acti
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value.bookingId);
+  await refreshInvoice(id, r.value.bookingId);
   const warn =
     (r.value.credit ? ` — ⚠ ${r.value.credit}` : "") +
     (r.value.proofMissing ? ` — ⚠ ${EXEMPTION_WARNING}` : "");
@@ -162,7 +162,7 @@ export async function discardDraft(_p: ActionResult, fd: FormData): Promise<Acti
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value);
+  await refreshInvoice(id, r.value);
   return { ok: true, data: undefined, message: "Draft discarded" };
 }
 
@@ -247,6 +247,6 @@ export async function creditInvoice(_p: ActionResult, fd: FormData): Promise<Act
     }),
   );
   if (!r.ok) return r;
-  refreshInvoice(id, r.value.bookingId);
+  await refreshInvoice(id, r.value.bookingId);
   redirect(`/accounting/invoices/${r.value.draftId ?? r.value.creditId}`);
 }

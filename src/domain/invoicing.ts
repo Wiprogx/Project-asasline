@@ -1,5 +1,6 @@
 import { VAT_CODES } from "./accounting";
 import { addDays } from "./dates";
+import { type Tone } from "./shipments";
 
 /**
  * Sales invoices and credit notes (legacy stage 4). Money is integer cents. A draft has no
@@ -80,6 +81,27 @@ export const BILL_STATUS_LABEL: Record<BillStatus, string> = {
   done: "Invoiced",
   over: "Over-invoiced",
 };
+
+export const BILL_STATUS_TONE: Record<BillStatus, Tone> = {
+  none: "neutral",
+  not: "neutral",
+  partly: "warning",
+  done: "success",
+  over: "danger",
+};
+
+/** The list's filter: a status, or "open" for everything not yet fully invoiced (legacy fbill). */
+export const BILL_FILTERS = ["open", "not", "partly", "done", "over"] as const;
+export type BillFilter = (typeof BILL_FILTERS)[number];
+export const BILL_FILTER_LABEL: Record<BillFilter, string> = {
+  open: "Not fully invoiced",
+  not: "Not invoiced",
+  partly: "Partly invoiced",
+  done: "Invoiced",
+  over: "Over-invoiced",
+};
+export const billMatches = (status: BillStatus, filter: BillFilter | undefined) =>
+  !filter || (filter === "open" ? status === "not" || status === "partly" : status === filter);
 
 /** A booking's invoicing state: what it is worth against what was invoiced, net of credits. */
 export function billStatus(totalCents: number, billedCents: number): BillStatus {

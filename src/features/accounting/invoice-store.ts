@@ -6,6 +6,7 @@ import { type ActionResult, fail } from "@/lib/action-result";
 import type { Tx } from "@/server/db/client";
 import { invoiceLines, invoices } from "@/server/db/schema";
 import { ConflictError } from "@/server/versioned";
+import { invalidateTags, tags } from "@/server/cache/cache";
 
 /** A refusal the person can act on, shown as the form's error. */
 export class Refused extends Error {}
@@ -36,10 +37,12 @@ export async function draftOf(tx: Tx, id: string) {
   return inv;
 }
 
-export function refreshInvoice(id: string, bookingId: string | null) {
+export async function refreshInvoice(id: string, bookingId: string | null) {
   revalidatePath("/accounting", "layout");
   revalidatePath(`/accounting/invoices/${id}`);
   if (bookingId) revalidatePath(`/bookings/${bookingId}`, "layout");
+  // The bookings list is cached with each booking's invoiced state on it.
+  if (bookingId) await invalidateTags(tags.bookings);
 }
 
 type Failure = Extract<ActionResult<never>, { ok: false }>;

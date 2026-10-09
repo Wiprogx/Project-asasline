@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import type { QuotationRow } from "../queries";
 import { QUOTATION_TONE } from "../status";
+import { formatCents } from "@/domain/money";
 
 export function QuotationsTable({ rows }: { rows: QuotationRow[] }) {
   if (rows.length === 0) {
@@ -22,6 +23,7 @@ export function QuotationsTable({ rows }: { rows: QuotationRow[] }) {
           <TableHead>Ref</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead className="hidden md:table-cell">Valid until</TableHead>
+          <TableHead className="hidden text-right lg:table-cell">Value</TableHead>
           <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
@@ -36,6 +38,15 @@ export function QuotationsTable({ rows }: { rows: QuotationRow[] }) {
             <TableCell className="max-w-48 truncate">{q.clientName}</TableCell>
             <TableCell className="hidden font-mono text-xs md:table-cell">
               {q.validUntil ?? "—"}
+            </TableCell>
+            <TableCell className="hidden text-right tabular-nums lg:table-cell">
+              {q.valueCents ? formatCents(q.valueCents) : "—"}
+              {q.destinations > 1 && (
+                <span className="text-xs text-muted-foreground">
+                  {" "}
+                  · {q.destinations} destinations
+                </span>
+              )}
             </TableCell>
             <TableCell>
               <ToneBadge tone={QUOTATION_TONE[q.status][1]}>
