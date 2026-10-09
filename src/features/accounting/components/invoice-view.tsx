@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { invoiceTotals, vatMentions } from "@/domain/invoicing";
 import { formatCents } from "@/domain/money";
 import type { getInvoice } from "../queries";
+import { fxLine } from "@/domain/fx";
 
 type Invoice = NonNullable<Awaited<ReturnType<typeof getInvoice>>>;
 
@@ -20,6 +21,8 @@ export function InvoiceView({
   const { invoice: i, customer: c, lines } = inv;
   const t = invoiceTotals(lines);
   const sign = i.kind === "credit" ? "−" : "";
+  const cur = i.currency;
+  const foreign = cur !== "EUR";
   const address = [c.street, [c.zip, c.city].filter(Boolean).join(" "), c.country]
     .filter(Boolean)
     .join(", ");
@@ -58,6 +61,12 @@ export function InvoiceView({
               <dd className="font-mono">{inv.creditOfNumber}</dd>
             </>
           )}
+          {foreign && (
+            <>
+              <dt className="text-muted-foreground">Currency</dt>
+              <dd className="font-mono">{fxLine(cur, i.fxBp)}</dd>
+            </>
+          )}
         </dl>
       </div>
 
@@ -82,9 +91,11 @@ export function InvoiceView({
                 )}
               </td>
               <td className="py-2 text-right tabular-nums">{l.qty}</td>
-              <td className="py-2 text-right tabular-nums">{formatCents(l.unitCents)}</td>
+              <td className="py-2 text-right tabular-nums">{formatCents(l.unitCents, cur)}</td>
               <td className="py-2 text-right font-mono text-xs">{l.vatCode}</td>
-              <td className="py-2 text-right tabular-nums">{formatCents(l.qty * l.unitCents)}</td>
+              <td className="py-2 text-right tabular-nums">
+                {formatCents(l.qty * l.unitCents, cur)}
+              </td>
               {lineAction && <td className="py-2 text-right">{lineAction(l.id)}</td>}
             </tr>
           ))}
@@ -95,24 +106,33 @@ export function InvoiceView({
         <dt className="text-muted-foreground">Net</dt>
         <dd className="text-right tabular-nums">
           {sign}
-          {formatCents(t.netCents)}
+          {formatCents(t.netCents, cur)}
         </dd>
         {t.rates.map((r) => (
           <div key={r.rate} className="contents">
             <dt className="text-muted-foreground">
-              VAT {r.rate}% on {formatCents(r.baseCents)}
+              VAT {r.rate}% on {formatCents(r.baseCents, cur)}
             </dt>
             <dd className="text-right tabular-nums">
               {sign}
-              {formatCents(r.vatCents)}
+              {formatCents(r.vatCents, cur)}
             </dd>
           </div>
         ))}
         <dt className="border-t pt-1 font-semibold">Total</dt>
         <dd className="border-t pt-1 text-right font-semibold tabular-nums">
           {sign}
-          {formatCents(t.grossCents)}
+          {formatCents(t.grossCents, cur)}
         </dd>
+        {foreign && (
+          <>
+            <dt className="text-muted-foreground">In euro, at the rate</dt>
+            <dd className="text-right tabular-nums">
+              {sign}
+              {formatCents(i.grossCents)}
+            </dd>
+          </>
+        )}
       </dl>
 
       <div className="grid gap-1 text-xs text-muted-foreground">

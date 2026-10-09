@@ -24,6 +24,12 @@ export const booksSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable()
     .default(null),
+  fx: z
+    .object({
+      USD: z.number().int().positive().default(DEFAULT_BOOKS.fx.USD),
+      GBP: z.number().int().positive().default(DEFAULT_BOOKS.fx.GBP),
+    })
+    .default({ ...DEFAULT_BOOKS.fx }),
 });
 
 export function parseBooks(value: unknown): BooksSettings {

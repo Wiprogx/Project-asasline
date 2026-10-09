@@ -16,6 +16,7 @@ import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } fro
 import { approveBillSchema, newBillSchema, recordBillSchema } from "./schemas";
 import { readBooks } from "@/server/books-config";
 import { rememberLines } from "./line-memory-store";
+import { euroCents } from "@/domain/fx";
 
 /** A supplier's bill, as a draft: for a booking (a shipment cost) or for the office. */
 export async function newBill(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -103,7 +104,7 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
             invoiceId: id,
             invoiceLineId: l.id,
             acquiredOn: billDate,
-            costCents: Math.round(l.qty * l.unitCents),
+            costCents: euroCents(Math.round(l.qty * l.unitCents), bill.fxBp),
             years: defaultYears(l.description),
             account: l.account,
             createdBy: user.id,

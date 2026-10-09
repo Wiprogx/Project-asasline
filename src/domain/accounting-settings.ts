@@ -1,4 +1,5 @@
 import { DEFAULT_PAYMENT_TERMS } from "./accounting";
+import { DEFAULT_FX, type FxRates } from "./fx";
 
 /**
  * The accounting settings the office edits (legacy BOOKS.approveOver, BOOKS.vatPeriod,
@@ -15,6 +16,8 @@ export type BooksSettings = {
   vatPeriod: VatPeriodMode;
   /** Alongside Odoo until this day, or null (legacy BOOKS.parallelUntil). */
   parallelUntil: string | null;
+  /** Euro for one unit, in ten-thousandths (legacy BOOKS.fx): what a new USD or GBP document starts from. */
+  fx: FxRates;
 };
 
 export const DEFAULT_BOOKS: BooksSettings = {
@@ -22,6 +25,7 @@ export const DEFAULT_BOOKS: BooksSettings = {
   approveOverCents: 500_000,
   vatPeriod: "quarterly",
   parallelUntil: null,
+  fx: { ...DEFAULT_FX },
 };
 
 /** The office runs alongside Odoo until that day (legacy BOOKS.parallelUntil): every sale is issued there too. */

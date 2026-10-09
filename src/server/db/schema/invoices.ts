@@ -38,6 +38,9 @@ export const invoices = pgTable(
     dueDate: day(),
     paymentTermId: text(),
     currency: text().notNull().default("EUR"),
+    // Euro for one unit of the currency, in ten-thousandths (legacy fx): the lines are in the
+    // currency, the totals below are the euro the books carry at this rate.
+    fxBp: integer().notNull().default(10_000),
     ogm: text(),
     note: text(),
     reason: text(),

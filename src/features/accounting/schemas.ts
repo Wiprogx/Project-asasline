@@ -3,6 +3,7 @@ import { VAT_CODES } from "@/domain/accounting";
 import { toCents } from "@/domain/money";
 import { DIFF_ACCOUNTS, type DiffAccount, PAYMENT_METHODS } from "@/domain/payments";
 import { dayField } from "@/lib/zod-fields";
+import { CURRENCIES } from "@/domain/fx";
 
 const ref = z.object({ id: z.uuid(), version: z.coerce.number().int().positive() });
 
@@ -103,6 +104,12 @@ export const recordBillSchema = z.object({
   supplierRef: z.string().min(1, "The supplier's invoice number").max(60),
   billDate: isoDay,
   dueDate: isoDay,
+});
+
+/** A draft's currency and its rate — euro for one unit — while it is still a draft. */
+export const currencySchema = ref.extend({
+  currency: z.enum(CURRENCIES),
+  fx: z.string().trim().max(12).optional().default(""),
 });
 
 export const approveBillSchema = z.object({

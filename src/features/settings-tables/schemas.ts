@@ -1,11 +1,21 @@
 import { z } from "zod";
 import { VAT_PERIODS } from "@/domain/accounting-settings";
 import { centsField } from "@/lib/zod-fields";
+import { parseFx } from "@/domain/fx";
 
-/** The books' two figures, saved against the version read (invariant 6). */
+/** A rate as typed — euro for one unit, up to four decimals — kept as ten-thousandths. */
+const fxField = z.string().transform((v, ctx) => {
+  const bp = parseFx(v);
+  if (bp === null) ctx.addIssue({ code: "custom", message: "Euro for one unit, like 0.92" });
+  return bp ?? 0;
+});
+
+/** The books' figures, saved against the version read (invariant 6). */
 export const booksSettingsSchema = z.object({
   version: z.coerce.number().int().min(0),
   approveOver: centsField("Approval from"),
+  fxUsd: fxField,
+  fxGbp: fxField,
   vatPeriod: z.enum(VAT_PERIODS),
   parallelUntil: z
     .string()

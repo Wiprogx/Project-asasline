@@ -17,6 +17,8 @@ import { z } from "zod";
 import { peppolFile } from "./peppol-queries";
 import { rememberedAccount } from "@/domain/line-memory";
 import { memoryOf } from "./line-memory-store";
+import { fxOf, isCurrency } from "@/domain/fx";
+import { readBooks } from "@/server/books-config";
 
 const digits = (v: string) =>
   v
@@ -38,9 +40,10 @@ export async function importUbl(_p: ActionResult, fd: FormData): Promise<ActionR
   const u = parseUbl(await file.text());
   if (!u) return fail(`${file.name} is not a UBL invoice (Peppol BIS).`);
   if (u.credit) return fail("A supplier's credit note is recorded by hand for now.");
-  if (u.currency !== "EUR")
-    return fail(`${u.number} is in ${u.currency}; only euro bills are read.`);
+  if (!isCurrency(u.currency))
+    return fail(`${u.number} is in ${u.currency}; only EUR, USD and GBP bills are read.`);
   if (u.lines.length === 0) return fail(`${u.number} has no lines.`);
+  const fxBp = fxOf((await readBooks()).fx, u.currency);
 
   const r = await guarded(() =>
     db.transaction(async (tx) => {
@@ -115,6 +118,8 @@ export async function importUbl(_p: ActionResult, fd: FormData): Promise<ActionR
         .values({
           kind: "bill",
           viaPeppol: true,
+          currency: u.currency,
+          fxBp,
           customerId: supplier.id,
           supplierRef: u.number,
           issueDate: u.issueDate || null,

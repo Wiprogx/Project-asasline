@@ -15,6 +15,7 @@ describe("the accounting settings", () => {
       approveOverCents: 500_000,
       vatPeriod: "quarterly",
       parallelUntil: null,
+      fx: { USD: 9200, GBP: 11_700 },
     });
   });
 

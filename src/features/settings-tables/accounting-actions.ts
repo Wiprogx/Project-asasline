@@ -53,6 +53,7 @@ export async function saveBooksSettings(_p: ActionResult, fd: FormData): Promise
     approveOverCents: parsed.data.approveOver,
     vatPeriod: parsed.data.vatPeriod,
     parallelUntil: parsed.data.parallelUntil,
+    fx: { USD: parsed.data.fxUsd, GBP: parsed.data.fxGbp },
   });
   const bad = await saveTable({
     userId: user.id,
@@ -65,6 +66,7 @@ export async function saveBooksSettings(_p: ActionResult, fd: FormData): Promise
       approveOverCents: value.approveOverCents,
       vatPeriod: value.vatPeriod,
       parallelUntil: value.parallelUntil,
+      fx: value.fx,
     },
   });
   return bad ?? { ok: true, data: undefined, message: "Books saved" };

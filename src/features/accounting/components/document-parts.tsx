@@ -1,7 +1,9 @@
 import { defaultSaleVat, needsApproval, PURCHASE_ACCOUNTS } from "@/domain/accounting";
 import { addDays } from "@/domain/dates";
 import type { getInvoice } from "../queries";
+import { fxRates } from "../fx-queries";
 import { BillActions } from "./bill-controls";
+import { CurrencyForm } from "./currency-form";
 import { AddLineForm, RemoveLine } from "./draft-editor";
 import { InvoiceActions } from "./invoice-actions";
 import { InvoiceView } from "./invoice-view";
@@ -52,10 +54,11 @@ export function DocumentActions({
 }
 
 /** The document's lines; on a draft, lines can be removed and added (with a cost account on a bill). */
-export function DocumentBody({ inv, editable }: { inv: Doc; editable: boolean }) {
+export async function DocumentBody({ inv, editable }: { inv: Doc; editable: boolean }) {
   const i = inv.invoice;
   const bill = i.kind === "bill";
   const costAccount = i.bookingId ? "604000" : "619000";
+  const rates = editable ? await fxRates() : null;
   return (
     <>
       {bill && i.note && (
@@ -71,10 +74,20 @@ export function DocumentBody({ inv, editable }: { inv: Doc; editable: boolean })
             : undefined
         }
       />
+      {editable && rates && (
+        <CurrencyForm
+          id={i.id}
+          version={i.version}
+          currency={i.currency}
+          fxBp={i.fxBp}
+          rates={rates}
+        />
+      )}
       {editable && (
         <AddLineForm
           id={i.id}
           version={i.version}
+          currency={i.currency}
           defaultVat={bill ? "S21" : defaultSaleVat(inv.customer.country)}
           accounts={
             bill

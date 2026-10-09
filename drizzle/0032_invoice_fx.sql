@@ -1,0 +1,1 @@
+ALTER TABLE "invoices" ADD COLUMN "fx_bp" integer DEFAULT 10000 NOT NULL;

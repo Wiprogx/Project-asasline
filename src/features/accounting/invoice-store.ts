@@ -7,6 +7,7 @@ import type { Tx } from "@/server/db/client";
 import { invoiceLines, invoices } from "@/server/db/schema";
 import { ConflictError } from "@/server/versioned";
 import { invalidateTags, tags } from "@/server/cache/cache";
+import { euroTotals, FX_UNIT } from "@/domain/fx";
 
 /** A refusal the person can act on, shown as the form's error. */
 export class Refused extends Error {}
@@ -18,13 +19,17 @@ export async function liveLines(tx: Tx, invoiceId: string) {
     .where(and(eq(invoiceLines.invoiceId, invoiceId), isNull(invoiceLines.archivedAt)));
 }
 
-/** Totals are stored on the invoice so lists and reports never recompute them. */
+/**
+ * Totals are stored on the invoice so lists and reports never recompute them — in euro, at
+ * the document's rate: the lines of a USD bill stay in dollars, the books carry euro.
+ */
 export async function storeTotals(tx: Tx, invoiceId: string) {
-  const t = invoiceTotals(await liveLines(tx, invoiceId));
-  await tx
-    .update(invoices)
-    .set({ netCents: t.netCents, vatCents: t.vatCents, grossCents: t.grossCents })
+  const [doc] = await tx
+    .select({ fxBp: invoices.fxBp })
+    .from(invoices)
     .where(eq(invoices.id, invoiceId));
+  const t = euroTotals(invoiceTotals(await liveLines(tx, invoiceId)), doc?.fxBp ?? FX_UNIT);
+  await tx.update(invoices).set(t).where(eq(invoices.id, invoiceId));
   return t;
 }
 

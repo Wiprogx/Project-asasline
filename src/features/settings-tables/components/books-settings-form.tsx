@@ -11,8 +11,9 @@ import { centsToInput } from "@/domain/money";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { saveBooksSettings } from "../accounting-actions";
 import { booksSettingsSchema } from "../schemas";
+import { fxToInput } from "@/domain/fx";
 
-/** The two figures of the books the office edits (legacy BOOKS.approveOver, BOOKS.vatPeriod). */
+/** The figures of the books the office edits (legacy BOOKS.approveOver, BOOKS.vatPeriod, BOOKS.fx). */
 export function BooksSettingsForm({ books, version }: { books: BooksSettings; version: number }) {
   const [state, run, pending] = useToastedAction(saveBooksSettings, undefined, booksSettingsSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
@@ -22,15 +23,16 @@ export function BooksSettingsForm({ books, version }: { books: BooksSettings; ve
         <CardTitle>Books</CardTitle>
         <CardDescription>
           A bill at or above the threshold needs a second person before it is paid; the VAT return
-          is monthly (by the 20th) or quarterly (by the 25th). The close day moves from the VAT
-          screen.
+          is monthly (by the 20th) or quarterly (by the 25th). A document in dollars or pounds
+          starts from these rates (euro for one unit) and keeps its own. The close day moves from
+          the VAT screen.
           {books.closedThrough ? ` Closed through ${books.closedThrough}.` : " Nothing closed yet."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ActionForm
           action={run}
-          className="grid gap-3 sm:grid-cols-[12rem_12rem_12rem_auto] sm:items-end"
+          className="grid gap-3 sm:grid-cols-3 lg:grid-cols-[12rem_10rem_12rem_8rem_8rem_auto] lg:items-end"
         >
           <input type="hidden" name="version" value={version} />
           <Field id="approveOver" label="Approval from (EUR)" error={fe?.approveOver}>
@@ -63,6 +65,22 @@ export function BooksSettingsForm({ books, version }: { books: BooksSettings; ve
               name="parallelUntil"
               type="date"
               defaultValue={books.parallelUntil ?? ""}
+            />
+          </Field>
+          <Field id="fxUsd" label="Euro for 1 USD" error={fe?.fxUsd}>
+            <Input
+              id="fxUsd"
+              name="fxUsd"
+              inputMode="decimal"
+              defaultValue={fxToInput(books.fx.USD)}
+            />
+          </Field>
+          <Field id="fxGbp" label="Euro for 1 GBP" error={fe?.fxGbp}>
+            <Input
+              id="fxGbp"
+              name="fxGbp"
+              inputMode="decimal"
+              defaultValue={fxToInput(books.fx.GBP)}
             />
           </Field>
           <Button type="submit" size="sm" disabled={pending}>

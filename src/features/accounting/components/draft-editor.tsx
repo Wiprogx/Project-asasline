@@ -39,10 +39,13 @@ export function AddLineForm({
   version,
   defaultVat,
   accounts,
+  currency = "EUR",
 }: {
   id: string;
   version: number;
   defaultVat: string;
+  /** The document's currency: the unit price is typed in it. */
+  currency?: string;
   /** For a supplier bill: where each line is booked (cost accounts). */
   accounts?: { account: string; label: string; default?: boolean }[];
 }) {
@@ -67,7 +70,7 @@ export function AddLineForm({
       <Field id="l-qty" label="Qty" error={fe?.qty}>
         <Input id="l-qty" name="qty" type="number" min={1} defaultValue={1} />
       </Field>
-      <Field id="l-unit" label="Unit (EUR)" error={fe?.unit}>
+      <Field id="l-unit" label={`Unit (${currency})`} error={fe?.unit}>
         <Input id="l-unit" name="unit" inputMode="decimal" required />
       </Field>
       {accounts && (
