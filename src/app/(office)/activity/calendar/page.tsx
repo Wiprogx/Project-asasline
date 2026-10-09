@@ -43,7 +43,10 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
   const href = (p: Record<string, string>) =>
     `/activity/calendar?${new URLSearchParams({ who, month, ...p })}`;
 
-  const types = await readConfig("activityTypes");
+  const [types, withdrawReasons] = await Promise.all([
+    readConfig("activityTypes"),
+    readConfig("withdrawReasons"),
+  ]);
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -76,6 +79,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
           <h2 className="text-sm font-semibold">Tasks on {q.day}</h2>
           <NewTaskForm types={types} staff={staff} meId={me.id} defaultDue={q.day} />
           <TaskList
+            withdrawReasons={withdrawReasons}
             rows={tasks.filter((t) => t.due === q.day)}
             today={today}
             staff={staff}

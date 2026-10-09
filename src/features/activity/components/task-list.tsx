@@ -12,7 +12,17 @@ function Owner({ t }: { t: TaskRow }) {
   return <>{t.role ? `${ROLE_LABEL[t.role]} · anyone` : "nobody"}</>;
 }
 
-function TaskItem({ t, today, staff }: { t: TaskRow; today: string; staff: Staff }) {
+function TaskItem({
+  t,
+  today,
+  staff,
+  withdrawReasons,
+}: {
+  t: TaskRow;
+  today: string;
+  staff: Staff;
+  withdrawReasons: readonly string[];
+}) {
   const bucket = bucketOf(t.due, today);
   return (
     <li className="flex flex-wrap items-start justify-between gap-3 border-b py-3 last:border-0">
@@ -46,7 +56,13 @@ function TaskItem({ t, today, staff }: { t: TaskRow; today: string; staff: Staff
         </span>
         {t.note && <span className="text-sm text-muted-foreground">{t.note}</span>}
       </div>
-      <TaskActions id={t.id} version={t.version} state={t.state} staff={staff} />
+      <TaskActions
+        id={t.id}
+        version={t.version}
+        state={t.state}
+        staff={staff}
+        withdrawReasons={withdrawReasons}
+      />
     </li>
   );
 }
@@ -60,11 +76,13 @@ export function TaskList({
   today,
   staff,
   grouped = true,
+  withdrawReasons,
 }: {
   rows: TaskRow[];
   today: string;
   staff: Staff;
   grouped?: boolean;
+  withdrawReasons: readonly string[];
 }) {
   if (rows.length === 0)
     return <p className="py-8 text-center text-sm text-muted-foreground">No tasks here.</p>;
@@ -72,7 +90,13 @@ export function TaskList({
     return (
       <ul>
         {rows.map((t) => (
-          <TaskItem key={t.id} t={t} today={today} staff={staff} />
+          <TaskItem
+            withdrawReasons={withdrawReasons}
+            key={t.id}
+            t={t}
+            today={today}
+            staff={staff}
+          />
         ))}
       </ul>
     );
@@ -92,7 +116,13 @@ export function TaskList({
               .get(b)!
               .slice(0, BUCKET_SHOWN)
               .map((t) => (
-                <TaskItem key={t.id} t={t} today={today} staff={staff} />
+                <TaskItem
+                  withdrawReasons={withdrawReasons}
+                  key={t.id}
+                  t={t}
+                  today={today}
+                  staff={staff}
+                />
               ))}
           </ul>
           {groups.get(b)!.length > BUCKET_SHOWN && (

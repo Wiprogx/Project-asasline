@@ -19,7 +19,7 @@ type Copy = NonNullable<Awaited<ReturnType<typeof bookingCopy>>>;
  * asks for all, so a loading address and hour cannot be confused between drivers.
  */
 export function TruckerCopy({
-  copy: { booking: b, client },
+  copy: { booking: b, client, specs },
   box,
 }: {
   copy: Copy;
@@ -50,7 +50,7 @@ export function TruckerCopy({
       />
       {boxes.length === 0 && <p>No such container on this booking.</p>}
       {boxes.map(({ box: c, i }) => {
-        const g = vgm({ ...c, cargoKg: cargoKgOf(c) });
+        const g = vgm({ ...c, cargoKg: cargoKgOf(c) }, specs);
         const gaps = copyGaps(b, c, b.containers.length);
         return (
           <div key={i} className="grid gap-2 rounded border border-neutral-800 p-3">

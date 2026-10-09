@@ -48,16 +48,14 @@ or Lnnnn of `legacy/asasline-demo.html`.
 
 - **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
   (L1500) · `scheduleConflict`, which blocks sending documents made before a schedule change ·
-  `etdManual` override flag · requirement states received / verified / rejected with a verify and reject action · SEAL_SOURCES,
-  BOX_OWNERS (prefix → carrier) · list with configurable columns, stats and an "Invoiced" filter ·
-  a Documents tab per side for a "Both" shipment · CONTAINER_TARE / MAX as a table.
+  `etdManual` override flag · requirement states received / verified / rejected with a verify and reject action · SEAL_SOURCES · list with configurable columns, stats and an "Invoiced" filter ·
+  a Documents tab per side for a "Both" shipment.
 - **Quotations and pricing** — list analytics · Activities, Messages and History tabs
   (L7033) · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
   "Rate sources" tab.
-- **Contacts** — professions (the column exists, unused) · documents and activities tabs · "checked on" dates for VAT and EORI · ID_FORMATS editor · tags and a
+- **Contacts** — documents and activities tabs · "checked on" dates for VAT and EORI · ID_FORMATS editor · tags and a
   countries table · kanban view.
-- **Activity** — WITHDRAW_REASONS as a
-  list · NEED_KINDS (what closes a step: file, ref, confirm, send, track) and checklists (L9444) ·
+- **Activity** — NEED_KINDS (what closes a step: file, ref, confirm, send, track) and checklists (L9444) ·
   NOTIFY_LEVELS and the bell (L11567) · COUNTRY_REQS (mandatory papers and lead days per country).
 - **Discuss** — cc, attachments, answeredBy and recording on a message · a calls tab · INBOX config
   (inbox address, signature, subject tag) · WA_NUMBERS and AUTO_SEND.

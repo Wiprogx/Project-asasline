@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CONTACT_TYPES, idClean, idProblem, LANGUAGES } from "@/domain/contacts";
 import { ibanOk } from "@/domain/iban";
 import { toCents } from "@/domain/money";
+import { parseProfessions } from "@/domain/lookups";
 
 const optional = z.string().max(500).optional();
 
@@ -25,6 +26,8 @@ export const contactSchema = z.object({
   zip: optional,
   city: optional,
   note: z.string().max(5000).optional(),
+  /** The trades, typed comma-separated against the professions list. */
+  professions: z.string().max(1000).optional().transform(parseProfessions),
   paymentTermId: optional,
   usesLastPrice: z
     .string()

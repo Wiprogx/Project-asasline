@@ -31,10 +31,16 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
   const credit = may(user, "app.accounting") ? await creditStanding(c.id) : null;
   const agreements = may(user, "catalogue.edit") ? await listPriceLists({ contactId: c.id }) : null;
 
+  const professions = await readConfig("professions");
   return (
     <>
       {credit && <CreditLine {...credit} />}
-      <ContactForm action={updateContact} values={toContactFormValues(c)} submitLabel="Save" />
+      <ContactForm
+        action={updateContact}
+        values={toContactFormValues(c)}
+        submitLabel="Save"
+        professions={professions}
+      />
       <div className="grid gap-4 pt-4">
         <ContactAddresses contactId={c.id} addresses={c.addresses} types={addressTypes} />
         <BankAccounts contactId={c.id} accounts={c.bankAccounts} />

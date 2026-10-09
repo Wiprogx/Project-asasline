@@ -11,20 +11,25 @@ import { readConfig } from "@/server/config-tables";
 import { readHsCodes } from "@/server/goods-config";
 import { readLoadingModes } from "@/server/loading-config";
 import { cargoKgOf } from "@/domain/goods";
+import { readBoxOwners, readContainerSpecs } from "@/server/container-config";
+import { ownerOf, specsByType } from "@/domain/lookups";
 
 export const metadata: Metadata = { title: "Containers" };
 
 export default async function ContainersPage({ params }: PageProps<"/bookings/[id]/containers">) {
   const user = await requirePagePermission("app.bookings");
   const { id } = await params;
-  const [b, types, modes, truckers, packageTypes, hsCodes] = await Promise.all([
+  const [b, types, modes, truckers, packageTypes, hsCodes, specList, owners] = await Promise.all([
     getBooking(id),
     readConfig("containerTypes"),
     readLoadingModes(),
     contactOptions(),
     readConfig("packageTypes"),
     readHsCodes(),
+    readContainerSpecs(),
+    readBoxOwners(),
   ]);
+  const specs = specsByType(specList);
   if (!b) notFound();
   const editable = may(user, "bookings.edit") && b.status !== "cancelled";
 
@@ -38,9 +43,12 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
           >
             <span>
               #{i + 1} · {c.type} · <span className="font-mono">{c.number ?? "—"}</span>
+              {ownerOf(owners, c.number) && (
+                <span className="text-muted-foreground"> · {ownerOf(owners, c.number)}</span>
+              )}
               {c.loadingMode && <span className="text-muted-foreground"> · {c.loadingMode}</span>}
             </span>
-            <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} />
+            <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} specs={specs} />
           </div>
         ))}
       </div>
@@ -65,7 +73,10 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
           packageTypes={packageTypes}
           canRemove={b.containers.length > 1}
         >
-          <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} />
+          {ownerOf(owners, c.number) && (
+            <span className="text-xs text-muted-foreground">{ownerOf(owners, c.number)}</span>
+          )}
+          <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} specs={specs} />
         </ContainerRow>
       ))}
     </div>

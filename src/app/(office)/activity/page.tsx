@@ -25,7 +25,10 @@ export default async function ActivityPage({ searchParams }: PageProps<"/activit
     coversNow(),
   ]);
 
-  const types = await readConfig("activityTypes");
+  const [types, withdrawReasons] = await Promise.all([
+    readConfig("activityTypes"),
+    readConfig("withdrawReasons"),
+  ]);
   return (
     <div className="grid gap-4">
       <Card>
@@ -43,7 +46,13 @@ export default async function ActivityPage({ searchParams }: PageProps<"/activit
         <TaskFilters staff={staff} />
         <SearchInput placeholder="Search a task or an SB ref…" />
       </div>
-      <TaskList rows={rows} today={today} staff={staff} grouped={filters.state === "open"} />
+      <TaskList
+        withdrawReasons={withdrawReasons}
+        rows={rows}
+        today={today}
+        staff={staff}
+        grouped={filters.state === "open"}
+      />
     </div>
   );
 }

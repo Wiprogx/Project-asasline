@@ -8,6 +8,8 @@ import { contacts, quotationLines, quotationRoutes, quotations } from "@/server/
 import { getBooking } from "./queries";
 import { readHsCodes } from "@/server/goods-config";
 import { hsDescription } from "@/domain/goods";
+import { readContainerSpecs } from "@/server/container-config";
+import { specsByType } from "@/domain/lookups";
 
 /**
  * What a printed copy of the booking needs: the booking with its boxes, the customer as it
@@ -88,5 +90,10 @@ export async function bookingCopy(id: string) {
         })),
       };
   }
-  return { booking: b, client: client ?? null, price };
+  return {
+    booking: b,
+    client: client ?? null,
+    price,
+    specs: specsByType(await readContainerSpecs()),
+  };
 }

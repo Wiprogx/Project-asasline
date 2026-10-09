@@ -24,15 +24,20 @@ export type ContactFormValues = Partial<
 > & {
   id?: string;
   version?: number;
+  professions?: string | null;
 };
 
-type ContactRecord = { id: string; version: number; creditLimitCents: number | null } & Partial<
-  Record<(typeof CONTACT_TEXT_FIELDS)[number], string | null>
->;
+type ContactRecord = {
+  id: string;
+  version: number;
+  creditLimitCents: number | null;
+  professions?: string[];
+} & Partial<Record<(typeof CONTACT_TEXT_FIELDS)[number], string | null>>;
 
 export function toContactFormValues(c: ContactRecord): ContactFormValues {
   const out: ContactFormValues = { id: c.id, version: c.version };
   for (const k of CONTACT_TEXT_FIELDS) if (k !== "creditLimit") out[k] = c[k] ?? null;
   out.creditLimit = c.creditLimitCents === null ? null : centsToInput(c.creditLimitCents);
+  out.professions = c.professions?.join(", ") ?? null;
   return out;
 }

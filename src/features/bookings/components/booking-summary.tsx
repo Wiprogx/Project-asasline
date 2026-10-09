@@ -4,6 +4,8 @@ import { containerNumberOk } from "@/domain/container";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { getBooking } from "../queries";
 import { VgmBadge } from "./vgm-badge";
+import { type BoxOwner, ownerOf } from "@/domain/lookups";
+import { cargoKgOf } from "@/domain/goods";
 
 type Booking = NonNullable<Awaited<ReturnType<typeof getBooking>>>;
 type Party = { id: string; name: string } | null;
@@ -24,7 +26,15 @@ const party = (p: Party) =>
     </Link>
   );
 
-export function BookingSummary({ b }: { b: Booking }) {
+export function BookingSummary({
+  b,
+  specs,
+  owners,
+}: {
+  b: Booking;
+  specs: Record<string, { tareKg: number; maxGrossKg: number }>;
+  owners: readonly BoxOwner[];
+}) {
   const route = b.pol || b.pod ? `${b.pol ?? "?"} → ${b.pod ?? "?"}` : null;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -108,8 +118,13 @@ export function BookingSummary({ b }: { b: Booking }) {
                   {c.number && !containerNumberOk(c.number) && (
                     <span className="ml-2 text-destructive">check digit ✗</span>
                   )}
+                  {ownerOf(owners, c.number) && (
+                    <span className="ml-2 font-sans text-muted-foreground">
+                      {ownerOf(owners, c.number)}
+                    </span>
+                  )}
                 </span>
-                <VgmBadge type={c.type} cargoKg={c.cargoKg} tareKg={c.tareKg} />
+                <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} specs={specs} />
               </span>
             </div>
           ))}

@@ -33,10 +33,13 @@ export function ContactForm({
   action,
   values = {},
   submitLabel,
+  professions,
 }: {
   action: Action;
   values?: ContactFormValues;
   submitLabel: string;
+  /** The professions list (Settings › Lists), offered as the person types. */
+  professions: readonly string[];
 }) {
   const [state, formAction, pending] = useToastedAction(action, undefined, checkedContactSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
@@ -88,6 +91,25 @@ export function ContactForm({
           </Field>
         ))}
       </div>
+      <Field
+        id="professions"
+        label="Professions"
+        hint="Comma-separated; the list in Settings › Lists is offered as you type."
+        error={fe?.professions}
+      >
+        <Input
+          id="professions"
+          name="professions"
+          list="professions-list"
+          defaultValue={values.professions ?? ""}
+          placeholder="Transporter, Used clothing"
+        />
+      </Field>
+      <datalist id="professions-list">
+        {professions.map((p) => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
       <Field id="note" label="Note">
         <Textarea id="note" name="note" defaultValue={values.note ?? ""} rows={3} />
       </Field>

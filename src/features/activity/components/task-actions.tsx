@@ -93,11 +93,14 @@ export function TaskActions({
   version,
   state,
   staff,
+  withdrawReasons,
 }: {
   id: string;
   version: number;
   state: TaskState;
   staff: Staff;
+  /** The reasons offered when withdrawing (Settings › Lists). */
+  withdrawReasons: readonly string[];
 }) {
   if (state === "done")
     return <Move action={reopenTask} id={id} version={version} label="Reopen" />;
@@ -113,6 +116,7 @@ export function TaskActions({
         title="Withdraw this task?"
         description="It leaves the lists but keeps its history; you can put it back."
         confirmLabel="Withdraw"
+        reasons={withdrawReasons}
       />
       <Move action={completeTask} id={id} version={version} label="Done" variant="default" />
     </div>

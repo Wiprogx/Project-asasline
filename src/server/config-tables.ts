@@ -4,6 +4,7 @@ import { z } from "zod";
 import { DEFAULT_ACTIVITY_TYPES } from "@/domain/activity-rules";
 import { ADDRESS_TYPES } from "@/domain/contacts";
 import { DEFAULT_PACKAGE_TYPES } from "@/domain/goods";
+import { DEFAULT_PROFESSIONS, DEFAULT_WITHDRAW_REASONS } from "@/domain/lookups";
 import { DEFAULT_PAPER_DOCS } from "@/domain/release";
 import { DEFAULT_CANCEL_REASONS } from "@/domain/shipments";
 import { cached, invalidateTags } from "./cache/cache";
@@ -25,6 +26,8 @@ const TABLES = {
   packageTypes: { schema: LIST, fallback: DEFAULT_PACKAGE_TYPES },
   paperDocs: { schema: LIST, fallback: DEFAULT_PAPER_DOCS },
   activityTypes: { schema: LIST, fallback: DEFAULT_ACTIVITY_TYPES },
+  withdrawReasons: { schema: LIST, fallback: DEFAULT_WITHDRAW_REASONS },
+  professions: { schema: LIST, fallback: DEFAULT_PROFESSIONS },
 } as const;
 
 export type ConfigName = keyof typeof TABLES;

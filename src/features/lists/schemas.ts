@@ -30,6 +30,15 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     description:
       "What kind of task: e-mail, call, upload, to do, meeting, approval, reminder (legacy ACTIVITY_TYPES).",
   },
+  withdrawReasons: {
+    title: "Withdraw reasons",
+    description: "Offered when a task is withdrawn (legacy WITHDRAW_REASONS).",
+  },
+  professions: {
+    title: "Professions",
+    description:
+      "The trades a contact is in: the five a booking picks its parties from, then what the cargo is (legacy PROFESSIONS). Offered as you type on a contact.",
+  },
   paperDocs: {
     title: "Paper documents",
     description:

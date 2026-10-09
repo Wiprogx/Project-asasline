@@ -31,13 +31,11 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
 
   await open(page, "/activity");
   await row(page, title).getByRole("button", { name: "Withdraw" }).click();
-  await page.getByPlaceholder("Why? It stays on the record.").fill("Customer will send it himself");
+  await page.getByRole("dialog").getByLabel("Reason").selectOption("Done outside the system");
   await page.getByRole("dialog").getByRole("button", { name: "Withdraw" }).click();
   await expectToast(page, "Withdrawn");
   await open(page, "/activity?state=withdrawn");
-  await expect(
-    row(page, title).getByText("withdrawn — Customer will send it himself"),
-  ).toBeVisible();
+  await expect(row(page, title).getByText("withdrawn — Done outside the system")).toBeVisible();
   await submit(page, row(page, title).getByRole("button", { name: "Put back" }));
   await expectToast(page, "Put back");
 

@@ -71,8 +71,11 @@ export type Vgm =
  * the box or its type, is "unknown" — never a reassuring zero. Over the type's maximum the
  * line refuses the VGM, so the booking shows it red.
  */
-export function vgm(box: { type: string; cargoKg: number | null; tareKg: number | null }): Vgm {
-  const spec = CONTAINER_SPECS[box.type.toUpperCase()];
+export function vgm(
+  box: { type: string; cargoKg: number | null; tareKg: number | null },
+  specs: Record<string, { tareKg: number; maxGrossKg: number }> = CONTAINER_SPECS,
+): Vgm {
+  const spec = specs[box.type.toUpperCase()];
   if (box.cargoKg === null) return { state: "unknown", reason: "cargo weight missing" };
   const tare = box.tareKg ?? spec?.tareKg ?? null;
   if (tare === null) return { state: "unknown", reason: "tare unknown for this type" };

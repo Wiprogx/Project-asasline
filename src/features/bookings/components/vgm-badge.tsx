@@ -6,12 +6,15 @@ export function VgmBadge({
   type,
   cargoKg,
   tareKg,
+  specs,
 }: {
   type: string;
   cargoKg: number | null;
   tareKg: number | null;
+  /** Tare and maximum gross per type (Settings › Containers). */
+  specs: Record<string, { tareKg: number; maxGrossKg: number }>;
 }) {
-  const v = vgm({ type, cargoKg, tareKg });
+  const v = vgm({ type, cargoKg, tareKg }, specs);
   if (v.state === "unknown") return <ToneBadge tone="warning">VGM unknown · {v.reason}</ToneBadge>;
   const max = v.maxGrossKg ? ` / max ${formatKg(v.maxGrossKg)}` : "";
   return (

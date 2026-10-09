@@ -7,6 +7,7 @@ import { readFileHintsForEdit } from "@/server/file-config";
 import { readPaymentTermsForEdit } from "@/server/accounting-config";
 import { readActivityRulesForEdit } from "@/server/activity-config";
 import { readBooksForEdit } from "@/server/books-config";
+import { readBoxOwnersForEdit, readContainerSpecsForEdit } from "@/server/container-config";
 import { readHsCodesForEdit } from "@/server/goods-config";
 import { readLoadingModesForEdit } from "@/server/loading-config";
 import {
@@ -36,6 +37,13 @@ export async function accountingSettingsForEdit() {
     db.select().from(sequences).orderBy(asc(sequences.key)),
   ]);
   return { terms, books, sequences: seq };
+}
+
+/** The container specs and the box owners, for Settings › Containers. */
+export async function containerTablesForEdit() {
+  await requirePermission("app.settings");
+  const [specs, owners] = await Promise.all([readContainerSpecsForEdit(), readBoxOwnersForEdit()]);
+  return { specs, owners };
 }
 
 export async function activityRulesForEdit() {
