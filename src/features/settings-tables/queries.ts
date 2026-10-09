@@ -22,6 +22,7 @@ import { readAccessWatchForEdit } from "@/server/access-config";
 import { readBankAccountsForEdit } from "@/server/bank-config";
 import { readQuoteFieldsForEdit } from "@/server/quote-fields-config";
 import { readChecklistsForEdit } from "@/server/checklist-config";
+import { readBankRulesForEdit } from "@/server/bank-rules-config";
 
 export async function portsForEdit() {
   await requirePermission("app.settings");
@@ -36,13 +37,14 @@ export async function fileHintsForEdit() {
 /** Payment terms, the books' figures and the counters, for Settings › Accounting. */
 export async function accountingSettingsForEdit() {
   await requirePermission("app.settings");
-  const [terms, books, bank, seq] = await Promise.all([
+  const [terms, books, bank, rules, seq] = await Promise.all([
     readPaymentTermsForEdit(),
     readBooksForEdit(),
     readBankAccountsForEdit(),
+    readBankRulesForEdit(),
     db.select().from(sequences).orderBy(asc(sequences.key)),
   ]);
-  return { terms, books, bank, sequences: seq };
+  return { terms, books, bank, rules, sequences: seq };
 }
 
 /** The container specs and the box owners, for Settings › Containers. */

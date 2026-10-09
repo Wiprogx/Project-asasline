@@ -87,6 +87,8 @@ export type LedgerPayment = {
   reference: string | null;
   invoiceNumber: string | null;
   reversedOn: string | null;
+  /** A charge booked straight to an account (the bank's fee, legacy rules): no partner, no invoice. */
+  chargeAccount?: string | null;
 };
 
 /** Reverse charge on a purchase: the office owes the Belgian VAT and deducts it in the same return. */
@@ -147,15 +149,24 @@ export function docEntry(d: LedgerDoc): Entry {
 export function paymentEntries(p: LedgerPayment): Entry[] {
   const s = p.direction === "in" ? 1 : -1;
   const partnerAccount = p.direction === "in" ? ACCOUNTS.customers : ACCOUNTS.suppliers;
-  const lines: EntryLine[] = [
-    { account: ACCOUNTS.bank, cents: s * p.amountCents, label: p.reference ?? undefined },
-    { account: p.diffAccount ?? ACCOUNTS.suspense, cents: s * p.diffCents, label: "Written off" },
-    {
-      account: partnerAccount,
-      cents: -s * (p.amountCents + p.diffCents),
-      label: p.invoiceNumber ?? "on account",
-    },
-  ];
+  const lines: EntryLine[] = p.chargeAccount
+    ? [
+        { account: ACCOUNTS.bank, cents: s * p.amountCents, label: p.reference ?? undefined },
+        { account: p.chargeAccount, cents: -s * p.amountCents, label: p.reference ?? undefined },
+      ]
+    : [
+        { account: ACCOUNTS.bank, cents: s * p.amountCents, label: p.reference ?? undefined },
+        {
+          account: p.diffAccount ?? ACCOUNTS.suspense,
+          cents: s * p.diffCents,
+          label: "Written off",
+        },
+        {
+          account: partnerAccount,
+          cents: -s * (p.amountCents + p.diffCents),
+          label: p.invoiceNumber ?? "on account",
+        },
+      ];
   const who = p.partner ?? p.reference ?? "—";
   const ref = p.invoiceNumber ? `Payment ${p.invoiceNumber}` : "Payment";
   const booked = entry({

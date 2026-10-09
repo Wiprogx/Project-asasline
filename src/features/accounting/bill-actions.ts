@@ -15,6 +15,7 @@ import { assertOpen } from "./books-store";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import { approveBillSchema, newBillSchema, recordBillSchema } from "./schemas";
 import { readBooks } from "@/server/books-config";
+import { rememberLines } from "./line-memory-store";
 
 /** A supplier's bill, as a draft: for a booking (a shipment cost) or for the office. */
 export async function newBill(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -82,6 +83,8 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
       if (twice)
         throw new Refused(`This supplier's ${supplierRef} is already recorded as ${twice.number}.`);
       const totals = await storeTotals(tx, id);
+      // What each of their lines turned out to be — next time it is filled in.
+      await rememberLines(tx, bill.customerId, lines, user.id);
       const number = await nextInvoiceNumber(tx, "bill", billDate);
       await updateVersioned(
         tx,

@@ -61,6 +61,25 @@ const vatFull = (v?: string | null) => (v ?? "").toUpperCase().replace(/[^A-Z0-9
 const vatDigits = (v?: string | null) => vatFull(v).replace(/^[A-Z]{2}/, "");
 
 /** What a Peppol file needs that the customer record might not have. */
+/** Where a document stands with Peppol (legacy peppol field): read, never stored as a word. */
+export type PeppolState = "received" | "sent" | "ready" | "blocked";
+export const PEPPOL_STATE_LABEL: Record<PeppolState, string> = {
+  received: "Came in by Peppol",
+  sent: "Sent by Peppol",
+  ready: "Peppol file ready",
+  blocked: "No Peppol file yet",
+};
+
+export function peppolState(
+  i: { kind: string; status: string; viaPeppol: boolean; peppolSentAt: Date | null },
+  problems: number,
+): PeppolState | null {
+  if (i.kind === "bill") return i.viaPeppol ? "received" : null;
+  if (i.status !== "issued") return null;
+  if (i.peppolSentAt) return "sent";
+  return problems > 0 ? "blocked" : "ready";
+}
+
 export function peppolProblems(c: {
   name: string;
   vat?: string | null;

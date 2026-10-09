@@ -58,8 +58,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Discuss** — a voice recording on a call · a calls tab · INBOX config
   (inbox address, signature, subject tag) · WA_NUMBERS and AUTO_SEND.
 - **Accounting** — exchange rate on USD/GBP documents · catalogue
-  item per invoice line and general sale items (GL_ITEMS / SALE_ITEMS) · Peppol sent state · UBL import
-  line → item memory and the migration key · remembered bank matching rules · the bank's own closing balance against ours · reports: VAT by month · full JSON copy · BOOKS parallel-run flag.
+  item per invoice line and general sale items (GL_ITEMS / SALE_ITEMS) · the bank's own closing balance against ours · full JSON copy · BOOKS parallel-run flag.
 - **Settings and platform** — the remaining legacy tabs (time, notify, inbox, sign, trules,
   wa, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
   time on a record kept as a visit (L15225).

@@ -16,6 +16,8 @@ import { booksSettingsSchema, raiseSequenceSchema } from "./schemas";
 import { saveTable, versioned } from "./table-store";
 import { parseBankAccountLines } from "@/domain/bank-accounts";
 import { BANK_ACCOUNTS_TAG, bankAccountsSchema } from "@/server/bank-config";
+import { parseBankRuleLines } from "@/domain/bank-rules";
+import { BANK_RULES_TAG, bankRulesSchema } from "@/server/bank-rules-config";
 
 /** Payment terms, one per line as "id | Name | rule | days". */
 export async function savePaymentTerms(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -109,4 +111,25 @@ export async function saveBankAccounts(_p: ActionResult, fd: FormData): Promise<
   return (
     bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} bank accounts` }
   );
+}
+
+/** The bank matching rules, one per line as "words|more words | 657000 | Bank charges". */
+export async function saveBankRules(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(20_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { rules, problems } = parseBankRuleLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = bankRulesSchema.safeParse(rules);
+  if (!checked.success) return fail("Fifty rules at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "bankRules",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: BANK_RULES_TAG,
+    path: "/settings/accounting",
+    detail: { count: checked.data.length },
+  });
+  return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} bank rules` };
 }

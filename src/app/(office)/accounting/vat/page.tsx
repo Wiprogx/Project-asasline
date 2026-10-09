@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -39,6 +40,9 @@ export default async function VatPage({ searchParams }: PageProps<"/accounting/v
         description={`${from} to ${to} · ${computed.documents} documents · to file by ${vatDeadline(period)}`}
         actions={
           <>
+            <Link className={buttonVariants({ variant: "ghost" })} href="/accounting/vat/by-month">
+              By month
+            </Link>
             <a
               className={buttonVariants({ variant: "outline" })}
               href={`/accounting/vat/${period}/intervat`}

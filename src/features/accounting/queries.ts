@@ -21,6 +21,8 @@ import {
 } from "@/server/db/schema";
 import { proposals } from "@/domain/matching";
 import { creditedSql, invoiceMoney, openInvoices, settledSql } from "./money";
+import { ruleFor } from "@/domain/bank-rules";
+import { readBankRules } from "@/server/bank-rules-config";
 
 const isUuid = (id: string) => z.uuid().safeParse(id).success;
 const original = alias(invoices, "original");
@@ -60,6 +62,8 @@ export async function listInvoices(opts: {
       customer: contacts.name,
       bookingRef: bookings.ref,
       createdAt: invoices.createdAt,
+      peppolSentAt: invoices.peppolSentAt,
+      viaPeppol: invoices.viaPeppol,
     })
     .from(invoices)
     .innerJoin(contacts, eq(contacts.id, invoices.customerId))
@@ -265,7 +269,7 @@ export async function listPayments() {
 /** Statement lines, open ones first, each open line with what it probably pays. */
 export async function bankLinesWithProposals() {
   await requirePermission("app.accounting");
-  const [lines, open, ibanOf] = await Promise.all([
+  const [lines, open, ibanOf, rules] = await Promise.all([
     db
       .select()
       .from(bankLines)
@@ -274,10 +278,13 @@ export async function bankLinesWithProposals() {
       .limit(500),
     openInvoices(db),
     contactOfIbanLookup(),
+    readBankRules(),
   ]);
   const numberOf = new Map(open.map((i) => [i.id, i]));
   return lines.map((l) => ({
     line: l,
+    /** The office's own rule the line's text reads like (the bank's fee…), or null. */
+    rule: l.state === "open" ? ruleFor(rules, `${l.comm ?? ""} ${l.name ?? ""}`) : null,
     proposals:
       l.state === "open"
         ? proposals(

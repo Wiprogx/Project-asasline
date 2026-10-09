@@ -35,6 +35,25 @@ export function vatPeriodShift(p: string, n: number): string {
 }
 
 /** Monthly returns are due on the 20th of the next month, quarterly on the 25th. */
+/** The months of a year up to the office's current month, as "YYYY-MM" (legacy VAT by month). */
+export function monthsOfYear(year: string, today: string): string[] {
+  const last = today.startsWith(year) ? Number(today.slice(5, 7)) : 12;
+  return Array.from({ length: last }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+}
+
+/** The month's figures as the office reads them: sales and purchases net, VAT due and deductible. */
+export function vatMonthFigures(r: ReturnType<typeof vatReturn>) {
+  const g = (k: string) => r.grids.get(k) ?? 0;
+  return {
+    salesCents:
+      ["00", "01", "02", "03", "44", "46", "47"].reduce((s, k) => s + g(k), 0) - g("48") - g("49"),
+    purchasesCents: ["81", "82", "83"].reduce((s, k) => s + g(k), 0) - g("84") - g("85"),
+    dueCents: r.dueCents,
+    deductibleCents: r.deductibleCents,
+    balanceCents: r.balanceCents,
+  };
+}
+
 export function vatDeadline(p: string): string {
   const next = addMonths(`${vatPeriodRange(p).to.slice(0, 8)}01`, 1);
   return `${next.slice(0, 8)}${p.includes("Q") ? "25" : "20"}`;

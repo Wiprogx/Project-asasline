@@ -204,3 +204,25 @@ describe("aged balance", () => {
     expect(rows[1].buckets["1–30"]).toBe(100);
   });
 });
+
+describe("a charge booked by a rule", () => {
+  it("goes from the bank straight to its account, with no partner", () => {
+    const [e] = paymentEntries({
+      id: "p1",
+      direction: "out",
+      date: "2026-10-09",
+      amountCents: 1234,
+      diffCents: 0,
+      diffAccount: null,
+      partner: null,
+      reference: "Frais de gestion",
+      invoiceNumber: null,
+      reversedOn: null,
+      chargeAccount: "657000",
+    });
+    expect(e.lines).toEqual([
+      { account: "550000", cents: -1234, label: "Frais de gestion" },
+      { account: "657000", cents: 1234, label: "Frais de gestion" },
+    ]);
+  });
+});

@@ -3,7 +3,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { formatCents } from "@/domain/money";
 import { ignoreLine } from "../bank-actions";
 import type { bankLinesWithProposals } from "../queries";
-import { MatchButton } from "./bank-controls";
+import { BookChargeButton, MatchButton } from "./bank-controls";
 
 type Row = Awaited<ReturnType<typeof bankLinesWithProposals>>[number];
 
@@ -17,7 +17,7 @@ export function BankLines({ rows, canAct }: { rows: Row[]; canAct: boolean }) {
     );
   return (
     <ul>
-      {rows.map(({ line: l, proposals }) => (
+      {rows.map(({ line: l, proposals, rule }) => (
         <li key={l.id} className="grid gap-2 border-b py-3 last:border-0">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="flex flex-wrap items-center gap-2">
@@ -36,7 +36,16 @@ export function BankLines({ rows, canAct }: { rows: Row[]; canAct: boolean }) {
           </div>
           {l.state === "open" && canAct && (
             <div className="flex flex-wrap items-center gap-2 pl-4 text-xs text-muted-foreground">
-              {proposals.length === 0 && (
+              {rule && (
+                <span className="flex items-center gap-2">
+                  <BookChargeButton
+                    lineId={l.id}
+                    label={`Book as ${rule.label} (${rule.account})`}
+                  />
+                  <span>sure: the office&apos;s rule «{rule.match.split("|")[0]}…»</span>
+                </span>
+              )}
+              {proposals.length === 0 && !rule && (
                 <span>
                   {l.amountCents < 0
                     ? "Money out — supplier bills come in the next step."

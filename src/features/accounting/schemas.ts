@@ -82,6 +82,8 @@ export const reversePaymentSchema = z.object({
 
 export const matchLineSchema = z.object({ lineId: z.uuid(), invoiceId: z.uuid() });
 
+export const bookChargeSchema = z.object({ lineId: z.uuid() });
+
 export const ignoreLineSchema = z.object({
   lineId: z.uuid(),
   reason: z.string().min(3, "Say why the line needs no match").max(300),

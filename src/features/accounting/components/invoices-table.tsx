@@ -12,6 +12,7 @@ import { openCents, payState } from "@/domain/payments";
 import type { InvoiceRow } from "../queries";
 import { InvoiceBadge } from "./invoice-badge";
 import { PayStateBadge } from "./pay-state-badge";
+import { ToneBadge } from "@/components/shared/tone-badge";
 
 export function InvoicesTable({ rows, today }: { rows: InvoiceRow[]; today: string }) {
   if (rows.length === 0)
@@ -67,6 +68,8 @@ export function InvoicesTable({ rows, today }: { rows: InvoiceRow[]; today: stri
                       open {formatCents(openCents(i.grossCents ?? 0, i.settled, i.credited))}
                     </span>
                   )}
+                  {i.peppolSentAt && <ToneBadge tone="success">Peppol</ToneBadge>}
+                  {i.viaPeppol && <ToneBadge tone="info">via Peppol</ToneBadge>}
                 </span>
               ) : (
                 <InvoiceBadge kind={i.kind} status={i.status} />

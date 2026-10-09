@@ -75,7 +75,12 @@ export function InvoiceView({
         <tbody>
           {lines.map((l) => (
             <tr key={l.id} className="border-b last:border-0">
-              <td className="py-2 pr-2">{l.description}</td>
+              <td className="py-2 pr-2">
+                {l.description}
+                {i.kind === "bill" && (
+                  <span className="ml-2 font-mono text-xs text-muted-foreground">{l.account}</span>
+                )}
+              </td>
               <td className="py-2 text-right tabular-nums">{l.qty}</td>
               <td className="py-2 text-right tabular-nums">{formatCents(l.unitCents)}</td>
               <td className="py-2 text-right font-mono text-xs">{l.vatCode}</td>

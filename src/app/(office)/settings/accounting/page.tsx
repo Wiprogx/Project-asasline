@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import { LinesEditor } from "@/components/shared/lines-editor";
 import { paymentTermLines, TERM_RULES } from "@/domain/accounting-settings";
-import { saveBankAccounts, savePaymentTerms } from "@/features/settings-tables/accounting-actions";
+import {
+  saveBankAccounts,
+  saveBankRules,
+  savePaymentTerms,
+} from "@/features/settings-tables/accounting-actions";
 import { BooksSettingsForm } from "@/features/settings-tables/components/books-settings-form";
 import { SequenceForm } from "@/features/settings-tables/components/sequence-form";
 import { accountingSettingsForEdit } from "@/features/settings-tables/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { bankAccountLines } from "@/domain/bank-accounts";
+import { bankRuleLines } from "@/domain/bank-rules";
 
 export const metadata: Metadata = { title: "Accounting settings" };
 
@@ -15,7 +20,7 @@ const TERMS_DESCRIPTION = `When an invoice is due, one term per line: "id | Name
 /** Payment terms, the books' two figures and the numbering (legacy Accounting › settings). */
 export default async function AccountingSettingsPage() {
   await requirePagePermission("app.settings");
-  const { terms, books, bank, sequences } = await accountingSettingsForEdit();
+  const { terms, books, bank, rules, sequences } = await accountingSettingsForEdit();
   return (
     <div className="grid gap-4">
       <BooksSettingsForm books={books.books} version={books.version} />
@@ -40,6 +45,18 @@ export default async function AccountingSettingsPage() {
         lines={bankAccountLines(bank.accounts)}
         version={bank.version}
         count={bank.accounts.length}
+      />
+      <LinesEditor
+        action={saveBankRules}
+        title="Bank matching rules"
+        description={
+          'A statement line whose text reads like one of these pays no invoice: it is booked straight to its account. One rule per line: "words|more words | account | label" — the words are tried against the line\'s text, whatever the case.'
+        }
+        label="Bank matching rules, one per line"
+        submitLabel="Save bank rules"
+        lines={bankRuleLines(rules.rules)}
+        version={rules.version}
+        count={rules.rules.length}
       />
       <SequenceForm rows={sequences} />
     </div>

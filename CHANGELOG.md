@@ -15,6 +15,9 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Bank: the office's own matching rules (legacy BOOKS.rules) are a Settings table — the bank's fee, the VAT to the state: a statement line whose text reads like one is booked straight to the rule's account in one click, as a payment with no partner, and the line is matched; the ledger and the cash flow carry it.
+- Bills: what a supplier's line turned out to be is remembered (legacy lineMem) — the cost account the office recorded it on, per supplier, under the words of the line without its month or number — and the next bill from them, read from a Peppol file, is filled in; a bill's lines show their account.
+- Accounting: where a document stands with Peppol (legacy peppol ready / sent / received) — the file ready, sent through the access point on a day the office writes with one click, or a bill that came in as a Peppol file — on the invoice and in the list. VAT by month: what each month of the year would declare, each opening its own return.
 - Accounting › Cash flow (legacy cash flow): what went through the bank and cash accounts month by month, named by the other side — from customers, to suppliers, VAT, salaries, bank charges — with the cash at the start and the end of each month.
 - Accounting › KPIs (legacy KPIs tab): what was invoiced in the period, what customers owe today, the days to get paid over the last ninety days, and the margin per customer, per destination and per shipping line.
 - Documents: a paper is checked item by item (legacy CHECKLISTS, NEED_KINDS): Settings › Checklists holds the lists (the legacy export-invoice check to start), a document rule names one, and that paper's step then closes through the list — every item ticked checks it; anything left unticked becomes its own task for the step's role and the paper goes back naming what it lacks.

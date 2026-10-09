@@ -28,6 +28,8 @@ export const payments = pgTable(
     bankLineId: uuid(),
     diffCents: cents().notNull().default(0),
     diffAccount: text(),
+    /** A charge booked straight to this account by a bank rule (legacy BOOKS.rules): no invoice. */
+    chargeAccount: text(),
     reversedOn: day(),
     reversalReason: text(),
   },

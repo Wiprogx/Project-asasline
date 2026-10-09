@@ -48,6 +48,11 @@ export const invoices = pgTable(
     supplierRef: text(),
     approvedBy: uuid(),
     approvedAt: timestamp({ withTimezone: true }),
+    // Peppol (legacy peppol: ready / sent / received): when the office sent the file through the
+    // access point, and whether a bill came in as a Peppol file.
+    peppolSentAt: timestamp({ withTimezone: true }),
+    peppolSentBy: uuid(),
+    viaPeppol: boolean().notNull().default(false),
     // Brought over from Odoo at the cut-over: only the open part, against 499000; its revenue
     // and VAT were Odoo's, so it stays out of the VAT return and the listings.
     opening: boolean().notNull().default(false),
@@ -109,4 +114,23 @@ export const invoiceFiles = pgTable(
     archivedReason: text(),
   },
   (t) => [index("invoice_files_invoice_idx").on(t.invoiceId)],
+);
+
+/**
+ * What a supplier's line turned out to be (legacy BOOKS.lineMem): per supplier, the words of
+ * a line and the cost account the office booked it on; the next bill from them is filled in.
+ */
+export const billLineMemory = pgTable(
+  "bill_line_memory",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    contactId: uuid()
+      .notNull()
+      .references(() => contacts.id),
+    key: text().notNull(),
+    account: text().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedBy: uuid(),
+  },
+  (t) => [uniqueIndex("bill_line_memory_uq").on(t.contactId, t.key)],
 );

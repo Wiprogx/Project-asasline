@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { invoice } from "../../test/factories/peppol";
-import { peppolProblems, ublVat, ublXml } from "./peppol";
+import { peppolProblems, peppolState, ublVat, ublXml } from "./peppol";
 
 describe("ublXml", () => {
   const xml = ublXml(invoice);
@@ -52,5 +52,29 @@ describe("peppolProblems", () => {
   it("needs the customer's VAT number and address", () => {
     expect(peppolProblems({ name: "X" })).toEqual(["X has no VAT number", "X has no address"]);
     expect(peppolProblems({ name: "X", vat: "BE0123456789", city: "Gent" })).toEqual([]);
+  });
+});
+
+describe("peppolState", () => {
+  it("reads where a document stands: a bill that came in, a sent invoice, a ready one, a blocked one", () => {
+    const at = new Date("2026-10-09T10:00:00Z");
+    expect(
+      peppolState({ kind: "bill", status: "issued", viaPeppol: true, peppolSentAt: null }, 0),
+    ).toBe("received");
+    expect(
+      peppolState({ kind: "bill", status: "issued", viaPeppol: false, peppolSentAt: null }, 0),
+    ).toBeNull();
+    expect(
+      peppolState({ kind: "invoice", status: "draft", viaPeppol: false, peppolSentAt: null }, 0),
+    ).toBeNull();
+    expect(
+      peppolState({ kind: "invoice", status: "issued", viaPeppol: false, peppolSentAt: at }, 0),
+    ).toBe("sent");
+    expect(
+      peppolState({ kind: "invoice", status: "issued", viaPeppol: false, peppolSentAt: null }, 0),
+    ).toBe("ready");
+    expect(
+      peppolState({ kind: "credit", status: "issued", viaPeppol: false, peppolSentAt: null }, 1),
+    ).toBe("blocked");
   });
 });

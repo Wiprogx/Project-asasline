@@ -211,6 +211,20 @@
       "when": 1791564662512,
       "tag": "0029_message_invoice_files",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791567715058,
+      "tag": "0030_peppol_state_line_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791567995756,
+      "tag": "0031_bank_rule_charges",
+      "breakpoints": true
     }
   ]
 }

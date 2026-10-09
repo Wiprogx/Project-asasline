@@ -8,6 +8,7 @@ import {
   vatPeriodRange,
   vatPeriodShift,
   vatReturn,
+  monthsOfYear,
 } from "./vat";
 
 const sale = (lines: VatDoc["lines"], credit = false): VatDoc => ({
@@ -138,5 +139,12 @@ describe("intervatXml", () => {
     expect(xml).toContain("<Name>A &amp; B</Name>");
     expect(xml).toContain("<VATNumber>0772649540</VATNumber>");
     expect(xml).toContain("<ns2:Month>8</ns2:Month>");
+  });
+});
+
+describe("monthsOfYear", () => {
+  it("runs to the current month this year, and the whole of a past year", () => {
+    expect(monthsOfYear("2026", "2026-03-15")).toEqual(["2026-01", "2026-02", "2026-03"]);
+    expect(monthsOfYear("2025", "2026-03-15")).toHaveLength(12);
   });
 });

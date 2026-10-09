@@ -16,6 +16,9 @@ import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { invoiceAttachments } from "@/features/accounting/file-queries";
 import { InvoiceFiles } from "@/features/accounting/components/invoice-files";
+import { peppolProblems, peppolState } from "@/domain/peppol";
+import { PeppolBadge } from "@/features/accounting/components/peppol-badge";
+import { PeppolSentButton } from "@/features/accounting/components/peppol-controls";
 
 export const metadata: Metadata = { title: "Invoice" };
 
@@ -33,6 +36,7 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
   if (!inv) notFound();
   const i = inv.invoice;
   const today = officeToday();
+  const peppol = peppolState(i, peppolProblems(inv.customer).length);
   const draftTitle = `${i.kind === "bill" ? "Bill from" : "Draft for"} ${inv.customer.name}`;
 
   return (
@@ -40,23 +44,32 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
       <PageHeader
         title={<span className="font-mono">{i.number ?? draftTitle}</span>}
         description={
-          <InvoiceStatusLine
-            kind={i.kind}
-            status={i.status}
-            reason={i.reason}
-            credits={inv.credits}
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            <InvoiceStatusLine
+              kind={i.kind}
+              status={i.status}
+              reason={i.reason}
+              credits={inv.credits}
+            />
+            <PeppolBadge
+              state={peppol}
+              sentOn={i.peppolSentAt ? officeToday(i.peppolSentAt) : null}
+            />
+          </span>
         }
         actions={
-          <DocumentActions
-            inv={inv}
-            terms={terms}
-            today={today}
-            can={{
-              issue: may(user, "accounting.issue"),
-              approve: may(user, "accounting.approve"),
-            }}
-          />
+          <>
+            <DocumentActions
+              inv={inv}
+              terms={terms}
+              today={today}
+              can={{
+                issue: may(user, "accounting.issue"),
+                approve: may(user, "accounting.approve"),
+              }}
+            />
+            {peppol === "ready" && may(user, "accounting.issue") && <PeppolSentButton id={i.id} />}
+          </>
         }
       />
       <Card>

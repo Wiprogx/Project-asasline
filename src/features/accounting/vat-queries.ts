@@ -1,10 +1,17 @@
 import "server-only";
 import { DECLARANT } from "@/domain/company";
-import { intervatXml } from "@/domain/vat";
+import {
+  intervatXml,
+  monthsOfYear,
+  vatMonthFigures,
+  vatPeriodRange,
+  vatReturn,
+} from "@/domain/vat";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { closedThrough } from "./books-store";
 import { computeVatReturn, vatFilingOf } from "./vat-store";
+import { issuedDocs } from "./ledger-store";
 
 /** Everything the VAT screen shows for one period. */
 export async function vatScreen(period: string) {
@@ -25,4 +32,15 @@ export async function intervatFile(period: string) {
     ? new Map(Object.entries(filed.filing.grids))
     : (await computeVatReturn(period)).grids;
   return intervatXml(period, grids, DECLARANT);
+}
+
+/** Each month of the year as the documents dated in it give it now (legacy VAT by month). */
+export async function vatByMonth(year: string, today: string) {
+  await requirePermission("app.accounting");
+  return Promise.all(
+    monthsOfYear(year, today).map(async (month) => {
+      const docs = await issuedDocs(vatPeriodRange(month));
+      return { month, documents: docs.length, ...vatMonthFigures(vatReturn(docs)) };
+    }),
+  );
 }

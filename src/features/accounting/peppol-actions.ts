@@ -5,14 +5,18 @@ import { redirect } from "next/navigation";
 import { ibanOk } from "@/domain/iban";
 import { invoiceTotals } from "@/domain/invoicing";
 import { formatCents } from "@/domain/money";
-import { type ActionResult, fail } from "@/lib/action-result";
+import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { contactBankAccounts, contacts, invoiceLines, invoices } from "@/server/db/schema";
 import { parseUbl } from "@/server/ubl";
-import { guarded, Refused, refreshInvoice } from "./invoice-store";
+import { guarded, refreshInvoice, Refused } from "./invoice-store";
+import { z } from "zod";
+import { peppolFile } from "./peppol-queries";
+import { rememberedAccount } from "@/domain/line-memory";
+import { memoryOf } from "./line-memory-store";
 
 const digits = (v: string) =>
   v
@@ -110,6 +114,7 @@ export async function importUbl(_p: ActionResult, fd: FormData): Promise<ActionR
         .insert(invoices)
         .values({
           kind: "bill",
+          viaPeppol: true,
           customerId: supplier.id,
           supplierRef: u.number,
           issueDate: u.issueDate || null,
@@ -119,6 +124,8 @@ export async function importUbl(_p: ActionResult, fd: FormData): Promise<ActionR
           updatedBy: user.id,
         })
         .returning({ id: invoices.id });
+      // A line the office booked before goes on the same account (legacy lineMem).
+      const memory = known ? await memoryOf(tx, known.id) : [];
       await tx.insert(invoiceLines).values(
         u.lines.map((l, i) => ({
           invoiceId: bill.id,
@@ -127,7 +134,7 @@ export async function importUbl(_p: ActionResult, fd: FormData): Promise<ActionR
           qty: l.qty,
           unitCents: l.unitCents,
           vatCode: l.vatCode,
-          account: "619000",
+          account: rememberedAccount(memory, l.description) ?? "619000",
           createdBy: user.id,
         })),
       );
@@ -145,4 +152,31 @@ export async function importUbl(_p: ActionResult, fd: FormData): Promise<ActionR
   await invalidateTags(tags.contacts);
   refreshInvoice(r.value, null);
   redirect(`/accounting/invoices/${r.value}`);
+}
+
+/**
+ * The office sent the file through the access point (legacy peppol: "sent"): the day is written
+ * on the invoice. Refused while the file itself cannot be made.
+ */
+export async function markPeppolSent(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("accounting.issue");
+  const parsed = z.object({ id: z.uuid() }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const file = await peppolFile(parsed.data.id);
+  if ("problems" in file) return fail(`Not sent: ${file.problems.join("; ")}.`);
+  const rows = await db
+    .update(invoices)
+    .set({ peppolSentAt: new Date(), peppolSentBy: user.id })
+    .where(and(eq(invoices.id, parsed.data.id), isNull(invoices.peppolSentAt)))
+    .returning({ id: invoices.id, bookingId: invoices.bookingId, number: invoices.number });
+  if (rows.length === 0) return fail("Already marked as sent.");
+  await audit(db, {
+    action: "invoice.peppolSent",
+    userId: user.id,
+    entity: "invoice",
+    entityId: rows[0].id,
+    detail: { number: rows[0].number },
+  });
+  await refreshInvoice(rows[0].id, rows[0].bookingId);
+  return { ok: true, data: undefined, message: `${rows[0].number} marked as sent by Peppol` };
 }

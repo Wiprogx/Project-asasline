@@ -36,6 +36,7 @@ export const readJournal = cache(async () => {
         amountCents: payments.amountCents,
         diffCents: payments.diffCents,
         diffAccount: payments.diffAccount,
+        chargeAccount: payments.chargeAccount,
         partner: contacts.name,
         reference: payments.reference,
         invoiceNumber: invoices.number,

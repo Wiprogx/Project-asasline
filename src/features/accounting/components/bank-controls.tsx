@@ -5,7 +5,7 @@ import { ActionForm } from "@/components/shared/action-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
-import { autoMatch, importStatement, matchLine } from "../bank-actions";
+import { autoMatch, bookCharge, importStatement, matchLine } from "../bank-actions";
 import { matchLineSchema } from "../schemas";
 
 export function ImportStatement() {
@@ -53,6 +53,19 @@ export function MatchButton({
     <ActionForm action={run}>
       <input type="hidden" name="lineId" value={lineId} />
       <input type="hidden" name="invoiceId" value={invoiceId} />
+      <Button type="submit" size="sm" variant="outline" disabled={pending}>
+        {label}
+      </Button>
+    </ActionForm>
+  );
+}
+
+/** The line reads like one of the office's rules: book it straight to the rule's account. */
+export function BookChargeButton({ lineId, label }: { lineId: string; label: string }) {
+  const [, run, pending] = useToastedAction(bookCharge);
+  return (
+    <ActionForm action={run}>
+      <input type="hidden" name="lineId" value={lineId} />
       <Button type="submit" size="sm" variant="outline" disabled={pending}>
         {label}
       </Button>

@@ -10,6 +10,7 @@ import { bankLines, invoices, paymentAllocations, payments } from "@/server/db/s
 import { Refused } from "./invoice-store";
 import { invoiceMoney } from "./money";
 import { readBooks } from "@/server/books-config";
+import { type BankRule } from "@/domain/bank-rules";
 
 export type PaymentInput = {
   invoiceId: string;
@@ -84,6 +85,42 @@ export async function bookPayment(tx: Tx, p: PaymentInput) {
     },
   });
   return { paymentId: pay.id, invoiceNumber: inv.number, bookingId: inv.bookingId };
+}
+
+/** A statement line booked straight to a rule's account: a payment with no partner, the line matched. */
+export async function bookRuleCharge(
+  tx: Tx,
+  line: { id: string; date: string; amountCents: number; comm: string | null; name: string | null },
+  rule: BankRule,
+  userId: string,
+) {
+  await assertOpen(tx, line.date);
+  const [pay] = await tx
+    .insert(payments)
+    .values({
+      direction: line.amountCents > 0 ? "in" : "out",
+      date: line.date,
+      amountCents: Math.abs(line.amountCents),
+      method: "bank",
+      reference: (line.comm || line.name || rule.label).slice(0, 200),
+      bankLineId: line.id,
+      chargeAccount: rule.account,
+      createdBy: userId,
+      updatedBy: userId,
+    })
+    .returning({ id: payments.id });
+  await tx
+    .update(bankLines)
+    .set({ state: "matched", paymentId: pay.id, updatedBy: userId, updatedAt: new Date() })
+    .where(eq(bankLines.id, line.id));
+  await audit(tx, {
+    action: "payment.charge",
+    userId,
+    entity: "payment",
+    entityId: pay.id,
+    detail: { account: rule.account, label: rule.label, amountCents: line.amountCents },
+  });
+  return { paymentId: pay.id, label: rule.label, account: rule.account };
 }
 
 export function refreshMoney(invoiceId?: string | null, bookingId?: string | null) {

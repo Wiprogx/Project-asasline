@@ -11,9 +11,11 @@ import { readBankAccounts } from "@/server/bank-config";
 import { bankLines } from "@/server/db/schema";
 import { guarded, Refused } from "./invoice-store";
 import { openInvoices } from "./money";
-import { bookPayment, refreshMoney } from "./payment-store";
+import { bookPayment, bookRuleCharge, refreshMoney } from "./payment-store";
 import { contactOfIbanLookup } from "./queries";
-import { ignoreLineSchema, matchLineSchema } from "./schemas";
+import { bookChargeSchema, ignoreLineSchema, matchLineSchema } from "./schemas";
+import { ruleFor } from "@/domain/bank-rules";
+import { readBankRules } from "@/server/bank-rules-config";
 
 const MAX_FILE = 5 * 1024 * 1024;
 
@@ -95,6 +97,34 @@ export async function matchLine(_p: ActionResult, fd: FormData): Promise<ActionR
   if (!r.ok) return r;
   refreshMoney(parsed.data.invoiceId, r.value.bookingId);
   return { ok: true, data: undefined, message: `Matched to ${r.value.invoiceNumber}` };
+}
+
+/**
+ * A line the office's own rules know (the bank's fee, the VAT to the state) pays no invoice:
+ * it is booked straight to the rule's account, as a payment with no partner, and the line is
+ * matched to it (legacy rule proposals).
+ */
+export async function bookCharge(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("accounting.bank");
+  const parsed = bookChargeSchema.safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const r = await guarded(() =>
+    db.transaction(async (tx) => {
+      const [line] = await tx
+        .select()
+        .from(bankLines)
+        .where(eq(bankLines.id, parsed.data.lineId))
+        .for("update");
+      if (!line || line.state !== "open")
+        throw new Refused("This line is already matched or ignored.");
+      const rule = ruleFor(await readBankRules(), `${line.comm ?? ""} ${line.name ?? ""}`);
+      if (!rule) throw new Refused("No rule of the office reads this line.");
+      return bookRuleCharge(tx, line, rule, user.id);
+    }),
+  );
+  if (!r.ok) return r;
+  refreshMoney();
+  return { ok: true, data: undefined, message: `Booked as ${r.value.label} — ${r.value.account}` };
 }
 
 export async function ignoreLine(_p: ActionResult, fd: FormData): Promise<ActionResult> {
