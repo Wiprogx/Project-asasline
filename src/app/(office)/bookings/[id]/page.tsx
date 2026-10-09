@@ -7,6 +7,8 @@ import { getBooking } from "@/features/bookings/queries";
 import { truckerCopyGaps } from "@/domain/loading";
 import { readBoxOwners, readContainerSpecs } from "@/server/container-config";
 import { specsByType } from "@/domain/lookups";
+import { scheduleConflict } from "@/domain/vessels";
+import { TakeSailingDates } from "@/features/vessels/components/take-sailing-dates";
 
 export async function generateMetadata({ params }: PageProps<"/bookings/[id]">): Promise<Metadata> {
   const id = z.uuid().safeParse((await params).id);
@@ -22,6 +24,7 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
     readBoxOwners(),
   ]);
   if (!b) notFound();
+  const blocked = scheduleConflict(b, b.vessel);
   return (
     <>
       <BookingSummary b={b} specs={specsByType(specList)} owners={owners} />
@@ -29,6 +32,8 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
         <div className="grid gap-4 pt-4 lg:grid-cols-2">
           <CopiesCard
             bookingId={b.id}
+            blocked={blocked}
+            fix={b.vessel && <TakeSailingDates bookingId={b.id} vesselId={b.vessel.id} />}
             boxes={b.containers.map((c) => ({
               id: c.id,
               number: c.number,

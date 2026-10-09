@@ -5,6 +5,7 @@ import { PrintSheet } from "@/components/shared/print-sheet";
 import { bookingCopy } from "@/features/bookings/copy-queries";
 import { CustomerCopy } from "@/features/bookings/components/customer-copy";
 import { requirePagePermission } from "@/server/auth/dal";
+import { CopyBlocked } from "@/features/bookings/components/copy-blocked";
 
 export const metadata: Metadata = { title: "Customer copy" };
 
@@ -17,6 +18,7 @@ export default async function CustomerCopyPage({
   if (!id.success) notFound();
   const copy = await bookingCopy(id.data);
   if (!copy || copy.booking.status === "cancelled") notFound();
+  if (copy.blocked.length) return <CopyBlocked bookingId={id.data} reasons={copy.blocked} />;
   return (
     <PrintSheet kind="Booking confirmation" number={copy.booking.ref}>
       <CustomerCopy copy={copy} />

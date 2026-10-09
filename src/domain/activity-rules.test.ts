@@ -9,13 +9,14 @@ import {
 } from "./activity-rules";
 
 describe("automatic activities", () => {
-  it("ship the legacy six rules, four of them active, and seven task types", () => {
-    expect(DEFAULT_ACTIVITY_RULES).toHaveLength(6);
+  it("ship the legacy six rules and the sailing-moved one, five of them active, and seven task types", () => {
+    expect(DEFAULT_ACTIVITY_RULES).toHaveLength(7);
     expect(DEFAULT_ACTIVITY_RULES.filter((r) => r.active).map((r) => r.trigger)).toEqual([
       "quote_created",
       "quote_sent",
       "dest_added",
       "booking_created",
+      "sailing_moved",
     ]);
     expect(DEFAULT_ACTIVITY_TYPES).toHaveLength(7);
   });

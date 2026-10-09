@@ -2,7 +2,9 @@ import "server-only";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { bookingFieldsOf, type CutoffRules } from "@/domain/vessels";
 import type { Tx } from "@/server/db/client";
-import { bookings, vessels } from "@/server/db/schema";
+import { openAutoTask } from "@/server/auto-tasks";
+import { officeToday } from "@/server/clock";
+import { bookings, contacts, vessels } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
 
 type Vessel = typeof vessels.$inferSelect;
@@ -33,11 +35,16 @@ export async function applySailing(
   return true;
 }
 
-/** Every live booking on the sailing, moved with it. Returns how many changed. */
+/**
+ * Every live booking on the sailing, moved with it; the customer of each one moved gets told
+ * (legacy "Tell the customer the new cut-offs", through the activity rules). Returns how many
+ * changed.
+ */
 export async function moveBookingsOf(tx: Tx, v: Vessel, rules: CutoffRules, userId: string) {
   const on = await tx
-    .select({ id: bookings.id })
+    .select({ id: bookings.id, ref: bookings.ref, client: contacts.name })
     .from(bookings)
+    .innerJoin(contacts, eq(contacts.id, bookings.clientId))
     .where(
       and(
         eq(bookings.vesselId, v.id),
@@ -46,6 +53,17 @@ export async function moveBookingsOf(tx: Tx, v: Vessel, rules: CutoffRules, user
       ),
     );
   let moved = 0;
-  for (const b of on) if (await applySailing(tx, b.id, v, rules, userId)) moved++;
+  const today = officeToday();
+  for (const b of on) {
+    if (!(await applySailing(tx, b.id, v, rules, userId))) continue;
+    moved++;
+    await openAutoTask(tx, {
+      trigger: "sailing_moved",
+      vars: { ref: b.ref, client: b.client },
+      link: { kind: "booking", id: b.id },
+      userId,
+      today,
+    });
+  }
   return moved;
 }

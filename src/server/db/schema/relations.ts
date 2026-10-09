@@ -3,7 +3,14 @@ import { activities } from "./activities";
 import { contactAddresses, contactBankAccounts, contacts } from "./contacts";
 import { users } from "./identity";
 import { priceListLines, priceLists, rateItems } from "./pricing";
-import { bookings, containers, quotationLines, quotationRoutes, quotations } from "./shipments";
+import {
+  bookings,
+  containers,
+  quotationLines,
+  quotationRoutes,
+  quotations,
+  vessels,
+} from "./shipments";
 
 export const contactsRelations = relations(contacts, ({ many }) => ({
   addresses: many(contactAddresses),
@@ -58,6 +65,7 @@ export const quotationLinesRelations = relations(quotationLines, ({ one }) => ({
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
+  vessel: one(vessels, { fields: [bookings.vesselId], references: [vessels.id] }),
   client: one(contacts, {
     fields: [bookings.clientId],
     references: [contacts.id],

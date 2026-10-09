@@ -73,3 +73,21 @@ export const sailingLabel = (v: Sailing & { pol: string | null; pod: string | nu
 export function sailingProblem(v: { etd: string | null; eta: string | null }): string | null {
   return v.etd && v.eta && v.eta < v.etd ? "The ETA is before the ETD." : null;
 }
+
+/**
+ * A date typed over the sailing's (legacy scheduleConflict, etdManual): nothing may leave the
+ * office carrying a sailing the ship has moved past. The booking's own dates are the override;
+ * the register's are the truth; each difference is named so the desk can see which to fix.
+ */
+export function scheduleConflict(
+  b: { etd: string | null; eta: string | null },
+  v: { etd: string | null; eta: string | null } | null | undefined,
+): string[] {
+  if (!v) return [];
+  const out: string[] = [];
+  if (b.etd && v.etd && b.etd !== v.etd)
+    out.push(`the page says the ship leaves ${b.etd}, the register says ${v.etd}`);
+  if (b.eta && v.eta && b.eta !== v.eta)
+    out.push(`the page says it arrives ${b.eta}, the register says ${v.eta}`);
+  return out;
+}

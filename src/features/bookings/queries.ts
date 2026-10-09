@@ -89,6 +89,8 @@ export const getBooking = cache(async (id: string) => {
       consignee: { columns: { id: true, name: true } },
       notify: { columns: { id: true, name: true } },
       quotation: { columns: { id: true, ref: true } },
+      /** The register's dates, to see a date typed over them (domain/vessels scheduleConflict). */
+      vessel: { columns: { id: true, etd: true, eta: true } },
       containers: { where: isNull(containers.archivedAt), orderBy: asc(containers.position) },
     },
   });

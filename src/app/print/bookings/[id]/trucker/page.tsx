@@ -5,6 +5,7 @@ import { PrintSheet } from "@/components/shared/print-sheet";
 import { bookingCopy } from "@/features/bookings/copy-queries";
 import { TruckerCopy } from "@/features/bookings/components/trucker-copy";
 import { requirePagePermission } from "@/server/auth/dal";
+import { CopyBlocked } from "@/features/bookings/components/copy-blocked";
 
 export const metadata: Metadata = { title: "Trucker copy" };
 
@@ -18,6 +19,7 @@ export default async function TruckerCopyPage({
   if (!id.success) notFound();
   const copy = await bookingCopy(id.data);
   if (!copy || copy.booking.status === "cancelled") notFound();
+  if (copy.blocked.length) return <CopyBlocked bookingId={id.data} reasons={copy.blocked} />;
   const { box } = await searchParams;
   const n = z.coerce.number().int().positive().safeParse(box);
   return (

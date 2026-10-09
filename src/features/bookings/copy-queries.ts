@@ -10,6 +10,7 @@ import { readHsCodes } from "@/server/goods-config";
 import { hsDescription } from "@/domain/goods";
 import { readContainerSpecs } from "@/server/container-config";
 import { specsByType } from "@/domain/lookups";
+import { scheduleConflict } from "@/domain/vessels";
 
 /**
  * What a printed copy of the booking needs: the booking with its boxes, the customer as it
@@ -95,5 +96,7 @@ export async function bookingCopy(id: string) {
     client: client ?? null,
     price,
     specs: specsByType(await readContainerSpecs()),
+    /** Why the copy may not go out: a date typed over the sailing's (legacy scheduleConflict). */
+    blocked: scheduleConflict(b, b.vessel),
   };
 }

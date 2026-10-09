@@ -5,6 +5,7 @@ import {
   DEFAULT_CUTOFFS,
   sailingLabel,
   sailingProblem,
+  scheduleConflict,
 } from "./vessels";
 
 const roma = { name: "MSC ROMA", voyage: "FA534A", etd: "2026-09-01", eta: "2026-09-19" };
@@ -46,5 +47,18 @@ describe("sailings", () => {
   it("refuses an ETA before the ETD", () => {
     expect(sailingProblem({ etd: "2026-09-10", eta: "2026-09-01" })).toMatch(/before the ETD/);
     expect(sailingProblem({ etd: "2026-09-10", eta: null })).toBeNull();
+  });
+});
+
+describe("scheduleConflict", () => {
+  it("names each date typed over the sailing's, and nothing when they agree or there is no sailing", () => {
+    const v = { etd: "2026-09-01", eta: "2026-09-19" };
+    expect(scheduleConflict({ etd: "2026-09-01", eta: "2026-09-19" }, v)).toEqual([]);
+    expect(scheduleConflict({ etd: "2026-09-03", eta: "2026-09-19" }, v)).toEqual([
+      "the page says the ship leaves 2026-09-03, the register says 2026-09-01",
+    ]);
+    expect(scheduleConflict({ etd: "2026-09-03", eta: "2026-09-21" }, v)).toHaveLength(2);
+    expect(scheduleConflict({ etd: "2026-09-03", eta: null }, null)).toEqual([]);
+    expect(scheduleConflict({ etd: null, eta: null }, v)).toEqual([]);
   });
 });

@@ -11,6 +11,7 @@ export const TRIGGERS = [
   "quote_sent",
   "dest_added",
   "booking_created",
+  "sailing_moved",
   "doc_missing",
   "invoice_overdue",
 ] as const;
@@ -21,6 +22,7 @@ export const TRIGGER_LABEL: Record<Trigger, string> = {
   quote_sent: "Quotation sent",
   dest_added: "Destination added",
   booking_created: "Booking created",
+  sailing_moved: "Sailing moved",
   doc_missing: "Document still missing",
   invoice_overdue: "Invoice overdue",
 };
@@ -83,6 +85,15 @@ export const DEFAULT_ACTIVITY_RULES: ActivityRule[] = [
     type: "Approve",
     role: "docs_clerk",
     days: 1,
+    active: true,
+  },
+  {
+    trigger: "sailing_moved",
+    label: "Sailing moved",
+    title: "Tell {client} the new cut-offs for {ref}",
+    type: "Email",
+    role: "docs_clerk",
+    days: 0,
     active: true,
   },
   {

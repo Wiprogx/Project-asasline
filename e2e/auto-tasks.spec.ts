@@ -8,7 +8,7 @@ test("a quotation, a destination and a booking each open the task their rule ask
   await login(page);
 
   await open(page, "/settings/activity-rules");
-  await expect(page.getByText(/6 entries/)).toBeVisible();
+  await expect(page.getByText(/7 entries/)).toBeVisible();
 
   const client = `E2E Rules ${t}`;
   await open(page, "/contacts/new");

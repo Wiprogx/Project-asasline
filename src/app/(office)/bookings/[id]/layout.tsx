@@ -12,6 +12,7 @@ import { releaseState, releaseTone } from "@/domain/release";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { readReleaseStates } from "@/server/release-config";
 import { creditStanding } from "@/features/accounting/reminder-queries";
+import { scheduleConflict } from "@/domain/vessels";
 
 /** The booking's header, status controls and tabs; each tab is its own URL. */
 export default async function BookingLayout({ params, children }: LayoutProps<"/bookings/[id]">) {
@@ -55,6 +56,9 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
             )}
             {b.client.name}
             {credit?.problem && <ToneBadge tone="danger">{credit.problem}</ToneBadge>}
+            {scheduleConflict(b, b.vessel).length > 0 && (
+              <ToneBadge tone="danger">{"Dates not the sailing's"}</ToneBadge>
+            )}
           </span>
         }
         actions={
