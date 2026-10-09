@@ -124,13 +124,14 @@ export async function staffOptions() {
     .orderBy(asc(users.name));
 }
 
-/** The home screen's two numbers: my open tasks overdue, and due today. */
+/** The home screen's and the bell's numbers: my open tasks overdue, due today, and the blocking steps at or past their day. */
 export async function myTaskCounts(today: string) {
   const me = await requirePermission("app.activity");
   const [row] = await db
     .select({
       overdue: sql<number>`count(*) filter (where ${activities.due} < ${today})::int`,
       today: sql<number>`count(*) filter (where ${activities.due} = ${today})::int`,
+      stop: sql<number>`count(*) filter (where ${activities.blocking} and ${activities.due} <= ${today})::int`,
     })
     .from(activities)
     .where(and(eq(activities.state, "open"), mineWhere(me)));

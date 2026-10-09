@@ -6,12 +6,14 @@ import { AutoMatch, ImportStatement } from "@/features/accounting/components/ban
 import { BankLines } from "@/features/accounting/components/bank-lines";
 import { bankLinesWithProposals } from "@/features/accounting/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { bankStandings } from "@/features/accounting/bank-queries";
+import { BankAccountsCard } from "@/features/accounting/components/bank-accounts-card";
 
 export const metadata: Metadata = { title: "Bank" };
 
 export default async function BankPage() {
   const user = await requirePagePermission("app.accounting");
-  const rows = await bankLinesWithProposals();
+  const [rows, standings] = await Promise.all([bankLinesWithProposals(), bankStandings()]);
   const canAct = may(user, "accounting.bank");
   const open = rows.filter((r) => r.line.state === "open").length;
   return (
@@ -28,6 +30,7 @@ export default async function BankPage() {
           )
         }
       />
+      <BankAccountsCard rows={standings} />
       <Card>
         <CardContent className="pt-2">
           <BankLines rows={rows} canAct={canAct} />

@@ -130,6 +130,8 @@ export function parseBankCsv(text: string): Statement | null {
   const cName = col(/naam tegenpartij|nom de la contrepartie|counterparty name/, /naam|nom|name/);
   const cIban = col(/rekening tegenpartij|compte (de la )?contrepartie|counterparty account|iban/);
   const cComm = col(/mededeling|communication|description|details|omschrijving|message/);
+  // The statement's own account (legacy: the first "Rekening" / "Compte" column), never the counterparty's.
+  const cOwn = H.findIndex((x) => /^(rekening|compte|account|own account|iban)$/.test(x.trim()));
 
   const out: Statement = { source: "CSV", account: "", moves: [] };
   for (const r of rows.slice(header + 1)) {
@@ -137,6 +139,7 @@ export function parseBankCsv(text: string): Statement | null {
     const cents = csvCents(c[cAmount] ?? "");
     const date = csvDate(c[cDate] ?? "");
     if (!cents || !date) continue;
+    if (!out.account && cOwn >= 0) out.account = (c[cOwn] ?? "").replace(/\s/g, "").toUpperCase();
     const comm = cComm >= 0 ? (c[cComm] ?? "") : "";
     const ogm = (OGM_RE.exec(comm)?.[0] ?? "").replace(/\*/g, "+");
     out.moves.push({

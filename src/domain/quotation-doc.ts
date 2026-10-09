@@ -36,7 +36,8 @@ export type DocRoute = {
 export type QuotationDoc = {
   routes: {
     title: string;
-    lines: { text: string; amountCents: number | null }[];
+    /** `term`: a free-time condition, named on the paper and never totalled. */
+    lines: { text: string; amountCents: number | null; term: boolean }[];
     totalCents: number;
   }[];
   totalCents: number;
@@ -87,10 +88,11 @@ export function quotationDoc(routes: readonly DocRoute[], display: QuotationDisp
           ? r.lines.map((l) => ({
               text: lineText(l, r.boxes),
               amountCents: l.condition ? null : lineTotal(l, r.boxes),
+              term: l.condition,
             }))
           : r.lines
               .filter((l) => l.listed)
-              .map((l) => ({ text: lineText(l, r.boxes), amountCents: null })),
+              .map((l) => ({ text: lineText(l, r.boxes), amountCents: null, term: l.condition })),
       totalCents: r.lines.reduce((s, l) => s + lineTotal(l, r.boxes), 0),
     }));
   return { routes: docRoutes, totalCents: docRoutes.reduce((s, r) => s + r.totalCents, 0) };

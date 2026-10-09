@@ -11,6 +11,9 @@ import { may, ROLE_LABEL } from "@/domain/permissions";
 import { logout } from "@/features/auth/actions";
 import { requireUser } from "@/server/auth/dal";
 import { readPorts } from "@/server/port-config";
+import { Bell } from "@/components/layout/bell";
+import { myTaskCounts } from "@/features/activity/queries";
+import { officeToday } from "@/server/clock";
 
 export default async function OfficeLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
@@ -18,6 +21,7 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
   const allowed = NAV.filter((i) => i.permission === null || may(user, i.permission)).map(
     (i) => i.href,
   );
+  const counts = may(user, "app.activity") ? await myTaskCounts(officeToday()) : null;
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
@@ -33,7 +37,8 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-4" />
           <span className="text-sm text-muted-foreground">ASASLINE S.A. · Brussels</span>
-          <span className="ml-auto">
+          <span className="ml-auto flex items-center gap-1">
+            {counts && <Bell counts={counts} />}
             <ThemeToggle />
           </span>
         </header>

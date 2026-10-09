@@ -49,18 +49,18 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
   (L1500) · SEAL_SOURCES · the list's column picker and period comparison ·
   a Documents tab per side for a "Both" shipment.
-- **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
-  "Rate sources" tab.
+- **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison ·
+  a "Rate sources" tab.
 - **Contacts** — documents tab · countries table · kanban view.
 - **Activity** — NEED_KINDS (what closes a step: file, ref, confirm, send, track) and checklists (L9444) ·
-  NOTIFY_LEVELS and the bell (L11567) · COUNTRY_REQS (mandatory papers and lead days per country).
+  a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
+  country) is covered by Settings › Document rules: a country's paper is a rule with its anchor, offset and blocking flag.
 - **Discuss** — a voice recording on a call · a calls tab · INBOX config
   (inbox address, signature, subject tag) · WA_NUMBERS and AUTO_SEND.
 - **Accounting** — exchange rate on USD/GBP documents · catalogue
   item per invoice line and general sale items (GL_ITEMS / SALE_ITEMS) · Peppol sent state · UBL import
-  line → item memory and the migration key · remembered bank matching rules · statement vs book balance
-  and a BANK_ACCOUNTS table · reports: cash flow, KPIs, DSO, profit per customer / destination / line,
-  VAT by month · full JSON copy · a BANK_ACCOUNTS Settings editor · BOOKS parallel-run flag.
+  line → item memory and the migration key · remembered bank matching rules · the bank's own closing balance against ours · reports: cash flow, KPIs, DSO, profit per customer / destination / line,
+  VAT by month · full JSON copy · BOOKS parallel-run flag.
 - **Settings and platform** — the remaining legacy tabs (time, notify, inbox, sign, trules,
   wa, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
   time on a record kept as a visit (L15225).

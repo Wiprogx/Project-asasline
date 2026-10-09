@@ -14,6 +14,8 @@ import { sequences } from "@/server/db/schema";
 import { ConflictError } from "@/server/versioned";
 import { booksSettingsSchema, raiseSequenceSchema } from "./schemas";
 import { saveTable, versioned } from "./table-store";
+import { parseBankAccountLines } from "@/domain/bank-accounts";
+import { BANK_ACCOUNTS_TAG, bankAccountsSchema } from "@/server/bank-config";
 
 /** Payment terms, one per line as "id | Name | rule | days". */
 export async function savePaymentTerms(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -84,4 +86,27 @@ export async function raiseSequence(_p: ActionResult, fd: FormData): Promise<Act
   revalidatePath("/settings/accounting");
   if (moved === null) return fail(`A counter never moves back: ${key} is already past ${value}.`);
   return { ok: true, data: undefined, message: `${key} moved forward from ${moved} to ${value}` };
+}
+
+/** The office's bank accounts, one per line as "Name | IBAN | BIC | 550000 | opening | YYYY-MM-DD". */
+export async function saveBankAccounts(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(10_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { accounts, problems } = parseBankAccountLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = bankAccountsSchema.safeParse(accounts);
+  if (!checked.success) return fail("Twenty accounts at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "bankAccounts",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: BANK_ACCOUNTS_TAG,
+    path: "/settings/accounting",
+    detail: { count: checked.data.length },
+  });
+  return (
+    bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} bank accounts` }
+  );
 }

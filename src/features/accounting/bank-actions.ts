@@ -7,6 +7,7 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { readBankAccounts } from "@/server/bank-config";
 import { bankLines } from "@/server/db/schema";
 import { guarded, Refused } from "./invoice-store";
 import { openInvoices } from "./money";
@@ -26,10 +27,13 @@ export async function importStatement(_p: ActionResult, fd: FormData): Promise<A
   const statement = parseStatement(await file.text());
   if (!statement) return fail(`Nothing in ${file.name} reads as a bank statement (CODA or CSV).`);
 
+  // A file that names no account is the office's only one, when it has only one.
+  const accounts = await readBankAccounts();
+  const account = statement.account || (accounts.length === 1 ? accounts[0].iban : "");
   const rows = statement.moves.map((m, i) => ({
     dedupKey: dedupKey(statement.account, m, i),
     source: statement.source,
-    account: statement.account || null,
+    account: account || null,
     date: m.date,
     amountCents: m.amountCents,
     name: m.name || null,

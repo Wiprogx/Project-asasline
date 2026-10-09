@@ -19,6 +19,8 @@ import { readPermissionsForEdit } from "@/server/permission-config";
 import { readPortsForEdit } from "@/server/port-config";
 import { readIdFormatsForEdit } from "@/server/id-config";
 import { readAccessWatchForEdit } from "@/server/access-config";
+import { readBankAccountsForEdit } from "@/server/bank-config";
+import { readQuoteFieldsForEdit } from "@/server/quote-fields-config";
 
 export async function portsForEdit() {
   await requirePermission("app.settings");
@@ -33,12 +35,13 @@ export async function fileHintsForEdit() {
 /** Payment terms, the books' figures and the counters, for Settings › Accounting. */
 export async function accountingSettingsForEdit() {
   await requirePermission("app.settings");
-  const [terms, books, seq] = await Promise.all([
+  const [terms, books, bank, seq] = await Promise.all([
     readPaymentTermsForEdit(),
     readBooksForEdit(),
+    readBankAccountsForEdit(),
     db.select().from(sequences).orderBy(asc(sequences.key)),
   ]);
-  return { terms, books, sequences: seq };
+  return { terms, books, bank, sequences: seq };
 }
 
 /** The container specs and the box owners, for Settings › Containers. */
@@ -58,6 +61,12 @@ export async function idFormatsForEdit() {
 export async function accessWatchForEdit() {
   await requirePermission("audit.view");
   return readAccessWatchForEdit();
+}
+
+/** What the printed quotation shows, for Settings › Quotation document. */
+export async function quoteFieldsForEdit() {
+  await requirePermission("app.settings");
+  return readQuoteFieldsForEdit();
 }
 
 export async function activityRulesForEdit() {

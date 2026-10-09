@@ -4,6 +4,7 @@ import { activityRuleLines, TRIGGER_LABEL, TRIGGERS } from "@/domain/activity-ru
 import { saveActivityRules } from "@/features/settings-tables/actions";
 import { activityRulesForEdit } from "@/features/settings-tables/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { NotifyLevelsCard } from "@/features/activity/components/notify-levels-card";
 
 export const metadata: Metadata = { title: "Automatic activities" };
 
@@ -13,15 +14,18 @@ export default async function ActivityRulesPage() {
   await requirePagePermission("app.settings");
   const { rules, version } = await activityRulesForEdit();
   return (
-    <LinesEditor
-      action={saveActivityRules}
-      title="Automatic activities"
-      description={DESCRIPTION}
-      label="Automatic activities, one per line"
-      submitLabel="Save automatic activities"
-      lines={activityRuleLines(rules)}
-      version={version}
-      count={rules.length}
-    />
+    <div className="grid gap-4">
+      <LinesEditor
+        action={saveActivityRules}
+        title="Automatic activities"
+        description={DESCRIPTION}
+        label="Automatic activities, one per line"
+        submitLabel="Save automatic activities"
+        lines={activityRuleLines(rules)}
+        version={version}
+        count={rules.length}
+      />
+      <NotifyLevelsCard />
+    </div>
   );
 }
