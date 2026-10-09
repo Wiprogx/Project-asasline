@@ -17,7 +17,7 @@ export function InvoicesTable({ rows, today }: { rows: InvoiceRow[]; today: stri
   if (rows.length === 0)
     return <p className="py-10 text-center text-sm text-muted-foreground">No invoices match.</p>;
   return (
-    <Table>
+    <Table aria-label="Invoices">
       <TableHeader>
         <TableRow>
           <TableHead>Number</TableHead>

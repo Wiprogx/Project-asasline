@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { sendQuotation } from "../send-actions";
+import { sendSchema } from "../editor-schemas";
 
 type Channel = "email" | "whatsapp";
 
@@ -36,10 +37,14 @@ export function SendQuotation(p: {
   const [channel, setChannel] = useState<Channel>(
     p.letter.email || !p.letter.whatsapp ? "email" : "whatsapp",
   );
-  const [state, run, pending] = useToastedAction(sendQuotation, (data) => {
-    if (data?.href) window.open(data.href, "_blank", "noopener");
-    setOpen(false);
-  });
+  const [state, run, pending] = useToastedAction(
+    sendQuotation,
+    (data) => {
+      if (data?.href) window.open(data.href, "_blank", "noopener");
+      setOpen(false);
+    },
+    sendSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   const to = channel === "email" ? p.letter.email : p.letter.whatsapp;
   return (

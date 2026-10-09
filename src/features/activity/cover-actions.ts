@@ -11,15 +11,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { activities, covers, users } from "@/server/db/schema";
-
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date");
-
-const coverSchema = z.object({
-  absentId: z.uuid("Who is away"),
-  coverId: z.uuid("Who covers"),
-  from: day,
-  to: day.optional().or(z.literal("").transform(() => undefined)),
-});
+import { coverHandOverSchema, coverSchema } from "./cover-schemas";
 
 const refresh = () => {
   revalidatePath("/activity", "layout");
@@ -81,18 +73,13 @@ export async function endCover(_p: ActionResult, fd: FormData): Promise<ActionRe
   return { ok: true, data: undefined, message: "Back — the tasks are theirs again" };
 }
 
-const handOverSchema = z.object({
-  from: z.string().min(1, "From whom"),
-  toId: z.uuid("To whom"),
-});
-
 /**
  * Leaving for good (or a job change): every open task of a person — or of a role nobody
  * holds any more — moves to someone, once, and the log says how many.
  */
 export async function handOver(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("activity.cover");
-  const parsed = handOverSchema.safeParse(formToObject(fd));
+  const parsed = coverHandOverSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { from, toId } = parsed.data;
   const isRole = (ROLES as readonly string[]).includes(from);

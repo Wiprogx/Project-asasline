@@ -2,6 +2,7 @@ import { buttonVariants } from "@/components/ui/button";
 import type { getQuotation, quotationLetter } from "../queries";
 import { PresentationSwitch } from "./presentation-switch";
 import { SendQuotation } from "./send-quotation";
+import { NewTab } from "@/components/shared/new-tab";
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 type Letter = Awaited<ReturnType<typeof quotationLetter>>;
@@ -18,6 +19,7 @@ export function QuotationActions({ q, letter }: { q: Quotation; letter: Letter }
         className={buttonVariants({ variant: "outline", size: "sm" })}
       >
         Print / PDF
+        <NewTab />
       </a>
       <SendQuotation
         quotationId={q.id}

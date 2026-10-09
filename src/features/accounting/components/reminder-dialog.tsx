@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { writeReminder } from "../reminder-actions";
+import { reminderSchema } from "../schemas";
 
 /** The reminder due, written out to be read and changed before it is recorded and opened. */
 export function ReminderDialog(p: {
@@ -28,10 +29,14 @@ export function ReminderDialog(p: {
   body: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, run, pending] = useToastedAction(writeReminder, (data) => {
-    if (data?.href) window.open(data.href, "_blank", "noopener");
-    setOpen(false);
-  });
+  const [state, run, pending] = useToastedAction(
+    writeReminder,
+    (data) => {
+      if (data?.href) window.open(data.href, "_blank", "noopener");
+      setOpen(false);
+    },
+    reminderSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <Dialog open={open} onOpenChange={setOpen}>

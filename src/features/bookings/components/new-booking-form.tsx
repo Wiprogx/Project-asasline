@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createBooking } from "../actions";
+import { newBookingSchema } from "../schemas";
 
 type Option = { id: string; name: string };
 
@@ -18,7 +19,7 @@ export function NewBookingForm({
   clients: Option[];
   containerTypes: string[];
 }) {
-  const [state, action, pending] = useToastedAction(createBooking);
+  const [state, action, pending] = useToastedAction(createBooking, undefined, newBookingSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

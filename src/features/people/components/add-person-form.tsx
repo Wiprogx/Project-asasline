@@ -10,10 +10,15 @@ import { MIN_PASSWORD_LENGTH } from "@/domain/people";
 import { ROLE_LABEL, ROLES } from "@/domain/permissions";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addPerson } from "../actions";
+import { newPersonSchema } from "../schemas";
 
 export function AddPersonForm() {
   const form = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useToastedAction(addPerson, () => form.current?.reset());
+  const [state, action, pending] = useToastedAction(
+    addPerson,
+    () => form.current?.reset(),
+    newPersonSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

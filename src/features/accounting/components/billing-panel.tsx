@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { formatCents } from "@/domain/money";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { draftFromBooking } from "../draft-actions";
+import { fromBookingSchema } from "../schemas";
 
 type Line = {
   key: string;
@@ -33,7 +34,7 @@ export function BillingPanel({
   parties: { id: string; name: string }[];
   defaultPayer: string;
 }) {
-  const [state, run, pending] = useToastedAction(draftFromBooking);
+  const [state, run, pending] = useToastedAction(draftFromBooking, undefined, fromBookingSchema);
   const open = lines.filter((l) => l.remaining > 0);
   if (lines.length === 0)
     return (

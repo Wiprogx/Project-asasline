@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addAddress, archiveAddress } from "../address-actions";
+import { addressSchema } from "../schemas";
 
 type Address = {
   id: string;
@@ -42,7 +43,7 @@ export function ContactAddresses({
   addresses: Address[];
   types: string[];
 }) {
-  const [state, run, pending] = useToastedAction(addAddress);
+  const [state, run, pending] = useToastedAction(addAddress, undefined, addressSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <Card>

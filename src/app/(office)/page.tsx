@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,8 @@ import { appTiles, monthPanel } from "@/features/home/queries";
 import { requireUser } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = { title: "Home" };
 
 function Stat({
   href,

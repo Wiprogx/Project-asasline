@@ -4,9 +4,10 @@ import { ActionForm } from "@/components/shared/action-form";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { claimMessage } from "../actions";
+import { claimSchema } from "../schemas";
 
 export function ClaimButton({ id }: { id: string }) {
-  const [, run, pending] = useToastedAction(claimMessage);
+  const [, run, pending] = useToastedAction(claimMessage, undefined, claimSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="id" value={id} />

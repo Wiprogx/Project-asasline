@@ -17,7 +17,7 @@ export function PriceListsTable({ rows, today }: { rows: Row[]; today: string })
   if (rows.length === 0)
     return <p className="py-8 text-center text-sm text-muted-foreground">No agreement yet.</p>;
   return (
-    <Table>
+    <Table aria-label="Price lists">
       <TableHeader>
         <TableRow>
           <TableHead>Agreement</TableHead>

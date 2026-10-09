@@ -19,7 +19,7 @@ function Empty({ text }: { text: string }) {
 export function ClientListingTable({ rows }: { rows: ClientRow[] }) {
   if (rows.length === 0) return <Empty text="No Belgian customer above €250 this year." />;
   return (
-    <Table>
+    <Table aria-label="Listing">
       <TableHeader>
         <TableRow>
           <TableHead>Customer</TableHead>
@@ -56,7 +56,7 @@ export function ClientListingTable({ rows }: { rows: ClientRow[] }) {
 export function IntraListingTable({ rows }: { rows: IntraRow[] }) {
   if (rows.length === 0) return <Empty text="No reverse-charge service to an EU customer." />;
   return (
-    <Table>
+    <Table aria-label="Listing">
       <TableHeader>
         <TableRow>
           <TableHead>Customer</TableHead>

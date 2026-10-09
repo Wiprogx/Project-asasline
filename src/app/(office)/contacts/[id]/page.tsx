@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PageHeader } from "@/components/shared/page-header";
@@ -18,6 +19,12 @@ import { listPriceLists } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readConfig } from "@/server/config-tables";
+
+export async function generateMetadata({ params }: PageProps<"/contacts/[id]">): Promise<Metadata> {
+  const id = z.uuid().safeParse((await params).id);
+  const c = id.success ? await getContact(id.data) : null;
+  return { title: c?.name ?? "Contact" };
+}
 
 export default async function ContactPage({ params }: PageProps<"/contacts/[id]">) {
   const user = await requirePagePermission("app.contacts");

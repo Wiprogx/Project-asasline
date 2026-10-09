@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import type { Holiday } from "@/domain/rules/calendar";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addHoliday, removeHoliday } from "../actions";
+import { addHolidaySchema, removeHolidaySchema } from "../schemas";
 
 function Remove({ index, version }: { index: number; version: number }) {
-  const [, run, pending] = useToastedAction(removeHoliday);
+  const [, run, pending] = useToastedAction(removeHoliday, undefined, removeHolidaySchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="index" value={index} />
@@ -28,7 +29,11 @@ function Remove({ index, version }: { index: number; version: number }) {
  */
 export function HolidaysEditor({ holidays, version }: { holidays: Holiday[]; version: number }) {
   const form = useRef<HTMLFormElement>(null);
-  const [state, run, pending] = useToastedAction(addHoliday, () => form.current?.reset());
+  const [state, run, pending] = useToastedAction(
+    addHoliday,
+    () => form.current?.reset(),
+    addHolidaySchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

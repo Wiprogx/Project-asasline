@@ -39,7 +39,7 @@ module.exports = {
           "[.]d[.]ts$", // declaration files
           "(^|/)tsconfig[.]json$",
           "(^|/)(?:babel|webpack|vite|vitest|next|playwright|drizzle|eslint|prettier)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$",
-          "(^|/)(?:app|pages)/.*(?:page|layout|route|loading|error|not-found|template|default|middleware|proxy|instrumentation)[.](?:js|jsx|ts|tsx)$", // framework entry points
+          "(^|/)(?:app|pages)/.*(?:page|layout|route|loading|error|not-found|template|default|middleware|proxy|instrumentation|manifest|robots|sitemap|icon|apple-icon|opengraph-image)[.](?:js|jsx|ts|tsx)$", // framework entry points, metadata routes included
           "(^|/)scripts/", // run by name, not imported
           "^src/proxy[.]ts$", // Next.js 16 proxy (was middleware), an entry point outside app/
         ],

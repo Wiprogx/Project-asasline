@@ -20,7 +20,7 @@ export function AuditTable({ rows }: { rows: AuditRow[] }) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Nothing recorded yet.</p>;
   }
   return (
-    <Table>
+    <Table aria-label="Audit">
       <TableHeader>
         <TableRow>
           <TableHead>When</TableHead>

@@ -5,9 +5,10 @@ import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { archiveRateItem, restoreRateItem } from "../item-actions";
+import { restoreSchema } from "../schemas";
 
 export function RateItemArchive({ id, archived }: { id: string; archived: boolean }) {
-  const [, restore, pending] = useToastedAction(restoreRateItem);
+  const [, restore, pending] = useToastedAction(restoreRateItem, undefined, restoreSchema);
   if (archived)
     return (
       <ActionForm action={restore}>

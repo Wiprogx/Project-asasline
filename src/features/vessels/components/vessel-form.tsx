@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { VESSEL_STATUS_META, VESSEL_STATUSES } from "@/domain/vessels";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createVessel, updateVessel } from "../actions";
+import { vesselSchema, vesselUpdateSchema } from "../schemas";
 
 type Values = Partial<
   Record<
@@ -43,7 +44,11 @@ const FIELDS = [
 /** A sailing: new, or changed — a changed one moves every booking on it. */
 export function VesselForm({ values }: { values?: Values }) {
   const editing = !!values?.id;
-  const [state, run, pending] = useToastedAction(editing ? updateVessel : createVessel);
+  const [state, run, pending] = useToastedAction(
+    editing ? updateVessel : createVessel,
+    undefined,
+    editing ? vesselUpdateSchema : vesselSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm

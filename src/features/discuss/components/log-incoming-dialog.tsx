@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CHANNEL_LABEL, type Route } from "@/domain/messages";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { logIncoming } from "../actions";
+import { logIncomingSchema } from "../schemas";
 
 type Option = { id: string; name: string };
 
@@ -35,7 +37,11 @@ export function LogIncomingDialog({
   linkRef?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, run, pending] = useToastedAction(logIncoming, () => setOpen(false));
+  const [state, run, pending] = useToastedAction(
+    logIncoming,
+    () => setOpen(false),
+    logIncomingSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
@@ -47,6 +53,10 @@ export function LogIncomingDialog({
         <ActionForm action={run} className="grid gap-3">
           <DialogHeader>
             <DialogTitle>Log a message received</DialogTitle>
+            <DialogDescription>
+              A mail, a call or a WhatsApp that reached the office outside the system, on the record
+              with its file.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field id="in-channel" label="Came by">

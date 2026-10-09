@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BOOKING_FLOW, BOOKING_STATUS_META, type BookingStatus } from "@/domain/shipments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { cancelBooking, restoreBooking, setBookingStatus } from "../actions";
+import { restoreSchema, statusSchema } from "../schemas";
 
 type Props = {
   id: string;
@@ -18,8 +19,16 @@ type Props = {
 };
 
 export function BookingControls({ id, version, status, canEdit, canCancel, cancelReasons }: Props) {
-  const [, statusAction, statusPending] = useToastedAction(setBookingStatus);
-  const [, restoreAction, restorePending] = useToastedAction(restoreBooking);
+  const [, statusAction, statusPending] = useToastedAction(
+    setBookingStatus,
+    undefined,
+    statusSchema,
+  );
+  const [, restoreAction, restorePending] = useToastedAction(
+    restoreBooking,
+    undefined,
+    restoreSchema,
+  );
 
   if (status === "cancelled") {
     return canCancel ? (

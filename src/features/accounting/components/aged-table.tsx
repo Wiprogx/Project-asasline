@@ -18,7 +18,7 @@ export function AgedTable({ rows, who }: { rows: ReturnType<typeof agedBalance>;
     return <p className="py-6 text-center text-sm text-muted-foreground">Nothing open.</p>;
   const col = (b: (typeof AGE_BUCKETS)[number]) => rows.reduce((s, r) => s + r.buckets[b], 0);
   return (
-    <Table>
+    <Table aria-label="Aged">
       <TableHeader>
         <TableRow>
           <TableHead>{who}</TableHead>

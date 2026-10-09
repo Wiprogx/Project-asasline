@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -17,6 +18,7 @@ import { ROLE_LABEL, ROLES } from "@/domain/permissions";
 import type { TaskState } from "@/domain/tasks";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { completeTask, handOverTask, putBackTask, reopenTask, withdrawTask } from "../actions";
+import { handOverSchema } from "../schemas";
 
 type Staff = { id: string; name: string }[];
 
@@ -47,7 +49,7 @@ function Move({
 
 function HandOver({ id, version, staff }: { id: string; version: number; staff: Staff }) {
   const [open, setOpen] = useState(false);
-  const [, run, pending] = useToastedAction(handOverTask, () => setOpen(false));
+  const [, run, pending] = useToastedAction(handOverTask, () => setOpen(false), handOverSchema);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="ghost" size="sm" />}>Hand over</DialogTrigger>
@@ -55,6 +57,10 @@ function HandOver({ id, version, staff }: { id: string; version: number; staff: 
         <ActionForm action={run} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>Hand over this task</DialogTitle>
+            <DialogDescription>
+              To a person, or to a role for the first who takes it; the task keeps its date and its
+              link.
+            </DialogDescription>
           </DialogHeader>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="version" value={version} />

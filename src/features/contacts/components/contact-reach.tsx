@@ -1,4 +1,5 @@
 import { Button, buttonVariants } from "@/components/ui/button";
+import { NewTab } from "@/components/shared/new-tab";
 
 const digits = (v: string) => v.replace(/[^\d+]/g, "");
 
@@ -40,6 +41,7 @@ export function ContactReach({
           }
         >
           WhatsApp
+          <NewTab />
         </Button>
       )}
       {email && (

@@ -33,7 +33,7 @@ export function MarginTable({ rows }: { rows: Row[] }) {
   const sum = (k: "revenueCents" | "costCents" | "marginCents") =>
     rows.reduce((s, r) => s + r[k], 0);
   return (
-    <Table>
+    <Table aria-label="Margin">
       <TableHeader>
         <TableRow>
           <TableHead>Shipment</TableHead>

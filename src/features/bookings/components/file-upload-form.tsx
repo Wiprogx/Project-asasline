@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ALLOWED_TYPES } from "@/domain/files";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { uploadFile } from "../file-actions";
+import { fileMetaSchema } from "../file-schemas";
 
 /**
  * Files a document on the booking. The code is read from the file's name (Settings › Filing
@@ -22,7 +23,7 @@ export function FileUploadForm({
   codes: string[];
   steps: { code: string; doc: string }[];
 }) {
-  const [state, run, pending] = useToastedAction(uploadFile);
+  const [state, run, pending] = useToastedAction(uploadFile, undefined, fileMetaSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm

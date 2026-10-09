@@ -31,7 +31,7 @@ export function RemindersTable({
   if (rows.length === 0)
     return <p className="py-8 text-center text-sm text-muted-foreground">Nothing overdue.</p>;
   return (
-    <Table>
+    <Table aria-label="Reminders">
       <TableHeader>
         <TableRow>
           <TableHead>Invoice</TableHead>

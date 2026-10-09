@@ -27,7 +27,7 @@ export default async function RoomPage({ params }: PageProps<"/discuss/room/[roo
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No messages yet.</p>
         ) : (
-          <ul aria-label="Messages" aria-live="polite">
+          <ul aria-label="Messages" aria-live="polite" aria-relevant="additions">
             {rows.map((m) => (
               <MessageItem key={m.id} m={m} />
             ))}

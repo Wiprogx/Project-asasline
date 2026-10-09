@@ -5,10 +5,11 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { blankDraft } from "../draft-actions";
+import { blankDraftSchema } from "../schemas";
 
 /** A draft for a customer, not tied to a booking; lines are added on the draft. */
 export function NewInvoiceForm({ customers }: { customers: { id: string; name: string }[] }) {
-  const [, run, pending] = useToastedAction(blankDraft);
+  const [, run, pending] = useToastedAction(blankDraft, undefined, blankDraftSchema);
   return (
     <ActionForm action={run} className="flex flex-wrap items-center gap-2">
       <NativeSelect

@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { closeBooksThrough, fileVatReturn } from "../vat-actions";
+import { closeBooksSchema, fileVatSchema } from "../schemas";
 
 /** Marks the period as filed once it has been sent through Intervat. */
 export function FileVatButton({ period }: { period: string }) {
-  const [, run, pending] = useToastedAction(fileVatReturn);
+  const [, run, pending] = useToastedAction(fileVatReturn, undefined, fileVatSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="period" value={period} />
@@ -22,7 +23,7 @@ export function FileVatButton({ period }: { period: string }) {
 
 /** Closes the books through a past day; nothing dated on or before it can change afterwards. */
 export function CloseBooksForm({ suggested }: { suggested: string }) {
-  const [state, run, pending] = useToastedAction(closeBooksThrough);
+  const [state, run, pending] = useToastedAction(closeBooksThrough, undefined, closeBooksSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm action={run} className="flex flex-wrap items-end gap-2">

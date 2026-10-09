@@ -28,7 +28,7 @@ export function RateItemsTable({
     return <p className="py-8 text-center text-sm text-muted-foreground">No item here.</p>;
   const label = (code: string) => categories.find((c) => c.code === code)?.label ?? code;
   return (
-    <Table>
+    <Table aria-label="Rate items">
       <TableHeader>
         <TableRow>
           <TableHead>Item</TableHead>

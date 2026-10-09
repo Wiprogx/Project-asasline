@@ -5,6 +5,7 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { setBookingVessel } from "../actions";
+import { bookingVesselSchema } from "../schemas";
 
 /**
  * The booking's sailing from the register: its ETD, ETA and closings follow the sailing, and
@@ -19,7 +20,7 @@ export function BookingSailing({
   vesselId: string | null;
   options: { value: string; label: string }[];
 }) {
-  const [, run, pending] = useToastedAction(setBookingVessel);
+  const [, run, pending] = useToastedAction(setBookingVessel, undefined, bookingVesselSchema);
   return (
     <ActionForm action={run} className="flex flex-wrap items-center gap-2" key={vesselId ?? "none"}>
       <input type="hidden" name="bookingId" value={bookingId} />

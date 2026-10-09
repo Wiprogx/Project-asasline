@@ -39,7 +39,7 @@ export function RouteLines({
 }) {
   const { sell, cost } = routeTotals(r);
   return (
-    <Table>
+    <Table aria-label="Route lines">
       <TableHeader>
         <TableRow>
           <TableHead>Service</TableHead>

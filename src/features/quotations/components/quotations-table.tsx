@@ -16,7 +16,7 @@ export function QuotationsTable({ rows }: { rows: QuotationRow[] }) {
     return <p className="py-10 text-center text-sm text-muted-foreground">No quotations match.</p>;
   }
   return (
-    <Table>
+    <Table aria-label="Quotations">
       <TableHeader>
         <TableRow>
           <TableHead>Ref</TableHead>

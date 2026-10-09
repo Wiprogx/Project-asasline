@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ import { ROLE_LABEL, ROLES } from "@/domain/permissions";
 import { ANCHOR_LABEL, ANCHORS, type DocRule, PARTIES } from "@/domain/rules/engine";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { saveRule } from "../actions";
+import { ruleFormSchema } from "../schemas";
 
 const opts = <T extends string>(values: readonly T[], label: (v: T) => string = (v) => v) =>
   values.map((v) => ({ value: v, label: label(v) }));
@@ -49,7 +51,7 @@ export function RuleDialog({
   trigger: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, run, pending] = useToastedAction(saveRule, () => setOpen(false));
+  const [state, run, pending] = useToastedAction(saveRule, () => setOpen(false), ruleFormSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   const r = rule;
 
@@ -62,6 +64,10 @@ export function RuleDialog({
         <ActionForm action={run} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{r ? `Rule ${r.code}` : "New document rule"}</DialogTitle>
+            <DialogDescription>
+              Which document, for which destinations, due when and by whom; every live booking is
+              re-planned on save.
+            </DialogDescription>
           </DialogHeader>
           <input type="hidden" name="index" value={index} />
           <input type="hidden" name="version" value={version} />

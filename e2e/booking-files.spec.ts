@@ -56,7 +56,7 @@ test("a file is filed by its name, proves a document step, and is taken off with
   await submit(page, page.getByRole("button", { name: "File it" }));
   await expectToast(page, "Filed as ASK_INV — the step is done");
   await expect(stepRow(page, "ASK_INV").getByText("Done")).toBeVisible();
-  await expect(stepRow(page, "INVOICE").getByText("Open")).toBeVisible();
+  await expect(stepRow(page, "INVOICE").getByText("Open", { exact: true })).toBeVisible();
   // …and its task exists: the chain was re-planned, not only redrawn.
   await open(page, `${base}/tasks`);
   await expect(

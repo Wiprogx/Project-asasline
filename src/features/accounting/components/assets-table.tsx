@@ -32,7 +32,7 @@ export function AssetsTable({
       </p>
     );
   return (
-    <Table>
+    <Table aria-label="Assets">
       <TableHeader>
         <TableRow>
           <TableHead>Asset</TableHead>

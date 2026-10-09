@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ROLE_LABEL, ROLES } from "@/domain/permissions";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addCover, endCover, handOver } from "../cover-actions";
+import { coverHandOverSchema, coverSchema } from "../cover-schemas";
 
 type Cover = {
   id: string;
@@ -33,7 +34,7 @@ function EndCover({ id, started }: { id: string; started: boolean }) {
 }
 
 function AddCover({ staff, today }: { staff: Person[]; today: string }) {
-  const [state, run, pending] = useToastedAction(addCover);
+  const [state, run, pending] = useToastedAction(addCover, undefined, coverSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   const people = staff.map((p) => ({ value: p.id, label: p.name }));
   return (
@@ -70,7 +71,7 @@ function AddCover({ staff, today }: { staff: Person[]; today: string }) {
 }
 
 function HandOver({ staff }: { staff: Person[] }) {
-  const [, run, pending] = useToastedAction(handOver);
+  const [, run, pending] = useToastedAction(handOver, undefined, coverHandOverSchema);
   return (
     <ActionForm action={run} className="grid gap-2 sm:grid-cols-3 sm:items-end">
       <Field id="ho-from" label="Hand over everything of">

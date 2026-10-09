@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addLine } from "../line-actions";
+import { addLineSchema } from "../editor-schemas";
 
 /**
  * A charge on one destination: an item of the catalogue, priced for this customer (leave the
@@ -25,7 +26,7 @@ export function AddLineForm({
   items: { value: string; label: string }[];
   showCost: boolean;
 }) {
-  const [state, run, pending] = useToastedAction(addLine);
+  const [state, run, pending] = useToastedAction(addLine, undefined, addLineSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   const id = (name: string) => `al-${routeId}-${name}`;
   return (

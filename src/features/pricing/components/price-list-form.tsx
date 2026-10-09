@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createPriceList, updatePriceList } from "../list-actions";
+import { priceListSchema, priceListUpdateSchema } from "../schemas";
 
 type Values = {
   id?: string;
@@ -27,7 +28,11 @@ export function PriceListForm({
   values?: Values;
 }) {
   const editing = !!values?.id;
-  const [state, run, pending] = useToastedAction(editing ? updatePriceList : createPriceList);
+  const [state, run, pending] = useToastedAction(
+    editing ? updatePriceList : createPriceList,
+    undefined,
+    editing ? priceListUpdateSchema : priceListSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm

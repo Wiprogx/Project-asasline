@@ -10,6 +10,7 @@ import { CONTACT_TYPES, LANGUAGES } from "@/domain/contacts";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import type { ActionResult } from "@/lib/action-result";
 import type { ContactFormValues } from "../form-values";
+import { checkedContactSchema } from "../schemas";
 
 type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
 
@@ -37,7 +38,7 @@ export function ContactForm({
   values?: ContactFormValues;
   submitLabel: string;
 }) {
-  const [state, formAction, pending] = useToastedAction(action);
+  const [state, formAction, pending] = useToastedAction(action, undefined, checkedContactSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

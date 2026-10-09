@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { formatCents } from "@/domain/money";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { bookAccruals, cancelAccruals } from "../accrual-actions";
+import { accrualBookSchema } from "../schemas";
 
 /** Books what the table shows on the chosen day. */
 export function BookAccruals({ onDate, totalCents }: { onDate: string; totalCents: number }) {
-  const [, run, pending] = useToastedAction(bookAccruals);
+  const [, run, pending] = useToastedAction(bookAccruals, undefined, accrualBookSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="onDate" value={onDate} />

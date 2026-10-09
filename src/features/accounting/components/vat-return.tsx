@@ -52,7 +52,7 @@ export function VatGrids({ grids }: { grids: Map<string, number> }) {
         <h2 className="font-heading text-base font-medium">Grids</h2>
       </CardHeader>
       <CardContent>
-        <Table>
+        <Table aria-label="Vat return">
           {Object.entries(GRID_SECTIONS).map(([section, gs]) => (
             <TableBody key={section}>
               <TableRow>

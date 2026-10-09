@@ -12,5 +12,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api/health|_next/static|_next/image|favicon.ico).*)"],
+  // The installable app's files and the offline page are read before anyone signs in.
+  matcher: [
+    "/((?!login|offline|api/health|_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|manifest.webmanifest|sw.js|icons/).*)",
+  ],
 };

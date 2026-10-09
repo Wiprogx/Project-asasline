@@ -17,7 +17,7 @@ export function VesselsTable({ rows }: { rows: Row[] }) {
   if (rows.length === 0)
     return <p className="py-8 text-center text-sm text-muted-foreground">No sailing yet.</p>;
   return (
-    <Table>
+    <Table aria-label="Vessels">
       <TableHeader>
         <TableRow>
           <TableHead>Vessel · voyage</TableHead>

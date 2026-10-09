@@ -60,7 +60,7 @@ test("the calendar shows a task on its day", async ({ page }) => {
   await page.getByLabel("New task").fill(title);
   await submit(page, page.getByRole("button", { name: "Add task" }));
   await expectToast(page, "Task added");
-  await expect(page.getByRole("gridcell", { name: new RegExp(`^${day}: [1-9]`) })).toBeVisible();
+  await expect(page.getByRole("link", { name: new RegExp(`^${day}: [1-9]`) })).toBeVisible();
   await expect(
     page.getByRole("region", { name: `Tasks on ${day}` }).getByText(title),
   ).toBeVisible();

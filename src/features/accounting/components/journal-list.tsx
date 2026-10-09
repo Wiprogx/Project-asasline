@@ -37,7 +37,7 @@ export function JournalList({ entries, period }: { entries: Entry[]; period: Per
       </p>
     );
   return (
-    <Table>
+    <Table aria-label="Journal list">
       <TableHeader>
         <TableRow>
           <TableHead>Date</TableHead>

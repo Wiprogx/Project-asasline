@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { removeContainer, updateContainer } from "../container-actions";
+import { containerSchema } from "../schemas";
 
 export type Box = {
   id: string;
@@ -34,7 +35,7 @@ export function ContainerRow({
   canRemove: boolean;
   children?: React.ReactNode;
 }) {
-  const [state, action, pending] = useToastedAction(updateContainer);
+  const [state, action, pending] = useToastedAction(updateContainer, undefined, containerSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   const p = `c${index}`;
   const typeOptions = [...new Set([box.type, ...types])].map((t) => ({ value: t, label: t }));

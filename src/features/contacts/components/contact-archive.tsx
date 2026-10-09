@@ -5,6 +5,7 @@ import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { archiveContact, restoreContact } from "../actions";
+import { versionRef } from "../schemas";
 
 export function ContactArchive({
   id,
@@ -15,7 +16,7 @@ export function ContactArchive({
   version: number;
   archived: boolean;
 }) {
-  const [, restore, pending] = useToastedAction(restoreContact);
+  const [, restore, pending] = useToastedAction(restoreContact, undefined, versionRef);
 
   if (archived) {
     return (

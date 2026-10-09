@@ -24,7 +24,7 @@ export function AccrualsTable({ lines }: { lines: Line[] }) {
     );
   const sum = (k: "expectedCents" | "billedCents" | "cents") => lines.reduce((s, l) => s + l[k], 0);
   return (
-    <Table>
+    <Table aria-label="Accruals">
       <TableHeader>
         <TableRow>
           <TableHead>Shipment</TableHead>

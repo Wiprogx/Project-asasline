@@ -18,6 +18,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { creditInvoice, discardDraft, issueInvoice } from "../actions";
+import { creditSchema, issueSchema } from "../schemas";
+import { NewTab } from "@/components/shared/new-tab";
 
 type Term = { id: string; name: string };
 
@@ -32,7 +34,7 @@ function Issue({
   termId: string | null;
   terms: Term[];
 }) {
-  const [, run, pending] = useToastedAction(issueInvoice);
+  const [, run, pending] = useToastedAction(issueInvoice, undefined, issueSchema);
   return (
     <ActionForm action={run} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="id" value={id} />
@@ -53,7 +55,7 @@ function Issue({
 
 function Credit({ id, version }: { id: string; version: number }) {
   const [open, setOpen] = useState(false);
-  const [state, run, pending] = useToastedAction(creditInvoice, () => setOpen(false));
+  const [state, run, pending] = useToastedAction(creditInvoice, () => setOpen(false), creditSchema);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" />}>Credit this invoice</DialogTrigger>
@@ -116,9 +118,11 @@ export function InvoiceActions(p: {
       <Link
         href={`/print/invoices/${p.id}`}
         target="_blank"
+        rel="noopener"
         className={buttonVariants({ variant: "outline" })}
       >
         Print / PDF
+        <NewTab />
       </Link>
       <a
         href={`/accounting/invoices/${p.id}/ubl`}

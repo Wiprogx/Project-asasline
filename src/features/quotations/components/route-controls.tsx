@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { declineRoute, restoreRoute, updateRoute } from "../route-actions";
+import { restoreRouteSchema } from "../editor-schemas";
 
 type Route = {
   id: string;
@@ -30,7 +31,7 @@ export function RouteControls({
   route: Route;
   booked: boolean;
 }) {
-  const [, restore, restoring] = useToastedAction(restoreRoute);
+  const [, restore, restoring] = useToastedAction(restoreRoute, undefined, restoreRouteSchema);
   const hidden = { quotationId, version, routeId: r.id };
   if (r.declined)
     return (
@@ -50,6 +51,7 @@ export function RouteControls({
         hidden={hidden}
         trigger="Edit"
         title={`Destination ${r.pol} → ${r.pod}`}
+        description="The ports, the final place of delivery and the container type of this destination."
         submitLabel="Save destination"
       >
         {(fe) => (

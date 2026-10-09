@@ -19,7 +19,7 @@ export function SepaBatches({ rows, canCancel }: { rows: Row[]; canCancel: boole
   if (rows.length === 0)
     return <p className="py-6 text-center text-sm text-muted-foreground">No file made yet.</p>;
   return (
-    <Table>
+    <Table aria-label="Sepa batches">
       <TableHeader>
         <TableRow>
           <TableHead>Execution</TableHead>

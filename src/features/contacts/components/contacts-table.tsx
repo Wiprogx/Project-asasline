@@ -16,7 +16,7 @@ export function ContactsTable({ rows }: { rows: ContactRow[] }) {
     return <p className="py-10 text-center text-sm text-muted-foreground">No contacts match.</p>;
   }
   return (
-    <Table>
+    <Table aria-label="Contacts">
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>

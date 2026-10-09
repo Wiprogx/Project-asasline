@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { DIFF_ACCOUNTS, PAYMENT_METHODS } from "@/domain/payments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { registerPayment } from "../payment-actions";
+import { registerPaymentSchema } from "../schemas";
 
 /** Registers a payment on one invoice: the open amount by default, never more. */
 export function RegisterPayment({
@@ -21,7 +22,11 @@ export function RegisterPayment({
   today: string;
 }) {
   const form = useRef<HTMLFormElement>(null);
-  const [state, run, pending] = useToastedAction(registerPayment, () => form.current?.reset());
+  const [state, run, pending] = useToastedAction(
+    registerPayment,
+    () => form.current?.reset(),
+    registerPaymentSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm

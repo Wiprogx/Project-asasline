@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ROLE_LABEL, ROLES } from "@/domain/permissions";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createTask } from "../actions";
+import { newTaskSchema } from "../schemas";
 
 type Props = {
   staff: { id: string; name: string }[];
@@ -20,7 +21,11 @@ type Props = {
 /** Assigned to me by default; clear the person and pick a role to leave it for anyone in it. */
 export function NewTaskForm({ staff, meId, link, defaultDue }: Props) {
   const form = useRef<HTMLFormElement>(null);
-  const [state, run, pending] = useToastedAction(createTask, () => form.current?.reset());
+  const [state, run, pending] = useToastedAction(
+    createTask,
+    () => form.current?.reset(),
+    newTaskSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

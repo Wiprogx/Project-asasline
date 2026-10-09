@@ -20,7 +20,7 @@ export function LedgerTable({ rows }: { rows: ReturnType<typeof accountLedger>["
       <p className="py-8 text-center text-sm text-muted-foreground">No movement in this period.</p>
     );
   return (
-    <Table>
+    <Table aria-label="Ledger">
       <TableHeader>
         <TableRow>
           <TableHead>Date</TableHead>

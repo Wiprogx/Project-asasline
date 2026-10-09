@@ -16,10 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { disposeAsset, setAssetYears } from "../asset-actions";
+import { assetDisposeSchema, assetYearsSchema } from "../schemas";
 
 /** The years, changed in place (refused once a booked month is closed). */
 export function AssetYears({ id, version, years }: { id: string; version: number; years: number }) {
-  const [, run, pending] = useToastedAction(setAssetYears);
+  const [, run, pending] = useToastedAction(setAssetYears, undefined, assetYearsSchema);
   return (
     <ActionForm action={run} className="flex items-center gap-1">
       <input type="hidden" name="id" value={id} />
@@ -43,7 +44,11 @@ export function AssetYears({ id, version, years }: { id: string; version: number
 /** Sold or scrapped on a day, with what happened to it. */
 export function DisposeAsset(p: { id: string; version: number; name: string; today: string }) {
   const [open, setOpen] = useState(false);
-  const [state, run, pending] = useToastedAction(disposeAsset, () => setOpen(false));
+  const [state, run, pending] = useToastedAction(
+    disposeAsset,
+    () => setOpen(false),
+    assetDisposeSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <Dialog open={open} onOpenChange={setOpen}>

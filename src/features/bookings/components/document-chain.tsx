@@ -51,7 +51,7 @@ export function DocumentChain({ steps, today }: { steps: PlanStep[]; today: stri
     );
   }
   return (
-    <Table>
+    <Table aria-label="Document chain">
       <TableHeader>
         <TableRow>
           <TableHead>Step</TableHead>

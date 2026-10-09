@@ -44,7 +44,7 @@ export function TrialBalanceTable({ rows, period }: { rows: AccountTotal[]; peri
     rows.reduce((s, r) => s + r[k], 0);
   return (
     <Section title="Trial balance">
-      <Table>
+      <Table aria-label="Report">
         <TableHeader>
           <TableRow>
             <TableHead>Account</TableHead>
@@ -118,7 +118,7 @@ export function ProfitLossTable({
 }) {
   return (
     <Section title="Profit and loss">
-      <Table>
+      <Table aria-label="Report">
         <TableBody>
           <Lines rows={pl.revenue} period={period} />
           <Total label="Revenue" cents={pl.revenueCents} />
@@ -143,7 +143,7 @@ export function BalanceSheetTable({
   const rows = (xs: AccountTotal[]) => xs.map((a) => ({ ...a, cents: a.closeCents }));
   return (
     <Section title={`Balance sheet at ${period.to}`}>
-      <Table>
+      <Table aria-label="Report">
         <TableBody>
           <Lines rows={rows(bs.assets)} period={period} />
           <Total label="Assets" cents={bs.assetCents} />

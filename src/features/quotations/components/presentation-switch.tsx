@@ -9,6 +9,7 @@ import {
 } from "@/domain/quotation-doc";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { setDisplay, toggleListed } from "../send-actions";
+import { displaySchema, listedSchema } from "../editor-schemas";
 
 /** Itemized or all-inclusive: how the customer's document shows the price. */
 export function PresentationSwitch({
@@ -20,7 +21,7 @@ export function PresentationSwitch({
   version: number;
   display: QuotationDisplay;
 }) {
-  const [, run, pending] = useToastedAction(setDisplay);
+  const [, run, pending] = useToastedAction(setDisplay, undefined, displaySchema);
   return (
     <div className="flex items-center gap-1" role="group" aria-label="Presentation">
       {QUOTATION_DISPLAYS.map((d) => (
@@ -50,7 +51,7 @@ export function ListedToggle(p: {
   lineId: string;
   listed: boolean;
 }) {
-  const [, run, pending] = useToastedAction(toggleListed);
+  const [, run, pending] = useToastedAction(toggleListed, undefined, listedSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="quotationId" value={p.quotationId} />

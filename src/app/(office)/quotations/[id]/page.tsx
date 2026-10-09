@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PageHeader } from "@/components/shared/page-header";
@@ -9,6 +10,14 @@ import { QuotationRoutes } from "@/features/quotations/components/quotation-rout
 import { QUOTATION_TONE } from "@/features/quotations/status";
 import { catalogueChoices, getQuotation, quotationLetter } from "@/features/quotations/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/quotations/[id]">): Promise<Metadata> {
+  const id = z.uuid().safeParse((await params).id);
+  const q = id.success ? await getQuotation(id.data) : null;
+  return { title: q ? `${q.ref} · ${q.client.name}` : "Quotation" };
+}
 
 export default async function QuotationPage({ params }: PageProps<"/quotations/[id]">) {
   const user = await requirePagePermission("app.quotations");

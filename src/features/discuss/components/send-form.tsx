@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { sendMessage } from "../actions";
+import { sendSchema } from "../schemas";
 
 export type Recipient = {
   id: string;
@@ -45,15 +46,19 @@ export function SendForm({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [template, setTemplate] = useState("");
-  const [state, run, pending] = useToastedAction(sendMessage, (data) => {
-    if (data?.href) window.open(data.href, "_blank", "noopener");
-    form.current?.reset();
-    setTo("");
-    setContactId("");
-    setSubject("");
-    setBody("");
-    setTemplate("");
-  });
+  const [state, run, pending] = useToastedAction(
+    sendMessage,
+    (data) => {
+      if (data?.href) window.open(data.href, "_blank", "noopener");
+      form.current?.reset();
+      setTo("");
+      setContactId("");
+      setSubject("");
+      setBody("");
+      setTemplate("");
+    },
+    sendSchema,
+  );
 
   // A template writes the subject and the text, filled from the file; they stay editable.
   const applyTemplate = (code: string) => {

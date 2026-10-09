@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/shared/action-form";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { acceptQuotation } from "../actions";
+import { acceptRouteSchema } from "../schemas";
 
 /** Accepts one destination: it becomes its own booking. */
 export function AcceptQuotation({
@@ -15,7 +16,7 @@ export function AcceptQuotation({
   version: number;
   routeId: string;
 }) {
-  const [, action, pending] = useToastedAction(acceptQuotation);
+  const [, action, pending] = useToastedAction(acceptQuotation, undefined, acceptRouteSchema);
   return (
     <ActionForm action={action}>
       <input type="hidden" name="id" value={id} />

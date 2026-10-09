@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addLine, removeLine } from "../draft-actions";
+import { addLineSchema, removeLineSchema } from "../schemas";
 
 export function RemoveLine({
   id,
@@ -19,7 +20,7 @@ export function RemoveLine({
   version: number;
   lineId: string;
 }) {
-  const [, run, pending] = useToastedAction(removeLine);
+  const [, run, pending] = useToastedAction(removeLine, undefined, removeLineSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="id" value={id} />
@@ -46,7 +47,11 @@ export function AddLineForm({
   accounts?: { account: string; label: string; default?: boolean }[];
 }) {
   const form = useRef<HTMLFormElement>(null);
-  const [state, run, pending] = useToastedAction(addLine, () => form.current?.reset());
+  const [state, run, pending] = useToastedAction(
+    addLine,
+    () => form.current?.reset(),
+    addLineSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm

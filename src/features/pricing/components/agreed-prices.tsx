@@ -17,6 +17,7 @@ import {
 import { formatCents } from "@/domain/money";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { removeAgreedPrice, setAgreedPrice } from "../list-actions";
+import { agreedPriceSchema } from "../schemas";
 
 type Line = {
   id: string;
@@ -36,7 +37,7 @@ export function AgreedPrices({
   lines: Line[];
   items: { value: string; label: string }[];
 }) {
-  const [state, run, pending] = useToastedAction(setAgreedPrice);
+  const [state, run, pending] = useToastedAction(setAgreedPrice, undefined, agreedPriceSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <div className="grid gap-3">
@@ -45,7 +46,7 @@ export function AgreedPrices({
           No agreed price yet — quotations for this customer use the catalogue.
         </p>
       ) : (
-        <Table>
+        <Table aria-label="Agreed prices">
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>

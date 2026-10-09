@@ -35,6 +35,7 @@ export function SearchInput({ placeholder }: { placeholder: string }) {
         aria-label={placeholder}
         className="pl-8"
         data-pending={pending || undefined}
+        aria-busy={pending}
       />
     </div>
   );

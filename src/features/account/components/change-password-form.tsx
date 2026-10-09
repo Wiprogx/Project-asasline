@@ -8,10 +8,15 @@ import { Input } from "@/components/ui/input";
 import { MIN_PASSWORD_LENGTH } from "@/domain/people";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { changePassword } from "../actions";
+import { changePasswordSchema } from "../schemas";
 
 export function ChangePasswordForm() {
   const form = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useToastedAction(changePassword, () => form.current?.reset());
+  const [state, action, pending] = useToastedAction(
+    changePassword,
+    () => form.current?.reset(),
+    changePasswordSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

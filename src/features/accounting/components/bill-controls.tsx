@@ -11,12 +11,13 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { discardDraft } from "../actions";
 import { approveBill, newBill, recordBill } from "../bill-actions";
 import { importUbl } from "../peppol-actions";
+import { approveBillSchema, newBillSchema, recordBillSchema } from "../schemas";
 
 type Option = { id: string; name: string };
 
 /** Start a supplier's bill: for the office, or (with bookingId) as a cost of that shipment. */
 export function NewBillForm({ suppliers, bookingId }: { suppliers: Option[]; bookingId?: string }) {
-  const [, run, pending] = useToastedAction(newBill);
+  const [, run, pending] = useToastedAction(newBill, undefined, newBillSchema);
   return (
     <ActionForm action={run} className="flex flex-wrap items-center gap-2">
       {bookingId && <input type="hidden" name="bookingId" value={bookingId} />}
@@ -53,7 +54,7 @@ function RecordBill({
   due: string;
   supplierRef: string | null;
 }) {
-  const [state, run, pending] = useToastedAction(recordBill);
+  const [state, run, pending] = useToastedAction(recordBill, undefined, recordBillSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm
@@ -79,7 +80,7 @@ function RecordBill({
 }
 
 function Approve({ id, version }: { id: string; version: number }) {
-  const [, run, pending] = useToastedAction(approveBill);
+  const [, run, pending] = useToastedAction(approveBill, undefined, approveBillSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="id" value={id} />

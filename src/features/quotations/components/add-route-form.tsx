@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addRoute } from "../route-actions";
+import { addRouteSchema } from "../editor-schemas";
 
 /**
  * Another destination on the quotation. An ocean leg of the catalogue brings its ports, box
@@ -21,7 +22,7 @@ export function AddRouteForm({
   version: number;
   lanes: { value: string; label: string }[];
 }) {
-  const [state, run, pending] = useToastedAction(addRoute);
+  const [state, run, pending] = useToastedAction(addRoute, undefined, addRouteSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <ActionForm

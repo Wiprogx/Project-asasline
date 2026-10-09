@@ -13,7 +13,7 @@ import { PersonControls } from "./person-controls";
 
 export function PeopleTable({ rows, selfId }: { rows: PersonRow[]; selfId: string }) {
   return (
-    <Table>
+    <Table aria-label="People">
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>

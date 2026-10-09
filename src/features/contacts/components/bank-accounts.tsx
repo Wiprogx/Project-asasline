@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { ibanPretty } from "@/domain/iban";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addBankAccount, archiveBankAccount } from "../bank-actions";
+import { bankAccountSchema } from "../schemas";
 
 type Account = { id: string; iban: string; bic: string | null; label: string | null };
 
 /** The contact's IBANs: to pay a supplier, and to recognise a payment from them. */
 export function BankAccounts({ contactId, accounts }: { contactId: string; accounts: Account[] }) {
-  const [state, run, pending] = useToastedAction(addBankAccount);
+  const [state, run, pending] = useToastedAction(addBankAccount, undefined, bankAccountSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   return (
     <Card>

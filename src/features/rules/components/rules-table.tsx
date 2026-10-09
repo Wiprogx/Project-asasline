@@ -16,9 +16,10 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { cn } from "@/lib/utils";
 import { toggleRule } from "../actions";
 import { RuleDialog } from "./rule-dialog";
+import { toggleRuleSchema } from "../schemas";
 
 function Toggle({ index, version, active }: { index: number; version: number; active: boolean }) {
-  const [, run, pending] = useToastedAction(toggleRule);
+  const [, run, pending] = useToastedAction(toggleRule, undefined, toggleRuleSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="index" value={index} />
@@ -39,7 +40,7 @@ const offsetText = (r: DocRule) =>
 /** The rule book: which paper, for which route, due when, after what, chased by whom. */
 export function RulesTable({ rules, version }: { rules: DocRule[]; version: number }) {
   return (
-    <Table>
+    <Table aria-label="Rules">
       <TableHeader>
         <TableRow>
           <TableHead>Rule</TableHead>

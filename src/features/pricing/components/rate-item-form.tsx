@@ -10,6 +10,7 @@ import { VAT_CODES } from "@/domain/accounting";
 import { RATE_TYPE_LABEL, RATE_TYPES } from "@/domain/pricing";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createRateItem, updateRateItem } from "../item-actions";
+import { rateItemSchema, rateItemUpdateSchema } from "../schemas";
 
 type Key =
   | "name"
@@ -71,7 +72,11 @@ export function RateItemForm({
 }) {
   const editing = !!values?.id;
   const [category, setCategory] = useState(values?.category ?? "ocean");
-  const [state, run, pending] = useToastedAction(editing ? updateRateItem : createRateItem);
+  const [state, run, pending] = useToastedAction(
+    editing ? updateRateItem : createRateItem,
+    undefined,
+    editing ? rateItemUpdateSchema : rateItemSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   const fields = FIELDS_OF[category] ?? ["name"];
   const input = (name: string, label: string, type = "text", value?: string | number | null) => (

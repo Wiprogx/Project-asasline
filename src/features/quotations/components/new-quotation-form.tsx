@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createQuotation } from "../actions";
+import { newQuotationSchema } from "../schemas";
 
 type Option = { id: string; name: string };
 
@@ -18,7 +19,7 @@ export function NewQuotationForm({
   clients: Option[];
   containerTypes: string[];
 }) {
-  const [state, action, pending] = useToastedAction(createQuotation);
+  const [state, action, pending] = useToastedAction(createQuotation, undefined, newQuotationSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (

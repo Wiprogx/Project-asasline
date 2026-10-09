@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { autoMatch, importStatement, matchLine } from "../bank-actions";
+import { matchLineSchema } from "../schemas";
 
 export function ImportStatement() {
   const form = useRef<HTMLFormElement>(null);
@@ -47,7 +48,7 @@ export function MatchButton({
   invoiceId: string;
   label: string;
 }) {
-  const [, run, pending] = useToastedAction(matchLine);
+  const [, run, pending] = useToastedAction(matchLine, undefined, matchLineSchema);
   return (
     <ActionForm action={run}>
       <input type="hidden" name="lineId" value={lineId} />

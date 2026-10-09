@@ -29,17 +29,12 @@ export function TaskCalendar({
   for (const t of tasks) if (t.due) byDay.set(t.due, [...(byDay.get(t.due) ?? []), t]);
 
   return (
-    <div
+    <nav
       className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-border text-sm"
-      role="grid"
       aria-label={`Tasks in ${month}`}
     >
       {WEEKDAYS.map((d) => (
-        <div
-          key={d}
-          role="columnheader"
-          className="bg-card px-2 py-1 text-xs text-muted-foreground"
-        >
+        <div key={d} aria-hidden className="bg-card px-2 py-1 text-xs text-muted-foreground">
           {d}
         </div>
       ))}
@@ -47,13 +42,14 @@ export function TaskCalendar({
         .flat()
         .map(({ day, inMonth }) => {
           const list = byDay.get(day) ?? [];
+          const overdue = list.filter((t) => bucketOf(t.due, today) === "overdue").length;
+          const words = `${list.length} task${list.length === 1 ? "" : "s"}${overdue ? `, ${overdue} overdue` : ""}`;
           return (
             <Link
               key={day}
               href={hrefFor(day)}
-              role="gridcell"
-              aria-selected={selected === day}
-              aria-label={`${day}: ${list.length} task${list.length === 1 ? "" : "s"}`}
+              aria-current={selected === day ? "date" : undefined}
+              aria-label={`${day}: ${words}`}
               className={cn(
                 "min-h-16 bg-card p-1.5 hover:bg-accent/40 sm:min-h-20",
                 !inMonth && "text-muted-foreground",
@@ -78,6 +74,6 @@ export function TaskCalendar({
             </Link>
           );
         })}
-    </div>
+    </nav>
   );
 }

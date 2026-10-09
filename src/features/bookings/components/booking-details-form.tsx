@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { DOC_TYPES, SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { updateBookingDetails } from "../details-actions";
+import { bookingDetailsSchema } from "../schemas";
 
 type Values = { id: string; version: number; [field: string]: string | number | null };
 type Option = { id: string; name: string };
@@ -41,7 +42,11 @@ const TEXT = (
 ).map(([name, label, type]) => ({ name, label, type }));
 
 export function BookingDetailsForm({ values, contacts }: { values: Values; contacts: Option[] }) {
-  const [state, action, pending] = useToastedAction(updateBookingDetails);
+  const [state, action, pending] = useToastedAction(
+    updateBookingDetails,
+    undefined,
+    bookingDetailsSchema,
+  );
   const fe = !state.ok ? state.fieldErrors : undefined;
   const contactOptions = contacts.map((c) => ({ value: c.id, label: c.name }));
 

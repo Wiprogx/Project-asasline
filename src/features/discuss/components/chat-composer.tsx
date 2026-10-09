@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { postInternal } from "../actions";
+import { postInternalSchema } from "../schemas";
 
 /** Internal chat. Enter sends, Shift+Enter breaks the line; an SB/QT number links the message. */
 export function ChatComposer({ room }: { room: string }) {
   const form = useRef<HTMLFormElement>(null);
-  const [, run, pending] = useToastedAction(postInternal, () => form.current?.reset());
+  const [, run, pending] = useToastedAction(
+    postInternal,
+    () => form.current?.reset(),
+    postInternalSchema,
+  );
   return (
     <ActionForm ref={form} action={run} className="flex items-end gap-2">
       <input type="hidden" name="room" value={room} />

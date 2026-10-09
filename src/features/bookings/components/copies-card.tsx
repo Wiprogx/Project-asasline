@@ -1,5 +1,6 @@
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NewTab } from "@/components/shared/new-tab";
 
 /** The printed copies of the booking: the customer's with the price, one per driver without. */
 export function CopiesCard({
@@ -19,6 +20,7 @@ export function CopiesCard({
       className={buttonVariants({ variant: "outline", size: "sm" })}
     >
       {label}
+      <NewTab />
     </a>
   );
   return (

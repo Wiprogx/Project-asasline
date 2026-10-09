@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { archiveFile, refileFile } from "../file-actions";
+import { NewTab } from "@/components/shared/new-tab";
 
 type FileRow = {
   id: string;
@@ -48,7 +49,7 @@ export function BookingFiles({
   if (files.length === 0)
     return <p className="text-sm text-muted-foreground">Nothing filed yet.</p>;
   return (
-    <Table>
+    <Table aria-label="Booking files">
       <TableHeader>
         <TableRow>
           <TableHead>File</TableHead>
@@ -69,6 +70,7 @@ export function BookingFiles({
                 rel="noopener"
               >
                 {f.name}
+                <NewTab />
               </a>
               <span className="text-muted-foreground"> · {size(f.sizeBytes)}</span>
             </TableCell>
@@ -90,6 +92,7 @@ export function BookingFiles({
                     hidden={{ bookingId, fileId: f.id }}
                     trigger="Refile"
                     title={f.name}
+                    description="What the file is filed as, for which box and against which step."
                     submitLabel="Save"
                   >
                     {(fe) => (

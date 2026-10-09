@@ -16,7 +16,7 @@ export function BookingsTable({ rows }: { rows: BookingRow[] }) {
     return <p className="py-10 text-center text-sm text-muted-foreground">No bookings match.</p>;
   }
   return (
-    <Table>
+    <Table aria-label="Bookings">
       <TableHeader>
         <TableRow>
           <TableHead>Ref</TableHead>

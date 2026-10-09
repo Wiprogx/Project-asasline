@@ -5,9 +5,10 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addContainer } from "../container-actions";
+import { addContainerSchema } from "../schemas";
 
 export function AddContainer({ bookingId, types }: { bookingId: string; types: string[] }) {
-  const [, action, pending] = useToastedAction(addContainer);
+  const [, action, pending] = useToastedAction(addContainer, undefined, addContainerSchema);
   return (
     <ActionForm action={action} className="flex items-center gap-2">
       <input type="hidden" name="bookingId" value={bookingId} />

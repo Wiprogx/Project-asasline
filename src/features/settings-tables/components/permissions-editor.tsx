@@ -38,7 +38,7 @@ export function PermissionsEditor({
       <CardContent>
         <ActionForm action={run} className="grid gap-3">
           <input type="hidden" name="version" value={version} />
-          <Table>
+          <Table aria-label="Permissions editor">
             <TableHeader>
               <TableRow>
                 <TableHead>Permission</TableHead>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { saveList } from "../actions";
-import { LIST_META } from "../schemas";
+import { LIST_META, saveListSchema } from "../schemas";
 
 /** One entry per line; blanks and duplicates are dropped on save. */
 export function ListEditor({
@@ -18,7 +18,7 @@ export function ListEditor({
   values: string[];
   version: number;
 }) {
-  const [, action, pending] = useToastedAction(saveList);
+  const [, action, pending] = useToastedAction(saveList, undefined, saveListSchema);
   const meta = LIST_META[name] ?? { title: name, description: "" };
 
   return (

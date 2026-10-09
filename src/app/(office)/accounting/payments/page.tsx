@@ -31,7 +31,7 @@ export default async function PaymentsPage() {
           {rows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">No payment yet.</p>
           ) : (
-            <Table>
+            <Table aria-label="Payments">
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>

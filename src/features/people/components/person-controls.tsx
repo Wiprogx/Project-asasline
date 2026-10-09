@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { type Role, ROLE_LABEL, ROLES } from "@/domain/permissions";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { changeRole, setActive } from "../actions";
+import { activeChangeSchema, roleChangeSchema } from "../schemas";
 
 const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }));
 
@@ -20,8 +21,12 @@ export function PersonControls({
   active: boolean;
   isSelf: boolean;
 }) {
-  const [, roleAction, rolePending] = useToastedAction(changeRole);
-  const [, activeAction, activePending] = useToastedAction(setActive);
+  const [, roleAction, rolePending] = useToastedAction(changeRole, undefined, roleChangeSchema);
+  const [, activeAction, activePending] = useToastedAction(
+    setActive,
+    undefined,
+    activeChangeSchema,
+  );
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">

@@ -43,12 +43,24 @@ export async function expectToast(page: Page, text: string | RegExp) {
  * Clicks a submit button and waits for that server action's own response. Waiting for a toast
  * alone is a race: the previous save's toast may still be on screen.
  */
+/**
+ * Clicks and waits for the outcome: the server action's response — or, when the form refuses
+ * the input in the browser first (the same zod schema as the server, so no request is made),
+ * the refusal's toast.
+ */
 export async function submit(page: Page, button: Locator) {
-  const done = page.waitForResponse(
-    (r) => r.request().method() === "POST" && r.request().headers()["next-action"] !== undefined,
-  );
+  const answered = page
+    .waitForResponse(
+      (r) => r.request().method() === "POST" && r.request().headers()["next-action"] !== undefined,
+    )
+    .catch(() => null);
+  const refused = page
+    .locator("[data-sonner-toast][data-type=error]")
+    .first()
+    .waitFor({ state: "visible" })
+    .catch(() => null);
   await button.click();
-  await done;
+  await Promise.race([answered, refused]);
 }
 
 /** A VAT number no other contact has: a Belgian one with valid check digits (97 − first eight mod 97). */
