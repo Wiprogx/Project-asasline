@@ -10,6 +10,7 @@ import { DIFF_ACCOUNTS, PAYMENT_METHODS } from "@/domain/payments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { registerPayment } from "../payment-actions";
 import { registerPaymentSchema } from "../schemas";
+import { centsToInput } from "@/domain/money";
 
 /** Registers a payment on one invoice: the open amount by default, never more. */
 export function RegisterPayment({
@@ -43,7 +44,7 @@ export function RegisterPayment({
           id="p-amount"
           name="amount"
           inputMode="decimal"
-          defaultValue={(openCents / 100).toFixed(2)}
+          defaultValue={centsToInput(openCents)}
           required
         />
       </Field>

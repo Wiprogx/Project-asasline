@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { parseYmd } from "@/domain/dates";
 import { ROLES } from "@/domain/permissions";
 import { ownerProblem } from "@/domain/tasks";
+import { dayField } from "@/lib/zod-fields";
 
-const day = z.string().refine((s) => parseYmd(s) !== null, "Date as YYYY-MM-DD");
+const day = dayField();
 
 /** Things a task can hang off. Only bookings for now; quotations and contacts follow. */
 export const LINK_KINDS = ["booking"] as const;

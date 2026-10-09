@@ -7,6 +7,7 @@
 import { invoiceTotals, vatMentions } from "./invoicing";
 import { type QuotationDisplay, quotationDoc } from "./quotation-doc";
 import type { ShipmentKind } from "./shipments";
+import { formatKg } from "./container";
 
 export type CopyBooking = {
   ref: string;
@@ -109,8 +110,8 @@ export function boxRows(b: CopyBooking, box: CopyBox): Row[] {
     ["Type", box.type],
     ["Seal", box.seals.length ? box.seals[box.seals.length - 1] : "—"],
     ["Commodity", dash(b.commodity)],
-    ["Cargo weight", box.cargoKg === null ? "—" : `${box.cargoKg.toLocaleString("en")} kg`],
-    ["Tare", box.tareKg === null ? "—" : `${box.tareKg.toLocaleString("en")} kg`],
+    ["Cargo weight", box.cargoKg === null ? "—" : formatKg(box.cargoKg)],
+    ["Tare", box.tareKg === null ? "—" : formatKg(box.tareKg)],
   ];
 }
 

@@ -11,6 +11,7 @@ import { RATE_TYPE_LABEL, RATE_TYPES } from "@/domain/pricing";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createRateItem, updateRateItem } from "../item-actions";
 import { rateItemSchema, rateItemUpdateSchema } from "../schemas";
+import { centsToInput } from "@/domain/money";
 
 type Key =
   | "name"
@@ -59,8 +60,6 @@ export type RateItemValues = Partial<
   rateType?: string;
   scope?: string | null;
 };
-
-const euros = (c?: number) => (c === undefined ? "" : (c / 100).toFixed(2));
 
 /** A catalogue item: its category decides which fields identify it. */
 export function RateItemForm({
@@ -120,8 +119,8 @@ export function RateItemForm({
           values?.[k],
         ),
       )}
-      {input("sellCents", "Sell (EUR)", "number", euros(values?.sellCents))}
-      {input("buyCents", "Buy (EUR)", "number", euros(values?.buyCents))}
+      {input("sellCents", "Sell (EUR)", "number", centsToInput(values?.sellCents))}
+      {input("buyCents", "Buy (EUR)", "number", centsToInput(values?.buyCents))}
       <Field id="ri-vat" label="VAT" error={fe?.vatCode}>
         <NativeSelect
           id="ri-vat"

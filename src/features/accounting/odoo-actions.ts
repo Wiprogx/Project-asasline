@@ -2,7 +2,6 @@
 
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { ibanOk } from "@/domain/iban";
 import { formatCents } from "@/domain/money";
 import { openingLines, readBalances, readContacts, readOpenDocs, seriesOf } from "@/domain/odoo";
@@ -22,8 +21,9 @@ import {
 } from "@/server/db/schema";
 import { assertOpen } from "./books-store";
 import { guarded, Refused } from "./invoice-store";
+import { dayField } from "@/lib/zod-fields";
 
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const day = dayField();
 
 /** The uploaded CSV, read as UTF-8 or (older Odoo exports) Latin-1. */
 async function csvOf(fd: FormData): Promise<string | null> {

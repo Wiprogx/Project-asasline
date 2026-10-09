@@ -1,12 +1,10 @@
 import { addressLabel, boxesFor, boxRows, boxTitle, cutOffRows } from "@/domain/booking-doc";
-import { vgm } from "@/domain/container";
+import { formatKg, vgm } from "@/domain/container";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
 import { RowGrid, SheetTitle } from "./copy-parts";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof bookingCopy>>>;
-
-const kg = (n: number) => `${n.toLocaleString("en")} kg`;
 
 /**
  * The trucker copy (legacy preview "driver"): no price; one box per driver unless the office
@@ -58,8 +56,8 @@ export function TruckerCopy({
                   g.state === "unknown"
                     ? `— (${g.reason})`
                     : g.state === "over" && g.maxGrossKg !== null
-                      ? `${kg(g.grossKg)} — ${kg(g.grossKg - g.maxGrossKg)} OVER the ${kg(g.maxGrossKg)} limit`
-                      : kg(g.grossKg),
+                      ? `${formatKg(g.grossKg)} — ${formatKg(g.grossKg - g.maxGrossKg)} OVER the ${formatKg(g.maxGrossKg)} limit`
+                      : formatKg(g.grossKg),
                 ],
               ]}
             />

@@ -7,6 +7,7 @@ import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
 import { removeLine, updateLine } from "../line-actions";
+import { centsToInput } from "@/domain/money";
 
 type Line = {
   id: string;
@@ -16,8 +17,6 @@ type Line = {
   costCents: number | null;
   vatCode: string;
 };
-
-const euros = (c: number | null) => (c === null ? "" : (c / 100).toFixed(2));
 
 /** Change a line's text, quantity or price, or take it off with a reason. */
 export function LineControls({
@@ -58,7 +57,7 @@ export function LineControls({
                 type="number"
                 step="0.01"
                 min="0"
-                defaultValue={euros(l.sellCents)}
+                defaultValue={centsToInput(l.sellCents)}
               />
             </Field>
             {showCost && (
@@ -69,7 +68,7 @@ export function LineControls({
                   type="number"
                   step="0.01"
                   min="0"
-                  defaultValue={euros(l.costCents)}
+                  defaultValue={centsToInput(l.costCents)}
                 />
               </Field>
             )}

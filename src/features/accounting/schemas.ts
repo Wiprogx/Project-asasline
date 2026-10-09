@@ -2,6 +2,7 @@ import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
 import { toCents } from "@/domain/money";
 import { DIFF_ACCOUNTS, type DiffAccount, PAYMENT_METHODS } from "@/domain/payments";
+import { dayField } from "@/lib/zod-fields";
 
 const ref = z.object({ id: z.uuid(), version: z.coerce.number().int().positive() });
 
@@ -62,7 +63,7 @@ export const listFilterSchema = z.object({
 
 export const registerPaymentSchema = z.object({
   invoiceId: z.uuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date as YYYY-MM-DD"),
+  date: dayField(),
   amount: z.string().transform((v, ctx) => {
     const c = toCents(v);
     if (c === null || c <= 0) ctx.addIssue({ code: "custom", message: "An amount above zero" });
@@ -86,7 +87,7 @@ export const ignoreLineSchema = z.object({
   reason: z.string().min(3, "Say why the line needs no match").max(300),
 });
 
-const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date as YYYY-MM-DD");
+const isoDay = dayField();
 
 export const newBillSchema = z.object({
   supplierId: z.uuid("Choose the supplier"),
@@ -107,7 +108,7 @@ export const approveBillSchema = z.object({
   version: z.coerce.number().int().positive(),
 });
 
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date");
+const day = dayField("A date");
 
 export const fileVatSchema = z.object({
   period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2]|Q[1-4])$/, "A VAT period"),

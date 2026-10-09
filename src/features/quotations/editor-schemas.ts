@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
-import { toCents } from "@/domain/money";
 import { QUOTATION_DISPLAYS } from "@/domain/quotation-doc";
+import { centsField } from "@/lib/zod-fields";
 
 /** Every editor action names the quotation and the version the person read (invariant 6). */
 const onQuotation = {
@@ -9,13 +9,7 @@ const onQuotation = {
   version: z.coerce.number().int().positive(),
 };
 
-const amount = (label: string) =>
-  z.string().transform((v, ctx) => {
-    const c = toCents(v);
-    if (c === null || c < 0)
-      ctx.addIssue({ code: "custom", message: `${label}: an amount like 1250 or 1250.00` });
-    return c ?? 0;
-  });
+const amount = (label: string) => centsField(label);
 
 const text = (max: number) =>
   z

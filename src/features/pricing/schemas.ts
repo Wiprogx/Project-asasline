@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
 import { RATE_TYPES } from "@/domain/pricing";
-import { toCents } from "@/domain/money";
+import { centsField, optionalDayField } from "@/lib/zod-fields";
 
 const text = (max: number) =>
   z
@@ -13,11 +13,7 @@ const text = (max: number) =>
 
 const upper = (max: number) => text(max).transform((v) => v?.toUpperCase() ?? null);
 
-const day = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "A date")
-  .optional()
-  .transform((v) => v ?? null);
+const day = optionalDayField();
 
 const count = z
   .string()
@@ -25,13 +21,7 @@ const count = z
   .transform((v) => (v === undefined ? null : Number(v)))
   .refine((v) => v === null || (Number.isInteger(v) && v >= 0 && v <= 365), "0 to 365 days");
 
-const amount = (label: string) =>
-  z.string({ error: `${label}: an amount` }).transform((v, ctx) => {
-    const c = toCents(v);
-    if (c === null || c < 0)
-      ctx.addIssue({ code: "custom", message: `${label}: an amount like 1250 or 1250.00` });
-    return c ?? 0;
-  });
+const amount = (label: string) => centsField(label);
 
 const version = z.coerce.number().int().positive();
 const reason = z.string().trim().min(3, "Say why — it stays on the record").max(300);

@@ -3,6 +3,7 @@
  * reversed, never deleted; the invoice's paid state follows its money and is never set by
  * hand.
  */
+import { centsToInput } from "./money";
 export const PAYMENT_METHODS = ["bank", "cash", "card", "other"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
@@ -62,7 +63,7 @@ export function settlement(
     return {
       allocated: 0,
       diffCents: 0,
-      problem: `Only ${(open / 100).toFixed(2)} is open on this invoice.`,
+      problem: `Only ${centsToInput(open)} is open on this invoice.`,
     };
   if (writeOff && amountCents < open)
     return { allocated: amountCents, diffCents: open - amountCents, problem: null };

@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { accountLedger } from "@/domain/ledger";
+import type { accountLedger } from "@/domain/ledger-reports";
 import { formatCents } from "@/domain/money";
 import { sourceHref } from "./journal-list";
 

@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { AccountTotal, balanceSheet, profitAndLoss } from "@/domain/ledger";
+import type { AccountTotal, balanceSheet, profitAndLoss } from "@/domain/ledger-reports";
 import { formatCents } from "@/domain/money";
 import type { Period } from "@/domain/period";
 

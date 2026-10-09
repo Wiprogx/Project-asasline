@@ -1,11 +1,8 @@
 import { z } from "zod";
 import { VESSEL_STATUSES } from "@/domain/vessels";
+import { optionalDayField } from "@/lib/zod-fields";
 
-const day = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "A date")
-  .optional()
-  .or(z.literal("").transform(() => undefined));
+const day = optionalDayField("A date").transform((v) => v ?? undefined);
 
 const text = (max: number) =>
   z

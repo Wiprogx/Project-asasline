@@ -1,6 +1,5 @@
 import {
   boolean,
-  date,
   index,
   integer,
   pgEnum,
@@ -11,14 +10,12 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { INVOICE_KINDS, INVOICE_STATUSES } from "../../../domain/invoicing";
-import { cents, recordColumns } from "./_columns";
+import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import { bookings } from "./shipments";
 
 export const invoiceKindEnum = pgEnum("invoice_kind", INVOICE_KINDS);
 export const invoiceStatusEnum = pgEnum("invoice_status", INVOICE_STATUSES);
-
-const day = () => date({ mode: "string" });
 
 /**
  * Sales invoices and credit notes. `number` stays null while a draft and is set once, at

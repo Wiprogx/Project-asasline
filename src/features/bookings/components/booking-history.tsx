@@ -1,12 +1,7 @@
 import type { bookingHistory } from "../queries";
+import { formatStamp } from "@/lib/stamp";
 
 type Row = Awaited<ReturnType<typeof bookingHistory>>[number];
-
-const stamp = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Europe/Brussels",
-  dateStyle: "short",
-  timeStyle: "short",
-});
 
 const LABEL: Record<string, (d: Record<string, unknown>) => string> = {
   "booking.create": (d) => `Created ${d.ref ?? ""}`,
@@ -38,7 +33,7 @@ export function BookingHistory({ rows }: { rows: Row[] }) {
           key={r.id}
           className="grid grid-cols-[9rem_1fr] gap-3 border-b pb-2 text-sm last:border-0"
         >
-          <span className="font-mono text-xs text-muted-foreground">{stamp.format(r.at)}</span>
+          <span className="font-mono text-xs text-muted-foreground">{formatStamp(r.at)}</span>
           <span>
             {(LABEL[r.action] ?? (() => r.action))(r.detail ?? {})}
             <span className="text-muted-foreground"> · {r.who ?? "unknown"}</span>

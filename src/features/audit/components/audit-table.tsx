@@ -7,13 +7,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AuditRow } from "../queries";
+import { formatStamp } from "@/lib/stamp";
 
 /** Brussels time, "YYYY-MM-DD HH:MM", the same on every screen whatever the server's zone. */
-const stamp = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Europe/Brussels",
-  dateStyle: "short",
-  timeStyle: "short",
-});
 
 export function AuditTable({ rows }: { rows: AuditRow[] }) {
   if (rows.length === 0) {
@@ -33,7 +29,7 @@ export function AuditTable({ rows }: { rows: AuditRow[] }) {
         {rows.map((r) => (
           <TableRow key={r.id}>
             <TableCell className="font-mono text-xs whitespace-nowrap">
-              {stamp.format(r.at)}
+              {formatStamp(r.at)}
             </TableCell>
             <TableCell>{r.who ?? <span className="text-muted-foreground">unknown</span>}</TableCell>
             <TableCell className="font-mono text-xs">

@@ -3,12 +3,7 @@ import type { ReactNode } from "react";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { CHANNEL_LABEL } from "@/domain/messages";
 import type { MessageRow } from "../queries";
-
-const stamp = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Europe/Brussels",
-  dateStyle: "short",
-  timeStyle: "short",
-});
+import { formatStamp } from "@/lib/stamp";
 
 function who(m: MessageRow) {
   if (m.direction === "internal") return m.author ?? "someone";
@@ -26,7 +21,7 @@ export function MessageItem({ m, actions }: { m: MessageRow; actions?: ReactNode
             <ToneBadge tone="neutral">{CHANNEL_LABEL[m.channel]}</ToneBadge>
           )}
           <span className="font-medium">{who(m)}</span>
-          <span className="font-mono text-xs text-muted-foreground">{stamp.format(m.at)}</span>
+          <span className="font-mono text-xs text-muted-foreground">{formatStamp(m.at)}</span>
           {m.linkRef && m.linkKind === "booking" && (
             <Link
               href={`/bookings/${m.linkId}/messages`}

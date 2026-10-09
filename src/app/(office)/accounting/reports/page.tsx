@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
-import { balanceSheet, profitAndLoss, trialBalance } from "@/domain/ledger";
+import { balanceSheet, profitAndLoss, trialBalance } from "@/domain/ledger-reports";
 import { periodOf } from "@/domain/period";
 import { PeriodPicker } from "@/features/accounting/components/period-picker";
 import {

@@ -1,7 +1,5 @@
 import { ToneBadge } from "@/components/shared/tone-badge";
-import { vgm } from "@/domain/container";
-
-const kg = (n: number) => `${n.toLocaleString("en-BE")} kg`;
+import { formatKg, vgm } from "@/domain/container";
 
 /** VGM at a glance: unknown is shown as unknown (fail closed), over the maximum in red. */
 export function VgmBadge({
@@ -15,10 +13,10 @@ export function VgmBadge({
 }) {
   const v = vgm({ type, cargoKg, tareKg });
   if (v.state === "unknown") return <ToneBadge tone="warning">VGM unknown · {v.reason}</ToneBadge>;
-  const max = v.maxGrossKg ? ` / max ${kg(v.maxGrossKg)}` : "";
+  const max = v.maxGrossKg ? ` / max ${formatKg(v.maxGrossKg)}` : "";
   return (
     <ToneBadge tone={v.state === "over" ? "danger" : "success"}>
-      VGM {kg(v.grossKg)}
+      VGM {formatKg(v.grossKg)}
       {max}
       {v.tareFrom === "type" && " · tare from type"}
     </ToneBadge>

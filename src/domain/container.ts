@@ -85,3 +85,6 @@ export function vgm(box: { type: string; cargoKg: number | null; tareKg: number 
     tareFrom: box.tareKg !== null ? "box" : "type",
   };
 }
+
+/** A weight the way the papers print it: "12,345 kg". */
+export const formatKg = (n: number) => `${n.toLocaleString("en")} kg`;

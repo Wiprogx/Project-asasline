@@ -1,4 +1,4 @@
-import { integer, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, integer, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Columns every business record carries.
@@ -22,3 +22,6 @@ export const recordColumns = {
 
 /** Money is integer cents; there is no float money column anywhere (probe tms.floatMoney). */
 export const cents = (name?: string) => (name ? integer(name) : integer());
+
+/** Dates are stored as `date` and read as "YYYY-MM-DD" strings — never as instants (invariant 4). */
+export const day = () => date({ mode: "string" });

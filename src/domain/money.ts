@@ -14,3 +14,8 @@ export function toCents(input: string): number | null {
   if (!/^-?\d+(\.\d{1,2})?$/.test(t)) return null;
   return Math.round(Number(t) * 100);
 }
+
+/** Integer cents as the "1250.00" a text input shows; nothing when there is no amount. */
+export function centsToInput(cents: number | null | undefined): string {
+  return cents === null || cents === undefined ? "" : (cents / 100).toFixed(2);
+}

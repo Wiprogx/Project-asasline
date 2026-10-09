@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AGE_BUCKETS, type agedBalance } from "@/domain/ledger";
+import { AGE_BUCKETS, type agedBalance } from "@/domain/ledger-reports";
 import { formatCents } from "@/domain/money";
 
 const num = "text-right tabular-nums";

@@ -7,6 +7,7 @@
 import { EU_COUNTRIES } from "./accounting";
 import { addDays, addMonths } from "./dates";
 import { invoiceTotals, type Line } from "./invoicing";
+import { centsToInput } from "./money";
 
 const PERIOD = /^(\d{4})-(0[1-9]|1[0-2]|Q[1-4])$/;
 
@@ -173,7 +174,7 @@ export function periodXml(period: string): string {
   return `<ns2:Period>${when}<ns2:Year>${y}</ns2:Year></ns2:Period>`;
 }
 
-export const euros = (cents: number) => (cents / 100).toFixed(2);
+export const euros = (cents: number) => centsToInput(cents);
 
 /** A draft Intervat VATConsignment file for one period. */
 export function intervatXml(period: string, grids: Map<string, number>, o: Declarant): string {

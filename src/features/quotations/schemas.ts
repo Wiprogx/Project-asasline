@@ -1,24 +1,14 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
-import { parseYmd } from "@/domain/dates";
-import { toCents } from "@/domain/money";
+import { centsField, dayField } from "@/lib/zod-fields";
 
-const amount = (label: string) =>
-  z.string().transform((v, ctx) => {
-    const c = toCents(v);
-    if (c === null)
-      ctx.addIssue({ code: "custom", message: `${label}: an amount like 1250 or 1250.00` });
-    return c ?? 0;
-  });
+const amount = (label: string) => centsField(label, { allowNegative: true });
 
 /** A first quotation: one destination, one all-inclusive line. More routes/lines come in the editor. */
 export const newQuotationSchema = z.object({
   clientId: z.uuid("Choose the customer"),
   kind: z.enum(["export", "import"]).default("export"),
-  validUntil: z
-    .string()
-    .refine((s) => parseYmd(s) !== null, "Date as YYYY-MM-DD")
-    .optional(),
+  validUntil: dayField().optional(),
   pol: z.string().min(2, "Port of loading").max(10),
   pod: z.string().min(2, "Port of discharge").max(10),
   finalPlace: z.string().max(200).optional(),

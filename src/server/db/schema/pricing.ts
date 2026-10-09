@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   char,
-  date,
   index,
   integer,
   pgTable,
@@ -10,12 +9,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { cents, recordColumns } from "./_columns";
+import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import { rateTypeEnum } from "./enums";
-
-/** Dates are stored as `date` and read as "YYYY-MM-DD" strings — never as instants. */
-const day = () => date({ mode: "string" });
 
 /**
  * The rate catalogue (legacy RATE_ITEMS): every chargeable thing — an ocean leg, an inland

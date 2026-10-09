@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
-  accountLedger,
-  ageBucket,
-  agedBalance,
-  balanceSheet,
   docEntry,
   journal,
   type LedgerDoc,
   type LedgerPayment,
   paymentEntries,
-  profitAndLoss,
   searchEntries,
-  trialBalance,
 } from "./ledger";
+import {
+  accountLedger,
+  ageBucket,
+  agedBalance,
+  balanceSheet,
+  profitAndLoss,
+  trialBalance,
+} from "./ledger-reports";
 
 const sale: LedgerDoc = {
   id: "i1",

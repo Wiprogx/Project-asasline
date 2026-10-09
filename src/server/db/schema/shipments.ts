@@ -1,15 +1,6 @@
 import { sql } from "drizzle-orm";
-import {
-  boolean,
-  date,
-  index,
-  integer,
-  pgTable,
-  text,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
-import { cents, recordColumns } from "./_columns";
+import { boolean, index, integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import {
   bookingStatusEnum,
@@ -22,9 +13,6 @@ import { rateItems } from "./pricing";
 
 // The rate catalogue lives in its own file (size); it stays part of the shipments schema here.
 export { priceListLines, priceLists, rateItems } from "./pricing";
-
-/** Dates are stored as `date` and read as "YYYY-MM-DD" strings — never as instants. */
-const day = () => date({ mode: "string" });
 
 export const quotations = pgTable(
   "quotations",

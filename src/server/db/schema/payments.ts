@@ -1,6 +1,6 @@
 import { date, index, pgEnum, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { PAYMENT_METHODS } from "../../../domain/payments";
-import { cents, recordColumns } from "./_columns";
+import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import { invoices } from "./invoices";
 
@@ -8,8 +8,6 @@ export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS);
 export const paymentStatusEnum = pgEnum("payment_status", ["posted", "reversed"]);
 export const paymentDirectionEnum = pgEnum("payment_direction", ["in", "out"]);
 export const bankLineStateEnum = pgEnum("bank_line_state", ["open", "matched", "ignored"]);
-
-const day = () => date({ mode: "string" });
 
 /**
  * Money received. Reversed with a reason and a date, never deleted: the books must show that

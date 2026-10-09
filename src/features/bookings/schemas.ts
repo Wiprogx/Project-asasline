@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { parseYmd } from "@/domain/dates";
 import { containerNumberOk } from "@/domain/container";
 import { BOOKING_FLOW, DOC_TYPES, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
+import { dayField } from "@/lib/zod-fields";
 
-const day = z.string().refine((s) => parseYmd(s) !== null, "Date as YYYY-MM-DD");
+const day = dayField();
 const optional = z.string().max(200).optional();
 
 export const newBookingSchema = z.object({
