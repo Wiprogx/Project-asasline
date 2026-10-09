@@ -32,6 +32,7 @@ const TABLES = {
   payments: t.payments,
   paymentAllocations: t.paymentAllocations,
   bankLines: t.bankLines,
+  bankStatements: t.bankStatements,
   sepaBatches: t.sepaBatches,
   sepaBatchItems: t.sepaBatchItems,
   fixedAssets: t.fixedAssets,

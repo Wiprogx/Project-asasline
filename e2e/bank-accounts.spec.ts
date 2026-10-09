@@ -50,4 +50,55 @@ test("the office's bank accounts are a Settings table, and the Bank screen stand
   await expect(card).toContainText("€1,087.66");
   await expect(card).toContainText("Balance in the books (550000)");
   await expect(card).toContainText("2 · €987.66");
+
+  // A CODA statement says what the bank holds: one more line of 50.00, and a closing of 1,200.00
+  // where ours would be 1,137.66 — a statement is missing, and the screen says so.
+  const rec = (parts: [number, string][]) => {
+    const a = new Array<string>(128).fill(" ");
+    for (const [p, str] of parts)
+      for (let k = 0; k < str.length && p - 1 + k < 128; k++) a[p - 1 + k] = str[k];
+    return a.join("");
+  };
+  const d = officeToday();
+  const ddmmyy = `${d.slice(8, 10)}${d.slice(5, 7)}${d.slice(2, 4)}`;
+  const coda = [
+    rec([[1, "0000023092672505"]]),
+    rec([
+      [1, "1"],
+      [6, `${iban} EUR`],
+    ]),
+    rec([
+      [1, "21"],
+      [3, "0001"],
+      [7, "0000"],
+      [32, "0"],
+      [33, "000000000050000"],
+      [48, ddmmyy],
+      [62, "0"],
+      [63, `Interest ${t}`],
+      [116, ddmmyy],
+    ]),
+    rec([
+      [1, "8"],
+      [42, "0"],
+      [43, "000000001200000"],
+      [58, ddmmyy],
+    ]),
+  ].join("\n");
+  await page.getByLabel("Statement file (CODA or CSV)").setInputFiles({
+    name: `statement-${t}.cod`,
+    mimeType: "text/plain",
+    buffer: Buffer.from(coda),
+  });
+  await submit(page, page.getByRole("button", { name: "Import statement" }));
+  await expectToast(
+    page,
+    /1 line imported · ⚠ the balance differs by -€62\.34 — a statement is missing/,
+  );
+  await expect(card).toContainText("€1,137.66");
+  await expect(card).toContainText(`The bank's last statement says (${d})`);
+  await expect(card).toContainText("€1,200.00");
+  await expect(card.getByRole("status")).toContainText(
+    "€62.34 apart from the bank — a statement is missing.",
+  );
 });

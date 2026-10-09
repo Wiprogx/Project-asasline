@@ -114,3 +114,21 @@ export const sepaBatchItems = pgTable(
     index("sepa_items_invoice_idx").on(t.invoiceId),
   ],
 );
+
+/**
+ * What the bank's statement said the account held when it was imported (CODA record 8, legacy
+ * stmtBalance): kept per import, so the Bank screen can say when ours and the bank's differ —
+ * a statement is missing, or a line was never imported.
+ */
+export const bankStatements = pgTable(
+  "bank_statements",
+  {
+    ...recordColumns,
+    account: text().notNull(),
+    source: text().notNull(),
+    file: text(),
+    closingDate: day(),
+    closingCents: cents().notNull(),
+  },
+  (t) => [index("bank_statements_account_idx").on(t.account, t.closingDate)],
+);

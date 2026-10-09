@@ -108,6 +108,13 @@ describe("CODA", () => {
       [48, "250926"],
       [116, "250926"],
     ]),
+    // The new balance: 8,765.43 on 25/09/26.
+    rec([
+      [1, "8"],
+      [42, "0"],
+      [43, "000000008765430"],
+      [58, "250926"],
+    ]),
   ].join("\n");
 
   it("reads movements, amounts in cents, signs, dates and the structured reference", () => {
@@ -123,6 +130,16 @@ describe("CODA", () => {
     });
     expect(s.moves[1].comm).toBe("Invoice INV/2026/00018 thank you");
     expect(s.moves[2].amountCents).toBe(-1234);
+    expect(s.closingCents).toBe(876_543);
+    expect(s.closingDate).toBe("2026-09-25");
+  });
+  it("a CSV export carries no closing balance", () => {
+    const csv = "Date;Amount;Name\n2026-09-23;12,00;X";
+    expect(parseStatement(csv)).toMatchObject({
+      source: "CSV",
+      closingCents: null,
+      closingDate: null,
+    });
   });
   it("is chosen for a CODA file and refuses what is not one", () => {
     expect(parseStatement(file)?.source).toBe("CODA");

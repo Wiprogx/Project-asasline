@@ -56,7 +56,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
   country) is covered by Settings › Document rules: a country's paper is a rule with its anchor, offset and blocking flag.
 - **Discuss** — a voice recording on a call · a calls tab · WA_NUMBERS and AUTO_SEND.
 - **Accounting** — catalogue
-  item per invoice line and general sale items (GL_ITEMS / SALE_ITEMS) · the bank's own closing balance against ours.
+  item per invoice line and general sale items (GL_ITEMS / SALE_ITEMS).
 - **Settings and platform** — the remaining legacy tabs (time, notify, trules,
   wa, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
   time on a record kept as a visit (L15225).

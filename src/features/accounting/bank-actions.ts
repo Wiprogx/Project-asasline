@@ -8,7 +8,7 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { readBankAccounts } from "@/server/bank-config";
-import { bankLines } from "@/server/db/schema";
+import { bankLines, bankStatements } from "@/server/db/schema";
 import { guarded, Refused } from "./invoice-store";
 import { openInvoices } from "./money";
 import { bookPayment, bookRuleCharge, refreshMoney } from "./payment-store";
@@ -16,6 +16,8 @@ import { contactOfIbanLookup } from "./queries";
 import { bookChargeSchema, ignoreLineSchema, matchLineSchema } from "./schemas";
 import { ruleFor } from "@/domain/bank-rules";
 import { readBankRules } from "@/server/bank-rules-config";
+import { formatCents } from "@/domain/money";
+import { bankStandings } from "./bank-queries";
 
 const MAX_FILE = 5 * 1024 * 1024;
 
@@ -49,6 +51,16 @@ export async function importStatement(_p: ActionResult, fd: FormData): Promise<A
     .values(rows)
     .onConflictDoNothing()
     .returning({ id: bankLines.id });
+  // The statement says what the balance is: kept, and if ours differs a statement is missing.
+  if (statement.closingCents !== null && account)
+    await db.insert(bankStatements).values({
+      account,
+      source: statement.source,
+      file: file.name,
+      closingDate: statement.closingDate,
+      closingCents: statement.closingCents,
+      createdBy: user.id,
+    });
   await audit(db, {
     action: "bank.import",
     userId: user.id,
@@ -57,14 +69,22 @@ export async function importStatement(_p: ActionResult, fd: FormData): Promise<A
       source: statement.source,
       added: added.length,
       skipped: rows.length - added.length,
+      closingCents: statement.closingCents,
     },
   });
   refreshMoney();
+  const gap =
+    statement.closingCents !== null && account
+      ? ((await bankStandings()).find((x) => x.account.iban === account)?.standing.gapCents ?? 0)
+      : 0;
+  const differs = gap
+    ? ` · ⚠ the balance differs by ${formatCents(gap)} — a statement is missing`
+    : "";
   const skipped = rows.length - added.length;
   return {
     ok: true,
     data: undefined,
-    message: `${added.length} line${added.length === 1 ? "" : "s"} imported${skipped ? ` · ${skipped} already there` : ""}`,
+    message: `${added.length} line${added.length === 1 ? "" : "s"} imported${skipped ? ` · ${skipped} already there` : ""}${differs}`,
   };
 }
 

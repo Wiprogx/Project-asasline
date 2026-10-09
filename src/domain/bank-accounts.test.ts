@@ -49,9 +49,30 @@ describe("bank accounts", () => {
     );
     expect(s).toEqual({
       statementCents: 223_766,
+      bankCents: null,
+      bankDate: null,
+      gapCents: 0,
       booksCents: 223_766,
       openCount: 1,
       openCents: -1_234,
     });
+  });
+  it("says how far ours stands from what the bank's last statement said", () => {
+    const lines = [
+      {
+        account: "BE68539007547034",
+        date: "2026-02-01",
+        amountCents: 100_000,
+        state: "matched" as const,
+      },
+    ];
+    const same = standingOf(belfius, lines, 0, {
+      closingCents: 225_000,
+      closingDate: "2026-02-01",
+    });
+    expect(same).toMatchObject({ bankCents: 225_000, bankDate: "2026-02-01", gapCents: 0 });
+    // The bank holds 50 more than our lines add up to: a statement is missing.
+    const short = standingOf(belfius, lines, 0, { closingCents: 230_000, closingDate: null });
+    expect(short.gapCents).toBe(-5_000);
   });
 });

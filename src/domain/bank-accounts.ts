@@ -82,6 +82,11 @@ export type StatementLine = {
 export type Standing = {
   /** The opening balance plus every statement line since (legacy stmtBalance). */
   statementCents: number;
+  /** What the bank's last statement says the account holds (legacy stmtBalance on the account), when a CODA said it. */
+  bankCents: number | null;
+  bankDate: string | null;
+  /** Ours minus the bank's: anything but zero means a statement is missing. */
+  gapCents: number;
   /** The ledger account's close (legacy "balance in the books"). */
   booksCents: number;
   openCount: number;
@@ -89,15 +94,22 @@ export type Standing = {
 };
 
 /** Where one account stands: the two balances meet once every line is reconciled. */
+export type BankWord = { closingCents: number; closingDate: string | null };
+
 export function standingOf(
   a: BankAccount,
   lines: readonly StatementLine[],
   booksCents: number,
+  bank: BankWord | null = null,
 ): Standing {
   const mine = lines.filter((l) => ibanClean(l.account) === a.iban && l.date >= a.openingDate);
   const open = mine.filter((l) => l.state === "open");
+  const statementCents = a.openingCents + mine.reduce((s, l) => s + l.amountCents, 0);
   return {
-    statementCents: a.openingCents + mine.reduce((s, l) => s + l.amountCents, 0),
+    statementCents,
+    bankCents: bank?.closingCents ?? null,
+    bankDate: bank?.closingDate ?? null,
+    gapCents: bank ? statementCents - bank.closingCents : 0,
     booksCents,
     openCount: open.length,
     openCents: open.reduce((s, l) => s + l.amountCents, 0),

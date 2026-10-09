@@ -44,7 +44,20 @@ export function BankAccountsCard({ rows }: { rows: Row[] }) {
                   {s.openCount ? `${s.openCount} · ${formatCents(s.openCents)}` : "nothing"}
                 </ToneBadge>
               </dd>
+              {s.bankCents !== null && (
+                <>
+                  <dt className="text-muted-foreground">
+                    The bank&apos;s last statement says{s.bankDate ? ` (${s.bankDate})` : ""}
+                  </dt>
+                  <dd className="tabular-nums">{formatCents(s.bankCents)}</dd>
+                </>
+              )}
             </dl>
+            {s.gapCents !== 0 && (
+              <p role="status" className="mt-2 text-xs text-destructive">
+                ⚠ {formatCents(Math.abs(s.gapCents))} apart from the bank — a statement is missing.
+              </p>
+            )}
             <p className="mt-2 text-xs text-muted-foreground">
               The two balances meet once every line is reconciled and every payment registered by
               hand has reached a statement.

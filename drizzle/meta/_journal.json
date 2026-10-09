@@ -232,6 +232,13 @@
       "when": 1791582148297,
       "tag": "0032_invoice_fx",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791584476650,
+      "tag": "0033_bank_statements",
+      "breakpoints": true
     }
   ]
 }

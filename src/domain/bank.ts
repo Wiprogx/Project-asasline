@@ -17,7 +17,14 @@ export type Move = {
   ref: string;
 };
 
-export type Statement = { source: "CODA" | "CSV"; account: string; moves: Move[] };
+export type Statement = {
+  source: "CODA" | "CSV";
+  account: string;
+  moves: Move[];
+  /** The bank's own closing balance (CODA record 8); a CSV export carries none. */
+  closingCents: number | null;
+  closingDate: string | null;
+};
 
 const OGM_RE = /\+\+\+\d{3}\/\d{4}\/\d{5}\+\+\+|\*\*\*\d{3}\/\d{4}\/\d{5}\*\*\*/;
 const ogmFrom12 = (d: string) => `+++${d.slice(0, 3)}/${d.slice(3, 7)}/${d.slice(7, 12)}+++`;
@@ -37,7 +44,13 @@ export function parseCoda(text: string): Statement | null {
     .filter((l) => l.trim())
     .map((l) => l.padEnd(128, " "));
   if (!rows.length || rows[0][0] !== "0") return null;
-  const out: Statement = { source: "CODA", account: "", moves: [] };
+  const out: Statement = {
+    source: "CODA",
+    account: "",
+    moves: [],
+    closingCents: null,
+    closingDate: null,
+  };
   let cur: Move | null = null;
   for (const L of rows) {
     if (L[0] === "1") out.account = ibanIn(L.slice(5, 42));
@@ -64,6 +77,10 @@ export function parseCoda(text: string): Statement | null {
       cur.iban = ibanIn(L.slice(10, 47));
       cur.name = L.slice(47, 82).trim();
       cur.comm += L.slice(82, 125);
+    } else if (L[0] === "8") {
+      // The new balance: what the bank says the account holds after this statement.
+      out.closingCents = codaCents(L[41], L.slice(42, 57));
+      out.closingDate = codaDate(L.slice(57, 63)) || null;
     }
   }
   for (const m of out.moves) m.comm = m.comm.replace(/\s+/g, " ").trim();
@@ -133,7 +150,13 @@ export function parseBankCsv(text: string): Statement | null {
   // The statement's own account (legacy: the first "Rekening" / "Compte" column), never the counterparty's.
   const cOwn = H.findIndex((x) => /^(rekening|compte|account|own account|iban)$/.test(x.trim()));
 
-  const out: Statement = { source: "CSV", account: "", moves: [] };
+  const out: Statement = {
+    source: "CSV",
+    account: "",
+    moves: [],
+    closingCents: null,
+    closingDate: null,
+  };
   for (const r of rows.slice(header + 1)) {
     const c = splitCsv(r, sep);
     const cents = csvCents(c[cAmount] ?? "");
