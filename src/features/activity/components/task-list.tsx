@@ -47,7 +47,7 @@ function TaskItem({
           {t.type && <span className="rounded border px-1 text-[10px] uppercase">{t.type}</span>}
           <Owner t={t} />
           {t.linkRef && (
-            <Link href={`/bookings/${t.linkId}`} className="font-mono hover:underline">
+            <Link href={`/${t.linkKind}s/${t.linkId}`} className="font-mono hover:underline">
               {t.linkRef}
             </Link>
           )}

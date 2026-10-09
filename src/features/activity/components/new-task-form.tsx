@@ -16,7 +16,7 @@ type Props = {
   types: readonly string[];
   staff: { id: string; name: string }[];
   meId: string;
-  link?: { kind: "booking"; id: string };
+  link?: { kind: "booking" | "quotation"; id: string };
   defaultDue?: string;
 };
 

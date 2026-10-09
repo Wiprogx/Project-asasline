@@ -49,8 +49,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
   (L1500) · SEAL_SOURCES · list with configurable columns, stats and an "Invoiced" filter ·
   a Documents tab per side for a "Both" shipment.
-- **Quotations and pricing** — list analytics · Activities, Messages and History tabs
-  (L7033) · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
+- **Quotations and pricing** — list analytics · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
   "Rate sources" tab.
 - **Contacts** — documents and activities tabs · "checked on" dates for VAT and EORI · ID_FORMATS editor · tags and a
   countries table · kanban view.

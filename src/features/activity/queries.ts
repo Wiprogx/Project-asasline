@@ -6,7 +6,7 @@ import type { TaskState } from "@/domain/tasks";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { activities, bookings, covers, users } from "@/server/db/schema";
+import { activities, bookings, covers, quotations, users } from "@/server/db/schema";
 
 const doneBy = alias(users, "done_by_user");
 
@@ -28,16 +28,17 @@ function baseQuery() {
       assigneeName: users.name,
       linkKind: activities.linkKind,
       linkId: activities.linkId,
-      linkRef: bookings.ref,
+      linkRef: sql<string | null>`coalesce(${bookings.ref}, ${quotations.ref})`,
       doneAt: activities.doneAt,
       doneByName: doneBy.name,
     })
     .from(activities)
     .leftJoin(users, eq(users.id, activities.assigneeId))
     .leftJoin(doneBy, eq(doneBy.id, activities.doneBy))
+    .leftJoin(bookings, and(eq(activities.linkKind, "booking"), eq(bookings.id, activities.linkId)))
     .leftJoin(
-      bookings,
-      and(eq(activities.linkKind, "booking"), eq(bookings.id, activities.linkId)),
+      quotations,
+      and(eq(activities.linkKind, "quotation"), eq(quotations.id, activities.linkId)),
     );
 }
 
@@ -94,12 +95,12 @@ export async function tasksBetween(from: string, to: string, who: string) {
     .orderBy(...byDue);
 }
 
-/** Every task of one booking, whatever its state (the booking's Tasks tab). */
-export async function tasksForBooking(bookingId: string) {
+/** Every task of one booking or quotation, whatever its state (the record's Tasks tab). */
+export async function tasksForRecord(kind: "booking" | "quotation", id: string) {
   await requirePermission("app.activity");
-  if (!z.uuid().safeParse(bookingId).success) return [];
+  if (!z.uuid().safeParse(id).success) return [];
   return baseQuery()
-    .where(and(eq(activities.linkKind, "booking"), eq(activities.linkId, bookingId)))
+    .where(and(eq(activities.linkKind, kind), eq(activities.linkId, id)))
     .orderBy(...byDue);
 }
 

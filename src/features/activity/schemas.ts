@@ -6,7 +6,7 @@ import { dayField } from "@/lib/zod-fields";
 const day = dayField();
 
 /** Things a task can hang off. Only bookings for now; quotations and contacts follow. */
-export const LINK_KINDS = ["booking"] as const;
+export const LINK_KINDS = ["booking", "quotation"] as const;
 
 const owner = {
   assigneeId: z.uuid().optional(),

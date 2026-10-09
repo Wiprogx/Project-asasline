@@ -16,6 +16,7 @@ import {
   quotations,
   rateItems,
 } from "@/server/db/schema";
+import { cache } from "react";
 
 export type QuotationRow = {
   id: string;
@@ -55,7 +56,8 @@ export async function listQuotations(opts: { q?: string; clientId?: string } = {
   );
 }
 
-export async function getQuotation(id: string) {
+/** One quotation with its client, routes and lines; cached per request (layout + page share it). */
+export const getQuotation = cache(async (id: string) => {
   await requirePermission("app.quotations");
   return db.query.quotations.findFirst({
     where: eq(quotations.id, id),
@@ -75,7 +77,7 @@ export async function getQuotation(id: string) {
       },
     },
   });
-}
+});
 
 /** The catalogue as the quotation editor offers it: ocean legs for a destination, all for a line. */
 export async function catalogueChoices() {

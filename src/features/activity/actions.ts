@@ -19,6 +19,7 @@ function refresh(linkKind: string | null, linkId: string | null) {
   revalidatePath("/activity", "layout");
   revalidatePath("/");
   if (linkKind === "booking" && linkId) revalidatePath(`/bookings/${linkId}`, "layout");
+  if (linkKind === "quotation" && linkId) revalidatePath(`/quotations/${linkId}`, "layout");
 }
 
 async function run(
