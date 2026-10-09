@@ -11,6 +11,7 @@ import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import {
   bookings,
+  contacts,
   containers,
   quotationLines,
   quotationRoutes,
@@ -21,6 +22,7 @@ import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { acceptRouteSchema, newQuotationSchema } from "./schemas";
 import { Refused } from "./editor-store";
+import { openAutoTask } from "@/server/auto-tasks";
 
 export async function createQuotation(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.quotations");
@@ -67,6 +69,17 @@ export async function createQuotation(_p: ActionResult, fd: FormData): Promise<A
       entity: "quotation",
       entityId: q.id,
       detail: { ref },
+    });
+    const [client] = await tx
+      .select({ name: contacts.name })
+      .from(contacts)
+      .where(eq(contacts.id, d.clientId));
+    await openAutoTask(tx, {
+      trigger: "quote_created",
+      vars: { ref, client: client?.name ?? "the customer" },
+      link: { kind: "quotation", id: q.id },
+      userId: user.id,
+      today: officeToday(),
     });
     return q.id;
   });
@@ -150,6 +163,17 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
         detail: { booking: ref, route: `${route.pol} → ${route.pod}` },
       });
       await syncBookingRules(tx, b.id, user.id);
+      const [client] = await tx
+        .select({ name: contacts.name })
+        .from(contacts)
+        .where(eq(contacts.id, q.clientId));
+      await openAutoTask(tx, {
+        trigger: "booking_created",
+        vars: { ref, client: client?.name ?? "the customer" },
+        link: { kind: "booking", id: b.id },
+        userId: user.id,
+        today: officeToday(),
+      });
       return b.id;
     });
   } catch (e) {

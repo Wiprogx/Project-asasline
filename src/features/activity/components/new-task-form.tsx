@@ -12,6 +12,8 @@ import { createTask } from "../actions";
 import { newTaskSchema } from "../schemas";
 
 type Props = {
+  /** The task types list (Settings › Lists). */
+  types: readonly string[];
   staff: { id: string; name: string }[];
   meId: string;
   link?: { kind: "booking"; id: string };
@@ -19,7 +21,7 @@ type Props = {
 };
 
 /** Assigned to me by default; clear the person and pick a role to leave it for anyone in it. */
-export function NewTaskForm({ staff, meId, link, defaultDue }: Props) {
+export function NewTaskForm({ staff, meId, link, defaultDue, types }: Props) {
   const form = useRef<HTMLFormElement>(null);
   const [state, run, pending] = useToastedAction(
     createTask,
@@ -42,6 +44,14 @@ export function NewTaskForm({ staff, meId, link, defaultDue }: Props) {
       )}
       <Field id="t-title" label="New task" error={fe?.title}>
         <Input id="t-title" name="title" required placeholder="e.g. Send the VGM to the line" />
+      </Field>
+      <Field id="t-type" label="Type" error={fe?.type}>
+        <NativeSelect
+          id="t-type"
+          name="type"
+          defaultValue={types.includes("To do") ? "To do" : (types[0] ?? "")}
+          options={types.map((x) => ({ value: x, label: x }))}
+        />
       </Field>
       <Field id="t-due" label="Due" error={fe?.due}>
         <Input id="t-due" name="due" type="date" defaultValue={defaultDue} />

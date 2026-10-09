@@ -7,12 +7,13 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { activities, bookings, containers } from "@/server/db/schema";
+import { activities, bookings, contacts, containers } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
 import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
 import { guarded, settle } from "./settle";
+import { openAutoTask } from "@/server/auto-tasks";
 
 /** The SB number is issued inside the insert's transaction: no gaps from failed saves. */
 export async function createBooking(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -43,6 +44,17 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
       detail: { ref },
     });
     await syncBookingRules(tx, row.id, user.id);
+    const [client] = await tx
+      .select({ name: contacts.name })
+      .from(contacts)
+      .where(eq(contacts.id, fields.clientId));
+    await openAutoTask(tx, {
+      trigger: "booking_created",
+      vars: { ref, client: client?.name ?? "the customer" },
+      link: { kind: "booking", id: row.id },
+      userId: user.id,
+      today: officeToday(),
+    });
     return row.id;
   });
   await settle(id);

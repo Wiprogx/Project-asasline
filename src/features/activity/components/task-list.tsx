@@ -34,6 +34,7 @@ function TaskItem({ t, today, staff }: { t: TaskRow; today: string; staff: Staff
           {t.state === "open" && (
             <ToneBadge tone={BUCKET_META[bucket].tone}>{t.due ?? "no date"}</ToneBadge>
           )}
+          {t.type && <span className="rounded border px-1 text-[10px] uppercase">{t.type}</span>}
           <Owner t={t} />
           {t.linkRef && (
             <Link href={`/bookings/${t.linkId}`} className="font-mono hover:underline">

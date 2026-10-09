@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { PageHeader } from "@/components/shared/page-header";
-import { ToneBadge } from "@/components/shared/tone-badge";
 import { may } from "@/domain/permissions";
 import { CreditLine } from "@/features/accounting/components/credit-line";
 import { creditStanding } from "@/features/accounting/reminder-queries";
 import { updateContact } from "@/features/contacts/actions";
 import { BankAccounts } from "@/features/contacts/components/bank-accounts";
 import { ContactAddresses } from "@/features/contacts/components/contact-addresses";
-import { ContactArchive } from "@/features/contacts/components/contact-archive";
 import { ContactForm } from "@/features/contacts/components/contact-form";
-import { ContactReach } from "@/features/contacts/components/contact-reach";
 import { toContactFormValues } from "@/features/contacts/form-values";
 import { getContact } from "@/features/contacts/queries";
 import { ContactAgreements } from "@/features/pricing/components/contact-agreements";
@@ -37,20 +33,6 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
 
   return (
     <>
-      <PageHeader
-        title={c.name}
-        description={
-          c.archivedAt ? (
-            <ToneBadge tone="neutral">Archived — {c.archivedReason}</ToneBadge>
-          ) : undefined
-        }
-        actions={
-          <>
-            <ContactReach phone={c.phone} mobile={c.mobile} whatsapp={c.whatsapp} email={c.email} />
-            <ContactArchive id={c.id} version={c.version} archived={!!c.archivedAt} />
-          </>
-        }
-      />
       {credit && <CreditLine {...credit} />}
       <ContactForm action={updateContact} values={toContactFormValues(c)} submitLabel="Save" />
       <div className="grid gap-4 pt-4">

@@ -5,7 +5,7 @@ import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { quotationRoutes } from "@/server/db/schema";
+import { contacts, quotationRoutes } from "@/server/db/schema";
 import {
   addRouteSchema,
   declineRouteSchema,
@@ -14,6 +14,8 @@ import {
 } from "./editor-schemas";
 import { bookingOn, editorResult, Refused, routeIn, touchQuotation } from "./editor-store";
 import { fillFromLane, oceanLeg } from "./lane-store";
+import { openAutoTask } from "@/server/auto-tasks";
+import { officeToday } from "@/server/clock";
 
 /**
  * A new destination. Picked from an ocean leg of the catalogue, it comes with its lines —
@@ -56,6 +58,17 @@ export async function addRoute(_p: ActionResult, fd: FormData): Promise<ActionRe
         entity: "quotation",
         entityId: q.id,
         detail: { route: `${pol} → ${pod}`, lane: lane?.id ?? null },
+      });
+      const [client] = await tx
+        .select({ name: contacts.name })
+        .from(contacts)
+        .where(eq(contacts.id, q.clientId));
+      await openAutoTask(tx, {
+        trigger: "dest_added",
+        vars: { ref: q.ref, client: client?.name ?? "the customer", dest: `${pol} › ${pod}` },
+        link: { kind: "quotation", id: q.id },
+        userId: user.id,
+        today: officeToday(),
       });
     }),
   );

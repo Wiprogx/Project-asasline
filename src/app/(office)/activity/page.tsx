@@ -10,6 +10,7 @@ import { coversNow, listTasks, staffOptions } from "@/features/activity/queries"
 import { listFilterSchema } from "@/features/activity/schemas";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readConfig } from "@/server/config-tables";
 
 export const metadata: Metadata = { title: "Activity" };
 
@@ -24,11 +25,12 @@ export default async function ActivityPage({ searchParams }: PageProps<"/activit
     coversNow(),
   ]);
 
+  const types = await readConfig("activityTypes");
   return (
     <div className="grid gap-4">
       <Card>
         <CardContent className="pt-4">
-          <NewTaskForm staff={staff} meId={me.id} />
+          <NewTaskForm types={types} staff={staff} meId={me.id} />
         </CardContent>
       </Card>
       <CoverCard

@@ -26,7 +26,7 @@
     "gate": "abatty gate",
     "gate:fast": "abatty gate --fast",
     "hooks:install": "git config core.hooksPath .githooks",
-    "pree2e": "npm run -s db:migrate && npm run -s db:seed",
+    "pree2e": "tsx scripts/e2e-prepare.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

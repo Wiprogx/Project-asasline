@@ -1,6 +1,7 @@
 import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { DEFAULT_ACTIVITY_TYPES } from "@/domain/activity-rules";
 import { ADDRESS_TYPES } from "@/domain/contacts";
 import { DEFAULT_PACKAGE_TYPES } from "@/domain/goods";
 import { DEFAULT_PAPER_DOCS } from "@/domain/release";
@@ -23,6 +24,7 @@ const TABLES = {
   addressTypes: { schema: LIST, fallback: ADDRESS_TYPES },
   packageTypes: { schema: LIST, fallback: DEFAULT_PACKAGE_TYPES },
   paperDocs: { schema: LIST, fallback: DEFAULT_PAPER_DOCS },
+  activityTypes: { schema: LIST, fallback: DEFAULT_ACTIVITY_TYPES },
 } as const;
 
 export type ConfigName = keyof typeof TABLES;

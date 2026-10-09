@@ -24,15 +24,26 @@ export type BookingRow = {
 };
 
 export async function listBookings(
-  opts: { q?: string; status?: BookingStatus; cancelled?: boolean } = {},
+  opts: { q?: string; status?: BookingStatus; cancelled?: boolean; contactId?: string } = {},
 ) {
   await requirePermission("app.bookings");
   const q = opts.q?.trim() ?? "";
-  const key = `bookings:list:${opts.status ?? "*"}:${!!opts.cancelled}:${q.toLowerCase()}`;
+  const key = `bookings:list:${opts.status ?? "*"}:${!!opts.cancelled}:${opts.contactId ?? "*"}:${q.toLowerCase()}`;
   return cached(key, { ttlSeconds: 30, tags: [tags.bookings] }, async (): Promise<BookingRow[]> => {
     const where: SQL[] = [];
     if (opts.status) where.push(eq(bookings.status, opts.status));
     else if (!opts.cancelled) where.push(ne(bookings.status, "cancelled"));
+    // A contact's bookings: every one it is a party on (customer, payer, shipper, consignee, notify).
+    if (opts.contactId)
+      where.push(
+        or(
+          eq(bookings.clientId, opts.contactId),
+          eq(bookings.payerId, opts.contactId),
+          eq(bookings.shipperId, opts.contactId),
+          eq(bookings.consigneeId, opts.contactId),
+          eq(bookings.notifyId, opts.contactId),
+        )!,
+      );
     if (q) {
       const like = `%${q}%`;
       where.push(

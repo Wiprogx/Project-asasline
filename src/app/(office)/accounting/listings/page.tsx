@@ -11,6 +11,7 @@ import {
 import { listingsScreen } from "@/features/accounting/listings-queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readBooks } from "@/server/books-config";
 
 export const metadata: Metadata = { title: "Listings" };
 
@@ -37,7 +38,9 @@ export default async function ListingsPage({ searchParams }: PageProps<"/account
       ? sp.year
       : String(Number(today.slice(0, 4)) - 1);
   const period =
-    typeof sp.p === "string" && isVatPeriod(sp.p) ? sp.p : vatPeriodOf(today, "quarterly");
+    typeof sp.p === "string" && isVatPeriod(sp.p)
+      ? sp.p
+      : vatPeriodOf(today, (await readBooks()).vatPeriod);
   const { clients, intra } = await listingsScreen(year, period);
   const go = (y: string, p: string, label: string, name: string) => (
     <Link

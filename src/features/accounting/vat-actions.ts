@@ -12,6 +12,8 @@ import { closeBooks, closedThrough } from "./books-store";
 import { guarded, Refused } from "./invoice-store";
 import { closeBooksSchema, fileVatSchema } from "./schemas";
 import { computeVatReturn, vatFilingOf } from "./vat-store";
+import { BOOKS_TAG } from "@/server/books-config";
+import { invalidateTags } from "@/server/cache/cache";
 
 /**
  * Marks a period's return as filed: the grids are kept as sent, and the books close through
@@ -49,6 +51,7 @@ export async function fileVatReturn(_p: ActionResult, fd: FormData): Promise<Act
     }),
   );
   if (!r.ok) return r;
+  await invalidateTags(BOOKS_TAG);
   revalidatePath("/accounting", "layout");
   return {
     ok: true,
@@ -67,6 +70,7 @@ export async function closeBooksThrough(_p: ActionResult, fd: FormData): Promise
     db.transaction((tx) => closeBooks(tx, through, officeToday(), user.id)),
   );
   if (!r.ok) return r;
+  await invalidateTags(BOOKS_TAG);
   revalidatePath("/accounting", "layout");
   return { ok: true, data: undefined, message: `The books are closed through ${through}` };
 }

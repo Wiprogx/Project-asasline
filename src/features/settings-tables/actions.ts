@@ -1,19 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { matrixProblem, type PermissionMatrix, PERMISSIONS, ROLES } from "@/domain/permissions";
+import { parseActivityRuleLines } from "@/domain/activity-rules";
 import { parseHsCodeLines } from "@/domain/goods";
 import { parseLoadingModeLines } from "@/domain/loading";
 import { parseReleaseStateLines, parseSendModeLines, parseTrackStepLines } from "@/domain/release";
 import { parsePortLines } from "@/domain/ports";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
-import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
-import { invalidateTags } from "@/server/cache/cache";
-import { writeTable } from "@/server/config-tables";
-import { db } from "@/server/db/client";
 import { FILE_HINTS_TAG, fileHintsSchema } from "@/server/file-config";
+import { ACTIVITY_RULES_TAG, activityRulesSchema } from "@/server/activity-config";
 import { HS_CODES_TAG, hsCodesSchema } from "@/server/goods-config";
 import { LOADING_MODES_TAG, loadingModesSchema } from "@/server/loading-config";
 import {
@@ -26,40 +23,7 @@ import {
 } from "@/server/release-config";
 import { PERMISSIONS_TAG } from "@/server/permission-config";
 import { PORTS_TAG } from "@/server/port-config";
-import { ConflictError } from "@/server/versioned";
-
-const versioned = z.object({ version: z.coerce.number().int().min(0) });
-
-/** One Settings table written with its version, audited, its cache cleared; a stale save is a conflict. */
-async function saveTable(p: {
-  userId: string;
-  name: string;
-  value: unknown;
-  version: number;
-  tag: string;
-  path: string;
-  detail: Record<string, unknown>;
-}): Promise<ActionResult | null> {
-  try {
-    await db.transaction(async (tx) => {
-      await writeTable(tx, p.name, p.value, p.version, p.userId);
-      await audit(tx, {
-        action: "config.save",
-        userId: p.userId,
-        entity: "config",
-        entityId: p.name,
-        detail: p.detail,
-      });
-    });
-  } catch (e) {
-    if (e instanceof ConflictError) return fail(`${e.message} Reload the page to see the latest.`);
-    throw e;
-  }
-  await invalidateTags(p.tag);
-  revalidatePath(p.path);
-  revalidatePath("/", "layout");
-  return null;
-}
+import { saveTable, versioned } from "./table-store";
 
 /** The ports table, one per line as "CODE Name CC". */
 export async function savePorts(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -79,6 +43,33 @@ export async function savePorts(_p: ActionResult, fd: FormData): Promise<ActionR
     detail: { count: ports.length },
   });
   return bad ?? { ok: true, data: undefined, message: `Saved · ${ports.length} ports` };
+}
+
+/** Automatic activities, one per line as "trigger | Label | Title | type | role | days | on or off". */
+export async function saveActivityRules(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(20_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { rules, problems } = parseActivityRuleLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = activityRulesSchema.safeParse(rules);
+  if (!checked.success) return fail("Forty rules at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "activityRules",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: ACTIVITY_RULES_TAG,
+    path: "/settings/activity-rules",
+    detail: { count: checked.data.length },
+  });
+  return (
+    bad ?? {
+      ok: true,
+      data: undefined,
+      message: `Saved · ${checked.data.length} automatic activities`,
+    }
+  );
 }
 
 /** Release states, one per line as "code | Label | hold or free | hint". */

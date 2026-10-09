@@ -12,6 +12,8 @@ export const activities = pgTable(
   {
     ...recordColumns,
     title: text().notNull(),
+    /** Email, Call, To do… (the activityTypes list); null reads as "To do". */
+    type: text(),
     assigneeId: uuid().references(() => users.id),
     role: roleEnum(),
     due: date({ mode: "string" }),

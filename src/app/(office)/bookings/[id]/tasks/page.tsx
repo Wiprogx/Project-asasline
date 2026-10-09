@@ -5,6 +5,7 @@ import { TaskList } from "@/features/activity/components/task-list";
 import { staffOptions, tasksForBooking } from "@/features/activity/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readConfig } from "@/server/config-tables";
 
 export const metadata: Metadata = { title: "Booking tasks" };
 
@@ -13,11 +14,12 @@ export default async function BookingTasksPage({ params }: PageProps<"/bookings/
   const me = await requirePagePermission("app.activity");
   const { id } = await params;
   const [rows, staff] = await Promise.all([tasksForBooking(id), staffOptions()]);
+  const types = await readConfig("activityTypes");
   return (
     <div className="grid gap-4">
       <Card>
         <CardContent className="pt-4">
-          <NewTaskForm staff={staff} meId={me.id} link={{ kind: "booking", id }} />
+          <NewTaskForm types={types} staff={staff} meId={me.id} link={{ kind: "booking", id }} />
         </CardContent>
       </Card>
       <TaskList rows={rows} today={officeToday()} staff={staff} grouped={false} />

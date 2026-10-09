@@ -183,6 +183,13 @@
       "when": 1791553421459,
       "tag": "0025_per_box_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791556760137,
+      "tag": "0026_task_type",
+      "breakpoints": true
     }
   ]
 }

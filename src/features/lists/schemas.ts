@@ -25,6 +25,11 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     title: "Package types",
     description: "Offered on a container's goods: bales, cartons, pallets… (legacy PACKAGE_TYPES).",
   },
+  activityTypes: {
+    title: "Task types",
+    description:
+      "What kind of task: e-mail, call, upload, to do, meeting, approval, reminder (legacy ACTIVITY_TYPES).",
+  },
   paperDocs: {
     title: "Paper documents",
     description:

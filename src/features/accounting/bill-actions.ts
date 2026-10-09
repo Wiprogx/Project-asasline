@@ -14,6 +14,7 @@ import { updateVersioned } from "@/server/versioned";
 import { assertOpen } from "./books-store";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import { approveBillSchema, newBillSchema, recordBillSchema } from "./schemas";
+import { readBooks } from "@/server/books-config";
 
 /** A supplier's bill, as a draft: for a booking (a shipment cost) or for the office. */
 export async function newBill(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -112,7 +113,11 @@ export async function recordBill(_p: ActionResult, fd: FormData): Promise<Action
         entityId: id,
         detail: { number, supplierRef, grossCents: totals.grossCents },
       });
-      return { number, bookingId: bill.bookingId, needs: needsApproval(totals.grossCents) };
+      return {
+        number,
+        bookingId: bill.bookingId,
+        needs: needsApproval(totals.grossCents, (await readBooks()).approveOverCents),
+      };
     }),
   );
   if (!r.ok) return r;

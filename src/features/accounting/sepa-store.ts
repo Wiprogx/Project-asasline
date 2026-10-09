@@ -6,6 +6,7 @@ import { sepaProblem } from "@/domain/sepa";
 import type { DbOrTx } from "@/server/db/client";
 import { contactBankAccounts, contacts, invoices } from "@/server/db/schema";
 import { creditedSql, settledSql } from "./money";
+import { readBooks } from "@/server/books-config";
 
 // Internal: read by the SEPA screen (permission-checked) and by the file action, under lock.
 
@@ -54,13 +55,14 @@ export async function payableBills(db: DbOrTx, ids?: string[]) {
         )
         .orderBy(asc(contactBankAccounts.createdAt))
     : [];
+  const approveOver = (await readBooks()).approveOverCents;
   return rows
     .map((r) => {
       const open = openCents(r.gross ?? 0, r.settled, r.credited);
       const account = accounts.find((a) => a.contactId === r.supplierId) ?? null;
       const problem =
         (r.inBatch ? "Already in a SEPA file" : null) ??
-        payProblem({ grossCents: r.gross ?? 0, approvedAt: r.approvedAt }) ??
+        payProblem({ grossCents: r.gross ?? 0, approvedAt: r.approvedAt }, approveOver) ??
         sepaProblem({ iban: account?.iban ?? null, amountCents: open });
       return {
         ...r,

@@ -16,6 +16,7 @@ import { VatGrids, VatPeriodNav } from "@/features/accounting/components/vat-ret
 import { vatScreen } from "@/features/accounting/vat-queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readBooks } from "@/server/books-config";
 
 export const metadata: Metadata = { title: "VAT return" };
 
@@ -26,7 +27,7 @@ export default async function VatPage({ searchParams }: PageProps<"/accounting/v
   const period =
     typeof p === "string" && isVatPeriod(p)
       ? p
-      : vatPeriodShift(vatPeriodOf(today, "quarterly"), -1);
+      : vatPeriodShift(vatPeriodOf(today, (await readBooks()).vatPeriod), -1);
   const { from, to } = vatPeriodRange(period);
   const { computed, filed, closedThrough } = await vatScreen(period);
   const grids = filed ? new Map(Object.entries(filed.filing.grids)) : computed.grids;

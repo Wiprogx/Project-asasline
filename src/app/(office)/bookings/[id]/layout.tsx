@@ -11,6 +11,7 @@ import { readConfig } from "@/server/config-tables";
 import { releaseState, releaseTone } from "@/domain/release";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { readReleaseStates } from "@/server/release-config";
+import { creditStanding } from "@/features/accounting/reminder-queries";
 
 /** The booking's header, status controls and tabs; each tab is its own URL. */
 export default async function BookingLayout({ params, children }: LayoutProps<"/bookings/[id]">) {
@@ -23,6 +24,7 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
     readReleaseStates(),
   ]);
   if (!b) notFound();
+  const credit = may(user, "app.accounting") ? await creditStanding(b.clientId) : null;
 
   const base = `/bookings/${b.id}`;
   const editable = may(user, "bookings.edit") && b.status !== "cancelled";
@@ -52,6 +54,7 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
               </ToneBadge>
             )}
             {b.client.name}
+            {credit?.problem && <ToneBadge tone="danger">{credit.problem}</ToneBadge>}
           </span>
         }
         actions={

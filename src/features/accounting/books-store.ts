@@ -1,14 +1,13 @@
 import "server-only";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
 import { closeProblem, lockProblem } from "@/domain/books";
 import { audit } from "@/server/audit";
 import type { DbOrTx, Tx } from "@/server/db/client";
 import { configTables } from "@/server/db/schema";
 import { Refused } from "./invoice-store";
+import { BOOKS_NAME, parseBooks, readBooksNow } from "@/server/books-config";
 
-const BOOKS = "books";
-const booksSchema = z.object({ closedThrough: z.string().nullable() });
+const BOOKS = BOOKS_NAME;
 
 /**
  * The last closed day. Inside a booking transaction the row is read FOR SHARE, so a close
@@ -17,8 +16,7 @@ const booksSchema = z.object({ closedThrough: z.string().nullable() });
 export async function closedThrough(db: DbOrTx, lock?: "share" | "update"): Promise<string | null> {
   const q = db.select().from(configTables).where(eq(configTables.name, BOOKS));
   const [row] = lock === "share" ? await q.for("share") : lock ? await q.for("update") : await q;
-  const parsed = row ? booksSchema.safeParse(row.value) : null;
-  return parsed?.success ? parsed.data.closedThrough : null;
+  return parseBooks(row?.value).closedThrough;
 }
 
 /** Refuses anything dated in a closed period. */
@@ -32,7 +30,8 @@ export async function closeBooks(tx: Tx, through: string, today: string, userId:
   const before = await closedThrough(tx, "update");
   const problem = closeProblem(through, before, today);
   if (problem) throw new Refused(problem);
-  const value = { closedThrough: through };
+  // The row also carries the office's settings (books-config): only the close day moves here.
+  const value = { ...(await readBooksNow(tx)), closedThrough: through };
   await tx
     .insert(configTables)
     .values({ name: BOOKS, value, updatedBy: userId })

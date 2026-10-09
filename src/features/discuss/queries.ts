@@ -126,13 +126,14 @@ export async function messagesForRecord(linkKind: "booking" | "quotation", id: s
 }
 
 /** Everything that is not internal chat, newest first, with search. */
-export async function allMessages(opts: { q?: string; channel?: Channel }) {
+export async function allMessages(opts: { q?: string; channel?: Channel; contactId?: string }) {
   await requirePermission("app.discuss");
   const where: (SQL | undefined)[] = [
     ne(messages.channel, "internal"),
     isNull(messages.archivedAt),
   ];
   if (opts.channel) where.push(eq(messages.channel, opts.channel));
+  if (opts.contactId) where.push(eq(messages.contactId, opts.contactId));
   if (opts.q) {
     const like = `%${opts.q}%`;
     where.push(

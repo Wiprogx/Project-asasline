@@ -11,6 +11,7 @@ import { QUOTATION_TONE } from "@/features/quotations/status";
 import { catalogueChoices, getQuotation, quotationLetter } from "@/features/quotations/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readLoadingModes } from "@/server/loading-config";
+import { creditStanding } from "@/features/accounting/reminder-queries";
 
 export async function generateMetadata({
   params,
@@ -32,6 +33,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
   const [choices, letter, modes] = open
     ? await Promise.all([catalogueChoices(), quotationLetter(q, user.name), readLoadingModes()])
     : [null, null, []];
+  const credit = may(user, "app.accounting") ? await creditStanding(q.client.id) : null;
 
   return (
     <>
@@ -44,6 +46,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
               {q.client.name}
             </Link>
             {q.validUntil && <span>· valid until {q.validUntil}</span>}
+            {credit?.problem && <ToneBadge tone="danger">{credit.problem}</ToneBadge>}
             {q.sentOn && (
               <span>
                 · sent {q.sentOn} by {q.sentVia === "whatsapp" ? "WhatsApp" : "e-mail"}

@@ -1,12 +1,12 @@
 import "server-only";
 import { eq } from "drizzle-orm";
-import { addDays } from "@/domain/dates";
 import { threadIdOf } from "@/domain/messages";
 import { audit } from "@/server/audit";
 import type { Tx } from "@/server/db/client";
-import { activities, contacts, messages, quotations } from "@/server/db/schema";
+import { contacts, messages, quotations } from "@/server/db/schema";
 import type { sendSchema } from "./editor-schemas";
 import { Refused, touchQuotation } from "./editor-store";
+import { openAutoTask } from "@/server/auto-tasks";
 
 // Internal: the send action calls this after its permission check.
 
@@ -44,14 +44,13 @@ export async function recordSending(tx: Tx, d: Letter, userId: string, today: st
       createdBy: userId,
     })
     .returning({ id: messages.id });
-  await tx.insert(activities).values({
-    title: `Ask ${client?.name ?? "the customer"} whether ${q.ref} is agreed`,
-    assigneeId: userId,
-    due: addDays(today, 1),
-    linkKind: "quotation",
-    linkId: q.id,
-    createdBy: userId,
-    updatedBy: userId,
+  // The follow-up the rule "Quotation sent" asks for (Settings › Automatic activities).
+  await openAutoTask(tx, {
+    trigger: "quote_sent",
+    vars: { ref: q.ref, client: client?.name ?? "the customer" },
+    link: { kind: "quotation", id: q.id },
+    userId,
+    today,
   });
   await audit(tx, {
     action: "quotation.send",

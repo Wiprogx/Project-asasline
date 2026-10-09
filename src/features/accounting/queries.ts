@@ -25,13 +25,21 @@ import { creditedSql, invoiceMoney, openInvoices, settledSql } from "./money";
 const isUuid = (id: string) => z.uuid().safeParse(id).success;
 const original = alias(invoices, "original");
 
-export async function listInvoices(opts: { status?: string; kind?: string; q?: string }) {
+export async function listInvoices(opts: {
+  status?: string;
+  kind?: string;
+  q?: string;
+  contactId?: string;
+}) {
   await requirePermission("app.accounting");
   const where: (SQL | undefined)[] = [];
   if (opts.status) where.push(eq(invoices.status, opts.status as "draft"));
-  // Supplier bills have their own tab; the sales list never mixes them in.
-  if (opts.kind) where.push(eq(invoices.kind, opts.kind as InvoiceKind));
+  // Supplier bills have their own tab; the sales list never mixes them in. A contact's tab
+  // asks for "all": its invoices as a customer and its bills as a supplier together.
+  if (opts.kind === "all") void 0;
+  else if (opts.kind) where.push(eq(invoices.kind, opts.kind as InvoiceKind));
   else where.push(ne(invoices.kind, "bill"));
+  if (opts.contactId) where.push(eq(invoices.customerId, opts.contactId));
   if (opts.q) {
     const like = `%${opts.q}%`;
     where.push(

@@ -1,0 +1,62 @@
+"use client";
+
+import { ActionForm } from "@/components/shared/action-form";
+import { Field } from "@/components/shared/field";
+import { NativeSelect } from "@/components/shared/native-select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { type BooksSettings, VAT_PERIODS } from "@/domain/accounting-settings";
+import { centsToInput } from "@/domain/money";
+import { useToastedAction } from "@/hooks/use-action-toast";
+import { saveBooksSettings } from "../accounting-actions";
+import { booksSettingsSchema } from "../schemas";
+
+/** The two figures of the books the office edits (legacy BOOKS.approveOver, BOOKS.vatPeriod). */
+export function BooksSettingsForm({ books, version }: { books: BooksSettings; version: number }) {
+  const [state, run, pending] = useToastedAction(saveBooksSettings, undefined, booksSettingsSchema);
+  const fe = !state.ok ? state.fieldErrors : undefined;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Books</CardTitle>
+        <CardDescription>
+          A bill at or above the threshold needs a second person before it is paid; the VAT return
+          is monthly (by the 20th) or quarterly (by the 25th). The close day moves from the VAT
+          screen.
+          {books.closedThrough ? ` Closed through ${books.closedThrough}.` : " Nothing closed yet."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ActionForm
+          action={run}
+          className="grid gap-3 sm:grid-cols-[12rem_12rem_auto] sm:items-end"
+        >
+          <input type="hidden" name="version" value={version} />
+          <Field id="approveOver" label="Approval from (EUR)" error={fe?.approveOver}>
+            <Input
+              id="approveOver"
+              name="approveOver"
+              inputMode="decimal"
+              defaultValue={centsToInput(books.approveOverCents)}
+            />
+          </Field>
+          <Field id="vatPeriod" label="VAT return" error={fe?.vatPeriod}>
+            <NativeSelect
+              id="vatPeriod"
+              name="vatPeriod"
+              defaultValue={books.vatPeriod}
+              options={VAT_PERIODS.map((p) => ({
+                value: p,
+                label: p[0].toUpperCase() + p.slice(1),
+              }))}
+            />
+          </Field>
+          <Button type="submit" size="sm" disabled={pending}>
+            {pending ? "Saving…" : "Save books"}
+          </Button>
+        </ActionForm>
+      </CardContent>
+    </Card>
+  );
+}

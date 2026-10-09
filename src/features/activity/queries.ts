@@ -17,6 +17,7 @@ function baseQuery() {
       id: activities.id,
       version: activities.version,
       title: activities.title,
+      type: activities.type,
       due: activities.due,
       state: activities.state,
       role: activities.role,

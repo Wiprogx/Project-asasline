@@ -12,12 +12,13 @@ import { readPaymentTerms } from "@/server/accounting-config";
 import { officeToday } from "@/server/clock";
 import { assertOpen } from "./books-store";
 import { db, type Tx } from "@/server/db/client";
-import { contacts, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
+import { bookingFiles, contacts, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
 import { nextInvoiceNumber } from "@/server/sequences";
 import { updateVersioned } from "@/server/versioned";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import { exposureOf } from "./reminder-store";
 import { creditSchema, discardSchema, issueSchema } from "./schemas";
+import { EXEMPTION_WARNING, exemptionProofMissing } from "@/domain/exemption";
 
 /**
  * Two drafts may pick the same booking line; whichever is issued second must still fit in
@@ -110,12 +111,26 @@ export async function issueInvoice(_p: ActionResult, fd: FormData): Promise<Acti
         .from(contacts)
         .where(eq(contacts.id, inv.customerId));
       const credit = creditProblem(c?.limit ?? null, await exposureOf(tx, inv.customerId));
-      return { bookingId: inv.bookingId, number, credit };
+      // Exempt under art. 41: the EX-A or the B/L must be on the booking's file (a warning).
+      const proofMissing = inv.bookingId
+        ? exemptionProofMissing(
+            await liveLines(tx, id),
+            await tx
+              .select({ code: bookingFiles.code, stage: bookingFiles.stage })
+              .from(bookingFiles)
+              .where(
+                and(eq(bookingFiles.bookingId, inv.bookingId), isNull(bookingFiles.archivedAt)),
+              ),
+          )
+        : false;
+      return { bookingId: inv.bookingId, number, credit, proofMissing };
     }),
   );
   if (!r.ok) return r;
   refreshInvoice(id, r.value.bookingId);
-  const warn = r.value.credit ? ` — ⚠ ${r.value.credit}` : "";
+  const warn =
+    (r.value.credit ? ` — ⚠ ${r.value.credit}` : "") +
+    (r.value.proofMissing ? ` — ⚠ ${EXEMPTION_WARNING}` : "");
   return { ok: true, data: undefined, message: `Issued as ${r.value.number}${warn}` };
 }
 

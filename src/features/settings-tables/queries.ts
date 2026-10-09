@@ -1,9 +1,12 @@
 import "server-only";
-import { and, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { bookings, contacts, rateItems, vessels } from "@/server/db/schema";
+import { bookings, contacts, rateItems, sequences, vessels } from "@/server/db/schema";
 import { readFileHintsForEdit } from "@/server/file-config";
+import { readPaymentTermsForEdit } from "@/server/accounting-config";
+import { readActivityRulesForEdit } from "@/server/activity-config";
+import { readBooksForEdit } from "@/server/books-config";
 import { readHsCodesForEdit } from "@/server/goods-config";
 import { readLoadingModesForEdit } from "@/server/loading-config";
 import {
@@ -22,6 +25,22 @@ export async function portsForEdit() {
 export async function fileHintsForEdit() {
   await requirePermission("app.settings");
   return readFileHintsForEdit();
+}
+
+/** Payment terms, the books' figures and the counters, for Settings › Accounting. */
+export async function accountingSettingsForEdit() {
+  await requirePermission("app.settings");
+  const [terms, books, seq] = await Promise.all([
+    readPaymentTermsForEdit(),
+    readBooksForEdit(),
+    db.select().from(sequences).orderBy(asc(sequences.key)),
+  ]);
+  return { terms, books, sequences: seq };
+}
+
+export async function activityRulesForEdit() {
+  await requirePermission("app.settings");
+  return readActivityRulesForEdit();
 }
 
 /** The three tables of the Release & tracking page, each with its version. */

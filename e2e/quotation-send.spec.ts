@@ -71,6 +71,6 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   );
   await expect(page.getByText("Sent", { exact: true })).toBeVisible();
   await expect(page.getByText(/sent \d{4}-\d{2}-\d{2} by e-mail/)).toBeVisible();
-  await open(page, "/activity?when=all");
+  await open(page, `/activity?when=all&q=${encodeURIComponent(ref)}`);
   await expect(page.getByText(`Ask ${client} whether ${ref} is agreed`)).toBeVisible();
 });

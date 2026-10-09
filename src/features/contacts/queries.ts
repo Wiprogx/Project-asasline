@@ -1,3 +1,4 @@
+import { cache } from "react";
 import "server-only";
 import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, type SQL } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
@@ -69,7 +70,8 @@ export async function listContacts(opts: { q?: string; archived?: boolean } = {}
   );
 }
 
-export async function getContact(id: string) {
+/** One contact with its addresses and accounts; cached per request (layout + page share it). */
+export const getContact = cache(async (id: string) => {
   await requirePermission("app.contacts");
   return db.query.contacts.findFirst({
     where: eq(contacts.id, id),
@@ -78,7 +80,7 @@ export async function getContact(id: string) {
       bankAccounts: { where: isNull(contactBankAccounts.archivedAt) },
     },
   });
-}
+});
 
 /** Live contacts for pickers (client, shipper, consignee…). */
 export async function contactOptions() {

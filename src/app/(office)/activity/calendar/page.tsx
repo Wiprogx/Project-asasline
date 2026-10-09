@@ -11,6 +11,7 @@ import { TaskList } from "@/features/activity/components/task-list";
 import { staffOptions, tasksBetween } from "@/features/activity/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readConfig } from "@/server/config-tables";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -42,6 +43,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
   const href = (p: Record<string, string>) =>
     `/activity/calendar?${new URLSearchParams({ who, month, ...p })}`;
 
+  const types = await readConfig("activityTypes");
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -72,7 +74,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
       {q.day && (
         <section aria-label={`Tasks on ${q.day}`} className="grid gap-3">
           <h2 className="text-sm font-semibold">Tasks on {q.day}</h2>
-          <NewTaskForm staff={staff} meId={me.id} defaultDue={q.day} />
+          <NewTaskForm types={types} staff={staff} meId={me.id} defaultDue={q.day} />
           <TaskList
             rows={tasks.filter((t) => t.due === q.day)}
             today={today}

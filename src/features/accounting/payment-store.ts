@@ -9,6 +9,7 @@ import type { Tx } from "@/server/db/client";
 import { bankLines, invoices, paymentAllocations, payments } from "@/server/db/schema";
 import { Refused } from "./invoice-store";
 import { invoiceMoney } from "./money";
+import { readBooks } from "@/server/books-config";
 
 export type PaymentInput = {
   invoiceId: string;
@@ -32,7 +33,10 @@ export async function bookPayment(tx: Tx, p: PaymentInput) {
   if (!inv || inv.kind === "credit" || inv.status !== "issued")
     throw new Refused("Only an issued invoice or a recorded bill can be paid.");
   if (inv.kind === "bill") {
-    const problem = payProblem({ grossCents: inv.grossCents ?? 0, approvedAt: inv.approvedAt });
+    const problem = payProblem(
+      { grossCents: inv.grossCents ?? 0, approvedAt: inv.approvedAt },
+      (await readBooks()).approveOverCents,
+    );
     if (problem) throw new Refused(problem);
   }
   const money = (await invoiceMoney(tx, [inv.id])).get(inv.id)!;

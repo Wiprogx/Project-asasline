@@ -21,6 +21,7 @@ const ownerRequired = (v: { assigneeId?: string; role?: string }, ctx: z.Refinem
 export const newTaskSchema = z
   .object({
     title: z.string().min(2, "What needs doing?").max(200),
+    type: z.string().max(40).optional(),
     due: day.optional(),
     note: z.string().max(2000).optional(),
     linkKind: z.enum(LINK_KINDS).optional(),

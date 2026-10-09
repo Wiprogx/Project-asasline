@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, or } from "drizzle-orm";
 import { formatCents } from "@/domain/money";
 import { itemLabel } from "@/domain/pricing";
 import { destinationsPhrase, letterLines, quotationDoc } from "@/domain/quotation-doc";
@@ -25,11 +25,11 @@ export type QuotationRow = {
   validUntil: string | null;
 };
 
-export async function listQuotations(opts: { q?: string } = {}) {
+export async function listQuotations(opts: { q?: string; clientId?: string } = {}) {
   await requirePermission("app.quotations");
   const q = opts.q?.trim() ?? "";
   return cached(
-    `quotations:list:${q.toLowerCase()}`,
+    `quotations:list:${opts.clientId ?? "*"}:${q.toLowerCase()}`,
     { ttlSeconds: 30, tags: [tags.quotations] },
     (): Promise<QuotationRow[]> => {
       const like = `%${q}%`;
@@ -43,7 +43,12 @@ export async function listQuotations(opts: { q?: string } = {}) {
         })
         .from(quotations)
         .innerJoin(contacts, eq(contacts.id, quotations.clientId))
-        .where(q ? or(ilike(quotations.ref, like), ilike(contacts.name, like)) : undefined)
+        .where(
+          and(
+            opts.clientId ? eq(quotations.clientId, opts.clientId) : undefined,
+            q ? or(ilike(quotations.ref, like), ilike(contacts.name, like)) : undefined,
+          ),
+        )
         .orderBy(desc(quotations.ref))
         .limit(500);
     },

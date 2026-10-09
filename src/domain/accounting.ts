@@ -2,6 +2,7 @@
  * Accounting reference data (legacy VAT_CODES, PAYMENT_TERMS, EU_CC). Seed values for the
  * Settings tables; the running app reads the table, not these constants.
  */
+import { formatCents } from "./money";
 export const VAT_CODES = [
   {
     code: "EX41",
@@ -101,7 +102,8 @@ export const PURCHASE_ACCOUNTS = [
 /** A bill from this amount (gross) needs a second person's approval before it is paid. */
 export const APPROVAL_LIMIT_CENTS = 500_000;
 
-export const needsApproval = (grossCents: number) => grossCents >= APPROVAL_LIMIT_CENTS;
+export const needsApproval = (grossCents: number, limitCents = APPROVAL_LIMIT_CENTS) =>
+  limitCents > 0 && grossCents >= limitCents;
 
 /** Four eyes: whoever recorded a bill cannot be the one who approves it. */
 export function approvalProblem(recordedBy: string | null, approverId: string): string | null {
@@ -111,8 +113,11 @@ export function approvalProblem(recordedBy: string | null, approverId: string): 
 }
 
 /** Paying a bill that needs approval and has none is refused. */
-export function payProblem(bill: { grossCents: number; approvedAt: unknown }): string | null {
-  return needsApproval(bill.grossCents) && !bill.approvedAt
-    ? "This bill is €5,000 or more: a second person must approve it before it is paid."
+export function payProblem(
+  bill: { grossCents: number; approvedAt: unknown },
+  limitCents = APPROVAL_LIMIT_CENTS,
+): string | null {
+  return needsApproval(bill.grossCents, limitCents) && !bill.approvedAt
+    ? `This bill is ${formatCents(limitCents)} or more: a second person must approve it before it is paid.`
     : null;
 }

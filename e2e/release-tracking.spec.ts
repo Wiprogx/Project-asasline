@@ -34,7 +34,7 @@ test("a hold opens a task and shows on the booking; the journey is ticked step b
   await submit(page, page.getByRole("button", { name: "Set release status" }));
   await expectToast(page, "Hold recorded");
   await expect(page.getByText("Held — payment outstanding").first()).toBeVisible();
-  await open(page, "/activity"); // the task is mine, due tomorrow: in my open list
+  await open(page, `/activity?q=${encodeURIComponent(ref)}`); // mine, due tomorrow: found by its reference
   await expect(
     page.getByText(`Clear the hold on ${ref} — Held — payment outstanding`),
   ).toBeVisible();
@@ -44,7 +44,7 @@ test("a hold opens a task and shows on the booking; the journey is ticked step b
   await page.getByLabel("Where it stands today").selectOption("released");
   await submit(page, page.getByRole("button", { name: "Set release status" }));
   await expectToast(page, "Release status updated");
-  await open(page, "/activity");
+  await open(page, `/activity?q=${encodeURIComponent(ref)}`);
   await expect(page.getByText(`Clear the hold on ${ref} — Held — payment outstanding`)).toHaveCount(
     0,
   );
