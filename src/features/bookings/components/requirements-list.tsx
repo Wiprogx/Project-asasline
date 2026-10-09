@@ -56,7 +56,9 @@ export function RequirementsList({
                   <RequirementActions
                     bookingId={bookingId}
                     code={r.code}
+                    label={r.label}
                     state={r.state}
+                    need={r.need}
                     list={checklists.find((l) => l.key === r.checklist) ?? null}
                   />
                 )}

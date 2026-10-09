@@ -16,7 +16,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ROLE_LABEL, ROLES } from "@/domain/permissions";
-import { ANCHOR_LABEL, ANCHORS, type DocRule, PARTIES } from "@/domain/rules/engine";
+import {
+  ANCHOR_LABEL,
+  ANCHORS,
+  type DocRule,
+  NEED_KINDS,
+  NEED_LABEL,
+  PARTIES,
+} from "@/domain/rules/engine";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { saveRule } from "../actions";
 import { ruleFormSchema } from "../schemas";
@@ -197,10 +204,21 @@ export function RuleDialog({
             <Field
               id="r-checklist"
               label="Checklist"
-              className="sm:col-span-2"
               hint="The key of a list in Settings › Checklists; the paper is then checked item by item, never by a tick"
             >
               <Input id="r-checklist" name="checklist" defaultValue={r?.checklist} />
+            </Field>
+            <Field
+              id="r-need"
+              label="Closes by"
+              hint="What closes the step: a document unless said otherwise"
+            >
+              <NativeSelect
+                id="r-need"
+                name="need"
+                defaultValue={r?.need ?? "file"}
+                options={NEED_KINDS.map((k) => ({ value: k, label: NEED_LABEL[k] }))}
+              />
             </Field>
           </div>
           <div className="flex flex-wrap gap-4">

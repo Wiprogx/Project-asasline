@@ -47,6 +47,7 @@ export const DEFAULT_RULES: DocRule[] = [
     checklist: "invoice",
   }),
   r("INV_CUSTOMS", "Send the export invoice to customs", "Export invoice sent to customs", {
+    need: "send",
     party: "customs",
     anchor: "customs",
     offset: -1,
@@ -77,6 +78,7 @@ export const DEFAULT_RULES: DocRule[] = [
     pol: "PTLEI",
   }),
   r("VGM", "Confirm the VGM was sent to the carrier", "VGM sent to the carrier", {
+    need: "confirm",
     party: "carrier",
     anchor: "vgm",
     offset: 0,
@@ -85,6 +87,7 @@ export const DEFAULT_RULES: DocRule[] = [
     note: "Cargo weight + tare, straight off the containers.",
   }),
   r("LOADING", "Confirm the container was loaded", "Container loaded", {
+    need: "track",
     party: "internal",
     anchor: "loading",
     offset: 0,
@@ -101,6 +104,7 @@ export const DEFAULT_RULES: DocRule[] = [
     note: "Weighed at the port after loading — it must reach the customer before the box goes in.",
   }),
   r("SI", "Send the shipping instruction", "Shipping instruction", {
+    need: "send",
     party: "carrier",
     anchor: "si",
     offset: 0,
@@ -115,30 +119,35 @@ export const DEFAULT_RULES: DocRule[] = [
     needs: ["SI"],
   }),
   r("BL_SEND", "Send the draft {docName} for confirmation", "Draft {docName} sent for approval", {
+    need: "send",
     party: "consignee",
     anchor: "etd",
     offset: -3,
     needs: ["BL_DRAFT"],
   }),
   r("BL_OK", "Confirm the {docName}", "{docName} confirmed", {
+    need: "confirm",
     party: "consignee",
     anchor: "etd",
     offset: 0,
     needs: ["BL_SEND"],
   }),
   r("TERMINAL", "Confirm the container is at the terminal", "Container at the terminal", {
+    need: "track",
     party: "internal",
     anchor: "portcut",
     offset: 0,
     blocking: true,
   }),
   r("SAILED", "Confirm the vessel sailed", "Vessel sailed", {
+    need: "track",
     party: "internal",
     anchor: "etd",
     offset: 0,
     kind: "*",
   }),
   r("TELL_SAILED", "Tell the customer the vessel sailed", "Customer told about the departure", {
+    need: "send",
     party: "customer",
     anchor: "etd",
     offset: 0,
@@ -161,6 +170,7 @@ export const DEFAULT_RULES: DocRule[] = [
 
   // — Gabon —
   r("BIETC_NO", "Request the BIETC number", "BIETC number", {
+    need: "ref",
     party: "waiver",
     anchor: "loading",
     offset: -1,
@@ -184,6 +194,7 @@ export const DEFAULT_RULES: DocRule[] = [
     needs: ["BIETC_FILE"],
   }),
   r("BL_FINAL_OUT", "Send the final {docName} to the waiver office", "Final {docName} sent", {
+    need: "send",
     party: "waiver",
     anchor: "eta",
     offset: -10,
@@ -199,6 +210,7 @@ export const DEFAULT_RULES: DocRule[] = [
 
   // — Egypt —
   r("ACID", "Request the ACID number from the consignee", "ACID number", {
+    need: "ref",
     party: "consignee",
     anchor: "si",
     offset: -2,
@@ -285,6 +297,7 @@ export const DEFAULT_RULES: DocRule[] = [
     needs: ["IMP_RELEASE"],
   }),
   r("IMP_DOCS_OUT", "Send the final documents to the customer", "Final documents to the customer", {
+    need: "send",
     party: "customer",
     anchor: "eta",
     offset: 3,

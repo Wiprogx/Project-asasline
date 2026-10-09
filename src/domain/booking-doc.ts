@@ -10,6 +10,7 @@ import type { ShipmentKind } from "./shipments";
 import { formatKg } from "./container";
 import { boxLoading, truckerCopyGaps, type Stop } from "./loading";
 import { cargoKgOf, packagesOf, packageTypeOf, type HsLine } from "./goods";
+import { sealLabel, sealOf } from "./seals";
 
 export type CopyBooking = {
   ref: string;
@@ -158,7 +159,7 @@ export function boxRows(b: CopyBooking, box: CopyBox): Row[] {
   const packageType = packageTypeOf(box);
   return [
     ["Type", box.type],
-    ["Seal", box.seals.length ? box.seals[box.seals.length - 1] : "—"],
+    ["Seal", box.seals.length ? sealLabel(sealOf(box.seals[box.seals.length - 1])) : "—"],
     ["Commodity", dash(b.commodity)],
     ...box.hsLines.map((l): Row => [
       `HS ${l.code}`,

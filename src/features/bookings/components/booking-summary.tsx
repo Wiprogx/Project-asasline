@@ -6,6 +6,7 @@ import type { getBooking } from "../queries";
 import { VgmBadge } from "./vgm-badge";
 import { type BoxOwner, ownerOf } from "@/domain/lookups";
 import { cargoKgOf } from "@/domain/goods";
+import { sealLabel, sealOf } from "@/domain/seals";
 
 type Booking = NonNullable<Awaited<ReturnType<typeof getBooking>>>;
 type Party = { id: string; name: string } | null;
@@ -110,7 +111,8 @@ export function BookingSummary({
             >
               <span className="text-muted-foreground">
                 #{i + 1} · {c.type}
-                {c.seals.length > 0 && ` · seals ${c.seals.join(", ")}`}
+                {c.seals.length > 0 &&
+                  ` · seals ${c.seals.map((x) => sealLabel(sealOf(x))).join(", ")}`}
               </span>
               <span className="flex flex-wrap items-center gap-2">
                 <span className="font-mono">

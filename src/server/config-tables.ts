@@ -15,6 +15,7 @@ import { cached, invalidateTags } from "./cache/cache";
 import { db, type Tx } from "./db/client";
 import { configTables } from "./db/schema";
 import { ConflictError } from "./versioned";
+import { DEFAULT_SEAL_SOURCES } from "@/domain/seals";
 
 /**
  * Editable lists (legacy STORE_CONFIG). Each table has a schema and a built-in default; the
@@ -33,6 +34,7 @@ const TABLES = {
   withdrawReasons: { schema: LIST, fallback: DEFAULT_WITHDRAW_REASONS },
   professions: { schema: LIST, fallback: DEFAULT_PROFESSIONS },
   contactTags: { schema: LIST, fallback: DEFAULT_CONTACT_TAGS },
+  sealSources: { schema: LIST, fallback: DEFAULT_SEAL_SOURCES },
 } as const;
 
 export type ConfigName = keyof typeof TABLES;

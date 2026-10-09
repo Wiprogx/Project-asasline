@@ -36,6 +36,7 @@ export function ContainerRow({
   packageTypes,
   canRemove,
   children,
+  sealSources,
 }: {
   box: Box;
   index: number;
@@ -47,6 +48,8 @@ export function ContainerRow({
   packageTypes: readonly string[];
   canRemove: boolean;
   children?: React.ReactNode;
+  /** Who may have sealed a box (Settings › Lists › Seal sources). */
+  sealSources: readonly string[];
 }) {
   const [state, action, pending] = useToastedAction(updateContainer, undefined, containerSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
@@ -96,7 +99,12 @@ export function ContainerRow({
             options={typeOptions}
           />
         </Field>
-        <Field id={`${p}-seals`} label="Seals (comma-separated)">
+        <Field
+          id={`${p}-seals`}
+          label="Seals (comma-separated)"
+          hint={`Who sealed it after the number: "ABC1234 (${sealSources.join(" · ")})"`}
+          error={fe?.seals}
+        >
           <Input
             id={`${p}-seals`}
             name="seals"

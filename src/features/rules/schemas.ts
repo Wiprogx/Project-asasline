@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NEED_KINDS } from "@/domain/rules/engine";
 
 const checkbox = z
   .string()
@@ -42,6 +43,7 @@ export const ruleFormSchema = z.object({
   perBox: checkbox,
   ready: checkbox.transform((v) => (v ? ("weights" as const) : undefined)),
   checklist: z.string().trim().toLowerCase().max(30).optional(),
+  need: z.enum(NEED_KINDS).default("file"),
 });
 
 export const toggleRuleSchema = z.object({

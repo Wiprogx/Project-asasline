@@ -60,6 +60,18 @@ export type DocRule = {
   ready?: "weights";
   /** The paper is checked against this list (Settings › Checklists) rather than by a tick. */
   checklist?: string;
+  /** What closes the step (legacy NEED_KINDS): the document itself unless said otherwise. */
+  need?: NeedKind;
+};
+
+export const NEED_KINDS = ["file", "ref", "confirm", "send", "track"] as const;
+export type NeedKind = (typeof NEED_KINDS)[number];
+export const NEED_LABEL: Record<NeedKind, string> = {
+  file: "A document must be attached",
+  ref: "A number has to be recorded — no document",
+  confirm: "A confirmation — no document exists",
+  send: "Closed when the message actually goes out",
+  track: "Closed by the tracking feed",
 };
 
 export type BookingFacts = {

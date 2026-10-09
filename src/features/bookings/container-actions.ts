@@ -15,6 +15,8 @@ import {
   removeContainerSchema,
 } from "./schemas";
 import { guarded, Refused } from "./settle";
+import { sealSourceProblem } from "@/domain/seals";
+import { readConfig } from "@/server/config-tables";
 
 /** Box changes are logged on the booking, so its history tells the whole story. */
 async function editableBooking(tx: Tx, bookingId: string) {
@@ -31,6 +33,8 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
   const user = await requirePermission("bookings.edit");
   const parsed = containerSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
+  const sealProblem = sealSourceProblem(parsed.data.seals, await readConfig("sealSources"));
+  if (sealProblem) return { ok: false, error: sealProblem, fieldErrors: { seals: [sealProblem] } };
   const { id, bookingId, version, ...fields } = parsed.data;
   const values = nullMissing(fields, CLEARABLE_CONTAINER);
 

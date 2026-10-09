@@ -40,6 +40,7 @@ export async function bookingDocuments(id: string) {
       doc: s.box ? `${s.rule.doc} — ${s.box.label}` : s.rule.doc,
       status: s.status,
       checklist: s.rule.checklist ?? null,
+      need: s.rule.need,
     })),
     files: files.map((f) => ({
       code: f.code,

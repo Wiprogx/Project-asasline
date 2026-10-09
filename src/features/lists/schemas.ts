@@ -44,6 +44,11 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     description:
       "Free labels on a contact (legacy tags): offered as you type, searched in the list.",
   },
+  sealSources: {
+    title: "Seal sources",
+    description:
+      'Who put a seal on a box (legacy SEAL_SOURCES): typed after the number as "ABC1234 (Carrier)".',
+  },
   paperDocs: {
     title: "Paper documents",
     description:

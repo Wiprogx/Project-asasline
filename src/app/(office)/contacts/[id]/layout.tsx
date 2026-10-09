@@ -20,6 +20,7 @@ export default async function ContactLayout({ params, children }: LayoutProps<"/
   const tabs = [
     { href: base, label: "Details", exact: true },
     ...(may(user, "app.bookings") ? [{ href: `${base}/bookings`, label: "Bookings" }] : []),
+    ...(may(user, "app.bookings") ? [{ href: `${base}/documents`, label: "Documents" }] : []),
     ...(may(user, "app.quotations") ? [{ href: `${base}/quotations`, label: "Quotations" }] : []),
     ...(may(user, "app.accounting") ? [{ href: `${base}/invoices`, label: "Invoices" }] : []),
     ...(may(user, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),

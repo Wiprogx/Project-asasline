@@ -19,16 +19,18 @@ export const metadata: Metadata = { title: "Containers" };
 export default async function ContainersPage({ params }: PageProps<"/bookings/[id]/containers">) {
   const user = await requirePagePermission("app.bookings");
   const { id } = await params;
-  const [b, types, modes, truckers, packageTypes, hsCodes, specList, owners] = await Promise.all([
-    getBooking(id),
-    readConfig("containerTypes"),
-    readLoadingModes(),
-    contactOptions(),
-    readConfig("packageTypes"),
-    readHsCodes(),
-    readContainerSpecs(),
-    readBoxOwners(),
-  ]);
+  const [b, types, modes, truckers, packageTypes, hsCodes, specList, owners, sealSources] =
+    await Promise.all([
+      getBooking(id),
+      readConfig("containerTypes"),
+      readLoadingModes(),
+      contactOptions(),
+      readConfig("packageTypes"),
+      readHsCodes(),
+      readContainerSpecs(),
+      readBoxOwners(),
+      readConfig("sealSources"),
+    ]);
   const specs = specsByType(specList);
   if (!b) notFound();
   const editable = may(user, "bookings.edit") && b.status !== "cancelled";
@@ -62,6 +64,7 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
       </div>
       {b.containers.map((c, i) => (
         <ContainerRow
+          sealSources={sealSources}
           key={c.id}
           box={c}
           index={i}

@@ -3,6 +3,7 @@
  * and which papers the shipment still lacks. The rules engine says which steps exist; this
  * says which of them have their paper.
  */
+import type { NeedKind } from "./rules/engine";
 
 /** Seed for the `fileHints` Settings table: words in a file name → the code it is filed under. */
 export const DEFAULT_FILE_HINTS = [
@@ -86,6 +87,8 @@ export type Requirement = {
   note?: string | null;
   /** The list this paper is checked against (Settings › Checklists), when its rule names one. */
   checklist?: string | null;
+  /** What closes the step (legacy NEED_KINDS): the document unless the rule says otherwise. */
+  need?: NeedKind;
 };
 
 /**
@@ -102,6 +105,7 @@ export function requirementsOf(input: {
     doc: string;
     status: "done" | "open" | "waiting";
     checklist?: string | null;
+    need?: NeedKind;
   }[];
   files: readonly {
     code: string | null;
@@ -144,6 +148,7 @@ export function requirementsOf(input: {
       source: "step",
       stepStatus: s.status,
       checklist: s.checklist ?? null,
+      need: s.need ?? "file",
       ...stateOf(s.code),
     });
   }

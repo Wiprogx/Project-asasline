@@ -5,7 +5,7 @@ import { parseYmd } from "@/domain/dates";
 import { ROLES } from "@/domain/permissions";
 import type { Holiday } from "@/domain/rules/calendar";
 import { DEFAULT_HOLIDAYS, DEFAULT_RULES } from "@/domain/rules/defaults";
-import { ANCHORS, type DocRule, PARTIES } from "@/domain/rules/engine";
+import { ANCHORS, type DocRule, NEED_KINDS, PARTIES } from "@/domain/rules/engine";
 import { cached, invalidateTags } from "./cache/cache";
 import { db, type Tx } from "./db/client";
 import { configTables } from "./db/schema";
@@ -39,6 +39,7 @@ export const docRuleSchema = z.object({
     .string()
     .regex(/^[a-z][a-z0-9_]{1,29}$/)
     .optional(),
+  need: z.enum(NEED_KINDS).optional(),
 }) satisfies z.ZodType<DocRule>;
 
 export const holidaySchema = z.object({

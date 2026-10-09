@@ -15,6 +15,9 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Document rules say what closes a step (legacy NEED_KINDS): a document attached, a number recorded (the BIETC, the ACID — typed into the step, with nothing to attach), a confirmation (the VGM sent, the B/L confirmed), a message gone out, or the tracking feed (confirmed by hand until the feed is wired). The Documents tab names the close accordingly.
+- Contacts: a Documents tab (legacy contact documents tab) with every paper on the contact's file — what is filed on the shipments it is a party on and what is kept with its invoices and bills — each opening from there.
+- Containers: a seal says who put it on (legacy SEAL_SOURCES): typed after the number as "ABC1234 (Carrier)", the source a word from Settings › Lists › Seal sources, refused otherwise; the booking and the printed copies read "ABC1234 · Carrier".
 - Bank: the office's own matching rules (legacy BOOKS.rules) are a Settings table — the bank's fee, the VAT to the state: a statement line whose text reads like one is booked straight to the rule's account in one click, as a payment with no partner, and the line is matched; the ledger and the cash flow carry it.
 - Bills: what a supplier's line turned out to be is remembered (legacy lineMem) — the cost account the office recorded it on, per supplier, under the words of the line without its month or number — and the next bill from them, read from a Peppol file, is filled in; a bill's lines show their account.
 - Accounting: where a document stands with Peppol (legacy peppol ready / sent / received) — the file ready, sent through the access point on a day the office writes with one click, or a bill that came in as a Peppol file — on the invoice and in the list. VAT by month: what each month of the year would declare, each opening its own return.

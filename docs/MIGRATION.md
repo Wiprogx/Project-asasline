@@ -47,12 +47,12 @@ editor, never a constant (invariant 8). Legacy refs: §n of `legacy/ASASLINE_TMS
 or Lnnnn of `legacy/asasline-demo.html`.
 
 - **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
-  (L1500) · SEAL_SOURCES · the list's column picker and period comparison ·
+  (L1500) · the list's column picker and period comparison ·
   a Documents tab per side for a "Both" shipment.
 - **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison ·
   a "Rate sources" tab.
-- **Contacts** — documents tab · countries table · kanban view.
-- **Activity** — NEED_KINDS ref / send / track closes (a number recorded, a message gone out, the feed) ·
+- **Contacts** — countries table · kanban view.
+- **Activity** — a send step closed by the message itself and a track step by the feed (both confirmed by hand for now) ·
   a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
   country) is covered by Settings › Document rules: a country's paper is a rule with its anchor, offset and blocking flag.
 - **Discuss** — a voice recording on a call · a calls tab · INBOX config
