@@ -76,16 +76,58 @@ describe("requirements per box", () => {
   });
 });
 
-describe("requirements per box", () => {
-  it("reads a paper filed against the box's step, not a same-coded paper of another box", () => {
+describe("the office's word on a paper", () => {
+  const steps = [
+    { code: "ASK_INV", doc: "Export invoice requested", status: "done" as const },
+    { code: "INVOICE", doc: "Export invoice", status: "open" as const },
+  ];
+  it("stands over the files: sent back with its reason, or checked with no paper at all", () => {
     const reqs = requirementsOf({
       destinationDocs: [],
-      steps: [
-        { code: "CERTIWEIGHT#b1", doc: "Certiweight — box 1", status: "open" },
-        { code: "CERTIWEIGHT#b2", doc: "Certiweight — box 2", status: "open" },
+      steps,
+      files: [{ code: "ASK_INV", ruleCode: "ASK_INV", stage: "final", at: "2026-10-01T09:00:00Z" }],
+      reviews: [
+        {
+          code: "ASK_INV",
+          state: "sent_back",
+          note: "Wrong consignee",
+          at: "2026-10-02T09:00:00Z",
+        },
+        { code: "INVOICE", state: "checked", note: null, at: "2026-10-02T09:00:00Z" },
       ],
-      files: [{ code: "CERTIWEIGHT", ruleCode: "CERTIWEIGHT#b1", stage: "final" }],
     });
-    expect(reqs.map((r) => r.state)).toEqual(["final", "missing"]);
+    expect(reqs.map((r) => [r.state, r.note ?? null])).toEqual([
+      ["sent_back", "Wrong consignee"],
+      ["checked", null],
+    ]);
+    expect(missingCount(reqs)).toBe(0); // ASK_INV's step is done; INVOICE is checked
+  });
+  it("asks for a new look once a paper is filed after the word", () => {
+    const reqs = requirementsOf({
+      destinationDocs: [],
+      steps,
+      files: [{ code: "ASK_INV", ruleCode: "ASK_INV", stage: "final", at: "2026-10-03T09:00:00Z" }],
+      reviews: [
+        {
+          code: "ASK_INV",
+          state: "sent_back",
+          note: "Wrong consignee",
+          at: "2026-10-02T09:00:00Z",
+        },
+      ],
+    });
+    expect(reqs[0]).toMatchObject({ state: "final" });
+    expect(reqs[0].note).toBeUndefined();
+  });
+  it("counts a paper sent back on an open step as missing", () => {
+    const reqs = requirementsOf({
+      destinationDocs: [],
+      steps: [{ code: "INVOICE", doc: "Export invoice", status: "open" }],
+      files: [{ code: "INVOICE", stage: "final", at: "2026-10-01T09:00:00Z" }],
+      reviews: [
+        { code: "INVOICE", state: "sent_back", note: "Blurred", at: "2026-10-02T09:00:00Z" },
+      ],
+    });
+    expect(missingCount(reqs)).toBe(1);
   });
 });

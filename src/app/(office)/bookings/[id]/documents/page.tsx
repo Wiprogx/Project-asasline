@@ -31,7 +31,12 @@ export default async function BookingDocumentsPage({
           </h2>
         </CardHeader>
         <CardContent>
-          <RequirementsList reqs={d.requirements} />
+          <RequirementsList
+            reqs={d.requirements}
+            bookingId={d.booking.id}
+            canEdit={canEdit}
+            reviewed={d.reviewed}
+          />
         </CardContent>
       </Card>
       <Card>

@@ -46,3 +46,17 @@ export const archiveFileSchema = z.object({
   fileId: z.uuid(),
   reason: z.string().trim().min(3, "Say why — it stays on the record").max(300),
 });
+
+/** The office's word on a paper: checked (a note is optional), or sent back (the reason goes with it). */
+export const checkSchema = z.object({
+  bookingId: z.uuid(),
+  code: z
+    .string()
+    .trim()
+    .regex(/^[A-Z][A-Z0-9_]{1,29}(#[0-9a-f-]{36})?$/, "A step"),
+  reason: z.string().trim().max(300).optional(),
+});
+
+export const sendBackSchema = checkSchema.extend({
+  reason: z.string().trim().min(3, "Say why — it goes back with the paper").max(300),
+});

@@ -72,7 +72,8 @@ test("a destination starts with the direction's customs, VGM and free time, and 
   await expect(
     leg
       .getByRole("row")
-      .filter({ hasText: /demurrage/i })
+      // The first free-time term the catalogue holds, whichever name a parallel run gave it.
+      .filter({ hasText: /free days/ })
       .first(),
   ).toBeVisible();
   await expect(leg.getByRole("row").filter({ hasText: `Import customs ${t}` })).toHaveCount(0);

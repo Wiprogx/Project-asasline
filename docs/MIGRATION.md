@@ -48,7 +48,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
 
 - **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
   (L1500) · `scheduleConflict`, which blocks sending documents made before a schedule change ·
-  `etdManual` override flag · requirement states received / verified / rejected with a verify and reject action · SEAL_SOURCES · list with configurable columns, stats and an "Invoiced" filter ·
+  `etdManual` override flag · SEAL_SOURCES · list with configurable columns, stats and an "Invoiced" filter ·
   a Documents tab per side for a "Both" shipment.
 - **Quotations and pricing** — list analytics · Activities, Messages and History tabs
   (L7033) · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
@@ -65,8 +65,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
   and a BANK_ACCOUNTS table · reports: cash flow, KPIs, DSO, profit per customer / destination / line,
   VAT by month · full JSON copy · a BANK_ACCOUNTS Settings editor · BOOKS parallel-run flag.
 - **Settings and platform** — the remaining legacy tabs (time, log, notify, inbox, sign, trules,
-  ttype, wa, prof, ctr, tags, idfmt, qstatus, rate, bstatus, doctype, sending, pkgtypes, hscodes,
-  seals, owners, track, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
+  wa, tags, idfmt, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
   ACCESS_WATCH (views, downloads and exports audited; L15267).
 - **Go-live** — the one-off import of the legacy `records` table (section below).
 

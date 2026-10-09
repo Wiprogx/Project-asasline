@@ -67,7 +67,11 @@ export function fileCodeOf(name: string, hints: readonly FileHint[]): string | n
   return null;
 }
 
-export type RequirementState = "missing" | "draft" | "final";
+/** The office's word on a paper (legacy req states verified / rejected). */
+export type ReviewState = "checked" | "sent_back";
+export type Review = { code: string; state: ReviewState; note: string | null; at: string };
+
+export type RequirementState = "missing" | "draft" | "final" | ReviewState;
 
 export type Requirement = {
   /** The rule's code, or `CODE#boxId` for a per-box step. */
@@ -78,32 +82,51 @@ export type Requirement = {
   state: RequirementState;
   /** A step already done or waiting does not ask for a file it has, or cannot have yet. */
   stepStatus?: "done" | "open" | "waiting";
+  /** Why it was sent back, or what was noted when it was checked. */
+  note?: string | null;
 };
 
 /**
  * The papers this shipment must hold, and whether each is there (legacy reqDocsOf +
  * destDocState): one per document the destination country asks for, and one per step of the
  * chain that produces a paper. A final file under the code settles it; a draft is a draft.
+ * The office's word stands over the files: checked, or sent back with a reason — until a paper
+ * filed after it asks for a new look (`at` orders a review against the files, nothing more).
  */
 export function requirementsOf(input: {
   destinationDocs: readonly { code: string; label: string }[];
   steps: readonly { code: string; doc: string; status: "done" | "open" | "waiting" }[];
-  files: readonly { code: string | null; ruleCode?: string | null; stage: FileStage }[];
+  files: readonly {
+    code: string | null;
+    ruleCode?: string | null;
+    stage: FileStage;
+    at?: string;
+  }[];
+  reviews?: readonly Review[];
 }): Requirement[] {
   // A file proves a step by the step it was filed against, or, for a step of no box, by its code.
-  const stateOf = (code: string): RequirementState => {
-    const mine = input.files.filter(
+  const filesOf = (code: string) =>
+    input.files.filter(
       (f) => f.ruleCode === code || (!code.includes("#") && !f.ruleCode && f.code === code),
     );
-    if (mine.some((f) => f.stage === "final")) return "final";
-    return mine.length ? "draft" : "missing";
+  const wordOn = (code: string): Review | null => {
+    const review = input.reviews?.find((r) => r.code === code);
+    if (!review) return null;
+    return filesOf(code).some((f) => f.at && f.at > review.at) ? null : review;
+  };
+  const stateOf = (code: string): Pick<Requirement, "state" | "note"> => {
+    const review = wordOn(code);
+    if (review) return { state: review.state, note: review.note };
+    const mine = filesOf(code);
+    if (mine.some((f) => f.stage === "final")) return { state: "final" };
+    return { state: mine.length ? "draft" : "missing" };
   };
   const seen = new Set<string>();
   const out: Requirement[] = [];
   for (const d of input.destinationDocs) {
     if (seen.has(d.code)) continue;
     seen.add(d.code);
-    out.push({ code: d.code, label: d.label, source: "destination", state: stateOf(d.code) });
+    out.push({ code: d.code, label: d.label, source: "destination", ...stateOf(d.code) });
   }
   for (const s of input.steps) {
     if (seen.has(s.code)) continue;
@@ -112,13 +135,16 @@ export function requirementsOf(input: {
       code: s.code,
       label: s.doc,
       source: "step",
-      state: stateOf(s.code),
       stepStatus: s.status,
+      ...stateOf(s.code),
     });
   }
   return out;
 }
 
-/** How many papers are still missing, for a badge: steps that are done or waiting do not count. */
+/** How many papers are still missing, for a badge: a paper sent back counts; done or waiting steps do not. */
 export const missingCount = (reqs: readonly Requirement[]) =>
-  reqs.filter((r) => r.state === "missing" && (r.stepStatus ?? "open") === "open").length;
+  reqs.filter(
+    (r) =>
+      (r.state === "missing" || r.state === "sent_back") && (r.stepStatus ?? "open") === "open",
+  ).length;

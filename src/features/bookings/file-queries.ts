@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
-import { type FileStage, requirementsOf } from "@/domain/files";
+import { type FileStage, requirementsOf, type ReviewState } from "@/domain/files";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
@@ -9,6 +9,7 @@ import { readFileHints } from "@/server/file-config";
 import { openStoredFile } from "@/server/files";
 import { bookingChain } from "@/server/rules-sync";
 import { destinationDocs, liveFiles } from "./file-store";
+import { latestReviews } from "./review-store";
 import { getBooking } from "./queries";
 
 /**
@@ -19,11 +20,12 @@ export async function bookingDocuments(id: string) {
   await requirePermission("app.bookings");
   const b = await getBooking(id);
   if (!b) return null;
-  const [steps, files, docs, hints] = await Promise.all([
+  const [steps, files, docs, hints, reviews] = await Promise.all([
     bookingChain(db, b),
     liveFiles(db, b.id),
     destinationDocs(db, b.pod),
     readFileHints(),
+    latestReviews(db, b.id),
   ]);
   const byUser = new Map(
     (await db.select({ id: users.id, name: users.name }).from(users)).map((u) => [u.id, u.name]),
@@ -35,7 +37,18 @@ export async function bookingDocuments(id: string) {
       doc: s.box ? `${s.rule.doc} — ${s.box.label}` : s.rule.doc,
       status: s.status,
     })),
-    files: files.map((f) => ({ code: f.code, ruleCode: f.ruleCode, stage: f.stage as FileStage })),
+    files: files.map((f) => ({
+      code: f.code,
+      ruleCode: f.ruleCode,
+      stage: f.stage as FileStage,
+      at: f.createdAt.toISOString(),
+    })),
+    reviews: reviews.map((r) => ({
+      code: r.code,
+      state: r.state as ReviewState,
+      note: r.note,
+      at: r.createdAt.toISOString(),
+    })),
   });
   const codes = [
     ...new Set([
@@ -54,6 +67,13 @@ export async function bookingDocuments(id: string) {
       filedOn: officeToday(f.createdAt),
     })),
     requirements,
+    /** Who gave the word on each paper, and the day. */
+    reviewed: Object.fromEntries(
+      reviews.map((r) => [
+        r.code,
+        `${byUser.get(r.createdBy ?? "") ?? "—"} · ${officeToday(r.createdAt)}`,
+      ]),
+    ),
     codes,
     openSteps: steps
       .filter((s) => s.status !== "done")

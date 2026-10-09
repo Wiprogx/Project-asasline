@@ -6,6 +6,7 @@ import {
   jsonb,
   pgTable,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -261,4 +262,26 @@ export const bookingFiles = pgTable(
     index("booking_files_booking_idx").on(t.bookingId),
     uniqueIndex("booking_files_stored_uq").on(t.bookingId, t.storedName),
   ],
+);
+
+/**
+ * The office's word on a paper (legacy requirement states verified / rejected): checked, or
+ * sent back with a reason. Append-only — the latest row per code is the state, and a paper
+ * filed after it asks for a new look. Nothing is ever deleted (invariant 1).
+ */
+export const requirementReviews = pgTable(
+  "requirement_reviews",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    bookingId: uuid()
+      .notNull()
+      .references(() => bookings.id),
+    /** The rule's code, or `CODE#boxId` for a per-box step. */
+    code: text().notNull(),
+    state: text().notNull(),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid(),
+  },
+  (t) => [index("requirement_reviews_booking_idx").on(t.bookingId, t.code)],
 );
