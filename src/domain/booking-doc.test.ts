@@ -5,9 +5,29 @@ import {
   boxesFor,
   clientBlock,
   type CopyBooking,
+  type CopyBox,
+  copyGaps,
+  loadingRows,
   priceTable,
   shipmentRows,
 } from "./booking-doc";
+
+/** A box that says nothing about its loading yet. */
+const bare = (number: string | null): CopyBox => ({
+  number,
+  type: "40HC",
+  seals: [],
+  tareKg: null,
+  cargoKg: null,
+  loadAddress: null,
+  loadDate: null,
+  loadTime: null,
+  loadingMode: null,
+  transporter: null,
+  pickBackDate: null,
+  pickBackTime: null,
+  stops: [],
+});
 
 const booking: CopyBooking = {
   ref: "SB2609001",
@@ -17,6 +37,7 @@ const booking: CopyBooking = {
   loadAddress: null,
   loadDate: "2026-10-02",
   loadTime: null,
+  loadingMode: null,
   carrierBookingNo: null,
   blNo: null,
   vesselName: "MSC ROMA",
@@ -36,9 +57,35 @@ describe("the copies", () => {
     const rows = Object.fromEntries(shipmentRows(booking));
     expect(rows["Loading address"]).toBe("—");
     expect(rows["Vessel · voyage"]).toBe("MSC ROMA · FA534A");
-    expect(
-      boxRows(booking, { number: null, type: "40HC", seals: [], tareKg: null, cargoKg: null }),
-    ).toContainEqual(["Seal", "—"]);
+    expect(boxRows(booking, bare(null))).toContainEqual(["Seal", "—"]);
+  });
+  it("tell the driver where this box loads, its stops and its pick-up, and what is still missing", () => {
+    const box: CopyBox = {
+      ...bare("MSKU1234567"),
+      loadAddress: "Quay 730, Antwerp",
+      loadDate: "2026-10-03",
+      loadTime: "07:30",
+      loadingMode: "Drop off container on ground",
+      transporter: "Transports Dupont",
+      pickBackDate: "2026-10-05",
+      pickBackTime: "16:00",
+      stops: [{ address: "Depot Zeebrugge", date: "2026-10-04", time: null }],
+    };
+    const rows = Object.fromEntries(loadingRows(booking, box, 2));
+    expect(rows["Loading address"]).toBe("Quay 730, Antwerp");
+    expect(rows["Loading date"]).toBe("2026-10-03 07:30");
+    expect(rows["Loading mode"]).toBe("Drop off container on ground");
+    expect(rows["Trucker"]).toBe("Transports Dupont");
+    expect(rows["Stop 1"]).toBe("Depot Zeebrugge · 2026-10-04");
+    expect(rows["Picked back up"]).toBe("2026-10-05 16:00");
+    expect(copyGaps(booking, box, 2)).toEqual([]);
+    // the second box inherits nothing from the first, not even the booking's date
+    expect(copyGaps(booking, bare(null), 2)).toEqual([
+      "loading address",
+      "loading date",
+      "loading mode",
+      "container number",
+    ]);
   });
   it("say unloading on an import", () => {
     expect(addressLabel("import")).toBe("Unloading address");
@@ -80,10 +127,7 @@ describe("priceTable", () => {
 });
 
 describe("boxesFor", () => {
-  const boxes = [
-    { number: "MSKU1234567", type: "40HC", seals: [], tareKg: null, cargoKg: null },
-    { number: null, type: "40HC", seals: [], tareKg: null, cargoKg: null },
-  ];
+  const boxes = [bare("MSKU1234567"), bare(null)];
   it("gives one driver one box, keeping its number in the shipment", () => {
     expect(boxesFor(boxes, 1)).toEqual([{ box: boxes[1], i: 1 }]);
     expect(boxesFor(boxes, 5)).toEqual([]);

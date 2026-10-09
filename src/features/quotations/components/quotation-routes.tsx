@@ -7,6 +7,7 @@ import { AddLineForm } from "./add-line-form";
 import { AddRouteForm } from "./add-route-form";
 import { RouteControls } from "./route-controls";
 import { RouteLines, routeTotals } from "./route-lines";
+import { type LoadingMode } from "@/domain/loading";
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 type Choices = Awaited<ReturnType<typeof catalogueChoices>>;
@@ -40,11 +41,13 @@ export function QuotationRoutes({
   showCost,
   canBook,
   choices,
+  modes,
 }: {
   q: Quotation;
   showCost: boolean;
   canBook: boolean;
   choices: Choices | null;
+  modes: readonly LoadingMode[];
 }) {
   const edit = choices ? { quotationId: q.id, version: q.version } : null;
   const live = q.routes.filter((r) => !r.declined);
@@ -66,6 +69,11 @@ export function QuotationRoutes({
                 <span className="ml-2 font-sans text-sm text-muted-foreground">
                   {r.containerType}
                 </span>
+                {r.loadingMode && (
+                  <span className="ml-2 font-sans text-sm text-muted-foreground">
+                    · {r.loadingMode}
+                  </span>
+                )}
                 {r.declined && (
                   <span className="ml-2 font-sans text-sm text-muted-foreground">
                     Declined — {r.declinedReason}
@@ -74,7 +82,7 @@ export function QuotationRoutes({
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 {!r.declined && <RouteBooking q={q} routeId={r.id} canBook={canBook} />}
-                {edit && <RouteControls {...edit} route={r} booked={booked} />}
+                {edit && <RouteControls {...edit} route={r} booked={booked} modes={modes} />}
               </div>
             </CardHeader>
             <CardContent className="grid gap-3">
@@ -102,7 +110,7 @@ export function QuotationRoutes({
             <h2 className="font-heading text-base font-medium">Another destination</h2>
           </CardHeader>
           <CardContent>
-            <AddRouteForm {...edit} lanes={choices.lanes} />
+            <AddRouteForm {...edit} lanes={choices.lanes} modes={modes} />
           </CardContent>
         </Card>
       )}

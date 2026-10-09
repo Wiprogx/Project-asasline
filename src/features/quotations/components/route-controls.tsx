@@ -6,9 +6,11 @@ import { FormDialog } from "@/components/shared/form-dialog";
 import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/shared/native-select";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { declineRoute, restoreRoute, updateRoute } from "../route-actions";
 import { restoreRouteSchema } from "../editor-schemas";
+import { modeNote, type LoadingMode } from "@/domain/loading";
 
 type Route = {
   id: string;
@@ -16,6 +18,7 @@ type Route = {
   pod: string;
   finalPlace: string | null;
   containerType: string | null;
+  loadingMode: string | null;
   declined: boolean;
 };
 
@@ -25,11 +28,13 @@ export function RouteControls({
   version,
   route: r,
   booked,
+  modes,
 }: {
   quotationId: string;
   version: number;
   route: Route;
   booked: boolean;
+  modes: readonly LoadingMode[];
 }) {
   const [, restore, restoring] = useToastedAction(restoreRoute, undefined, restoreRouteSchema);
   const hidden = { quotationId, version, routeId: r.id };
@@ -73,6 +78,20 @@ export function RouteControls({
                 />
               </Field>
             ))}
+            <Field
+              id={`re-${r.id}-loadingMode`}
+              label="Loading mode"
+              hint={modeNote(modes, r.loadingMode)}
+              error={fe?.loadingMode}
+            >
+              <NativeSelect
+                id={`re-${r.id}-loadingMode`}
+                name="loadingMode"
+                defaultValue={r.loadingMode ?? ""}
+                placeholder="— to agree —"
+                options={modes.map((m) => ({ value: m.name, label: m.name }))}
+              />
+            </Field>
           </>
         )}
       </FormDialog>

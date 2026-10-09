@@ -128,6 +128,7 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           payerId: q.clientId,
           pol: route.pol,
           pod: route.pod,
+          loadingMode: route.loadingMode,
           createdBy: user.id,
           updatedBy: user.id,
         })

@@ -10,6 +10,7 @@ import { QuotationRoutes } from "@/features/quotations/components/quotation-rout
 import { QUOTATION_TONE } from "@/features/quotations/status";
 import { catalogueChoices, getQuotation, quotationLetter } from "@/features/quotations/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readLoadingModes } from "@/server/loading-config";
 
 export async function generateMetadata({
   params,
@@ -28,9 +29,9 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
   const [label, tone] = QUOTATION_TONE[q.status];
   const canBook = q.status !== "cancelled" && may(user, "bookings.edit");
   const open = q.status !== "cancelled";
-  const [choices, letter] = open
-    ? await Promise.all([catalogueChoices(), quotationLetter(q, user.name)])
-    : [null, null];
+  const [choices, letter, modes] = open
+    ? await Promise.all([catalogueChoices(), quotationLetter(q, user.name), readLoadingModes()])
+    : [null, null, []];
 
   return (
     <>
@@ -57,6 +58,7 @@ export default async function QuotationPage({ params }: PageProps<"/quotations/[
         showCost={may(user, "costs.view")}
         canBook={canBook}
         choices={choices}
+        modes={modes}
       />
     </>
   );

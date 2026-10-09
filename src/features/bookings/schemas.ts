@@ -2,6 +2,7 @@ import { z } from "zod";
 import { containerNumberOk } from "@/domain/container";
 import { BOOKING_FLOW, DOC_TYPES, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
 import { dayField } from "@/lib/zod-fields";
+import { parseStopLines } from "@/domain/loading";
 
 const day = dayField();
 const optional = z.string().max(200).optional();
@@ -53,6 +54,8 @@ export const bookingDetailsSchema = z
     loadAddress: z.string().max(500).optional(),
     loadDate: day.optional(),
     loadTime: time,
+    /** The mode agreed on the quotation, the default for a one-box booking. */
+    loadingMode: z.string().max(80).optional(),
     commodity: optional,
     carrierBookingNo: optional,
     blNo: optional,
@@ -82,6 +85,7 @@ export const CLEARABLE_DETAILS = [
   "loadAddress",
   "loadDate",
   "loadTime",
+  "loadingMode",
   "commodity",
   "carrierBookingNo",
   "blNo",
@@ -119,7 +123,41 @@ export const containerSchema = z.object({
     ),
   tareKg: kg,
   cargoKg: kg,
+  // Loading — this box only (domain/loading): nothing is inherited between boxes.
+  loadAddress: z.string().max(500).optional(),
+  loadDate: day.optional(),
+  loadTime: time,
+  loadingMode: z.string().max(80).optional(),
+  transporterId: z.uuid().optional(),
+  pickBackDate: day.optional(),
+  pickBackTime: time,
+  stops: z
+    .string()
+    .max(5000)
+    .optional()
+    .transform((v, ctx) => {
+      const { stops, problem } = parseStopLines(v ?? "");
+      if (problem) {
+        ctx.addIssue({ code: "custom", message: problem });
+        return z.NEVER;
+      }
+      return stops;
+    }),
 });
+
+/** Fields of a box a person may empty (see nullMissing). */
+export const CLEARABLE_CONTAINER = [
+  "number",
+  "tareKg",
+  "cargoKg",
+  "loadAddress",
+  "loadDate",
+  "loadTime",
+  "loadingMode",
+  "transporterId",
+  "pickBackDate",
+  "pickBackTime",
+] as const;
 
 export const addContainerSchema = z.object({
   bookingId: z.uuid(),

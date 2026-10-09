@@ -8,13 +8,18 @@ import { BookingSailing } from "@/features/vessels/components/booking-sailing";
 import { sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readLoadingModes } from "@/server/loading-config";
 
 export const metadata: Metadata = { title: "Edit booking" };
 
 export default async function EditBookingPage({ params }: PageProps<"/bookings/[id]/edit">) {
   await requirePagePermission("bookings.edit");
   const { id } = await params;
-  const [b, contacts] = await Promise.all([getBooking(id), contactOptions()]);
+  const [b, contacts, modes] = await Promise.all([
+    getBooking(id),
+    contactOptions(),
+    readLoadingModes(),
+  ]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);
   const sailings = await sailingOptions(officeToday(), { pol: b.pol, pod: b.pod });
@@ -33,6 +38,7 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
     loadAddress: b.loadAddress,
     loadDate: b.loadDate,
     loadTime: b.loadTime,
+    loadingMode: b.loadingMode,
     commodity: b.commodity,
     carrierBookingNo: b.carrierBookingNo,
     blNo: b.blNo,
@@ -55,7 +61,7 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
           <BookingSailing bookingId={b.id} vesselId={b.vesselId} options={sailings} />
         </CardContent>
       </Card>
-      <BookingDetailsForm key={b.version} values={values} contacts={contacts} />
+      <BookingDetailsForm key={b.version} values={values} contacts={contacts} modes={modes} />
     </div>
   );
 }

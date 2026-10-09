@@ -21,7 +21,11 @@ export async function open(page: Page, path: string) {
     const main = document.querySelector("main");
     if (!main) return true;
     const nodes = [main, ...main.querySelectorAll("form, textarea, input, select, button")];
-    return nodes.every((n) => Object.keys(n).some((k) => k.startsWith("__reactFiber")));
+    if (!nodes.every((n) => Object.keys(n).some((k) => k.startsWith("__reactFiber")))) return false;
+    // A fiber exists from the render; the form's own mark is set by its effect, after the commit.
+    return [...document.querySelectorAll("form[data-action-form]")].every(
+      (f) => f.getAttribute("data-hydrated") === "1",
+    );
   });
 }
 

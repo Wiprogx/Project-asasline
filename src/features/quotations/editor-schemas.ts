@@ -41,6 +41,7 @@ export const addRouteSchema = z.object({
   pod: port("Port of discharge").optional(),
   finalPlace: text(200),
   containerType: text(10),
+  loadingMode: text(80),
 });
 
 export const updateRouteSchema = z.object({
@@ -50,6 +51,7 @@ export const updateRouteSchema = z.object({
   pod: port("Port of discharge"),
   finalPlace: text(200),
   containerType: text(10),
+  loadingMode: text(80),
 });
 
 export const declineRouteSchema = z.object({ ...onQuotation, routeId: z.uuid(), reason });

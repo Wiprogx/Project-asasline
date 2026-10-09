@@ -1,5 +1,15 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+import type { Stop } from "../../../domain/loading";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import {
@@ -56,6 +66,8 @@ export const quotationRoutes = pgTable(
     declined: boolean().notNull().default(false),
     /** Why the customer declined this destination; it stays on the quotation for the record. */
     declinedReason: text(),
+    /** The agreed loading mode (domain/loading): how many hours the price includes, or a drop-off. */
+    loadingMode: text(),
   },
   (t) => [index("quotation_routes_quotation_idx").on(t.quotationId, t.position)],
 );
@@ -133,6 +145,8 @@ export const bookings = pgTable(
     loadAddress: text(),
     loadDate: day(),
     loadTime: text(),
+    /** The mode agreed on the quotation; each box may say its own (domain/loading boxLoading). */
+    loadingMode: text(),
     carrierBookingNo: text(),
     blNo: text(),
     docType: text().notNull().default("SEA WAYBILL"),
@@ -182,6 +196,17 @@ export const containers = pgTable(
       .default(sql`'{}'::text[]`),
     tareKg: integer(),
     cargoKg: integer(),
+    // Loading — this box only (legacy per-box loading card): nothing is inherited between boxes.
+    loadAddress: text(),
+    loadDate: day(),
+    loadTime: text(),
+    loadingMode: text(),
+    transporterId: uuid().references(() => contacts.id),
+    /** When the truck comes back for a box left on site (a drop mode). */
+    pickBackDate: day(),
+    pickBackTime: text(),
+    /** Extra stops for this box, in order (domain/loading Stop). */
+    stops: jsonb().$type<Stop[]>().notNull().default([]),
   },
   (t) => [index("containers_booking_idx").on(t.bookingId)],
 );

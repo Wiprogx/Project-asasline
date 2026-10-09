@@ -1,4 +1,11 @@
-import { addressLabel, boxesFor, boxRows, boxTitle, cutOffRows } from "@/domain/booking-doc";
+import {
+  boxesFor,
+  boxRows,
+  boxTitle,
+  copyGaps,
+  cutOffRows,
+  loadingRows,
+} from "@/domain/booking-doc";
 import { formatKg, vgm } from "@/domain/container";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
@@ -43,13 +50,18 @@ export function TruckerCopy({
       {boxes.length === 0 && <p>No such container on this booking.</p>}
       {boxes.map(({ box: c, i }) => {
         const g = vgm(c);
+        const gaps = copyGaps(b, c, b.containers.length);
         return (
           <div key={i} className="grid gap-2 rounded border border-neutral-800 p-3">
             <div className="font-semibold">{boxTitle(c, i, b.containers.length)}</div>
+            {gaps.length > 0 && (
+              <p className="text-sm font-medium" role="status">
+                Not ready to go out — missing: {gaps.join(", ")}.
+              </p>
+            )}
             <RowGrid
               rows={[
-                [addressLabel(b.kind), b.loadAddress ?? "—"],
-                ["Loading date", [b.loadDate, b.loadTime].filter(Boolean).join(" ") || "—"],
+                ...loadingRows(b, c, b.containers.length),
                 ...boxRows(b, c),
                 [
                   "VGM",

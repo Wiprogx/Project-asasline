@@ -10,6 +10,7 @@ import { DOC_TYPES, SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipmen
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { updateBookingDetails } from "../details-actions";
 import { bookingDetailsSchema } from "../schemas";
+import { modeNote, type LoadingMode } from "@/domain/loading";
 
 type Values = { id: string; version: number; [field: string]: string | number | null };
 type Option = { id: string; name: string };
@@ -41,7 +42,15 @@ const TEXT = (
   ] as const
 ).map(([name, label, type]) => ({ name, label, type }));
 
-export function BookingDetailsForm({ values, contacts }: { values: Values; contacts: Option[] }) {
+export function BookingDetailsForm({
+  values,
+  contacts,
+  modes,
+}: {
+  values: Values;
+  contacts: Option[];
+  modes: readonly LoadingMode[];
+}) {
   const [state, action, pending] = useToastedAction(
     updateBookingDetails,
     undefined,
@@ -107,6 +116,20 @@ export function BookingDetailsForm({ values, contacts }: { values: Values; conta
           ))}
           <Field id="loadAddress" label="Loading address" className="sm:col-span-2 lg:col-span-3">
             <Input id="loadAddress" name="loadAddress" defaultValue={values.loadAddress ?? ""} />
+          </Field>
+          <Field
+            id="loadingMode"
+            label="Loading mode"
+            hint={modeNote(modes, values.loadingMode ? String(values.loadingMode) : null)}
+            className="sm:col-span-2 lg:col-span-3"
+          >
+            <NativeSelect
+              id="loadingMode"
+              name="loadingMode"
+              defaultValue={values.loadingMode ?? ""}
+              placeholder="— not agreed yet —"
+              options={modes.map((m) => ({ value: m.name, label: m.name }))}
+            />
           </Field>
         </CardContent>
       </Card>

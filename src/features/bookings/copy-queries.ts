@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type { CopyPrice } from "@/domain/booking-doc";
 import { requirePermission } from "@/server/auth/dal";
 import { readPaymentTerms } from "@/server/accounting-config";
@@ -14,8 +14,26 @@ import { getBooking } from "./queries";
  */
 export async function bookingCopy(id: string) {
   await requirePermission("app.bookings");
-  const b = await getBooking(id);
-  if (!b) return null;
+  const booking = await getBooking(id);
+  if (!booking) return null;
+  // The truckers of the boxes, by name: the copy prints who collects which box.
+  const truckerIds = [
+    ...new Set(booking.containers.map((c) => c.transporterId).filter((x): x is string => !!x)),
+  ];
+  const truckers = truckerIds.length
+    ? await db
+        .select({ id: contacts.id, name: contacts.name })
+        .from(contacts)
+        .where(inArray(contacts.id, truckerIds))
+    : [];
+  const nameOf = new Map(truckers.map((t) => [t.id, t.name]));
+  const b = {
+    ...booking,
+    containers: booking.containers.map((c) => ({
+      ...c,
+      transporter: c.transporterId ? (nameOf.get(c.transporterId) ?? null) : null,
+    })),
+  };
   const [client] = await db
     .select({
       name: contacts.name,

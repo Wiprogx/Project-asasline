@@ -8,7 +8,12 @@ import { db, type Tx } from "@/server/db/client";
 import { syncBookingRules } from "@/server/rules-sync";
 import { bookings, containers } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
-import { addContainerSchema, containerSchema, removeContainerSchema } from "./schemas";
+import {
+  addContainerSchema,
+  CLEARABLE_CONTAINER,
+  containerSchema,
+  removeContainerSchema,
+} from "./schemas";
 import { guarded, Refused } from "./settle";
 
 /** Box changes are logged on the booking, so its history tells the whole story. */
@@ -27,7 +32,7 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
   const parsed = containerSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { id, bookingId, version, ...fields } = parsed.data;
-  const values = nullMissing(fields, ["number", "tareKg", "cargoKg"]);
+  const values = nullMissing(fields, CLEARABLE_CONTAINER);
 
   return guarded(
     bookingId,

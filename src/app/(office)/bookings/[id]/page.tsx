@@ -4,6 +4,7 @@ import { z } from "zod";
 import { BookingSummary } from "@/features/bookings/components/booking-summary";
 import { CopiesCard } from "@/features/bookings/components/copies-card";
 import { getBooking } from "@/features/bookings/queries";
+import { truckerCopyGaps } from "@/domain/loading";
 
 export async function generateMetadata({ params }: PageProps<"/bookings/[id]">): Promise<Metadata> {
   const id = z.uuid().safeParse((await params).id);
@@ -20,7 +21,14 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
       <BookingSummary b={b} />
       {b.status !== "cancelled" && (
         <div className="grid gap-4 pt-4 lg:grid-cols-2">
-          <CopiesCard bookingId={b.id} boxes={b.containers} />
+          <CopiesCard
+            bookingId={b.id}
+            boxes={b.containers.map((c) => ({
+              id: c.id,
+              number: c.number,
+              gaps: truckerCopyGaps({ ...b, boxCount: b.containers.length }, c),
+            }))}
+          />
         </div>
       )}
     </>

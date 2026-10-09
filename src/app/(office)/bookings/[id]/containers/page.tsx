@@ -5,15 +5,22 @@ import { AddContainer } from "@/features/bookings/components/add-container";
 import { ContainerRow } from "@/features/bookings/components/container-row";
 import { VgmBadge } from "@/features/bookings/components/vgm-badge";
 import { getBooking } from "@/features/bookings/queries";
+import { contactOptions } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readConfig } from "@/server/config-tables";
+import { readLoadingModes } from "@/server/loading-config";
 
 export const metadata: Metadata = { title: "Containers" };
 
 export default async function ContainersPage({ params }: PageProps<"/bookings/[id]/containers">) {
   const user = await requirePagePermission("app.bookings");
   const { id } = await params;
-  const [b, types] = await Promise.all([getBooking(id), readConfig("containerTypes")]);
+  const [b, types, modes, truckers] = await Promise.all([
+    getBooking(id),
+    readConfig("containerTypes"),
+    readLoadingModes(),
+    contactOptions(),
+  ]);
   if (!b) notFound();
   const editable = may(user, "bookings.edit") && b.status !== "cancelled";
 
@@ -27,6 +34,7 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
           >
             <span>
               #{i + 1} · {c.type} · <span className="font-mono">{c.number ?? "—"}</span>
+              {c.loadingMode && <span className="text-muted-foreground"> · {c.loadingMode}</span>}
             </span>
             <VgmBadge type={c.type} cargoKg={c.cargoKg} tareKg={c.tareKg} />
           </div>
@@ -47,6 +55,8 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
           index={i}
           bookingId={b.id}
           types={types}
+          modes={modes}
+          truckers={truckers}
           canRemove={b.containers.length > 1}
         >
           <VgmBadge type={c.type} cargoKg={c.cargoKg} tareKg={c.tareKg} />

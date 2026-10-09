@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { removeContainer, updateContainer } from "../container-actions";
 import { containerSchema } from "../schemas";
+import { type BoxLoading, BoxLoadingFields } from "./box-loading-fields";
+import { type LoadingMode } from "@/domain/loading";
 
-export type Box = {
+export type Box = BoxLoading & {
   id: string;
   version: number;
   type: string;
@@ -25,6 +27,8 @@ export function ContainerRow({
   index,
   bookingId,
   types,
+  modes,
+  truckers,
   canRemove,
   children,
 }: {
@@ -32,6 +36,8 @@ export function ContainerRow({
   index: number;
   bookingId: string;
   types: string[];
+  modes: readonly LoadingMode[];
+  truckers: readonly { id: string; name: string }[];
   canRemove: boolean;
   children?: React.ReactNode;
 }) {
@@ -107,6 +113,7 @@ export function ContainerRow({
             defaultValue={box.cargoKg ?? ""}
           />
         </Field>
+        <BoxLoadingFields p={p} box={box} modes={modes} truckers={truckers} fe={fe} />
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save"}
         </Button>
