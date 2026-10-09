@@ -58,6 +58,8 @@ export type DocRule = {
   perBox?: boolean;
   /** The step opens only once every box's cargo weight is in (legacy VGM weightsReady). */
   ready?: "weights";
+  /** The paper is checked against this list (Settings › Checklists) rather than by a tick. */
+  checklist?: string;
 };
 
 export type BookingFacts = {

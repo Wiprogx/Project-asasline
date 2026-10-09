@@ -4,7 +4,7 @@ import { expectToast, login, open, submit, tag } from "./helpers";
 const stepRow = (page: import("@playwright/test").Page, code: string) =>
   page.getByRole("row").filter({ has: page.getByText(code, { exact: true }) });
 
-test("a paper is sent back with a reason and its step reopens; a corrected one is checked; a step closes by hand", async ({
+test("a paper is sent back with a reason and its step reopens; a corrected one is checked; the invoice is checked against its list", async ({
   page,
 }) => {
   const t = tag();
@@ -64,11 +64,13 @@ test("a paper is sent back with a reason and its step reopens; a corrected one i
   await expectToast(page, "ASK_INV checked");
   await expect(paper.getByText("Checked ✓")).toBeVisible();
 
-  // A step with no paper closes by hand: the word is the close.
+  // The invoice is checked against its list; everything ticked, the step is done.
   const invoice = page
     .getByRole("listitem")
     .filter({ has: page.getByText("INVOICE", { exact: true }) });
-  await submit(page, invoice.getByRole("button", { name: "Checked" }));
-  await expectToast(page, "INVOICE checked — the step is done");
+  await invoice.getByRole("button", { name: "Check the paper" }).click();
+  for (const box of await page.getByRole("dialog").getByRole("checkbox").all()) await box.check();
+  await submit(page, page.getByRole("dialog").getByRole("button", { name: "Done checking" }));
+  await expectToast(page, "INVOICE checked — Export invoice check complete");
   await expect(stepRow(page, "INVOICE").getByText("Done")).toBeVisible();
 });

@@ -5,21 +5,29 @@ import { ReasonDialog } from "@/components/shared/reason-dialog";
 import { Button } from "@/components/ui/button";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { checkRequirement, sendBackRequirement } from "../review-actions";
+import { type Checklist } from "@/domain/checklists";
+import { ChecklistDialog } from "./checklist-dialog";
 
 /** Checked, or sent back with a reason — the office's word on a paper (legacy verified / rejected). */
 export function RequirementActions({
   bookingId,
   code,
   state,
+  list = null,
 }: {
   bookingId: string;
   code: string;
   state: string;
+  /** The checklist the paper is checked against, when its rule names one: the list is the close. */
+  list?: Checklist | null;
 }) {
   const [, check, pending] = useToastedAction(checkRequirement);
   return (
     <span className="flex gap-2">
-      {state !== "checked" && (
+      {state !== "checked" && list && (
+        <ChecklistDialog bookingId={bookingId} code={code} list={list} />
+      )}
+      {state !== "checked" && !list && (
         <ActionForm action={check}>
           <input type="hidden" name="bookingId" value={bookingId} />
           <input type="hidden" name="code" value={code} />

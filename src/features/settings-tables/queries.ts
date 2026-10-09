@@ -21,6 +21,7 @@ import { readIdFormatsForEdit } from "@/server/id-config";
 import { readAccessWatchForEdit } from "@/server/access-config";
 import { readBankAccountsForEdit } from "@/server/bank-config";
 import { readQuoteFieldsForEdit } from "@/server/quote-fields-config";
+import { readChecklistsForEdit } from "@/server/checklist-config";
 
 export async function portsForEdit() {
   await requirePermission("app.settings");
@@ -67,6 +68,12 @@ export async function accessWatchForEdit() {
 export async function quoteFieldsForEdit() {
   await requirePermission("app.settings");
   return readQuoteFieldsForEdit();
+}
+
+/** The checklists, for Settings › Checklists. */
+export async function checklistsForEdit() {
+  await requirePermission("app.settings");
+  return readChecklistsForEdit();
 }
 
 export async function activityRulesForEdit() {

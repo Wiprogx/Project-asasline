@@ -194,6 +194,14 @@ export function RuleDialog({
             >
               <Input id="r-sold" name="sold" defaultValue={r?.sold} />
             </Field>
+            <Field
+              id="r-checklist"
+              label="Checklist"
+              className="sm:col-span-2"
+              hint="The key of a list in Settings › Checklists; the paper is then checked item by item, never by a tick"
+            >
+              <Input id="r-checklist" name="checklist" defaultValue={r?.checklist} />
+            </Field>
           </div>
           <div className="flex flex-wrap gap-4">
             <Check name="workingDays" label="Working days" checked={r?.workingDays ?? false} />

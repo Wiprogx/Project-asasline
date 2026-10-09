@@ -44,6 +44,7 @@ export const DEFAULT_RULES: DocRule[] = [
     anchor: "customs",
     offset: 0,
     needs: ["ASK_INV"],
+    checklist: "invoice",
   }),
   r("INV_CUSTOMS", "Send the export invoice to customs", "Export invoice sent to customs", {
     party: "customs",

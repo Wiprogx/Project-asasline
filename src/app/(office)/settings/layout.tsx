@@ -11,6 +11,7 @@ const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/permissions", label: "Permissions", permission: "app.settings" },
   { href: "/settings/links", label: "Links", permission: "app.settings" },
   { href: "/settings/rules", label: "Document rules", permission: "app.settings" },
+  { href: "/settings/checklists", label: "Checklists", permission: "app.settings" },
   { href: "/settings/holidays", label: "Holidays", permission: "app.settings" },
   { href: "/settings/vessels", label: "Vessels", permission: "bookings.edit" },
   { href: "/settings/loading", label: "Loading modes", permission: "app.settings" },

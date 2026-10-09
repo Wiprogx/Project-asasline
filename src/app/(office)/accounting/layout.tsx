@@ -16,12 +16,14 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
           { href: "/accounting/reminders", label: "Reminders" },
           { href: "/accounting/journal", label: "Journal" },
           { href: "/accounting/reports", label: "Reports" },
+          { href: "/accounting/cash-flow", label: "Cash flow" },
           { href: "/accounting/aged", label: "Aged" },
           { href: "/accounting/vat", label: "VAT" },
           { href: "/accounting/listings", label: "Listings" },
           { href: "/accounting/assets", label: "Assets" },
           { href: "/accounting/accruals", label: "Accruals" },
           { href: "/accounting/margins", label: "Margins" },
+          { href: "/accounting/kpis", label: "KPIs" },
           { href: "/accounting/odoo", label: "Odoo" },
         ]}
       />

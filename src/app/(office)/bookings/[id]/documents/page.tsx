@@ -36,6 +36,7 @@ export default async function BookingDocumentsPage({
             bookingId={d.booking.id}
             canEdit={canEdit}
             reviewed={d.reviewed}
+            checklists={d.checklists}
           />
         </CardContent>
       </Card>

@@ -15,6 +15,9 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Accounting › Cash flow (legacy cash flow): what went through the bank and cash accounts month by month, named by the other side — from customers, to suppliers, VAT, salaries, bank charges — with the cash at the start and the end of each month.
+- Accounting › KPIs (legacy KPIs tab): what was invoiced in the period, what customers owe today, the days to get paid over the last ninety days, and the margin per customer, per destination and per shipping line.
+- Documents: a paper is checked item by item (legacy CHECKLISTS, NEED_KINDS): Settings › Checklists holds the lists (the legacy export-invoice check to start), a document rule names one, and that paper's step then closes through the list — every item ticked checks it; anything left unticked becomes its own task for the step's role and the paper goes back naming what it lacks.
 - The bell (legacy NOTIFY_LEVELS): the header counts what wants me today — my open tasks overdue and due today — red when a blocking document step is at or past its day, and opens the activity list; Settings › Automatic activities explains the three levels of being told. A push to the phone for what stops a shipment waits for the notification infrastructure.
 - Quotations: what the printed quotation shows is a Settings table (Settings › Quotation document, legacy QUOTE_FIELDS): the price, what is included, the free time terms, the validity, the sales contact, the VAT note — each a switch the printed page obeys.
 - Accounting: the office's bank accounts are a Settings table (Settings › Accounting, legacy BANK_ACCOUNTS): name, IBAN, BIC, the ledger account and the balance on the day the books started; the Bank screen shows each account's balance on the statements against the balance in the books, and what is still to reconcile.

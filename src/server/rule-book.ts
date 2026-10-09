@@ -35,6 +35,10 @@ export const docRuleSchema = z.object({
   sold: z.string().max(100).optional(),
   perBox: z.boolean().optional(),
   ready: z.literal("weights").optional(),
+  checklist: z
+    .string()
+    .regex(/^[a-z][a-z0-9_]{1,29}$/)
+    .optional(),
 }) satisfies z.ZodType<DocRule>;
 
 export const holidaySchema = z.object({

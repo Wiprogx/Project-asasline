@@ -2,6 +2,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import type { Requirement } from "@/domain/files";
 import type { Tone } from "@/domain/shipments";
 import { RequirementActions } from "./requirement-actions";
+import { type Checklist } from "@/domain/checklists";
 
 const STATE: Record<Requirement["state"], [label: string, tone: Tone]> = {
   missing: ["Missing", "danger"],
@@ -17,12 +18,15 @@ export function RequirementsList({
   bookingId,
   canEdit,
   reviewed = {},
+  checklists = [],
 }: {
   reqs: Requirement[];
   bookingId: string;
   canEdit: boolean;
   /** Who gave the word on a paper and when, by code. */
   reviewed?: Record<string, string>;
+  /** The lists a paper may be checked against (Settings › Checklists). */
+  checklists?: Checklist[];
 }) {
   if (reqs.length === 0)
     return <p className="text-sm text-muted-foreground">No paper is required yet.</p>;
@@ -49,7 +53,12 @@ export function RequirementsList({
                   <ToneBadge tone={tone}>{label}</ToneBadge>
                 )}
                 {canEdit && !waits && (
-                  <RequirementActions bookingId={bookingId} code={r.code} state={r.state} />
+                  <RequirementActions
+                    bookingId={bookingId}
+                    code={r.code}
+                    state={r.state}
+                    list={checklists.find((l) => l.key === r.checklist) ?? null}
+                  />
                 )}
               </span>
             </div>

@@ -12,6 +12,7 @@ import { destinationDocs, liveFiles } from "./file-store";
 import { latestReviews } from "./review-store";
 import { getBooking } from "./queries";
 import { auditAccess } from "@/server/access";
+import { readChecklists } from "@/server/checklist-config";
 
 /**
  * The Documents tab in one read: the chain, the files, the papers the shipment still lacks,
@@ -21,12 +22,13 @@ export async function bookingDocuments(id: string) {
   await requirePermission("app.bookings");
   const b = await getBooking(id);
   if (!b) return null;
-  const [steps, files, docs, hints, reviews] = await Promise.all([
+  const [steps, files, docs, hints, reviews, checklists] = await Promise.all([
     bookingChain(db, b),
     liveFiles(db, b.id),
     destinationDocs(db, b.pod),
     readFileHints(),
     latestReviews(db, b.id),
+    readChecklists(),
   ]);
   const byUser = new Map(
     (await db.select({ id: users.id, name: users.name }).from(users)).map((u) => [u.id, u.name]),
@@ -37,6 +39,7 @@ export async function bookingDocuments(id: string) {
       code: s.key,
       doc: s.box ? `${s.rule.doc} — ${s.box.label}` : s.rule.doc,
       status: s.status,
+      checklist: s.rule.checklist ?? null,
     })),
     files: files.map((f) => ({
       code: f.code,
@@ -68,6 +71,7 @@ export async function bookingDocuments(id: string) {
       filedOn: officeToday(f.createdAt),
     })),
     requirements,
+    checklists,
     /** Who gave the word on each paper, and the day. */
     reviewed: Object.fromEntries(
       reviews.map((r) => [

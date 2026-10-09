@@ -84,6 +84,8 @@ export type Requirement = {
   stepStatus?: "done" | "open" | "waiting";
   /** Why it was sent back, or what was noted when it was checked. */
   note?: string | null;
+  /** The list this paper is checked against (Settings › Checklists), when its rule names one. */
+  checklist?: string | null;
 };
 
 /**
@@ -95,7 +97,12 @@ export type Requirement = {
  */
 export function requirementsOf(input: {
   destinationDocs: readonly { code: string; label: string }[];
-  steps: readonly { code: string; doc: string; status: "done" | "open" | "waiting" }[];
+  steps: readonly {
+    code: string;
+    doc: string;
+    status: "done" | "open" | "waiting";
+    checklist?: string | null;
+  }[];
   files: readonly {
     code: string | null;
     ruleCode?: string | null;
@@ -136,6 +143,7 @@ export function requirementsOf(input: {
       label: s.doc,
       source: "step",
       stepStatus: s.status,
+      checklist: s.checklist ?? null,
       ...stateOf(s.code),
     });
   }
