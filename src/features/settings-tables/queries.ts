@@ -18,6 +18,7 @@ import {
 import { readPermissionsForEdit } from "@/server/permission-config";
 import { readPortsForEdit } from "@/server/port-config";
 import { readIdFormatsForEdit } from "@/server/id-config";
+import { readAccessWatchForEdit } from "@/server/access-config";
 
 export async function portsForEdit() {
   await requirePermission("app.settings");
@@ -51,6 +52,12 @@ export async function containerTablesForEdit() {
 export async function idFormatsForEdit() {
   await requirePermission("app.settings");
   return readIdFormatsForEdit();
+}
+
+/** Which acts of looking are recorded, for Settings › Audit log. */
+export async function accessWatchForEdit() {
+  await requirePermission("audit.view");
+  return readAccessWatchForEdit();
 }
 
 export async function activityRulesForEdit() {

@@ -11,6 +11,7 @@ import { bookingChain } from "@/server/rules-sync";
 import { destinationDocs, liveFiles } from "./file-store";
 import { latestReviews } from "./review-store";
 import { getBooking } from "./queries";
+import { auditAccess } from "@/server/access";
 
 /**
  * The Documents tab in one read: the chain, the files, the papers the shipment still lacks,
@@ -83,12 +84,20 @@ export async function bookingDocuments(id: string) {
 
 /** A file to send to the browser: its stream and headers, or null when it is not there. */
 export async function fileForDownload(bookingId: string, fileId: string) {
-  await requirePermission("app.bookings");
+  const user = await requirePermission("app.bookings");
   const [f] = await db
     .select()
     .from(bookingFiles)
     .where(and(eq(bookingFiles.id, fileId), eq(bookingFiles.bookingId, bookingId)));
   if (!f) return null;
   const stream = await openStoredFile(bookingId, f.storedName);
+  if (stream)
+    await auditAccess("download", {
+      action: "file.download",
+      userId: user.id,
+      entity: "booking",
+      entityId: bookingId,
+      detail: { file: f.id, name: f.name },
+    });
   return stream ? { stream, name: f.name, mime: f.mime, size: f.sizeBytes } : null;
 }

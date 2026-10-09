@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { type CostLine, costSummary } from "@/domain/cost";
-import { audit } from "@/server/audit";
+import { auditAccess } from "@/server/access";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import {
@@ -94,7 +94,8 @@ export async function bookingCost(bookingId: string) {
     expectedLines,
     recordedCents: bills.reduce((s, x) => s + (x.netCents ?? 0), 0),
   });
-  await audit(db, {
+  // Opening the figures leaves a trace when the office records it (Settings › Audit log).
+  await auditAccess("cost", {
     action: "booking.cost.view",
     userId: user.id,
     entity: "booking",

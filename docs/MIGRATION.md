@@ -61,9 +61,9 @@ or Lnnnn of `legacy/asasline-demo.html`.
   line → item memory and the migration key · remembered bank matching rules · statement vs book balance
   and a BANK_ACCOUNTS table · reports: cash flow, KPIs, DSO, profit per customer / destination / line,
   VAT by month · full JSON copy · a BANK_ACCOUNTS Settings editor · BOOKS parallel-run flag.
-- **Settings and platform** — the remaining legacy tabs (time, log, notify, inbox, sign, trules,
+- **Settings and platform** — the remaining legacy tabs (time, notify, inbox, sign, trules,
   wa, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
-  ACCESS_WATCH (views, downloads and exports audited; L15267).
+  time on a record kept as a visit (L15225).
 - **Go-live** — the one-off import of the legacy `records` table (section below).
 
 ## Data migration (when a module goes live)

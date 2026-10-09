@@ -5,6 +5,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { readRateCategories, readRateCategoriesForEdit } from "@/server/catalogue-config";
 import { db } from "@/server/db/client";
 import { contacts, priceListLines, priceLists, rateItems } from "@/server/db/schema";
+import { auditAccess } from "@/server/access";
 
 export async function rateCategories() {
   await requirePermission("catalogue.edit");
@@ -81,7 +82,14 @@ export async function listPriceLists(opts: { contactId?: string } = {}) {
 }
 
 export async function getPriceList(id: string) {
-  await requirePermission("catalogue.edit");
+  const user = await requirePermission("catalogue.edit");
+  // A customer's prices are sensitive when the office says so (Settings › Audit log).
+  await auditAccess("price", {
+    action: "pricelist.view",
+    userId: user.id,
+    entity: "priceList",
+    entityId: id,
+  });
   const list = await db.query.priceLists.findFirst({
     where: eq(priceLists.id, id),
     with: {

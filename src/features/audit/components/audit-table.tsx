@@ -34,7 +34,13 @@ export function AuditTable({ rows }: { rows: AuditRow[] }) {
             <TableCell>{r.who ?? <span className="text-muted-foreground">unknown</span>}</TableCell>
             <TableCell className="font-mono text-xs">
               {r.action}
-              {r.entity && <span className="text-muted-foreground"> · {r.entity}</span>}
+              {r.entity && (
+                <span className="text-muted-foreground">
+                  {" "}
+                  · {r.entity}
+                  {r.entityId && ` ${r.entityId.slice(0, 8)}`}
+                </span>
+              )}
             </TableCell>
             <TableCell className="hidden max-w-md truncate font-mono text-xs text-muted-foreground lg:table-cell">
               {r.detail ? JSON.stringify(r.detail) : ""}

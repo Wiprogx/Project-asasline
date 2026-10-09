@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import {
   Table,
@@ -28,6 +29,12 @@ export function PeopleTable({ rows, selfId }: { rows: PersonRow[]; selfId: strin
             <TableCell className="font-medium">
               {p.name}
               {p.id === selfId && <span className="text-muted-foreground"> (you)</span>}
+              <Link
+                href={`/settings/people/${p.id}/log`}
+                className="ml-2 text-xs font-normal text-muted-foreground hover:underline"
+              >
+                What they did ›
+              </Link>
             </TableCell>
             <TableCell className="hidden md:table-cell">{p.email}</TableCell>
             <TableCell>

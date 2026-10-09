@@ -31,3 +31,6 @@ export function officeNow(now: Date = new Date()): string {
 
 /** The current instant, for "how long ago" questions (a message waiting, a session's age). */
 export const now = (): Date => new Date();
+
+/** The office's zone by name, for SQL that reads an instant as the office's day. */
+export const officeZone = () => env.APP_TIMEZONE;

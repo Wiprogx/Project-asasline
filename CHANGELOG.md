@@ -15,6 +15,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Settings › Audit log says which acts of looking are recorded (legacy ACCESS_WATCH): the cost of a shipment, a download, an export, another person's record, a customer's price list — each a switch in a Settings table, and nothing is written for a switched-off one. Every download and the journal export now leave a trace when recorded. Settings › People › "What they did" shows one person's window (day, week, month, everything): entries, records touched, messages, files, tasks closed, sensitive reads, and the lines; opening someone else's is itself recorded.
 - Accounting: an invoice or a bill keeps its attachments (legacy attachments): the supplier's PDF, a proof, the UBL it came from — opened from the document, taken off with a reason, never deleted.
 - Discuss: a message carries its copies and its attachments (legacy cc[], files[]). A booking has a copy list (Edit › Copy to) that every e-mail from it starts with; what comes with a logged message is kept on the message and, when it is on a shipment's number, filed on that shipment under the code its name suggests, so the Documents tab sees it; files on an outgoing e-mail go with it when the server sends, and stay on the record when the person's own app does.
 - The quotations list carries its figures (legacy STAT_DEFS): shown, open, booked, declined, booked value and the win rate over what was decided, for the list as filtered; a Value column with the number of destinations; status chips as bookmarkable links.
