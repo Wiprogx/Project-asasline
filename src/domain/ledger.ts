@@ -47,6 +47,8 @@ export const CHART: Record<string, string> = {
   "657000": "Bank charges",
   "658000": "Payment differences — cost",
   "700000": "Sales — shipping services",
+  "740000": "Other operating income",
+  "745000": "Gains on disposal of assets",
   "754000": "Exchange gains",
   "758000": "Payment differences — income",
 };

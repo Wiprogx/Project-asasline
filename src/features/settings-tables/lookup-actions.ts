@@ -15,6 +15,8 @@ import { parseIdFormatLines } from "@/domain/contacts";
 import { ID_FORMATS_TAG, idFormatsSchema } from "@/server/id-config";
 import { parseCountryLines } from "@/domain/countries";
 import { COUNTRIES_TAG, countriesSchema } from "@/server/country-config";
+import { parseLineItemLines } from "@/domain/line-items";
+import { LINE_ITEMS_TAG, lineItemsSchema } from "@/server/line-items-config";
 
 /** Box owners, one per line as "MSCU | MSC". */
 export async function saveBoxOwners(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -102,4 +104,25 @@ export async function saveCountries(_p: ActionResult, fd: FormData): Promise<Act
     detail: { count: checked.data.length },
   });
   return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} countries` };
+}
+
+/** The general line items (legacy GL_ITEMS and SALE_ITEMS): id, kind, name, account, VAT. */
+export async function saveLineItems(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(50_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { items, problems } = parseLineItemLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = lineItemsSchema.safeParse(items);
+  if (!checked.success) return fail("Two hundred items at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "lineItems",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: LINE_ITEMS_TAG,
+    path: "/settings/line-items",
+    detail: { count: checked.data.length },
+  });
+  return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} line items` };
 }

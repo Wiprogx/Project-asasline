@@ -2,6 +2,7 @@ import { defaultSaleVat, needsApproval, PURCHASE_ACCOUNTS } from "@/domain/accou
 import { addDays } from "@/domain/dates";
 import type { getInvoice } from "../queries";
 import { fxRates } from "../fx-queries";
+import { lineOptionsFor } from "../item-queries";
 import { BillActions } from "./bill-controls";
 import { CurrencyForm } from "./currency-form";
 import { AddLineForm, RemoveLine } from "./draft-editor";
@@ -58,7 +59,9 @@ export async function DocumentBody({ inv, editable }: { inv: Doc; editable: bool
   const i = inv.invoice;
   const bill = i.kind === "bill";
   const costAccount = i.bookingId ? "604000" : "619000";
-  const rates = editable ? await fxRates() : null;
+  const [rates, options] = editable
+    ? await Promise.all([fxRates(), lineOptionsFor(bill ? "purchase" : "sale")])
+    : [null, []];
   return (
     <>
       {bill && i.note && (
@@ -88,6 +91,7 @@ export async function DocumentBody({ inv, editable }: { inv: Doc; editable: bool
           id={i.id}
           version={i.version}
           currency={i.currency}
+          options={options}
           defaultVat={bill ? "S21" : defaultSaleVat(inv.customer.country)}
           accounts={
             bill
