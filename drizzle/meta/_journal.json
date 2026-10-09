@@ -239,6 +239,13 @@
       "when": 1791584476650,
       "tag": "0033_bank_statements",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791585531183,
+      "tag": "0034_rate_source_text",
+      "breakpoints": true
     }
   ]
 }

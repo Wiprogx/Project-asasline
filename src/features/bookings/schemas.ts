@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { containerNumberOk } from "@/domain/container";
-import { BOOKING_FLOW, DOC_TYPES, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
+import { BOOKING_FLOW, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
 import { dayField } from "@/lib/zod-fields";
 import { parseStopLines } from "@/domain/loading";
 import { parseHsLines } from "@/domain/goods";
@@ -63,7 +63,8 @@ export const bookingDetailsSchema = z
     blNo: optional,
     /** Copied on every message of the booking (legacy cc), typed comma-separated. */
     cc: z.string().max(1000).optional().transform(parseEmails),
-    docType: z.enum(DOC_TYPES).default("SEA WAYBILL"),
+    // From Settings › Lists › Document types; the form offers the list, the row keeps what was chosen.
+    docType: z.string().trim().min(1).max(60).default("SEA WAYBILL"),
     vesselName: optional,
     voyage: optional,
     etd: day.optional(),

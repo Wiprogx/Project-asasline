@@ -49,6 +49,11 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     description:
       'Who put a seal on a box (legacy SEAL_SOURCES): typed after the number as "ABC1234 (Carrier)".',
   },
+  docTypes: {
+    title: "Document types",
+    description:
+      "The transport document a booking carries (legacy DOC_TYPES): offered on the booking's details; the printed copies and the originals' tracking read it.",
+  },
   paperDocs: {
     title: "Paper documents",
     description:

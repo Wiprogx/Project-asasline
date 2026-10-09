@@ -7,6 +7,7 @@ import { RateItemArchive } from "@/features/pricing/components/rate-item-archive
 import { RateItemForm } from "@/features/pricing/components/rate-item-form";
 import { getRateItem, rateCategories } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readRateSources } from "@/server/rate-sources-config";
 
 export const metadata: Metadata = { title: "Catalogue item" };
 
@@ -15,7 +16,11 @@ export default async function RateItemPage({ params }: PageProps<"/settings/cata
   await requirePagePermission("catalogue.edit");
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
-  const [it, categories] = await Promise.all([getRateItem(id.data), rateCategories()]);
+  const [it, categories, sources] = await Promise.all([
+    getRateItem(id.data),
+    rateCategories(),
+    readRateSources(),
+  ]);
   if (!it) notFound();
   return (
     <Card>
@@ -30,7 +35,7 @@ export default async function RateItemPage({ params }: PageProps<"/settings/cata
         <RateItemArchive id={it.id} archived={!!it.archivedAt} />
       </CardHeader>
       <CardContent>
-        <RateItemForm categories={categories} values={it} />
+        <RateItemForm categories={categories} values={it} sources={sources} />
       </CardContent>
     </Card>
   );

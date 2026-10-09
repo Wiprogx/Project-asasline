@@ -10,7 +10,7 @@ import {
   DEFAULT_WITHDRAW_REASONS,
 } from "@/domain/lookups";
 import { DEFAULT_PAPER_DOCS } from "@/domain/release";
-import { DEFAULT_CANCEL_REASONS } from "@/domain/shipments";
+import { DEFAULT_CANCEL_REASONS, DOC_TYPES } from "@/domain/shipments";
 import { cached, invalidateTags } from "./cache/cache";
 import { db, type Tx } from "./db/client";
 import { configTables } from "./db/schema";
@@ -35,6 +35,7 @@ const TABLES = {
   professions: { schema: LIST, fallback: DEFAULT_PROFESSIONS },
   contactTags: { schema: LIST, fallback: DEFAULT_CONTACT_TAGS },
   sealSources: { schema: LIST, fallback: DEFAULT_SEAL_SOURCES },
+  docTypes: { schema: LIST, fallback: [...DOC_TYPES] },
 } as const;
 
 export type ConfigName = keyof typeof TABLES;

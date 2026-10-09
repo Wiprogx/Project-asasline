@@ -11,7 +11,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
-import { rateTypeEnum } from "./enums";
 
 /**
  * The rate catalogue (legacy RATE_ITEMS): every chargeable thing — an ocean leg, an inland
@@ -38,7 +37,8 @@ export const rateItems = pgTable(
     sellCents: cents().notNull().default(0),
     buyCents: cents().notNull().default(0),
     vatCode: text().notNull().default("EX41"),
-    rateType: rateTypeEnum().notNull().default("contract"),
+    // The key of a Settings › Rate sources row (legacy RATE_TYPES: contract, spot).
+    rateType: text().notNull().default("contract"),
     /** Export, import, or null for both: which shipments a customs or free-time item serves. */
     scope: text(),
     /** Free time: demurrage, detention or combined; and at origin or destination. */

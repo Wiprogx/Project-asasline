@@ -9,16 +9,18 @@ import { sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readLoadingModes } from "@/server/loading-config";
+import { readConfig } from "@/server/config-tables";
 
 export const metadata: Metadata = { title: "Edit booking" };
 
 export default async function EditBookingPage({ params }: PageProps<"/bookings/[id]/edit">) {
   await requirePagePermission("bookings.edit");
   const { id } = await params;
-  const [b, contacts, modes] = await Promise.all([
+  const [b, contacts, modes, docTypes] = await Promise.all([
     getBooking(id),
     contactOptions(),
     readLoadingModes(),
+    readConfig("docTypes"),
   ]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);
@@ -62,7 +64,13 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
           <BookingSailing bookingId={b.id} vesselId={b.vesselId} options={sailings} />
         </CardContent>
       </Card>
-      <BookingDetailsForm key={b.version} values={values} contacts={contacts} modes={modes} />
+      <BookingDetailsForm
+        key={b.version}
+        values={values}
+        contacts={contacts}
+        modes={modes}
+        docTypes={docTypes}
+      />
     </div>
   );
 }

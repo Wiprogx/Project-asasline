@@ -47,10 +47,13 @@ export function BookingDetailsForm({
   values,
   contacts,
   modes,
+  docTypes = DOC_TYPES,
 }: {
   values: Values;
   contacts: Option[];
   modes: readonly LoadingMode[];
+  /** The transport documents (Settings › Lists › Document types). */
+  docTypes?: readonly string[];
 }) {
   const [state, action, pending] = useToastedAction(
     updateBookingDetails,
@@ -100,7 +103,7 @@ export function BookingDetailsForm({
               id="docType"
               name="docType"
               defaultValue={values.docType ?? "SEA WAYBILL"}
-              options={DOC_TYPES.map((d) => ({ value: d, label: d }))}
+              options={docTypes.map((d) => ({ value: d, label: d }))}
             />
           </Field>
           {TEXT.map((f) => (

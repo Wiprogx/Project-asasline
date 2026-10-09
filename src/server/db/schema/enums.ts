@@ -1,5 +1,4 @@
 import { VESSEL_STATUSES } from "../../../domain/vessels";
-import { RATE_TYPES } from "../../../domain/pricing";
 import { QUOTATION_DISPLAYS } from "../../../domain/quotation-doc";
 import { pgEnum } from "drizzle-orm/pg-core";
 import { CONTACT_TYPES } from "../../../domain/contacts";
@@ -14,5 +13,4 @@ export const shipmentKindEnum = pgEnum("shipment_kind", SHIPMENT_KINDS);
 export const quotationStatusEnum = pgEnum("quotation_status", QUOTATION_STATUSES);
 export const activityStateEnum = pgEnum("activity_state", ["open", "done", "withdrawn"]);
 export const vesselStatusEnum = pgEnum("vessel_status", VESSEL_STATUSES);
-export const rateTypeEnum = pgEnum("rate_type", RATE_TYPES);
 export const quotationDisplayEnum = pgEnum("quotation_display", QUOTATION_DISPLAYS);

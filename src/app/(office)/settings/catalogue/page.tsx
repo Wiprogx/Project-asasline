@@ -11,6 +11,7 @@ import { saveRateCategories } from "@/features/pricing/category-actions";
 import { listRateItems, rateCategories, rateCategoriesForEdit } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readRateSources } from "@/server/rate-sources-config";
 
 export const metadata: Metadata = { title: "Catalogue" };
 
@@ -23,9 +24,10 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
   const editable = may(user, "app.settings") ? await rateCategoriesForEdit() : null;
   const category = str(sp.category);
   const archived = sp.archived === "1";
-  const [categories, rows] = await Promise.all([
+  const [categories, rows, sources] = await Promise.all([
     rateCategories(),
     listRateItems({ q: str(sp.q), category, archived }),
+    readRateSources(),
   ]);
   const chip = (href: string, label: string, on: boolean) => (
     <Link
@@ -46,7 +48,7 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
           <h2 className="font-heading text-base font-medium">New item</h2>
         </CardHeader>
         <CardContent>
-          <RateItemForm categories={categories} />
+          <RateItemForm categories={categories} sources={sources} />
         </CardContent>
       </Card>
       <SearchInput placeholder="Search a port, carrier, document or name…" />
@@ -59,7 +61,12 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
       </nav>
       <Card>
         <CardContent className="pt-2">
-          <RateItemsTable rows={rows} categories={categories} today={officeToday()} />
+          <RateItemsTable
+            rows={rows}
+            categories={categories}
+            today={officeToday()}
+            sources={sources}
+          />
         </CardContent>
       </Card>
       {editable && (

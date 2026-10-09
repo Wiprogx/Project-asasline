@@ -24,10 +24,12 @@ const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/id-formats", label: "Number formats", permission: "app.settings" },
   { href: "/settings/countries", label: "Countries", permission: "app.settings" },
   { href: "/settings/catalogue", label: "Catalogue", permission: "catalogue.edit" },
+  { href: "/settings/rate-sources", label: "Rate sources", permission: "app.settings" },
   { href: "/settings/price-lists", label: "Price lists", permission: "catalogue.edit" },
   { href: "/settings/routing", label: "Routing", permission: "app.settings" },
   { href: "/settings/templates", label: "Templates", permission: "app.settings" },
   { href: "/settings/quotation-document", label: "Quotation document", permission: "app.settings" },
+  { href: "/settings/statuses", label: "Statuses", permission: "app.settings" },
   { href: "/settings/audit", label: "Audit log", permission: "audit.view" },
 ];
 

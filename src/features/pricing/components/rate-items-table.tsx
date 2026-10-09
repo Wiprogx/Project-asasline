@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCents } from "@/domain/money";
-import { RATE_TYPE_LABEL } from "@/domain/pricing";
+import { DEFAULT_RATE_SOURCES, type RateSource, sourceLabel } from "@/domain/rate-sources";
 import type { listRateItems } from "../queries";
 
 type Row = Awaited<ReturnType<typeof listRateItems>>[number];
@@ -19,10 +19,12 @@ export function RateItemsTable({
   rows,
   categories,
   today,
+  sources = DEFAULT_RATE_SOURCES,
 }: {
   rows: Row[];
   categories: { code: string; label: string }[];
   today: string;
+  sources?: readonly RateSource[];
 }) {
   if (rows.length === 0)
     return <p className="py-8 text-center text-sm text-muted-foreground">No item here.</p>;
@@ -49,7 +51,7 @@ export function RateItemsTable({
               </Link>
             </TableCell>
             <TableCell>{label(it.category)}</TableCell>
-            <TableCell>{RATE_TYPE_LABEL[it.rateType]}</TableCell>
+            <TableCell>{sourceLabel(sources, it.rateType)}</TableCell>
             <TableCell className="font-mono text-xs">
               {it.validUntil && it.validUntil < today ? (
                 <ToneBadge tone="danger">expired {it.validUntil}</ToneBadge>

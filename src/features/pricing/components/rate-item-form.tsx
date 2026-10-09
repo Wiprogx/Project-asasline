@@ -7,7 +7,8 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
-import { FREE_KINDS, FREE_SIDES, RATE_TYPE_LABEL, RATE_TYPES } from "@/domain/pricing";
+import { FREE_KINDS, FREE_SIDES } from "@/domain/pricing";
+import { DEFAULT_RATE_SOURCES, type RateSource } from "@/domain/rate-sources";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createRateItem, updateRateItem } from "../item-actions";
 import { rateItemSchema, rateItemUpdateSchema } from "../schemas";
@@ -67,7 +68,10 @@ export type RateItemValues = Partial<
 export function RateItemForm({
   categories,
   values,
+  sources = DEFAULT_RATE_SOURCES,
 }: {
+  /** Where a rate comes from (Settings › Rate sources). */
+  sources?: readonly RateSource[];
   categories: { code: string; label: string }[];
   values?: RateItemValues;
 }) {
@@ -136,7 +140,7 @@ export function RateItemForm({
           id="ri-rate"
           name="rateType"
           defaultValue={values?.rateType ?? "contract"}
-          options={RATE_TYPES.map((r) => ({ value: r, label: RATE_TYPE_LABEL[r] }))}
+          options={sources.map((r) => ({ value: r.key, label: r.label }))}
         />
       </Field>
       {category === "freetime" && (
