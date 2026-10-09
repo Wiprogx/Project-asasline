@@ -11,6 +11,8 @@ import {
   containerSpecsSchema,
 } from "@/server/container-config";
 import { saveTable, versioned } from "./table-store";
+import { parseIdFormatLines } from "@/domain/contacts";
+import { ID_FORMATS_TAG, idFormatsSchema } from "@/server/id-config";
 
 /** Box owners, one per line as "MSCU | MSC". */
 export async function saveBoxOwners(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -53,5 +55,28 @@ export async function saveContainerSpecs(_p: ActionResult, fd: FormData): Promis
   });
   return (
     bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} container types` }
+  );
+}
+
+/** VAT and EORI formats, one per line as "BE | vat | ^BE0\\d{9}$ | BE + 10 digits, the first a 0 | BE0464648410". */
+export async function saveIdFormats(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(50_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { formats, problems } = parseIdFormatLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = idFormatsSchema.safeParse(formats);
+  if (!checked.success) return fail("Two hundred formats at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "idFormats",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: ID_FORMATS_TAG,
+    path: "/settings/id-formats",
+    detail: { count: checked.data.length },
+  });
+  return (
+    bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} number formats` }
   );
 }

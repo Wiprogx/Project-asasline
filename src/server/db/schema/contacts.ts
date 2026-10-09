@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, char, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
-import { cents, recordColumns } from "./_columns";
+import { cents, day, recordColumns } from "./_columns";
 import { contactTypeEnum } from "./enums";
 
 export const contacts = pgTable(
@@ -17,6 +17,14 @@ export const contacts = pgTable(
     lang: text().notNull().default("en"),
     vat: text(),
     eori: text(),
+    /** The day each number was checked against the register (legacy tvaChecked / eoriChecked); a new number is unchecked. */
+    vatCheckedOn: day(),
+    eoriCheckedOn: day(),
+    /** Free labels from the contactTags list (legacy tags[]). */
+    tags: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     phone: text(),
     mobile: text(),
     whatsapp: text(),

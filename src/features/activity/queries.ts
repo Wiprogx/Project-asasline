@@ -104,6 +104,16 @@ export async function tasksForRecord(kind: "booking" | "quotation", id: string) 
     .orderBy(...byDue);
 }
 
+/** Every task on a contact's bookings and quotations, whatever its state (the contact's Tasks tab). */
+export async function tasksForContact(contactId: string) {
+  await requirePermission("app.activity");
+  if (!z.uuid().safeParse(contactId).success) return [];
+  return baseQuery()
+    .where(or(eq(bookings.clientId, contactId), eq(quotations.clientId, contactId)))
+    .orderBy(...byDue)
+    .limit(500);
+}
+
 /** Active staff, for "assign to" and the person filter. */
 export async function staffOptions() {
   await requirePermission("app.activity");

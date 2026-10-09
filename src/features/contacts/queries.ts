@@ -1,6 +1,6 @@
 import { cache } from "react";
 import "server-only";
-import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, type SQL, sql } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
@@ -42,6 +42,7 @@ export async function listContacts(opts: { q?: string; archived?: boolean } = {}
             ilike(contacts.email, like),
             ilike(contacts.vat, like),
             ilike(contacts.city, like),
+            ilike(sql`array_to_string(${contacts.tags}, ' ')`, like),
             inArray(contacts.id, inChildren),
           )!,
         );

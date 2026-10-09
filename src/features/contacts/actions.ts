@@ -17,6 +17,7 @@ import {
   contactSchema,
   versionRef,
 } from "./schemas";
+import { readIdFormats } from "@/server/id-config";
 
 // Optional contact fields a person may empty; creditLimit is already mapped to null.
 const CLEARABLE = Object.keys(contactSchema.shape).filter((k) => k !== "creditLimit");
@@ -58,7 +59,7 @@ async function settle(id: string) {
 
 export async function createContact(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.contacts");
-  const parsed = checkedContactSchema.safeParse(formToObject(fd));
+  const parsed = checkedContactSchema(await readIdFormats()).safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const taken = await vatTaken(parsed.data.vat, null);
   if (taken) return taken;
@@ -84,19 +85,26 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
   const user = await requirePermission("app.contacts");
   const raw = formToObject(fd);
   const ref = versionRef.safeParse(raw);
-  const parsed = checkedContactSchema.safeParse(raw);
+  const parsed = checkedContactSchema(await readIdFormats()).safeParse(raw);
   if (!ref.success) return invalid(ref.error);
   if (!parsed.success) return invalid(parsed.error);
   const taken = await vatTaken(parsed.data.vat, ref.data.id);
   if (taken) return taken;
   try {
     await db.transaction(async (tx) => {
+      // A number that changed is a number not yet checked against the register.
+      const [cur] = await tx.select().from(contacts).where(eq(contacts.id, ref.data.id));
+      const values = nullMissing(toRow(parsed.data), CLEARABLE);
+      const unchecked = {
+        ...((values.vat ?? null) !== (cur?.vat ?? null) ? { vatCheckedOn: null } : {}),
+        ...((values.eori ?? null) !== (cur?.eori ?? null) ? { eoriCheckedOn: null } : {}),
+      };
       await updateVersioned(
         tx,
         contacts,
         ref.data.id,
         ref.data.version,
-        { ...nullMissing(toRow(parsed.data), CLEARABLE), updatedBy: user.id },
+        { ...values, ...unchecked, updatedBy: user.id },
         "This contact",
       );
       await audit(tx, {

@@ -17,6 +17,7 @@ import {
 } from "@/server/release-config";
 import { readPermissionsForEdit } from "@/server/permission-config";
 import { readPortsForEdit } from "@/server/port-config";
+import { readIdFormatsForEdit } from "@/server/id-config";
 
 export async function portsForEdit() {
   await requirePermission("app.settings");
@@ -44,6 +45,12 @@ export async function containerTablesForEdit() {
   await requirePermission("app.settings");
   const [specs, owners] = await Promise.all([readContainerSpecsForEdit(), readBoxOwnersForEdit()]);
   return { specs, owners };
+}
+
+/** The VAT and EORI formats per country, for Settings › Number formats. */
+export async function idFormatsForEdit() {
+  await requirePermission("app.settings");
+  return readIdFormatsForEdit();
 }
 
 export async function activityRulesForEdit() {

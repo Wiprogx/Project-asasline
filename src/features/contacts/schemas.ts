@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { CONTACT_TYPES, idClean, idProblem, LANGUAGES } from "@/domain/contacts";
+import { CONTACT_TYPES, idClean, type IdFormat, idProblem, LANGUAGES } from "@/domain/contacts";
 import { ibanOk } from "@/domain/iban";
 import { toCents } from "@/domain/money";
-import { parseProfessions } from "@/domain/lookups";
+import { parseCommaList } from "@/domain/lookups";
 
 const optional = z.string().max(500).optional();
 
@@ -27,7 +27,9 @@ export const contactSchema = z.object({
   city: optional,
   note: z.string().max(5000).optional(),
   /** The trades, typed comma-separated against the professions list. */
-  professions: z.string().max(1000).optional().transform(parseProfessions),
+  professions: z.string().max(1000).optional().transform(parseCommaList),
+  /** Free labels, typed comma-separated against the contactTags list. */
+  tags: z.string().max(500).optional().transform(parseCommaList),
   paymentTermId: optional,
   usesLastPrice: z
     .string()
@@ -46,13 +48,17 @@ export const contactSchema = z.object({
 
 export type ContactInput = z.infer<typeof contactSchema>;
 
-/** The contact with its VAT and EORI numbers checked against its country's formats. */
-export const checkedContactSchema = contactSchema.superRefine((c, ctx) => {
-  for (const kind of ["vat", "eori"] as const) {
-    const problem = idProblem(c[kind], c.country, kind);
-    if (problem) ctx.addIssue({ code: "custom", path: [kind], message: problem });
-  }
-});
+/** The contact with its VAT and EORI numbers checked against its country's formats (Settings › Number formats). */
+export const checkedContactSchema = (formats?: readonly IdFormat[]) =>
+  contactSchema.superRefine((c, ctx) => {
+    for (const kind of ["vat", "eori"] as const) {
+      const problem = idProblem(c[kind], c.country, kind, formats);
+      if (problem) ctx.addIssue({ code: "custom", path: [kind], message: problem });
+    }
+  });
+
+/** Marking a number as checked against the register today. */
+export const idCheckedSchema = z.object({ id: z.uuid(), kind: z.enum(["vat", "eori"]) });
 
 export const versionRef = z.object({
   id: z.uuid(),

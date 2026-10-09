@@ -6,11 +6,12 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CONTACT_TYPES, LANGUAGES } from "@/domain/contacts";
+import { CONTACT_TYPES, type IdFormat, LANGUAGES } from "@/domain/contacts";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import type { ActionResult } from "@/lib/action-result";
 import type { ContactFormValues } from "../form-values";
 import { checkedContactSchema } from "../schemas";
+import { useMemo } from "react";
 
 type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
 
@@ -34,14 +35,20 @@ export function ContactForm({
   values = {},
   submitLabel,
   professions,
+  tags,
+  idFormats,
 }: {
   action: Action;
   values?: ContactFormValues;
   submitLabel: string;
-  /** The professions list (Settings › Lists), offered as the person types. */
+  /** The professions and tags lists (Settings › Lists), offered as the person types. */
   professions: readonly string[];
+  tags: readonly string[];
+  /** The VAT and EORI formats (Settings › Number formats), checked in the browser as on the server. */
+  idFormats: readonly IdFormat[];
 }) {
-  const [state, formAction, pending] = useToastedAction(action, undefined, checkedContactSchema);
+  const schema = useMemo(() => checkedContactSchema(idFormats), [idFormats]);
+  const [state, formAction, pending] = useToastedAction(action, undefined, schema);
   const fe = !state.ok ? state.fieldErrors : undefined;
 
   return (
@@ -108,6 +115,25 @@ export function ContactForm({
       <datalist id="professions-list">
         {professions.map((p) => (
           <option key={p} value={p} />
+        ))}
+      </datalist>
+      <Field
+        id="tags"
+        label="Tags"
+        hint="Comma-separated; the list in Settings › Lists is offered as you type."
+        error={fe?.tags}
+      >
+        <Input
+          id="tags"
+          name="tags"
+          list="tags-list"
+          defaultValue={values.tags ?? ""}
+          placeholder="B2B, Key account"
+        />
+      </Field>
+      <datalist id="tags-list">
+        {tags.map((t) => (
+          <option key={t} value={t} />
         ))}
       </datalist>
       <Field id="note" label="Note">

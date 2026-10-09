@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { idClean, idProblem } from "./contacts";
+import { ID_FORMATS, idClean, idFormatLines, idProblem, parseIdFormatLines } from "./contacts";
 
 describe("idProblem", () => {
   it("reads a Belgian VAT number however it is typed, and checks its check digits", () => {
@@ -26,5 +26,19 @@ describe("idProblem", () => {
   it("checks EORI numbers with their own format", () => {
     expect(idProblem("DE123456789012345", "DE", "eori")).toBeNull();
     expect(idProblem("DE123456789", "DE", "eori")).toMatch(/15 digits/);
+  });
+});
+
+describe("the number formats table", () => {
+  it("round-trips the legacy formats through their lines", () => {
+    const { formats, problems } = parseIdFormatLines(idFormatLines(ID_FORMATS));
+    expect(problems).toEqual([]);
+    expect(formats).toEqual(ID_FORMATS);
+  });
+  it("refuses a pattern that does not compile, and uses the formats it is given", () => {
+    expect(parseIdFormatLines("BE | vat | ^BE( | words | BE1").problems[0]).toMatch(/compiles/);
+    const { formats } = parseIdFormatLines("TG | vat | ^TG\\d{4}$ | TG + 4 digits | TG1234");
+    expect(idProblem("TG12", "TG", "vat", formats)).toMatch(/TG \+ 4 digits/);
+    expect(idProblem("TG12", "TG", "vat")).toBeNull();
   });
 });

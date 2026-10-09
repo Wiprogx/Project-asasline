@@ -98,8 +98,20 @@ export const DEFAULT_PROFESSIONS = [
   "Wheat & flour",
 ];
 
-/** "Transporter, Used clothing" typed on the form → the list kept on the contact, each once. */
-export const parseProfessions = (text: string | null | undefined): string[] => [
+/** The tags of a contact (legacy tags[]): a Settings list, offered as the person types. */
+export const DEFAULT_CONTACT_TAGS = [
+  "B2B",
+  "Key account",
+  "Agent",
+  "Terminal",
+  "Depot",
+  "Pick up",
+  "Doc Check",
+  "Watch payments",
+];
+
+/** "Transporter, Used clothing" typed on the form → the list kept on the record, each once. */
+export const parseCommaList = (text: string | null | undefined): string[] => [
   ...new Set(
     (text ?? "")
       .split(/[,\n;]/)
@@ -107,6 +119,7 @@ export const parseProfessions = (text: string | null | undefined): string[] => [
       .filter(Boolean),
   ),
 ];
+export const parseProfessions = parseCommaList;
 
 export type BoxOwner = { prefix: string; owner: string };
 

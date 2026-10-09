@@ -51,8 +51,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
   a Documents tab per side for a "Both" shipment.
 - **Quotations and pricing** — list analytics · QUOTE_FIELDS (what the printed quotation shows, L4072) · editable status labels and a
   "Rate sources" tab.
-- **Contacts** — documents and activities tabs · "checked on" dates for VAT and EORI · ID_FORMATS editor · tags and a
-  countries table · kanban view.
+- **Contacts** — documents tab · countries table · kanban view.
 - **Activity** — NEED_KINDS (what closes a step: file, ref, confirm, send, track) and checklists (L9444) ·
   NOTIFY_LEVELS and the bell (L11567) · COUNTRY_REQS (mandatory papers and lead days per country).
 - **Discuss** — cc, attachments, answeredBy and recording on a message · a calls tab · INBOX config
@@ -63,7 +62,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
   and a BANK_ACCOUNTS table · reports: cash flow, KPIs, DSO, profit per customer / destination / line,
   VAT by month · full JSON copy · a BANK_ACCOUNTS Settings editor · BOOKS parallel-run flag.
 - **Settings and platform** — the remaining legacy tabs (time, log, notify, inbox, sign, trules,
-  wa, tags, idfmt, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
+  wa, qstatus, rate, bstatus, doctype, seals, ctrreq, inv, bank; L10236) · Integrations and Demo material screens ·
   ACCESS_WATCH (views, downloads and exports audited; L15267).
 - **Go-live** — the one-off import of the legacy `records` table (section below).
 

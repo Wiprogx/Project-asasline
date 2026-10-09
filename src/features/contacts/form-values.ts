@@ -25,6 +25,7 @@ export type ContactFormValues = Partial<
   id?: string;
   version?: number;
   professions?: string | null;
+  tags?: string | null;
 };
 
 type ContactRecord = {
@@ -32,6 +33,7 @@ type ContactRecord = {
   version: number;
   creditLimitCents: number | null;
   professions?: string[];
+  tags?: string[];
 } & Partial<Record<(typeof CONTACT_TEXT_FIELDS)[number], string | null>>;
 
 export function toContactFormValues(c: ContactRecord): ContactFormValues {
@@ -39,5 +41,6 @@ export function toContactFormValues(c: ContactRecord): ContactFormValues {
   for (const k of CONTACT_TEXT_FIELDS) if (k !== "creditLimit") out[k] = c[k] ?? null;
   out.creditLimit = c.creditLimitCents === null ? null : centsToInput(c.creditLimitCents);
   out.professions = c.professions?.join(", ") ?? null;
+  out.tags = c.tags?.join(", ") ?? null;
   return out;
 }

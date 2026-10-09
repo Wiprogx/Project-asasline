@@ -23,15 +23,21 @@ export default async function ContactLayout({ params, children }: LayoutProps<"/
     ...(may(user, "app.quotations") ? [{ href: `${base}/quotations`, label: "Quotations" }] : []),
     ...(may(user, "app.accounting") ? [{ href: `${base}/invoices`, label: "Invoices" }] : []),
     ...(may(user, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),
+    ...(may(user, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
   ];
   return (
     <>
       <PageHeader
         title={c.name}
         description={
-          c.archivedAt ? (
-            <ToneBadge tone="neutral">Archived — {c.archivedReason}</ToneBadge>
-          ) : undefined
+          <span className="flex flex-wrap items-center gap-2">
+            {c.archivedAt && <ToneBadge tone="neutral">Archived — {c.archivedReason}</ToneBadge>}
+            {c.tags.map((t) => (
+              <ToneBadge key={t} tone="info">
+                {t}
+              </ToneBadge>
+            ))}
+          </span>
         }
         actions={
           <>

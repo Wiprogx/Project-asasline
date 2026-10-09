@@ -15,6 +15,8 @@ import { listPriceLists } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readConfig } from "@/server/config-tables";
+import { IdChecks } from "@/features/contacts/components/id-checks";
+import { readIdFormats } from "@/server/id-config";
 
 export async function generateMetadata({ params }: PageProps<"/contacts/[id]">): Promise<Metadata> {
   const id = z.uuid().safeParse((await params).id);
@@ -31,15 +33,28 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
   const credit = may(user, "app.accounting") ? await creditStanding(c.id) : null;
   const agreements = may(user, "catalogue.edit") ? await listPriceLists({ contactId: c.id }) : null;
 
-  const professions = await readConfig("professions");
+  const [professions, tags, idFormats] = await Promise.all([
+    readConfig("professions"),
+    readConfig("contactTags"),
+    readIdFormats(),
+  ]);
   return (
     <>
       {credit && <CreditLine {...credit} />}
+      <IdChecks
+        contactId={c.id}
+        checks={[
+          { kind: "vat", label: "VAT number", value: c.vat, checkedOn: c.vatCheckedOn },
+          { kind: "eori", label: "EORI", value: c.eori, checkedOn: c.eoriCheckedOn },
+        ]}
+      />
       <ContactForm
         action={updateContact}
         values={toContactFormValues(c)}
         submitLabel="Save"
         professions={professions}
+        tags={tags}
+        idFormats={idFormats}
       />
       <div className="grid gap-4 pt-4">
         <ContactAddresses contactId={c.id} addresses={c.addresses} types={addressTypes} />
