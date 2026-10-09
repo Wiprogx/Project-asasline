@@ -3,6 +3,7 @@ import { containerNumberOk } from "@/domain/container";
 import { BOOKING_FLOW, DOC_TYPES, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
 import { dayField } from "@/lib/zod-fields";
 import { parseStopLines } from "@/domain/loading";
+import { parseHsLines } from "@/domain/goods";
 
 const day = dayField();
 const optional = z.string().max(200).optional();
@@ -143,6 +144,22 @@ export const containerSchema = z.object({
       }
       return stops;
     }),
+  // Goods in this container (domain/goods): the lines' totals win over the box's own figures.
+  hsLines: z
+    .string()
+    .max(10_000)
+    .optional()
+    .transform((v, ctx) => {
+      const { lines, problem } = parseHsLines(v ?? "");
+      if (problem) {
+        ctx.addIssue({ code: "custom", message: problem });
+        return z.NEVER;
+      }
+      return lines;
+    }),
+  packages: z.coerce.number().int().min(0, "Packages, 0 or more").max(1_000_000).optional(),
+  packageType: z.string().max(60).optional(),
+  blDescription: z.string().max(2000).optional(),
 });
 
 /** Fields of a box a person may empty (see nullMissing). */
@@ -157,6 +174,9 @@ export const CLEARABLE_CONTAINER = [
   "transporterId",
   "pickBackDate",
   "pickBackTime",
+  "packages",
+  "packageType",
+  "blDescription",
 ] as const;
 
 export const addContainerSchema = z.object({

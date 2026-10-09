@@ -9,6 +9,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { HsLine } from "../../../domain/goods";
 import type { Stop } from "../../../domain/loading";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
@@ -207,6 +208,12 @@ export const containers = pgTable(
     pickBackTime: text(),
     /** Extra stops for this box, in order (domain/loading Stop). */
     stops: jsonb().$type<Stop[]>().notNull().default([]),
+    // Goods in this container (domain/goods): weight and packages per HS code; the box's own
+    // figures stand when there are no lines; the B/L description is printed word for word.
+    hsLines: jsonb().$type<HsLine[]>().notNull().default([]),
+    packages: integer(),
+    packageType: text(),
+    blDescription: text(),
   },
   (t) => [index("containers_booking_idx").on(t.bookingId)],
 );

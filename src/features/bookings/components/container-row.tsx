@@ -9,18 +9,21 @@ import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { removeContainer, updateContainer } from "../container-actions";
 import { containerSchema } from "../schemas";
+import { type BoxGoodsValues, BoxGoodsFields } from "./box-goods-fields";
 import { type BoxLoading, BoxLoadingFields } from "./box-loading-fields";
 import { type LoadingMode } from "@/domain/loading";
+import { type HsCode } from "@/domain/goods";
 
-export type Box = BoxLoading & {
-  id: string;
-  version: number;
-  type: string;
-  number: string | null;
-  seals: string[];
-  tareKg: number | null;
-  cargoKg: number | null;
-};
+export type Box = BoxLoading &
+  BoxGoodsValues & {
+    id: string;
+    version: number;
+    type: string;
+    number: string | null;
+    seals: string[];
+    tareKg: number | null;
+    cargoKg: number | null;
+  };
 
 export function ContainerRow({
   box,
@@ -29,6 +32,8 @@ export function ContainerRow({
   types,
   modes,
   truckers,
+  hsCodes,
+  packageTypes,
   canRemove,
   children,
 }: {
@@ -38,6 +43,8 @@ export function ContainerRow({
   types: string[];
   modes: readonly LoadingMode[];
   truckers: readonly { id: string; name: string }[];
+  hsCodes: readonly HsCode[];
+  packageTypes: readonly string[];
   canRemove: boolean;
   children?: React.ReactNode;
 }) {
@@ -113,6 +120,7 @@ export function ContainerRow({
             defaultValue={box.cargoKg ?? ""}
           />
         </Field>
+        <BoxGoodsFields p={p} box={box} hsCodes={hsCodes} packageTypes={packageTypes} fe={fe} />
         <BoxLoadingFields p={p} box={box} modes={modes} truckers={truckers} fe={fe} />
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save"}

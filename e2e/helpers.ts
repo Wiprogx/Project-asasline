@@ -17,7 +17,7 @@ export async function open(page: Page, path: string) {
   await page.locator("html[data-hydrated='1']").waitFor({ state: "attached" });
   // The office's pages stream behind a loading boundary and hydrate after the shell: wait until
   // every form control in the main region carries its React fiber, i.e. is hydrated.
-  await page.waitForFunction(() => {
+  const hydrated = () => {
     const main = document.querySelector("main");
     if (!main) return true;
     const nodes = [main, ...main.querySelectorAll("form, textarea, input, select, button")];
@@ -26,7 +26,19 @@ export async function open(page: Page, path: string) {
     return [...document.querySelectorAll("form[data-action-form]")].every(
       (f) => f.getAttribute("data-hydrated") === "1",
     );
-  });
+  };
+  try {
+    await page.waitForFunction(hydrated, undefined, { timeout: 20_000 });
+  } catch {
+    // Say which form never hydrated: the usual cause is a component that rendered on the server
+    // and was never mounted by React (a dialog's hidden copy, a stale key).
+    const left = await page.evaluate(() =>
+      [...document.querySelectorAll("form[data-action-form]:not([data-hydrated])")].map((f) =>
+        f.outerHTML.slice(0, 160),
+      ),
+    );
+    throw new Error(`${path} did not hydrate; forms without their mark: ${JSON.stringify(left)}`);
+  }
 }
 
 export async function login(page: Page, who = ADMIN) {

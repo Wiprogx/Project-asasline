@@ -79,7 +79,7 @@ export const loadingModeLines = (modes: readonly LoadingMode[]) =>
         m.qty ? String(m.qty) : "",
       ]
         .join(" | ")
-        .replace(/( \|)+$/, ""),
+        .replace(/(\s\|\s*)+$/, ""),
     )
     .join("\n");
 

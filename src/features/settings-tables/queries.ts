@@ -4,6 +4,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { bookings, contacts, rateItems, vessels } from "@/server/db/schema";
 import { readFileHintsForEdit } from "@/server/file-config";
+import { readHsCodesForEdit } from "@/server/goods-config";
 import { readLoadingModesForEdit } from "@/server/loading-config";
 import { readPermissionsForEdit } from "@/server/permission-config";
 import { readPortsForEdit } from "@/server/port-config";
@@ -16,6 +17,11 @@ export async function portsForEdit() {
 export async function fileHintsForEdit() {
   await requirePermission("app.settings");
   return readFileHintsForEdit();
+}
+
+export async function hsCodesForEdit() {
+  await requirePermission("app.settings");
+  return readHsCodesForEdit();
 }
 
 export async function loadingModesForEdit() {

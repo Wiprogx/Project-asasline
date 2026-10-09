@@ -8,18 +8,22 @@ import { getBooking } from "@/features/bookings/queries";
 import { contactOptions } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readConfig } from "@/server/config-tables";
+import { readHsCodes } from "@/server/goods-config";
 import { readLoadingModes } from "@/server/loading-config";
+import { cargoKgOf } from "@/domain/goods";
 
 export const metadata: Metadata = { title: "Containers" };
 
 export default async function ContainersPage({ params }: PageProps<"/bookings/[id]/containers">) {
   const user = await requirePagePermission("app.bookings");
   const { id } = await params;
-  const [b, types, modes, truckers] = await Promise.all([
+  const [b, types, modes, truckers, packageTypes, hsCodes] = await Promise.all([
     getBooking(id),
     readConfig("containerTypes"),
     readLoadingModes(),
     contactOptions(),
+    readConfig("packageTypes"),
+    readHsCodes(),
   ]);
   if (!b) notFound();
   const editable = may(user, "bookings.edit") && b.status !== "cancelled";
@@ -36,7 +40,7 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
               #{i + 1} · {c.type} · <span className="font-mono">{c.number ?? "—"}</span>
               {c.loadingMode && <span className="text-muted-foreground"> · {c.loadingMode}</span>}
             </span>
-            <VgmBadge type={c.type} cargoKg={c.cargoKg} tareKg={c.tareKg} />
+            <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} />
           </div>
         ))}
       </div>
@@ -57,9 +61,11 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
           types={types}
           modes={modes}
           truckers={truckers}
+          hsCodes={hsCodes}
+          packageTypes={packageTypes}
           canRemove={b.containers.length > 1}
         >
-          <VgmBadge type={c.type} cargoKg={c.cargoKg} tareKg={c.tareKg} />
+          <VgmBadge type={c.type} cargoKg={cargoKgOf(c)} tareKg={c.tareKg} />
         </ContainerRow>
       ))}
     </div>

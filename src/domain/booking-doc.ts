@@ -9,6 +9,7 @@ import { type QuotationDisplay, quotationDoc } from "./quotation-doc";
 import type { ShipmentKind } from "./shipments";
 import { formatKg } from "./container";
 import { boxLoading, truckerCopyGaps, type Stop } from "./loading";
+import { cargoKgOf, packagesOf, packageTypeOf, type HsLine } from "./goods";
 
 export type CopyBooking = {
   ref: string;
@@ -59,6 +60,11 @@ export type CopyBox = {
   pickBackDate: string | null;
   pickBackTime: string | null;
   stops: readonly Stop[];
+  /** The goods lines with their description resolved by the query from the hsCodes table. */
+  hsLines: readonly (HsLine & { description: string | null })[];
+  packages: number | null;
+  packageType: string | null;
+  blDescription: string | null;
 };
 
 export type CopyPrice = {
@@ -143,12 +149,27 @@ export const copyGaps = (b: CopyBooking, box: CopyBox, boxCount: number) =>
   truckerCopyGaps({ ...b, boxCount }, box);
 
 export function boxRows(b: CopyBooking, box: CopyBox): Row[] {
+  const cargo = cargoKgOf(box);
+  const packages = packagesOf(box);
+  const packageType = packageTypeOf(box);
   return [
     ["Type", box.type],
     ["Seal", box.seals.length ? box.seals[box.seals.length - 1] : "—"],
     ["Commodity", dash(b.commodity)],
-    ["Cargo weight", box.cargoKg === null ? "—" : formatKg(box.cargoKg)],
+    ...box.hsLines.map((l): Row => [
+      `HS ${l.code}`,
+      [
+        l.description,
+        l.weightKg === null ? null : formatKg(l.weightKg),
+        l.packages === null ? null : `${l.packages} ${l.packageType ?? "packages"}`,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "—",
+    ]),
+    ["Packages", packages === null ? "—" : `${packages} ${packageType ?? "packages"}`],
+    ["Cargo weight", cargo === null ? "—" : formatKg(cargo)],
     ["Tare", box.tareKg === null ? "—" : formatKg(box.tareKg)],
+    ...(box.blDescription ? [["B/L description", box.blDescription] as Row] : []),
   ];
 }
 

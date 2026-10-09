@@ -10,6 +10,7 @@ import { formatKg, vgm } from "@/domain/container";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
 import { RowGrid, SheetTitle } from "./copy-parts";
+import { cargoKgOf } from "@/domain/goods";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof bookingCopy>>>;
 
@@ -49,7 +50,7 @@ export function TruckerCopy({
       />
       {boxes.length === 0 && <p>No such container on this booking.</p>}
       {boxes.map(({ box: c, i }) => {
-        const g = vgm(c);
+        const g = vgm({ ...c, cargoKg: cargoKgOf(c) });
         const gaps = copyGaps(b, c, b.containers.length);
         return (
           <div key={i} className="grid gap-2 rounded border border-neutral-800 p-3">

@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { ADDRESS_TYPES } from "@/domain/contacts";
+import { DEFAULT_PACKAGE_TYPES } from "@/domain/goods";
 import { DEFAULT_CANCEL_REASONS } from "@/domain/shipments";
 import { cached, invalidateTags } from "./cache/cache";
 import { db, type Tx } from "./db/client";
@@ -19,6 +20,7 @@ const TABLES = {
   cancelReasons: { schema: LIST, fallback: DEFAULT_CANCEL_REASONS },
   containerTypes: { schema: LIST, fallback: ["20DV", "40DV", "40HC", "45HC", "20RF", "40RF"] },
   addressTypes: { schema: LIST, fallback: ADDRESS_TYPES },
+  packageTypes: { schema: LIST, fallback: DEFAULT_PACKAGE_TYPES },
 } as const;
 
 export type ConfigName = keyof typeof TABLES;

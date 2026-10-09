@@ -21,4 +21,8 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     title: "Address types",
     description: "Kinds of child address on a contact: loading, delivery, consignee, billing…",
   },
+  packageTypes: {
+    title: "Package types",
+    description: "Offered on a container's goods: bales, cartons, pallets… (legacy PACKAGE_TYPES).",
+  },
 };

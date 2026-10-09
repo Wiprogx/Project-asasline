@@ -6,6 +6,7 @@ import { type AuditEntry, auditMany } from "./audit";
 import type { DbOrTx } from "./db/client";
 import { activities, bookings, containers, quotationLines } from "./db/schema";
 import { readHolidays, readRuleBook } from "./rule-book";
+import { cargoKgOf } from "@/domain/goods";
 
 type BookingRow = typeof bookings.$inferSelect;
 
@@ -106,7 +107,7 @@ async function boxesByBooking(tx: DbOrTx, bookingIds: readonly string[]) {
       list.push({
         id: c.id,
         label: c.number ?? `box ${list.length + 1}`,
-        weightsIn: c.cargoKg !== null,
+        weightsIn: cargoKgOf(c) !== null,
       });
       byBooking.set(c.bookingId, list);
     }

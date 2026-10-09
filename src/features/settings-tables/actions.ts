@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { matrixProblem, type PermissionMatrix, PERMISSIONS, ROLES } from "@/domain/permissions";
+import { parseHsCodeLines } from "@/domain/goods";
 import { parseLoadingModeLines } from "@/domain/loading";
 import { parsePortLines } from "@/domain/ports";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
@@ -12,6 +13,7 @@ import { invalidateTags } from "@/server/cache/cache";
 import { writeTable } from "@/server/config-tables";
 import { db } from "@/server/db/client";
 import { FILE_HINTS_TAG, fileHintsSchema } from "@/server/file-config";
+import { HS_CODES_TAG, hsCodesSchema } from "@/server/goods-config";
 import { LOADING_MODES_TAG, loadingModesSchema } from "@/server/loading-config";
 import { PERMISSIONS_TAG } from "@/server/permission-config";
 import { PORTS_TAG } from "@/server/port-config";
@@ -68,6 +70,27 @@ export async function savePorts(_p: ActionResult, fd: FormData): Promise<ActionR
     detail: { count: ports.length },
   });
   return bad ?? { ok: true, data: undefined, message: `Saved · ${ports.length} ports` };
+}
+
+/** The HS codes, one per line as "630900 | description". */
+export async function saveHsCodes(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(300_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { codes, problems } = parseHsCodeLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = hsCodesSchema.safeParse(codes);
+  if (!checked.success) return fail("At least one code, two thousand at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "hsCodes",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: HS_CODES_TAG,
+    path: "/settings/hs-codes",
+    detail: { count: checked.data.length },
+  });
+  return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} HS codes` };
 }
 
 /** The loading modes, one per line as "name | hours | direct or drop | surcharge item | qty". */

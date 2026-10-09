@@ -27,6 +27,10 @@ const bare = (number: string | null): CopyBox => ({
   pickBackDate: null,
   pickBackTime: null,
   stops: [],
+  hsLines: [],
+  packages: null,
+  packageType: null,
+  blDescription: null,
 });
 
 const booking: CopyBooking = {
@@ -86,6 +90,36 @@ describe("the copies", () => {
       "loading mode",
       "container number",
     ]);
+  });
+  it("print the goods per HS code and let the lines' totals be the box's weight and packages", () => {
+    const rows = Object.fromEntries(
+      boxRows(booking, {
+        ...bare("MSKU1234567"),
+        cargoKg: 1,
+        hsLines: [
+          {
+            code: "630900",
+            description: "Worn clothing",
+            weightKg: 12000,
+            packages: 620,
+            packageType: "Bales",
+          },
+          {
+            code: "640399",
+            description: null,
+            weightKg: 3000,
+            packages: 40,
+            packageType: "Cartons",
+          },
+        ],
+        blDescription: "620 BALES OF WORN CLOTHING",
+      }),
+    );
+    expect(rows["HS 630900"]).toBe("Worn clothing · 12,000 kg · 620 Bales");
+    expect(rows["HS 640399"]).toBe("3,000 kg · 40 Cartons");
+    expect(rows["Packages"]).toBe("660 Bales + Cartons");
+    expect(rows["Cargo weight"]).toBe("15,000 kg");
+    expect(rows["B/L description"]).toBe("620 BALES OF WORN CLOTHING");
   });
   it("say unloading on an import", () => {
     expect(addressLabel("import")).toBe("Unloading address");

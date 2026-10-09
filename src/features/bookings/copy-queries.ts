@@ -6,6 +6,8 @@ import { readPaymentTerms } from "@/server/accounting-config";
 import { db } from "@/server/db/client";
 import { contacts, quotationLines, quotations } from "@/server/db/schema";
 import { getBooking } from "./queries";
+import { readHsCodes } from "@/server/goods-config";
+import { hsDescription } from "@/domain/goods";
 
 /**
  * What a printed copy of the booking needs: the booking with its boxes, the customer as it
@@ -27,11 +29,13 @@ export async function bookingCopy(id: string) {
         .where(inArray(contacts.id, truckerIds))
     : [];
   const nameOf = new Map(truckers.map((t) => [t.id, t.name]));
+  const hs = await readHsCodes();
   const b = {
     ...booking,
     containers: booking.containers.map((c) => ({
       ...c,
       transporter: c.transporterId ? (nameOf.get(c.transporterId) ?? null) : null,
+      hsLines: c.hsLines.map((l) => ({ ...l, description: hsDescription(hs, l.code) })),
     })),
   };
   const [client] = await db
