@@ -21,6 +21,10 @@ import { resolveRef, signatureOf } from "@/server/messaging";
 import { attachFiles, filesOf } from "./file-store";
 import { claimSchema, logIncomingSchema, postInternalSchema, sendSchema } from "./schemas";
 import { signed } from "@/domain/templates";
+import { sentSteps } from "@/domain/rules/closes";
+import { readRuleBook } from "@/server/rule-book";
+import { settleSteps } from "@/server/steps";
+import { invalidateTags, tags } from "@/server/cache/cache";
 
 function refresh(linkId?: string | null) {
   revalidatePath("/discuss", "layout");
@@ -163,6 +167,8 @@ export async function sendMessage(
     attachments,
   };
   const sent = await deliver(db, row.id, letter);
+  const closed =
+    link?.kind === "booking" && d.code ? await closeSentSteps(link.id, d.code, user.id) : [];
   await publish({ type: "message", linkId: link?.id });
   refresh(link?.id);
   const out = outcomeOf(sent, letter, "Recorded");
@@ -170,7 +176,17 @@ export async function sendMessage(
     !sent.sent && files.length
       ? ` · ${files.length} file(s) kept on the record — add them in your own app`
       : "";
-  return { ok: true, data: { href: out.href ?? "" }, message: out.message + handOff };
+  const done = closed.length ? ` · ${closed.join(", ")} done` : "";
+  return { ok: true, data: { href: out.href ?? "" }, message: out.message + handOff + done };
+}
+
+/** A booking's "send" step closes on the message that went out with its template (legacy need send). */
+async function closeSentSteps(bookingId: string, code: string, userId: string) {
+  const codes = sentSteps(await readRuleBook(), code);
+  if (codes.length === 0) return [];
+  const closed = await db.transaction((tx) => settleSteps(tx, bookingId, codes, userId));
+  if (closed.length) await invalidateTags(tags.dashboard); // the home panel counts the open steps
+  return closed;
 }
 
 /** First to open it takes it; a second person is told who already has it. */

@@ -62,6 +62,10 @@ export type DocRule = {
   checklist?: string;
   /** What closes the step (legacy NEED_KINDS): the document itself unless said otherwise. */
   need?: NeedKind;
+  /** A "send" step: the template whose message closes it (legacy tpl); its own code when empty. */
+  tpl?: string;
+  /** A "track" step: the journey milestone that closes it when ticked. */
+  event?: string;
 };
 
 export const NEED_KINDS = ["file", "ref", "confirm", "send", "track"] as const;

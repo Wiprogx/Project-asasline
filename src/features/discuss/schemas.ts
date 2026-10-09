@@ -39,10 +39,13 @@ export const sendSchema = z.object({
   subject: z.string().max(300).default(""),
   body: z.string().min(1, "Write the message").max(10_000),
   linkRef: ref,
+  // The template's code: the subject key and the thread carry it, and a "send" step closes on it.
   code: z
     .string()
-    .regex(/^[A-Z0-9_]{2,20}$/)
-    .optional(),
+    .regex(/^[A-Z0-9_]{2,30}$/)
+    .or(z.literal(""))
+    .optional()
+    .transform((v) => v || undefined),
   replyToId: z.uuid().optional(),
 });
 

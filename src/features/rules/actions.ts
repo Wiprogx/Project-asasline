@@ -66,6 +66,8 @@ export async function saveRule(_p: ActionResult, fd: FormData): Promise<ActionRe
     perBox: fields.perBox || undefined,
     checklist: fields.checklist || undefined,
     need: fields.need === "file" ? undefined : fields.need,
+    tpl: fields.tpl || undefined,
+    event: fields.event || undefined,
   });
   if (!rule.success) return invalid(rule.error);
 

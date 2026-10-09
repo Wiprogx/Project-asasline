@@ -13,6 +13,10 @@ import { readReleaseStates, readTrackSteps } from "@/server/release-config";
 import { updateVersioned } from "@/server/versioned";
 import { originalsSchema, releaseSchema, trackStepSchema } from "./schemas";
 import { guarded, Refused } from "./settle";
+import { trackedSteps } from "@/domain/rules/closes";
+import { readRuleBook } from "@/server/rule-book";
+import { settleSteps } from "@/server/steps";
+import { invalidateTags, tags } from "@/server/cache/cache";
 
 const HOLD_TITLE = "Clear the hold on ";
 
@@ -129,13 +133,23 @@ export async function toggleTrackStep(_p: ActionResult, fd: FormData): Promise<A
           { track: next, updatedBy: user.id },
           "This booking",
         );
+        // A milestone ticked closes the tracking steps that name it (legacy need "track").
+        const closed = next[index].done
+          ? await settleSteps(
+              tx,
+              id,
+              trackedSteps(await readRuleBook(), track[index].name),
+              user.id,
+            )
+          : [];
         await audit(tx, {
           action: "booking.track",
           userId: user.id,
           entity: "booking",
           entityId: id,
-          detail: { step: track[index].name, done: next[index].done },
+          detail: { step: track[index].name, done: next[index].done, closed },
         });
+        if (closed.length) await invalidateTags(tags.dashboard);
       }),
     "Journey updated",
   );

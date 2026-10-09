@@ -33,7 +33,7 @@ test("a step closes on a number recorded, a confirmation or a message sent, as i
   const ask = page
     .getByRole("listitem")
     .filter({ has: page.getByText("ASK_INV", { exact: true }) });
-  await expect(ask.getByRole("button", { name: "Checked" })).toBeVisible();
+  await expect(ask.getByRole("button", { name: "Sent" })).toBeVisible();
 
   // The rule editor offers what closes a step.
   await open(page, "/settings/rules");

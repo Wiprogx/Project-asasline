@@ -52,8 +52,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison ·
   a "Rate sources" tab.
 - **Contacts** — kanban view.
-- **Activity** — a send step closed by the message itself and a track step by the feed (both confirmed by hand for now) ·
-  a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
+- **Activity** — a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
   country) is covered by Settings › Document rules: a country's paper is a rule with its anchor, offset and blocking flag.
 - **Discuss** — a voice recording on a call · a calls tab · WA_NUMBERS and AUTO_SEND.
 - **Accounting** — catalogue

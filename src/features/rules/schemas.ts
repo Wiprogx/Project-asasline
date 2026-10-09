@@ -44,6 +44,8 @@ export const ruleFormSchema = z.object({
   ready: checkbox.transform((v) => (v ? ("weights" as const) : undefined)),
   checklist: z.string().trim().toLowerCase().max(30).optional(),
   need: z.enum(NEED_KINDS).default("file"),
+  tpl: z.string().trim().toUpperCase().max(30).optional(),
+  event: z.string().trim().max(60).optional(),
 });
 
 export const toggleRuleSchema = z.object({

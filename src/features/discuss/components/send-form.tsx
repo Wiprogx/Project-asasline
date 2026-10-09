@@ -85,6 +85,7 @@ export function SendForm({
     <ActionForm ref={form} action={run} className="grid gap-3">
       <input type="hidden" name="linkRef" value={linkRef} />
       <input type="hidden" name="contactId" value={contactId} />
+      <input type="hidden" name="code" value={template} />
       {templates.length > 0 && (
         <Field id="s-template" label="Template">
           <NativeSelect

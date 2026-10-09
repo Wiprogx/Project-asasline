@@ -34,6 +34,8 @@ const r = (
 export const DEFAULT_RULES: DocRule[] = [
   // — Export, every destination —
   r("ASK_INV", "Request the export invoice from the customer", "Export invoice requested", {
+    need: "send",
+    tpl: "ASK_INVOICE",
     party: "customer",
     anchor: "customs",
     offset: -2,
@@ -87,6 +89,7 @@ export const DEFAULT_RULES: DocRule[] = [
   }),
   r("LOADING", "Confirm the container was loaded", "Container loaded", {
     need: "track",
+    event: "Container pickup",
     party: "internal",
     anchor: "loading",
     offset: 0,
@@ -104,6 +107,7 @@ export const DEFAULT_RULES: DocRule[] = [
   }),
   r("SI", "Send the shipping instruction", "Shipping instruction", {
     need: "send",
+    tpl: "SI_OUT",
     party: "carrier",
     anchor: "si",
     offset: 0,
@@ -133,6 +137,7 @@ export const DEFAULT_RULES: DocRule[] = [
   }),
   r("TERMINAL", "Confirm the container is at the terminal", "Container at the terminal", {
     need: "track",
+    event: "Arrival at terminal",
     party: "internal",
     anchor: "portcut",
     offset: 0,
@@ -140,6 +145,7 @@ export const DEFAULT_RULES: DocRule[] = [
   }),
   r("SAILED", "Confirm the vessel sailed", "Vessel sailed", {
     need: "track",
+    event: "Vessel departure",
     party: "internal",
     anchor: "etd",
     offset: 0,
@@ -147,6 +153,7 @@ export const DEFAULT_RULES: DocRule[] = [
   }),
   r("TELL_SAILED", "Tell the customer the vessel sailed", "Customer told about the departure", {
     need: "send",
+    tpl: "SAILED_OUT",
     party: "customer",
     anchor: "etd",
     offset: 0,

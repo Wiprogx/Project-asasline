@@ -40,6 +40,11 @@ export const docRuleSchema = z.object({
     .regex(/^[a-z][a-z0-9_]{1,29}$/)
     .optional(),
   need: z.enum(NEED_KINDS).optional(),
+  tpl: z
+    .string()
+    .regex(/^[A-Z][A-Z0-9_]{1,29}$/)
+    .optional(),
+  event: z.string().min(1).max(60).optional(),
 }) satisfies z.ZodType<DocRule>;
 
 export const holidaySchema = z.object({

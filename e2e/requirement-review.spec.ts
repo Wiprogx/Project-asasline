@@ -60,7 +60,7 @@ test("a paper is sent back with a reason and its step reopens; a corrected one i
   await submit(page, page.getByRole("button", { name: "File it" }));
   await expectToast(page, "Filed as ASK_INV — the step is done");
   await expect(paper.getByText("Filed", { exact: true })).toBeVisible();
-  await submit(page, paper.getByRole("button", { name: "Checked" }));
+  await submit(page, paper.getByRole("button", { name: "Sent" }));
   await expectToast(page, "ASK_INV checked");
   await expect(paper.getByText("Checked ✓")).toBeVisible();
 
