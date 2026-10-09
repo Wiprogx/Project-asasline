@@ -7,7 +7,7 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
-import { RATE_TYPE_LABEL, RATE_TYPES } from "@/domain/pricing";
+import { FREE_KINDS, FREE_SIDES, RATE_TYPE_LABEL, RATE_TYPES } from "@/domain/pricing";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createRateItem, updateRateItem } from "../item-actions";
 import { rateItemSchema, rateItemUpdateSchema } from "../schemas";
@@ -59,6 +59,8 @@ export type RateItemValues = Partial<
   vatCode?: string;
   rateType?: string;
   scope?: string | null;
+  freeKind?: string | null;
+  side?: string | null;
 };
 
 /** A catalogue item: its category decides which fields identify it. */
@@ -137,6 +139,34 @@ export function RateItemForm({
           options={RATE_TYPES.map((r) => ({ value: r, label: RATE_TYPE_LABEL[r] }))}
         />
       </Field>
+      {category === "freetime" && (
+        <>
+          <Field id="ri-free-kind" label="Free time of" error={fe?.freeKind}>
+            <NativeSelect
+              id="ri-free-kind"
+              name="freeKind"
+              defaultValue={values?.freeKind ?? ""}
+              placeholder="— by the name —"
+              options={FREE_KINDS.map((k) => ({
+                value: k,
+                label: k[0].toUpperCase() + k.slice(1),
+              }))}
+            />
+          </Field>
+          <Field id="ri-side" label="At" error={fe?.side}>
+            <NativeSelect
+              id="ri-side"
+              name="side"
+              defaultValue={values?.side ?? ""}
+              placeholder="— either end —"
+              options={FREE_SIDES.map((k) => ({
+                value: k,
+                label: k[0].toUpperCase() + k.slice(1),
+              }))}
+            />
+          </Field>
+        </>
+      )}
       {["customs", "freetime", "vgm", "other"].includes(category) && (
         <Field id="ri-scope" label="Applies to" error={fe?.scope}>
           <NativeSelect

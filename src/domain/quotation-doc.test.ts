@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { destinationsPhrase, letterLines, quotationDoc } from "./quotation-doc";
+import { destinationsPhrase, letterLines, quotationDoc, routeTotals } from "./quotation-doc";
+
+const charge = { perBox: true, condition: false };
 
 const douala = {
   pol: "BEANR",
   pod: "CMDLA",
   finalPlace: null,
   containerType: "40HC",
+  boxes: 1,
   declined: false,
   lines: [
-    { description: "Ocean freight", qty: 2, sellCents: 425_000, listed: true },
-    { description: "BESC", qty: 1, sellCents: 25_000, listed: false },
+    { description: "Ocean freight", qty: 2, sellCents: 425_000, listed: true, ...charge },
+    { description: "BESC", qty: 1, sellCents: 25_000, listed: false, ...charge },
   ],
 };
 const mersin = {
@@ -17,9 +20,56 @@ const mersin = {
   pod: "TRMER",
   finalPlace: "Adana",
   containerType: null,
+  boxes: 1,
   declined: false,
-  lines: [{ description: "Ocean freight", qty: 1, sellCents: 190_000, listed: true }],
+  lines: [{ description: "Ocean freight", qty: 1, sellCents: 190_000, listed: true, ...charge }],
 };
+
+describe("a destination quoted per container (legacy routeSell)", () => {
+  const twoBoxes = {
+    ...mersin,
+    boxes: 2,
+    lines: [
+      {
+        description: "Ocean freight",
+        qty: 1,
+        sellCents: 190_000,
+        costCents: 150_000,
+        listed: true,
+        ...charge,
+      },
+      {
+        description: "Extra stop",
+        qty: 1,
+        sellCents: 10_000,
+        costCents: 8_000,
+        listed: true,
+        perBox: false,
+        condition: false,
+      },
+      {
+        description: "Demurrage at destination · 14 free days",
+        qty: 1,
+        sellCents: 6_500,
+        costCents: 4_500,
+        listed: true,
+        perBox: true,
+        condition: true,
+      },
+    ],
+  };
+  it("multiplies a per-container line by the boxes, counts a box-bound line once, and never totals a term", () => {
+    expect(routeTotals(twoBoxes)).toEqual({ sell: 390_000, cost: 308_000 });
+    const doc = quotationDoc([twoBoxes], "itemized");
+    expect(doc.routes[0].title).toBe("BEANR › TRMER × 2 · to Adana");
+    expect(doc.routes[0].lines).toEqual([
+      { text: "Ocean freight · per container", amountCents: 380_000 },
+      { text: "Extra stop", amountCents: 10_000 },
+      { text: "Demurrage at destination · 14 free days — terms", amountCents: null },
+    ]);
+    expect(doc.totalCents).toBe(390_000);
+  });
+});
 
 describe("quotationDoc", () => {
   it("lists every line with its amount when itemized", () => {

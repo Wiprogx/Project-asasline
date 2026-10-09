@@ -45,6 +45,7 @@ export async function addRoute(_p: ActionResult, fd: FormData): Promise<ActionRe
           finalPlace: d.finalPlace,
           containerType: lane?.containerType ?? d.containerType,
           loadingMode: d.loadingMode,
+          boxes: d.boxes,
           createdBy: user.id,
         })
         .returning({ id: quotationRoutes.id });

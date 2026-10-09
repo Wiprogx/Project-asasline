@@ -8,13 +8,20 @@ import { BookingStatusBadge } from "@/features/bookings/components/booking-statu
 import { getBooking } from "@/features/bookings/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readConfig } from "@/server/config-tables";
+import { releaseState, releaseTone } from "@/domain/release";
+import { ToneBadge } from "@/components/shared/tone-badge";
+import { readReleaseStates } from "@/server/release-config";
 
 /** The booking's header, status controls and tabs; each tab is its own URL. */
 export default async function BookingLayout({ params, children }: LayoutProps<"/bookings/[id]">) {
   const user = await requirePagePermission("app.bookings");
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
-  const [b, cancelReasons] = await Promise.all([getBooking(id.data), readConfig("cancelReasons")]);
+  const [b, cancelReasons, states] = await Promise.all([
+    getBooking(id.data),
+    readConfig("cancelReasons"),
+    readReleaseStates(),
+  ]);
   if (!b) notFound();
 
   const base = `/bookings/${b.id}`;
@@ -24,9 +31,11 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
     ...(editable ? [{ href: `${base}/edit`, label: "Edit" }] : []),
     { href: `${base}/documents`, label: "Documents" },
     { href: `${base}/containers`, label: `Containers (${b.containers.length})` },
+    { href: `${base}/tracking`, label: "Tracking" },
     ...(may(user, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
     ...(may(user, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),
     ...(may(user, "app.accounting") ? [{ href: `${base}/billing`, label: "Billing" }] : []),
+    ...(may(user, "costs.view") ? [{ href: `${base}/cost`, label: "Cost & margin" }] : []),
     { href: `${base}/history`, label: "History" },
   ];
 
@@ -37,6 +46,11 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
         description={
           <span className="flex flex-wrap items-center gap-2">
             <BookingStatusBadge status={b.status} />
+            {b.release !== "pending" && (
+              <ToneBadge tone={releaseTone(releaseState(states, b.release))}>
+                {releaseState(states, b.release).label}
+              </ToneBadge>
+            )}
             {b.client.name}
           </span>
         }

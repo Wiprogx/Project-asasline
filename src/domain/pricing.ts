@@ -96,7 +96,18 @@ export type StarterItem = {
   category: string;
   name: string | null;
   scope: string | null;
+  /** Free time: "demurrage", "detention" or "combined"; null falls back to the name. */
+  freeKind?: string | null;
 };
+
+export const FREE_KINDS = ["demurrage", "detention", "combined"] as const;
+export const FREE_SIDES = ["origin", "destination"] as const;
+
+const freeOf = (it: StarterItem, kind: "demurrage" | "detention") =>
+  it.category === "freetime" &&
+  (it.freeKind
+    ? it.freeKind === kind || it.freeKind === "combined"
+    : new RegExp(kind, "i").test(it.name ?? ""));
 
 /**
  * The service lines a destination starts with (legacy fillRouteLines): the customs clearance
@@ -109,8 +120,8 @@ export function starterLines(items: readonly StarterItem[], kind: "export" | "im
   const chosen = [
     first((it) => it.category === "customs"),
     kind === "export" ? first((it) => it.category === "vgm") : undefined,
-    first((it) => it.category === "freetime" && /demurrage/i.test(it.name ?? "")),
-    first((it) => it.category === "freetime" && /detention/i.test(it.name ?? "")),
+    first((it) => freeOf(it, "demurrage")),
+    first((it) => freeOf(it, "detention")),
   ];
   return [...new Set(chosen.filter((x): x is StarterItem => !!x).map((x) => x.id))];
 }

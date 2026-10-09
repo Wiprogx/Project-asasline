@@ -5,6 +5,7 @@ import { z } from "zod";
 import { matrixProblem, type PermissionMatrix, PERMISSIONS, ROLES } from "@/domain/permissions";
 import { parseHsCodeLines } from "@/domain/goods";
 import { parseLoadingModeLines } from "@/domain/loading";
+import { parseReleaseStateLines, parseSendModeLines, parseTrackStepLines } from "@/domain/release";
 import { parsePortLines } from "@/domain/ports";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
@@ -15,6 +16,14 @@ import { db } from "@/server/db/client";
 import { FILE_HINTS_TAG, fileHintsSchema } from "@/server/file-config";
 import { HS_CODES_TAG, hsCodesSchema } from "@/server/goods-config";
 import { LOADING_MODES_TAG, loadingModesSchema } from "@/server/loading-config";
+import {
+  RELEASE_STATES_TAG,
+  releaseStatesSchema,
+  SEND_MODES_TAG,
+  sendModesSchema,
+  TRACK_STEPS_TAG,
+  trackStepsSchema,
+} from "@/server/release-config";
 import { PERMISSIONS_TAG } from "@/server/permission-config";
 import { PORTS_TAG } from "@/server/port-config";
 import { ConflictError } from "@/server/versioned";
@@ -70,6 +79,73 @@ export async function savePorts(_p: ActionResult, fd: FormData): Promise<ActionR
     detail: { count: ports.length },
   });
   return bad ?? { ok: true, data: undefined, message: `Saved · ${ports.length} ports` };
+}
+
+/** Release states, one per line as "code | Label | hold or free | hint". */
+export async function saveReleaseStates(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(20_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { states, problems } = parseReleaseStateLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = releaseStatesSchema.safeParse(states);
+  if (!checked.success) return fail("At least one state, twenty at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "releaseStates",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: RELEASE_STATES_TAG,
+    path: "/settings/release",
+    detail: { count: checked.data.length },
+  });
+  return (
+    bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} release states` }
+  );
+}
+
+/** Ways to send the originals, one per line as "name | tracks or no | tracking page". */
+export async function saveSendModes(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(20_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { modes, problems } = parseSendModeLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = sendModesSchema.safeParse(modes);
+  if (!checked.success) return fail("At least one way, thirty at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "sendModes",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: SEND_MODES_TAG,
+    path: "/settings/release",
+    detail: { count: checked.data.length },
+  });
+  return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} send modes` };
+}
+
+/** The journey's steps, one per line as "name | auto or manual". */
+export async function saveTrackSteps(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(20_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { steps, problems } = parseTrackStepLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = trackStepsSchema.safeParse(steps);
+  if (!checked.success) return fail("At least one step, thirty at most.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "trackSteps",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: TRACK_STEPS_TAG,
+    path: "/settings/release",
+    detail: { count: checked.data.length },
+  });
+  return (
+    bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} journey steps` }
+  );
 }
 
 /** The HS codes, one per line as "630900 | description". */

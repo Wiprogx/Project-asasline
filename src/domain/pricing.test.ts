@@ -154,6 +154,21 @@ describe("starterLines", () => {
   it("gives an import its customs, no VGM, and the detention that serves imports", () => {
     expect(starterLines(items, "import")).toEqual(["cus-imp", "dem-first", "det-imp"]);
   });
+  it("reads the free-time kind from the item when it has one, the name otherwise", () => {
+    const typed = [
+      {
+        id: "a",
+        category: "freetime",
+        name: "Container terms",
+        scope: null,
+        freeKind: "detention",
+      },
+      { id: "b", category: "freetime", name: "Demurrage", scope: null, freeKind: "demurrage" },
+      { id: "c", category: "freetime", name: "Both", scope: null, freeKind: "combined" },
+    ];
+    expect(starterLines(typed, "export")).toEqual(["b", "a"]);
+    expect(starterLines(typed.slice(2), "export")).toEqual(["c"]);
+  });
   it("takes an item for both directions, and nothing twice", () => {
     const both = [{ id: "cus", category: "customs", name: "Customs", scope: null }];
     expect(starterLines(both, "import")).toEqual(["cus"]);

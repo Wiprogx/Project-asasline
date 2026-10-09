@@ -6,7 +6,8 @@ import { AcceptQuotation } from "./accept-quotation";
 import { AddLineForm } from "./add-line-form";
 import { AddRouteForm } from "./add-route-form";
 import { RouteControls } from "./route-controls";
-import { RouteLines, routeTotals } from "./route-lines";
+import { routeTotals } from "@/domain/quotation-doc";
+import { RouteLines } from "./route-lines";
 import { type LoadingMode } from "@/domain/loading";
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
@@ -68,6 +69,7 @@ export function QuotationRoutes({
                 )}
                 <span className="ml-2 font-sans text-sm text-muted-foreground">
                   {r.containerType}
+                  {r.boxes > 1 && ` × ${r.boxes}`}
                 </span>
                 {r.loadingMode && (
                   <span className="ml-2 font-sans text-sm text-muted-foreground">

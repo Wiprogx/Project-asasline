@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { HsLine } from "../../../domain/goods";
 import type { Stop } from "../../../domain/loading";
+import type { TrackStep } from "../../../domain/release";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import {
@@ -69,6 +70,8 @@ export const quotationRoutes = pgTable(
     declinedReason: text(),
     /** The agreed loading mode (domain/loading): how many hours the price includes, or a drop-off. */
     loadingMode: text(),
+    /** How many containers this destination is quoted for: a per-container line is multiplied by it. */
+    boxes: integer().notNull().default(1),
   },
   (t) => [index("quotation_routes_quotation_idx").on(t.quotationId, t.position)],
 );
@@ -86,7 +89,10 @@ export const quotationLines = pgTable(
     itemId: uuid().references(() => rateItems.id),
     description: text().notNull(),
     qty: integer().notNull().default(1),
-    perBox: boolean().notNull().default(false),
+    /** Multiplied by the destination's containers (legacy: a line with no box applies to every box). */
+    perBox: boolean().notNull().default(true),
+    /** A term, not a charge (free time): named on the paper, never totalled. */
+    condition: boolean().notNull().default(false),
     sellCents: cents(),
     costCents: cents(),
     vatCode: text().notNull().default("EX41"),
@@ -162,6 +168,17 @@ export const bookings = pgTable(
     siClosing: day(),
     portCutOff: day(),
     commodity: text(),
+    // Where the shipment stands for the consignee (domain/release): a hold names who asked and why.
+    release: text().notNull().default("pending"),
+    releaseById: uuid().references(() => contacts.id),
+    releaseNote: text(),
+    // The original papers: who receives them, by which courier, when, under which number.
+    docReceiverId: uuid().references(() => contacts.id),
+    sendMode: text(),
+    sendDate: day(),
+    sendTracking: text(),
+    /** The journey's milestones as ticked by hand (domain/release TrackStep); empty = not started. */
+    track: jsonb().$type<TrackStep[]>().notNull().default([]),
     cancelReason: text(),
     statusBeforeCancel: bookingStatusEnum("status_before_cancel"),
   },

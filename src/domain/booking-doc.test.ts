@@ -143,18 +143,46 @@ describe("the copies", () => {
 
 describe("priceTable", () => {
   const lines = [
-    { description: "Ocean freight", qty: 2, sellCents: 425_000, vatCode: "EX41", listed: true },
-    { description: "THC", qty: 1, sellCents: 21_000, vatCode: "EX41", listed: false },
+    {
+      description: "Ocean freight",
+      qty: 2,
+      sellCents: 425_000,
+      vatCode: "EX41",
+      listed: true,
+      perBox: true,
+      condition: false,
+    },
+    {
+      description: "THC",
+      qty: 1,
+      sellCents: 21_000,
+      vatCode: "EX41",
+      listed: false,
+      perBox: true,
+      condition: false,
+    },
   ];
   it("totals the lines and carries the exemption mention", () => {
-    const t = priceTable({ display: "itemized", validUntil: null, paymentTerm: null, lines });
+    const t = priceTable({
+      display: "itemized",
+      validUntil: null,
+      paymentTerm: null,
+      boxes: 1,
+      lines,
+    });
     expect(t.net).toBe(871_000);
     expect(t.vat).toBe(0);
     expect(t.mentions[0]).toMatch(/article 41/);
     expect(t.lines[0].amountCents).toBe(850_000);
   });
   it("names only the listed services when all-inclusive", () => {
-    const t = priceTable({ display: "inclusive", validUntil: null, paymentTerm: null, lines });
+    const t = priceTable({
+      display: "inclusive",
+      validUntil: null,
+      paymentTerm: null,
+      boxes: 1,
+      lines,
+    });
     expect(t.itemized).toBe(false);
     expect(t.includes).toEqual(["2 × Ocean freight"]);
   });

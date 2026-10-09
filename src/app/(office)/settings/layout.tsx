@@ -15,6 +15,7 @@ const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/vessels", label: "Vessels", permission: "bookings.edit" },
   { href: "/settings/loading", label: "Loading modes", permission: "app.settings" },
   { href: "/settings/hs-codes", label: "HS codes", permission: "app.settings" },
+  { href: "/settings/release", label: "Release & tracking", permission: "app.settings" },
   { href: "/settings/catalogue", label: "Catalogue", permission: "catalogue.edit" },
   { href: "/settings/price-lists", label: "Price lists", permission: "catalogue.edit" },
   { href: "/settings/routing", label: "Routing", permission: "app.settings" },

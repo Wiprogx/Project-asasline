@@ -41,6 +41,9 @@ export const rateItems = pgTable(
     rateType: rateTypeEnum().notNull().default("contract"),
     /** Export, import, or null for both: which shipments a customs or free-time item serves. */
     scope: text(),
+    /** Free time: demurrage, detention or combined; and at origin or destination. */
+    freeKind: text(),
+    side: text(),
     validUntil: day(),
     note: text(),
   },

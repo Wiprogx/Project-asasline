@@ -133,9 +133,15 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           updatedBy: user.id,
         })
         .returning({ id: bookings.id });
-      await tx
-        .insert(containers)
-        .values({ bookingId: b.id, type: route.containerType ?? "40HC", createdBy: user.id });
+      // As many boxes as the destination was quoted for (legacy expectedBoxes).
+      await tx.insert(containers).values(
+        Array.from({ length: Math.max(1, route.boxes) }, (_, position) => ({
+          bookingId: b.id,
+          type: route.containerType ?? "40HC",
+          position,
+          createdBy: user.id,
+        })),
+      );
       await audit(tx, {
         action: "quotation.accept",
         userId: user.id,

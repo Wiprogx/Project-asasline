@@ -32,7 +32,7 @@ export function AddLineForm({
   return (
     <ActionForm
       action={run}
-      className="grid gap-2 border-t pt-3 sm:grid-cols-[2fr_2fr_5rem_8rem_8rem_auto] sm:items-end"
+      className="grid gap-2 border-t pt-3 sm:grid-cols-[2fr_2fr_5rem_8rem_8rem_auto_auto] sm:items-end"
     >
       <input type="hidden" name="quotationId" value={quotationId} />
       <input type="hidden" name="version" value={version} />
@@ -46,6 +46,10 @@ export function AddLineForm({
       <Field id={id("qty")} label="Qty" error={fe?.qty}>
         <Input id={id("qty")} name="qty" type="number" min="1" defaultValue="1" />
       </Field>
+      <label className="flex items-center gap-2 pb-2 text-sm" htmlFor={id("perBox")}>
+        <input id={id("perBox")} name="perBox" type="checkbox" defaultChecked className="size-4" />
+        Per container
+      </label>
       <Field id={id("sell")} label="Sell (EUR)" error={fe?.sellCents}>
         <Input id={id("sell")} name="sellCents" type="number" step="0.01" min="0" />
       </Field>

@@ -49,6 +49,7 @@ export async function fillFromLane(
       category: rateItems.category,
       name: rateItems.name,
       scope: rateItems.scope,
+      freeKind: rateItems.freeKind,
     })
     .from(rateItems)
     .where(

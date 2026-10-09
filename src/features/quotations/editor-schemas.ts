@@ -42,6 +42,7 @@ export const addRouteSchema = z.object({
   finalPlace: text(200),
   containerType: text(10),
   loadingMode: text(80),
+  boxes: z.coerce.number().int().min(1, "At least one container").max(50).default(1),
 });
 
 export const updateRouteSchema = z.object({
@@ -52,12 +53,18 @@ export const updateRouteSchema = z.object({
   finalPlace: text(200),
   containerType: text(10),
   loadingMode: text(80),
+  boxes: z.coerce.number().int().min(1, "At least one container").max(50).default(1),
 });
 
 export const declineRouteSchema = z.object({ ...onQuotation, routeId: z.uuid(), reason });
 export const restoreRouteSchema = z.object({ ...onQuotation, routeId: z.uuid() });
 
 const qty = z.coerce.number().int().min(1, "At least 1").max(999).default(1);
+/** A checkbox posts "on" when ticked and nothing at all when not. */
+const checkbox = z
+  .string()
+  .optional()
+  .transform((v) => v === "on" || v === "true");
 const vatCode = z.enum(VAT_CODES.map((v) => v.code) as [string, ...string[]]);
 
 /** A line from the catalogue (priced for the customer), or typed with its own price. */
@@ -74,6 +81,7 @@ export const addLineSchema = z.object({
   sellCents: amount("Sell").optional(),
   costCents: amount("Cost").optional(),
   vatCode: vatCode.optional(),
+  perBox: checkbox,
 });
 
 /** Cost is optional: a role that cannot see costs leaves it as it was. */
@@ -85,6 +93,7 @@ export const updateLineSchema = z.object({
   sellCents: amount("Sell"),
   costCents: amount("Cost").optional(),
   vatCode,
+  perBox: checkbox,
 });
 
 export const removeLineSchema = z.object({ ...onQuotation, lineId: z.uuid(), reason });

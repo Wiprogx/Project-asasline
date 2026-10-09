@@ -13,16 +13,12 @@ import { PRICE_SOURCE_LABEL, type PriceSource, PRICE_SOURCES } from "@/domain/pr
 import type { getQuotation } from "../queries";
 import { LineControls } from "./line-controls";
 import { ListedToggle } from "./presentation-switch";
+import { lineAmount, routeTotals } from "@/domain/quotation-doc";
 
 type Route = NonNullable<Awaited<ReturnType<typeof getQuotation>>>["routes"][number];
 
 const sourceLabel = (s: string | null) =>
   PRICE_SOURCES.includes(s as PriceSource) ? PRICE_SOURCE_LABEL[s as PriceSource] : null;
-
-export const routeTotals = (r: Route) => ({
-  sell: r.lines.reduce((s, l) => s + (l.sellCents ?? 0) * l.qty, 0),
-  cost: r.lines.reduce((s, l) => s + (l.costCents ?? 0) * l.qty, 0),
-});
 
 /** A destination's lines: where each price came from, and the totals. */
 export function RouteLines({
@@ -57,6 +53,14 @@ export function RouteLines({
             <TableCell>
               {l.qty > 1 ? `${l.qty} × ` : ""}
               {l.description}
+              {l.condition ? (
+                <span className="text-muted-foreground"> — terms</span>
+              ) : (
+                l.perBox &&
+                r.boxes > 1 && (
+                  <span className="text-muted-foreground"> · × {r.boxes} containers</span>
+                )
+              )}
             </TableCell>
             <TableCell>
               {sourceLabel(l.priceSource) && (
@@ -77,9 +81,15 @@ export function RouteLines({
                 )}
               </TableCell>
             )}
-            <TableCell className="text-right tabular-nums">{formatCents(l.sellCents)}</TableCell>
+            <TableCell className="text-right tabular-nums">
+              {l.condition ? "—" : formatCents(lineAmount(l, r.boxes))}
+            </TableCell>
             {showCost && (
-              <TableCell className="text-right tabular-nums">{formatCents(l.costCents)}</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {l.condition
+                  ? "—"
+                  : formatCents(lineAmount({ ...l, sellCents: l.costCents }, r.boxes))}
+              </TableCell>
             )}
             {edit && (
               <TableCell>

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
-import { RATE_TYPES } from "@/domain/pricing";
+import { FREE_KINDS, FREE_SIDES, RATE_TYPES } from "@/domain/pricing";
 import { centsField, optionalDayField } from "@/lib/zod-fields";
 
 const text = (max: number) =>
@@ -45,6 +45,14 @@ export const rateItemSchema = z.object({
   rateType: z.enum(RATE_TYPES).default("contract"),
   scope: z
     .enum(["export", "import", ""])
+    .optional()
+    .transform((v) => v || null),
+  freeKind: z
+    .enum([...FREE_KINDS, ""])
+    .optional()
+    .transform((v) => v || null),
+  side: z
+    .enum([...FREE_SIDES, ""])
     .optional()
     .transform((v) => v || null),
   validUntil: day,

@@ -169,6 +169,20 @@
       "when": 1791550529855,
       "tag": "0023_box_goods",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791551573565,
+      "tag": "0024_release_tracking",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791553421459,
+      "tag": "0025_per_box_pricing",
+      "breakpoints": true
     }
   ]
 }

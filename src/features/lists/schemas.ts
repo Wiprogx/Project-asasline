@@ -25,4 +25,9 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     title: "Package types",
     description: "Offered on a container's goods: bales, cartons, pallets… (legacy PACKAGE_TYPES).",
   },
+  paperDocs: {
+    title: "Paper documents",
+    description:
+      "Transport document types whose originals travel on paper (ORIGINAL BL, CMR): the booking's Tracking tab asks how they were sent.",
+  },
 };

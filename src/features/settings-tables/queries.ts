@@ -6,6 +6,11 @@ import { bookings, contacts, rateItems, vessels } from "@/server/db/schema";
 import { readFileHintsForEdit } from "@/server/file-config";
 import { readHsCodesForEdit } from "@/server/goods-config";
 import { readLoadingModesForEdit } from "@/server/loading-config";
+import {
+  readReleaseStatesForEdit,
+  readSendModesForEdit,
+  readTrackStepsForEdit,
+} from "@/server/release-config";
 import { readPermissionsForEdit } from "@/server/permission-config";
 import { readPortsForEdit } from "@/server/port-config";
 
@@ -17,6 +22,17 @@ export async function portsForEdit() {
 export async function fileHintsForEdit() {
   await requirePermission("app.settings");
   return readFileHintsForEdit();
+}
+
+/** The three tables of the Release & tracking page, each with its version. */
+export async function releaseTablesForEdit() {
+  await requirePermission("app.settings");
+  const [release, send, track] = await Promise.all([
+    readReleaseStatesForEdit(),
+    readSendModesForEdit(),
+    readTrackStepsForEdit(),
+  ]);
+  return { release, send, track };
 }
 
 export async function hsCodesForEdit() {

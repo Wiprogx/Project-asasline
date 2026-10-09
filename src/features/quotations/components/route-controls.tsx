@@ -19,6 +19,7 @@ type Route = {
   finalPlace: string | null;
   containerType: string | null;
   loadingMode: string | null;
+  boxes: number;
   declined: boolean;
 };
 
@@ -78,6 +79,21 @@ export function RouteControls({
                 />
               </Field>
             ))}
+            <Field
+              id={`re-${r.id}-boxes`}
+              label="Containers"
+              hint="A line marked per container is multiplied by this number."
+              error={fe?.boxes}
+            >
+              <Input
+                id={`re-${r.id}-boxes`}
+                name="boxes"
+                type="number"
+                min="1"
+                max="50"
+                defaultValue={r.boxes}
+              />
+            </Field>
             <Field
               id={`re-${r.id}-loadingMode`}
               label="Loading mode"

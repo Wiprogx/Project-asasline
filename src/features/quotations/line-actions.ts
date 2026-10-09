@@ -43,6 +43,7 @@ async function insertTypedLine(tx: Tx, d: NewLine, position: number, userId: str
     costCents: d.costCents ?? null,
     vatCode: d.vatCode ?? "EX41",
     priceSource: "manual",
+    perBox: d.perBox,
     createdBy: userId,
   });
 }
@@ -69,6 +70,7 @@ export async function addLine(_p: ActionResult, fd: FormData): Promise<ActionRes
           day: officeToday(),
           userId: user.id,
           typed: { sellCents: d.sellCents, costCents: d.costCents },
+          perBox: d.perBox,
         });
       else await insertTypedLine(tx, d, position, user.id);
       await resyncBookingOf(tx, route.id, user.id);
@@ -101,6 +103,7 @@ export async function updateLine(_p: ActionResult, fd: FormData): Promise<Action
         .set({
           description: f.description,
           qty: f.qty,
+          perBox: f.perBox,
           sellCents: f.sellCents,
           costCents: f.costCents ?? line.costCents,
           vatCode: f.vatCode,

@@ -11,18 +11,24 @@ export const QUOTATION_DISPLAY_LABEL: Record<QuotationDisplay, string> = {
   inclusive: "All-inclusive",
 };
 
-type DocLine = {
+export type DocLine = {
   description: string;
   qty: number;
   sellCents: number | null;
   listed: boolean;
+  /** Multiplied by the destination's containers (legacy: a line with no box applies to every box). */
+  perBox: boolean;
+  /** A term (free time), named on the paper and never totalled. */
+  condition: boolean;
 };
 
-type DocRoute = {
+export type DocRoute = {
   pol: string;
   pod: string;
   finalPlace: string | null;
   containerType: string | null;
+  /** How many containers the destination is quoted for. */
+  boxes: number;
   declined: boolean;
   lines: readonly DocLine[];
 };
@@ -36,13 +42,39 @@ export type QuotationDoc = {
   totalCents: number;
 };
 
-const lineTotal = (l: DocLine) => (l.sellCents ?? 0) * l.qty;
-const lineText = (l: DocLine) => `${l.qty > 1 ? `${l.qty} × ` : ""}${l.description}`;
+/** What one line adds: per container it is multiplied by the boxes; a term adds nothing. */
+export const lineAmount = (
+  l: Pick<DocLine, "qty" | "sellCents" | "perBox" | "condition">,
+  boxes: number,
+) => (l.condition ? 0 : (l.sellCents ?? 0) * l.qty * (l.perBox ? Math.max(1, boxes) : 1));
+
+const lineTotal = (l: DocLine, boxes: number) => lineAmount(l, boxes);
+const lineText = (l: DocLine, boxes: number) =>
+  `${l.qty > 1 ? `${l.qty} × ` : ""}${l.description}${
+    l.condition ? " — terms" : l.perBox && boxes > 1 ? ` · per container` : ""
+  }`;
+
+/** The destination's sell and cost, the legacy routeSell: unit lines × boxes + the lines counted once. */
+export function routeTotals(r: {
+  boxes: number;
+  lines: readonly (Pick<DocLine, "qty" | "sellCents" | "perBox" | "condition"> & {
+    costCents?: number | null;
+  })[];
+}) {
+  return {
+    sell: r.lines.reduce((s, l) => s + lineAmount(l, r.boxes), 0),
+    cost: r.lines.reduce(
+      (s, l) => s + lineAmount({ ...l, sellCents: l.costCents ?? 0 }, r.boxes),
+      0,
+    ),
+  };
+}
 
 export function routeTitle(r: Omit<DocRoute, "lines" | "declined">): string {
   const box = r.containerType ? ` · ${r.containerType}` : "";
+  const n = r.boxes > 1 ? ` × ${r.boxes}` : "";
   const final = r.finalPlace ? ` · to ${r.finalPlace}` : "";
-  return `${r.pol} › ${r.pod}${box}${final}`;
+  return `${r.pol} › ${r.pod}${box}${n}${final}`;
 }
 
 export function quotationDoc(routes: readonly DocRoute[], display: QuotationDisplay): QuotationDoc {
@@ -52,9 +84,14 @@ export function quotationDoc(routes: readonly DocRoute[], display: QuotationDisp
       title: routeTitle(r),
       lines:
         display === "itemized"
-          ? r.lines.map((l) => ({ text: lineText(l), amountCents: lineTotal(l) }))
-          : r.lines.filter((l) => l.listed).map((l) => ({ text: lineText(l), amountCents: null })),
-      totalCents: r.lines.reduce((s, l) => s + lineTotal(l), 0),
+          ? r.lines.map((l) => ({
+              text: lineText(l, r.boxes),
+              amountCents: l.condition ? null : lineTotal(l, r.boxes),
+            }))
+          : r.lines
+              .filter((l) => l.listed)
+              .map((l) => ({ text: lineText(l, r.boxes), amountCents: null })),
+      totalCents: r.lines.reduce((s, l) => s + lineTotal(l, r.boxes), 0),
     }));
   return { routes: docRoutes, totalCents: docRoutes.reduce((s, r) => s + r.totalCents, 0) };
 }

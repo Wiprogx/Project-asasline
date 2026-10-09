@@ -4,7 +4,7 @@ import type { CopyPrice } from "@/domain/booking-doc";
 import { requirePermission } from "@/server/auth/dal";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { db } from "@/server/db/client";
-import { contacts, quotationLines, quotations } from "@/server/db/schema";
+import { contacts, quotationLines, quotationRoutes, quotations } from "@/server/db/schema";
 import { getBooking } from "./queries";
 import { readHsCodes } from "@/server/goods-config";
 import { hsDescription } from "@/domain/goods";
@@ -59,8 +59,10 @@ export async function bookingCopy(id: string) {
         display: quotations.display,
         validUntil: quotations.validUntil,
         paymentTermId: quotations.paymentTermId,
+        boxes: quotationRoutes.boxes,
       })
       .from(quotations)
+      .innerJoin(quotationRoutes, eq(quotationRoutes.id, b.quotationRouteId))
       .where(eq(quotations.id, b.quotationId));
     const lines = await db
       .select()
@@ -74,12 +76,15 @@ export async function bookingCopy(id: string) {
         display: q.display,
         validUntil: q.validUntil,
         paymentTerm: term?.name ?? null,
+        boxes: q.boxes,
         lines: lines.map((l) => ({
           description: l.description,
           qty: l.qty,
           sellCents: l.sellCents,
           vatCode: l.vatCode,
           listed: l.listed,
+          perBox: l.perBox,
+          condition: l.condition,
         })),
       };
   }

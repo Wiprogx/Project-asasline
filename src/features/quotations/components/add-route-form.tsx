@@ -32,7 +32,7 @@ export function AddRouteForm({
   return (
     <ActionForm
       action={run}
-      className="grid gap-2 sm:grid-cols-[2fr_7rem_7rem_2fr_2fr_auto] sm:items-end"
+      className="grid gap-2 sm:grid-cols-[2fr_7rem_7rem_2fr_2fr_6rem_auto] sm:items-end"
     >
       <input type="hidden" name="quotationId" value={quotationId} />
       <input type="hidden" name="version" value={version} />
@@ -47,6 +47,9 @@ export function AddRouteForm({
       </Field>
       <Field id="ar-final" label="Final place (optional)" error={fe?.finalPlace}>
         <Input id="ar-final" name="finalPlace" />
+      </Field>
+      <Field id="ar-boxes" label="Containers" error={fe?.boxes}>
+        <Input id="ar-boxes" name="boxes" type="number" min="1" max="50" defaultValue="1" />
       </Field>
       <Field id="ar-mode" label="Loading mode" hint={modeNote(modes, mode)} error={fe?.loadingMode}>
         <NativeSelect

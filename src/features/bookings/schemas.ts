@@ -162,6 +162,33 @@ export const containerSchema = z.object({
   blDescription: z.string().max(2000).optional(),
 });
 
+/** Where the shipment stands for the consignee; a hold says who asked and what must happen. */
+export const releaseSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  release: z.string().min(1, "Choose a state").max(32),
+  releaseById: z.uuid().optional(),
+  releaseNote: z.string().max(300).optional(),
+});
+
+/** One milestone of the journey, by its position, ticked or unticked. */
+export const trackStepSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  index: z.coerce.number().int().min(0).max(50),
+  place: z.string().max(120).optional(),
+});
+
+/** How the original papers travel. */
+export const originalsSchema = z.object({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+  docReceiverId: z.uuid().optional(),
+  sendMode: z.string().max(60).optional(),
+  sendDate: day.optional(),
+  sendTracking: z.string().max(80).optional(),
+});
+
 /** Fields of a box a person may empty (see nullMissing). */
 export const CLEARABLE_CONTAINER = [
   "number",

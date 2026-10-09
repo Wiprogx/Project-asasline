@@ -16,6 +16,8 @@ type Line = {
   sellCents: number | null;
   costCents: number | null;
   vatCode: string;
+  perBox: boolean;
+  condition: boolean;
 };
 
 /** Change a line's text, quantity or price, or take it off with a reason. */
@@ -50,6 +52,16 @@ export function LineControls({
             <Field id={id("qty")} label="Quantity" error={fe?.qty}>
               <Input id={id("qty")} name="qty" type="number" min="1" defaultValue={l.qty} />
             </Field>
+            <label className="flex items-center gap-2 text-sm" htmlFor={id("perBox")}>
+              <input
+                id={id("perBox")}
+                name="perBox"
+                type="checkbox"
+                defaultChecked={l.perBox}
+                className="size-4"
+              />
+              Per container — multiplied by the destination&apos;s boxes
+            </label>
             <Field id={id("sell")} label="Sell (EUR)" error={fe?.sellCents}>
               <Input
                 id={id("sell")}

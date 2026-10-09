@@ -5,7 +5,7 @@
  * another box's address or hour on it (legacy 1أ.10).
  */
 import { invoiceTotals, vatMentions } from "./invoicing";
-import { type QuotationDisplay, quotationDoc } from "./quotation-doc";
+import { lineAmount, type QuotationDisplay, quotationDoc } from "./quotation-doc";
 import type { ShipmentKind } from "./shipments";
 import { formatKg } from "./container";
 import { boxLoading, truckerCopyGaps, type Stop } from "./loading";
@@ -71,12 +71,16 @@ export type CopyPrice = {
   display: QuotationDisplay;
   validUntil: string | null;
   paymentTerm: string | null;
+  /** How many containers the destination was quoted for (domain/quotation-doc). */
+  boxes: number;
   lines: readonly {
     description: string;
     qty: number;
     sellCents: number | null;
     vatCode: string;
     listed: boolean;
+    perBox: boolean;
+    condition: boolean;
   }[];
 };
 
@@ -186,20 +190,35 @@ export type PriceTable = {
 
 /** The price on the customer copy: the booking's destination on the quotation, as it chose to show it. */
 export function priceTable(p: CopyPrice): PriceTable {
+  const charges = p.lines.filter((l) => !l.condition);
   const totals = invoiceTotals(
-    p.lines.map((l) => ({ qty: l.qty, unitCents: l.sellCents ?? 0, vatCode: l.vatCode })),
+    charges.map((l) => ({
+      qty: l.qty * (l.perBox ? Math.max(1, p.boxes) : 1),
+      unitCents: l.sellCents ?? 0,
+      vatCode: l.vatCode,
+    })),
   );
   const doc = quotationDoc(
-    [{ pol: "", pod: "", finalPlace: null, containerType: null, declined: false, lines: p.lines }],
+    [
+      {
+        pol: "",
+        pod: "",
+        finalPlace: null,
+        containerType: null,
+        boxes: p.boxes,
+        declined: false,
+        lines: p.lines,
+      },
+    ],
     p.display,
   );
   return {
     itemized: p.display === "itemized",
-    lines: p.lines.map((l) => ({
-      text: l.description,
-      qty: l.qty,
+    lines: charges.map((l) => ({
+      text: l.description + (l.perBox && p.boxes > 1 ? " · per container" : ""),
+      qty: l.qty * (l.perBox ? Math.max(1, p.boxes) : 1),
       unitCents: l.sellCents ?? 0,
-      amountCents: (l.sellCents ?? 0) * l.qty,
+      amountCents: lineAmount(l, p.boxes),
     })),
     includes: doc.routes[0]?.lines.map((l) => l.text) ?? [],
     net: totals.netCents,

@@ -17,6 +17,7 @@ import {
   paymentAllocations,
   payments,
   quotationLines,
+  quotationRoutes,
 } from "@/server/db/schema";
 import { proposals } from "@/domain/matching";
 import { creditedSql, invoiceMoney, openInvoices, settledSql } from "./money";
@@ -103,10 +104,13 @@ export async function bookingBilling(bookingId: string) {
   const [b] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
   if (!b) return null;
 
+  // The destination's lines with its box count: a per-container line bills qty × boxes, a term
+  // (free time) bills nothing (domain/quotation-doc).
   const source = b.quotationRouteId
     ? await db
-        .select({ line: quotationLines })
+        .select({ line: quotationLines, boxes: quotationRoutes.boxes })
         .from(quotationLines)
+        .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
         .where(
           and(eq(quotationLines.routeId, b.quotationRouteId), isNull(quotationLines.archivedAt)),
         )
@@ -132,17 +136,18 @@ export async function bookingBilling(bookingId: string) {
     );
 
   const lines = source
-    .filter(({ line }) => (line.sellCents ?? 0) > 0)
-    .map(({ line }) => {
+    .filter(({ line }) => (line.sellCents ?? 0) > 0 && !line.condition)
+    .map(({ line, boxes }) => {
       const key = `q:${line.id}`;
+      const qty = line.qty * (line.perBox ? Math.max(1, boxes) : 1);
       return {
         key,
-        description: line.description,
-        qty: line.qty,
+        description: line.description + (line.perBox && boxes > 1 ? ` · ${boxes} containers` : ""),
+        qty,
         unitCents: line.sellCents ?? 0,
         vatCode: line.vatCode,
         remaining: remainingQty(
-          line.qty,
+          qty,
           billed.filter((x) => x.key === key),
         ),
       };

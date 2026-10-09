@@ -123,6 +123,8 @@ type PricedLine = {
   userId: string;
   /** Prices typed by the person; a sell different from the looked-up one makes it "manual". */
   typed?: { sellCents?: number; costCents?: number };
+  /** Multiplied by the destination's containers; the default for a catalogue line. */
+  perBox?: boolean;
 };
 
 /** A catalogue item as a line, priced for the customer: agreement → last price → catalogue. */
@@ -146,6 +148,9 @@ export async function insertPricedLine(tx: DbOrTx, p: PricedLine) {
     costCents: p.typed?.costCents ?? price.buyCents,
     vatCode: item.vatCode,
     priceSource: sell === price.sellCents ? price.source : "manual",
+    perBox: p.perBox ?? true,
+    // Free time is a term, not a charge: named on the paper, never totalled (legacy).
+    condition: item.category === "freetime",
     createdBy: p.userId,
   });
   return { item, label, price };
