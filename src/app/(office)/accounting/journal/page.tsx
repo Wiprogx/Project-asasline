@@ -34,12 +34,20 @@ export default async function JournalPage({ searchParams }: PageProps<"/accounti
         title="Journal"
         description="Every entry comes from a numbered document or a payment — nothing is typed in."
         actions={
-          <a
-            className={buttonVariants({ variant: "outline" })}
-            href={`/accounting/journal/export?from=${period.from}&to=${period.to}`}
-          >
-            Export for the accountant (CSV)
-          </a>
+          <>
+            <a
+              className={buttonVariants({ variant: "outline" })}
+              href={`/accounting/journal/export?from=${period.from}&to=${period.to}`}
+            >
+              Export for the accountant (CSV)
+            </a>
+            <a
+              className={buttonVariants({ variant: "outline" })}
+              href={`/accounting/invoices/export?from=${period.from}&to=${period.to}`}
+            >
+              Invoices (CSV)
+            </a>
+          </>
         }
       />
       <PeriodPicker path="/accounting/journal" period={period} today={today} />

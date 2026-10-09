@@ -3,6 +3,7 @@ import {
   DEFAULT_TEMPLATES,
   fillTemplate,
   placeholdersOf,
+  signed,
   TEMPLATE_PLACEHOLDERS,
   templateScope,
 } from "./templates";
@@ -55,8 +56,21 @@ describe("the default templates", () => {
       "loadTime",
       "loadAddress",
       "me",
+      "sign",
     ]);
     for (const t of DEFAULT_TEMPLATES.filter((x) => templateScope(x.code) === "booking"))
       expect(placeholdersOf(t.subject + t.body).filter((p) => !known.has(p))).toEqual([]);
+  });
+});
+
+describe("signed", () => {
+  it("ends a letter with the signature once, and leaves one already signed alone", () => {
+    expect(signed("Hello", "Sam — ASASLINE S.A.\nBrussels")).toBe(
+      "Hello\n\nSam — ASASLINE S.A.\nBrussels",
+    );
+    expect(signed("Hello\n\nSam — ASASLINE S.A.\nBrussels", "Sam — ASASLINE S.A.\nBrussels")).toBe(
+      "Hello\n\nSam — ASASLINE S.A.\nBrussels",
+    );
+    expect(signed("Hello", "  ")).toBe("Hello");
   });
 });

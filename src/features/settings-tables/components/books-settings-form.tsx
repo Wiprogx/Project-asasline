@@ -30,7 +30,7 @@ export function BooksSettingsForm({ books, version }: { books: BooksSettings; ve
       <CardContent>
         <ActionForm
           action={run}
-          className="grid gap-3 sm:grid-cols-[12rem_12rem_auto] sm:items-end"
+          className="grid gap-3 sm:grid-cols-[12rem_12rem_12rem_auto] sm:items-end"
         >
           <input type="hidden" name="version" value={version} />
           <Field id="approveOver" label="Approval from (EUR)" error={fe?.approveOver}>
@@ -50,6 +50,19 @@ export function BooksSettingsForm({ books, version }: { books: BooksSettings; ve
                 value: p,
                 label: p[0].toUpperCase() + p.slice(1),
               }))}
+            />
+          </Field>
+          <Field
+            id="parallelUntil"
+            label="Alongside Odoo until"
+            hint="Empty once the app keeps the books alone."
+            error={fe?.parallelUntil}
+          >
+            <Input
+              id="parallelUntil"
+              name="parallelUntil"
+              type="date"
+              defaultValue={books.parallelUntil ?? ""}
             />
           </Field>
           <Button type="submit" size="sm" disabled={pending}>

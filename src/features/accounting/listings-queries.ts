@@ -5,6 +5,7 @@ import {
   clientListingXml,
   intraListing,
   intraListingXml,
+  invoicesCsv,
   journalCsv,
 } from "@/domain/listings";
 import type { Period } from "@/domain/period";
@@ -41,4 +42,10 @@ export async function journalFile(period: Period) {
   await requirePermission("app.accounting");
   const entries = (await readJournal()).filter((e) => e.date >= period.from && e.date <= period.to);
   return journalCsv(entries);
+}
+
+/** The period's documents as a CSV for the accountant. */
+export async function invoicesFile(period: Period) {
+  await requirePermission("app.accounting");
+  return invoicesCsv(await issuedDocs(period));
 }

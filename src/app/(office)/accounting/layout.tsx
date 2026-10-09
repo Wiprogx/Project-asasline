@@ -1,11 +1,25 @@
 import { SubNav } from "@/components/layout/sub-nav";
 import { requirePagePermission } from "@/server/auth/dal";
+import { parallelRun } from "@/domain/accounting-settings";
+import { readBooks } from "@/server/books-config";
+import { officeToday } from "@/server/clock";
 
 /** Tabs only: each page gives its own title, so a screen never carries two h1s. */
 export default async function AccountingLayout({ children }: LayoutProps<"/accounting">) {
   await requirePagePermission("app.accounting");
+  const books = await readBooks();
+  const today = officeToday();
   return (
     <>
+      {parallelRun(books, today) && (
+        <p
+          role="status"
+          className="mb-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
+        >
+          Running alongside Odoo until {books.parallelUntil}: issue every sale there too, so both
+          books carry it.
+        </p>
+      )}
       <SubNav
         items={[
           { href: "/accounting", label: "Invoices", exact: true },

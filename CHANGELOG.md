@@ -15,6 +15,8 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Accounting: the books can run alongside Odoo until a day (Settings › Accounting, legacy BOOKS.parallelUntil) — every accounting screen then says so, so each sale is issued there too; the period's invoices, credit notes and bills download as a CSV for the accountant next to the journal (legacy invoicesCsv), each export recorded when the office records exports.
+- Discuss: the office's inbox address and signature are a Settings value (Settings › Routing, legacy INBOX): every letter the office writes — a template or a message typed from a file — ends with the signature, with the writer's name in it, once.
 - Document rules say what closes a step (legacy NEED_KINDS): a document attached, a number recorded (the BIETC, the ACID — typed into the step, with nothing to attach), a confirmation (the VGM sent, the B/L confirmed), a message gone out, or the tracking feed (confirmed by hand until the feed is wired). The Documents tab names the close accordingly.
 - Contacts: a Documents tab (legacy contact documents tab) with every paper on the contact's file — what is filed on the shipments it is a party on and what is kept with its invoices and bills — each opening from there.
 - Containers: a seal says who put it on (legacy SEAL_SOURCES): typed after the number as "ABC1234 (Carrier)", the source a word from Settings › Lists › Seal sources, refused otherwise; the booking and the printed copies read "ABC1234 · Carrier".

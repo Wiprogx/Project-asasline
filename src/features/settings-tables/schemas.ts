@@ -7,6 +7,11 @@ export const booksSettingsSchema = z.object({
   version: z.coerce.number().int().min(0),
   approveOver: centsField("Approval from"),
   vatPeriod: z.enum(VAT_PERIODS),
+  parallelUntil: z
+    .string()
+    .optional()
+    .transform((v) => v || null)
+    .refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "A day as YYYY-MM-DD"),
 });
 
 /** A counter moved forward: the series' key and what its last issued number becomes. */

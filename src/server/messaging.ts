@@ -3,7 +3,14 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_ESCALATE_MINUTES, DEFAULT_ROUTES, type Route } from "@/domain/messages";
 import { ROLES } from "@/domain/permissions";
-import { DEFAULT_TEMPLATES, TEMPLATE_CHANNELS, type Template } from "@/domain/templates";
+import {
+  DEFAULT_INBOX,
+  DEFAULT_TEMPLATES,
+  fillTemplate,
+  type Inbox,
+  type Template,
+  TEMPLATE_CHANNELS,
+} from "@/domain/templates";
 import { cached } from "./cache/cache";
 import { db, type DbOrTx } from "./db/client";
 import { bookings, configTables, quotations } from "./db/schema";
@@ -30,6 +37,26 @@ export function readEscalateMinutes(): Promise<number> {
     const parsed = row ? escalationSchema.safeParse(row.value) : null;
     return parsed?.success ? parsed.data.minutes : DEFAULT_ESCALATE_MINUTES;
   });
+}
+
+const inboxSchema = z.object({
+  address: z.string().trim().max(200),
+  signature: z.string().trim().max(1000),
+});
+export const INBOX_TAG = "config:inbox";
+
+/** The office's inbox and signature (legacy INBOX): a Settings value, the legacy one until saved. */
+export function readInbox(): Promise<Inbox> {
+  return cached("config:inbox", { ttlSeconds: 600, tags: [INBOX_TAG] }, async () => {
+    const [row] = await db.select().from(configTables).where(eq(configTables.name, "inbox"));
+    const parsed = row ? inboxSchema.safeParse(row.value) : null;
+    return parsed?.success ? parsed.data : { ...DEFAULT_INBOX };
+  });
+}
+
+/** The signature as this person writes it under a letter. */
+export async function signatureOf(me: string) {
+  return fillTemplate((await readInbox()).signature, { me });
 }
 
 /** An SB/QT number → the record it names, or null when nothing carries it. */

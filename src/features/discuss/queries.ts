@@ -9,7 +9,13 @@ import { requirePermission } from "@/server/auth/dal";
 import { now } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { bookings, configTables, contacts, containers, messages, users } from "@/server/db/schema";
-import { readEscalateMinutes, readRoutes, readTemplates } from "@/server/messaging";
+import {
+  readEscalateMinutes,
+  readInbox,
+  readRoutes,
+  readTemplates,
+  signatureOf,
+} from "@/server/messaging";
 
 const claimer = alias(users, "claimer");
 
@@ -205,14 +211,20 @@ export async function routingForEdit() {
   const rows = await db
     .select()
     .from(configTables)
-    .where(inArray(configTables.name, ["routes", "escalation"]));
+    .where(inArray(configTables.name, ["routes", "escalation", "inbox"]));
   const of = (name: string) => rows.find((r) => r.name === name);
-  const [routes, minutes] = await Promise.all([readRoutes(), readEscalateMinutes()]);
+  const [routes, minutes, inbox] = await Promise.all([
+    readRoutes(),
+    readEscalateMinutes(),
+    readInbox(),
+  ]);
   return {
     routes,
     version: of("routes")?.version ?? 0,
     minutes,
     escalationVersion: of("escalation")?.version ?? 0,
+    inbox,
+    inboxVersion: of("inbox")?.version ?? 0,
   };
 }
 
@@ -248,6 +260,7 @@ export async function bookingTemplates(bookingId: string, me: string) {
     loadTime: b.loadTime,
     loadAddress: b.loadAddress,
     me,
+    sign: await signatureOf(me),
   };
   return (await readTemplates())
     .filter((t) => t.active && templateScope(t.code) === "booking")

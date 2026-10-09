@@ -15,7 +15,20 @@ export type Template = {
   active: boolean;
 };
 
-const SIGN = "{me} — ASASLINE S.A.";
+/** The office's inbox (legacy INBOX): where files arrive, and how every letter is signed. */
+export type Inbox = { address: string; signature: string };
+export const DEFAULT_INBOX: Inbox = {
+  address: "docs@asasline.com",
+  signature: "{me} — ASASLINE S.A.\nRue de Douvres 115, 1070 Brussels · +32 23 15 14 15",
+};
+
+/** A letter ends with the signature; a template writes {sign} where it goes. */
+export const signed = (body: string, signature: string) =>
+  signature.trim() && !body.includes(signature.trim().split("\n")[0])
+    ? `${body.trimEnd()}\n\n${signature.trim()}`
+    : body;
+
+const SIGN = "{sign}";
 
 export const DEFAULT_TEMPLATES: Template[] = [
   {
@@ -110,8 +123,9 @@ export const TEMPLATE_PLACEHOLDERS = {
     "loadTime",
     "loadAddress",
     "me",
+    "sign",
   ],
-  quotation: ["client", "ref", "dest", "total", "validUntil", "lines", "me"],
+  quotation: ["client", "ref", "dest", "total", "validUntil", "lines", "me", "sign"],
 } as const;
 
 /** Fills {placeholders}; an unknown or empty one reads "—". */

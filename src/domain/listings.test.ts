@@ -8,6 +8,7 @@ import {
   journalCsv,
   type ListingDoc,
   vatCountry,
+  invoicesCsv,
 } from "./listings";
 import { docEntry } from "./ledger";
 
@@ -129,5 +130,38 @@ describe("journalCsv", () => {
     expect(rows[1]).toBe(
       "2026-05-10;SAL;INV/2026/00001;400000;Customers;Invoice · Acme;Acme;1210,00;",
     );
+  });
+});
+
+describe("invoicesCsv", () => {
+  it("writes one row per document with its totals, a credit note negative", () => {
+    const csv = invoicesCsv([
+      {
+        id: "a",
+        side: "sale",
+        credit: false,
+        number: "INV/2026/00001",
+        date: "2026-10-01",
+        partner: "Os Textile",
+        partnerVat: "BE0464648410",
+        partnerCountry: "BE",
+        lines: [{ qty: 1, unitCents: 10_000, vatCode: "S21", account: "700000" }],
+      },
+      {
+        id: "b",
+        side: "sale",
+        credit: true,
+        number: "CN/2026/00001",
+        date: "2026-10-02",
+        partner: "Os Textile",
+        lines: [{ qty: 1, unitCents: 2_000, vatCode: "S21", account: "700000" }],
+      },
+    ]);
+    const lines = csv.split("\r\n");
+    expect(lines[0]).toContain("Type;Number;Date;Partner;VAT number;Country;Net;VAT;Total");
+    expect(lines[1]).toBe(
+      "Sale;INV/2026/00001;2026-10-01;Os Textile;BE0464648410;BE;100,00;21,00;121,00",
+    );
+    expect(lines[2]).toBe("Credit note;CN/2026/00001;2026-10-02;Os Textile;;;-20,00;-4,20;-24,20");
   });
 });

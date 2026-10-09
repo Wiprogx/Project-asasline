@@ -9,7 +9,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags } from "@/server/cache/cache";
 import { writeTable } from "@/server/config-tables";
 import { db } from "@/server/db/client";
-import { readRoutes } from "@/server/messaging";
+import { INBOX_TAG, readRoutes } from "@/server/messaging";
 import { ConflictError } from "@/server/versioned";
 
 const rowSchema = z.object({
@@ -77,4 +77,36 @@ export async function saveRouting(_p: ActionResult, fd: FormData): Promise<Actio
   revalidatePath("/settings/routing");
   revalidatePath("/discuss", "layout");
   return { ok: true, data: undefined, message: "Routing saved" };
+}
+
+const inboxForm = z.object({
+  address: z.string().trim().max(200),
+  signature: z.string().trim().min(1, "A signature").max(1000),
+  version: z.coerce.number().int().min(0),
+});
+
+/** Where files arrive, and how every letter is signed (legacy INBOX). */
+export async function saveInbox(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = inboxForm.safeParse(Object.fromEntries(fd.entries()));
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the form.");
+  const { version, ...inbox } = parsed.data;
+  try {
+    await db.transaction(async (tx) => {
+      await writeTable(tx, "inbox", inbox, version, user.id);
+      await audit(tx, {
+        action: "config.inbox",
+        userId: user.id,
+        entity: "config",
+        entityId: "inbox",
+        detail: { address: inbox.address },
+      });
+    });
+  } catch (e) {
+    if (e instanceof ConflictError) return fail(e.message);
+    throw e;
+  }
+  await invalidateTags(INBOX_TAG);
+  revalidatePath("/settings/routing");
+  return { ok: true, data: undefined, message: "Inbox and signature saved" };
 }

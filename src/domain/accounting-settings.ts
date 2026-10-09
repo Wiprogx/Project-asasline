@@ -13,13 +13,20 @@ export type BooksSettings = {
   /** A bill at or above this gross amount needs a second person before it is paid. */
   approveOverCents: number;
   vatPeriod: VatPeriodMode;
+  /** Alongside Odoo until this day, or null (legacy BOOKS.parallelUntil). */
+  parallelUntil: string | null;
 };
 
 export const DEFAULT_BOOKS: BooksSettings = {
   closedThrough: null,
   approveOverCents: 500_000,
   vatPeriod: "quarterly",
+  parallelUntil: null,
 };
+
+/** The office runs alongside Odoo until that day (legacy BOOKS.parallelUntil): every sale is issued there too. */
+export const parallelRun = (books: { parallelUntil: string | null }, today: string) =>
+  !!books.parallelUntil && today <= books.parallelUntil;
 
 export const TERM_RULES = ["days", "docs", "before_confirm", "before_arrival"] as const;
 export type TermRule = (typeof TERM_RULES)[number];

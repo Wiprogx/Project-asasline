@@ -4,7 +4,7 @@
  * filing, like the VAT return.
  */
 import { invoiceTotals, type Line } from "./invoicing";
-import { accountName, type Entry } from "./ledger";
+import { accountName, type Entry, type LedgerDoc } from "./ledger";
 import { type Declarant, declarantXml, euros, periodXml, xe } from "./vat";
 
 export type ListingDoc = {
@@ -131,6 +131,9 @@ export function csvCell(v: string | number | null | undefined): string {
 export const csvAmount = (cents: number) => euros(cents).replace(".", ",");
 
 /** The journal for the accountant: one row per line, with a BOM so Excel reads the accents. */
+/** Cents as the accountant's software reads them: a comma decimal, two places. */
+const csvNum = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+
 export function journalCsv(entries: readonly Entry[]): string {
   const rows: (string | number)[][] = [
     [
@@ -159,4 +162,35 @@ export function journalCsv(entries: readonly Entry[]): string {
         l.cents < 0 ? csvAmount(-l.cents) : "",
       ]);
   return `﻿${rows.map((r) => r.map(csvCell).join(";")).join("\r\n")}`;
+}
+
+/** The documents of a period for the accountant (legacy invoicesCsv): one row each, with its totals. */
+export function invoicesCsv(
+  docs: readonly (LedgerDoc & { partnerVat?: string | null; partnerCountry?: string | null })[],
+): string {
+  const rows: (string | number)[][] = [
+    ["Type", "Number", "Date", "Partner", "VAT number", "Country", "Net", "VAT", "Total"],
+  ];
+  for (const d of docs) {
+    const t = invoiceTotals(d.lines);
+    const sign = d.credit ? -1 : 1;
+    rows.push([
+      d.side === "sale"
+        ? d.credit
+          ? "Credit note"
+          : "Sale"
+        : d.credit
+          ? "Purchase credit"
+          : "Purchase",
+      d.number,
+      d.date,
+      d.partner,
+      d.partnerVat ?? "",
+      d.partnerCountry ?? "",
+      csvNum(sign * t.netCents),
+      csvNum(sign * t.vatCents),
+      csvNum(sign * t.grossCents),
+    ]);
+  }
+  return "\ufeff" + rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
 }

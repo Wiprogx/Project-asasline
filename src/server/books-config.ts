@@ -19,6 +19,11 @@ export const booksSchema = z.object({
     .max(100_000_000)
     .default(DEFAULT_BOOKS.approveOverCents),
   vatPeriod: z.enum(VAT_PERIODS).default(DEFAULT_BOOKS.vatPeriod),
+  parallelUntil: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .default(null),
 });
 
 export function parseBooks(value: unknown): BooksSettings {

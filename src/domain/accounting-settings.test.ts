@@ -5,6 +5,7 @@ import {
   parsePaymentTermLines,
   paymentTermLines,
   sequenceLabel,
+  parallelRun,
 } from "./accounting-settings";
 
 describe("the accounting settings", () => {
@@ -13,6 +14,7 @@ describe("the accounting settings", () => {
       closedThrough: null,
       approveOverCents: 500_000,
       vatPeriod: "quarterly",
+      parallelUntil: null,
     });
   });
 
@@ -36,5 +38,13 @@ describe("the accounting settings", () => {
     expect(sequenceLabel("INV:2026")).toBe("Invoices · 2026");
     expect(sequenceLabel("CN:2026")).toBe("Credit notes · 2026");
     expect(sequenceLabel("odd")).toBe("odd");
+  });
+});
+
+describe("parallelRun", () => {
+  it("runs alongside Odoo up to and including the day, and not without one", () => {
+    expect(parallelRun({ parallelUntil: "2026-12-31" }, "2026-12-31")).toBe(true);
+    expect(parallelRun({ parallelUntil: "2026-12-31" }, "2027-01-01")).toBe(false);
+    expect(parallelRun({ parallelUntil: null }, "2026-10-09")).toBe(false);
   });
 });

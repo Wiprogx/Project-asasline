@@ -17,9 +17,10 @@ import { db } from "@/server/db/client";
 import { deliver, outcomeOf } from "@/server/delivery";
 import { messages } from "@/server/db/schema";
 import { publish } from "@/server/events";
-import { resolveRef } from "@/server/messaging";
+import { resolveRef, signatureOf } from "@/server/messaging";
 import { attachFiles, filesOf } from "./file-store";
 import { claimSchema, logIncomingSchema, postInternalSchema, sendSchema } from "./schemas";
+import { signed } from "@/domain/templates";
 
 function refresh(linkId?: string | null) {
   revalidatePath("/discuss", "layout");
@@ -120,6 +121,8 @@ export async function sendMessage(
   if (problem) return fail(problem);
   const link = await resolveRef(db, d.linkRef);
   const subject = link ? withKey(d.subject, link.ref, d.code) : d.subject;
+  // Every letter of the office ends with its signature (Settings › Routing), once.
+  const body = signed(d.body, await signatureOf(user.name));
   const { files, problem: badFile } = filesOf(fd);
   if (badFile) return fail(badFile);
 
@@ -132,7 +135,7 @@ export async function sendMessage(
       cc: d.channel === "email" ? d.cc : [],
       contactId: d.contactId,
       subject,
-      body: d.body,
+      body,
       linkKind: link?.kind,
       linkId: link?.id,
       linkRef: link?.ref,
@@ -156,7 +159,7 @@ export async function sendMessage(
     to: d.toText,
     cc: d.channel === "email" ? d.cc : [],
     subject,
-    body: d.body,
+    body,
     attachments,
   };
   const sent = await deliver(db, row.id, letter);

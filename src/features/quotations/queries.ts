@@ -8,7 +8,7 @@ import type { QuotationStatus } from "@/domain/shipments";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
-import { readTemplates } from "@/server/messaging";
+import { readTemplates, signatureOf } from "@/server/messaging";
 import {
   contacts,
   quotationLines,
@@ -130,6 +130,7 @@ export async function quotationLetter(q: Quotation, me: string) {
     validUntil: q.validUntil,
     lines: letterLines(doc, (c) => formatCents(c)),
     me,
+    sign: await signatureOf(me),
   };
   return {
     subject: fillTemplate(t.subject, vars),
