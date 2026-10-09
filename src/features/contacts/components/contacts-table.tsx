@@ -43,7 +43,9 @@ export function ContactsTable({ rows }: { rows: ContactRow[] }) {
             <TableCell className="hidden md:table-cell">{c.email ?? "—"}</TableCell>
             <TableCell className="hidden md:table-cell">{c.phone ?? "—"}</TableCell>
             <TableCell className="hidden font-mono text-xs lg:table-cell">{c.vat ?? "—"}</TableCell>
-            <TableCell>{[c.city, c.country].filter(Boolean).join(", ") || "—"}</TableCell>
+            <TableCell>
+              {[c.city, c.countryName ?? c.country].filter(Boolean).join(", ") || "—"}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

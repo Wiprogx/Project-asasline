@@ -21,6 +21,7 @@ const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/accounting", label: "Accounting", permission: "app.settings" },
   { href: "/settings/containers", label: "Containers", permission: "app.settings" },
   { href: "/settings/id-formats", label: "Number formats", permission: "app.settings" },
+  { href: "/settings/countries", label: "Countries", permission: "app.settings" },
   { href: "/settings/catalogue", label: "Catalogue", permission: "catalogue.edit" },
   { href: "/settings/price-lists", label: "Price lists", permission: "catalogue.edit" },
   { href: "/settings/routing", label: "Routing", permission: "app.settings" },

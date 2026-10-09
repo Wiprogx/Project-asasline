@@ -13,6 +13,8 @@ import {
 import { saveTable, versioned } from "./table-store";
 import { parseIdFormatLines } from "@/domain/contacts";
 import { ID_FORMATS_TAG, idFormatsSchema } from "@/server/id-config";
+import { parseCountryLines } from "@/domain/countries";
+import { COUNTRIES_TAG, countriesSchema } from "@/server/country-config";
 
 /** Box owners, one per line as "MSCU | MSC". */
 export async function saveBoxOwners(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -79,4 +81,25 @@ export async function saveIdFormats(_p: ActionResult, fd: FormData): Promise<Act
   return (
     bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} number formats` }
   );
+}
+
+/** The countries table (legacy Settings › Countries): code, name, dial code and language. */
+export async function saveCountries(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(50_000) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { countries, problems } = parseCountryLines(parsed.data.lines);
+  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
+  const checked = countriesSchema.safeParse(countries);
+  if (!checked.success) return fail("Between one and three hundred countries.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "countries",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: COUNTRIES_TAG,
+    path: "/settings/countries",
+    detail: { count: checked.data.length },
+  });
+  return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} countries` };
 }

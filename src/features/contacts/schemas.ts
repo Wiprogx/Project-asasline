@@ -14,7 +14,12 @@ export const contactSchema = z.object({
     .regex(/^[A-Za-z]{2}$/, "Two-letter ISO code, e.g. BE")
     .transform((c) => c.toUpperCase())
     .optional(),
-  lang: z.enum(LANGUAGES).default("en"),
+  // Empty on a new contact: the language follows the country (Settings › Countries).
+  lang: z
+    .enum(LANGUAGES)
+    .or(z.literal(""))
+    .optional()
+    .transform((v) => v || undefined),
   vat: optional.transform((v) => (v === undefined ? v : idClean(v) || undefined)),
   eori: optional.transform((v) => (v === undefined ? v : idClean(v) || undefined)),
   phone: optional,

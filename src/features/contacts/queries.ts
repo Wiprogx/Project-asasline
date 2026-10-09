@@ -5,12 +5,16 @@ import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { contactAddresses, contactBankAccounts, contacts } from "@/server/db/schema";
+import { countryName } from "@/domain/countries";
+import { readCountries } from "@/server/country-config";
 
 export type ContactRow = {
   id: string;
   name: string;
   type: "company" | "person";
   country: string | null;
+  /** The country's name from Settings › Countries, the code when unknown. */
+  countryName: string | null;
   city: string | null;
   email: string | null;
   phone: string | null;
@@ -19,10 +23,20 @@ export type ContactRow = {
 };
 
 /** Search matches the contact and its child addresses (legacy contactHay). */
-export async function listContacts(opts: { q?: string; archived?: boolean } = {}) {
+export async function listContacts(
+  opts: { q?: string; archived?: boolean } = {},
+): Promise<ContactRow[]> {
   await requirePermission("app.contacts");
   const q = opts.q?.trim() ?? "";
   const archived = !!opts.archived;
+  const [rows, countries] = await Promise.all([cachedList(q, archived), readCountries()]);
+  return rows.map((r) => ({
+    ...r,
+    countryName: r.country ? countryName(countries, r.country) : null,
+  }));
+}
+
+function cachedList(q: string, archived: boolean) {
   return cached(
     `contacts:list:${archived}:${q.toLowerCase()}`,
     { ttlSeconds: 60, tags: [tags.contacts] },
@@ -63,10 +77,7 @@ export async function listContacts(opts: { q?: string; archived?: boolean } = {}
         .where(and(...where))
         .orderBy(asc(contacts.name))
         .limit(500);
-      return rows.map(({ archivedAt, ...r }): ContactRow => ({
-        ...r,
-        archived: archivedAt !== null,
-      }));
+      return rows.map(({ archivedAt, ...r }) => ({ ...r, archived: archivedAt !== null }));
     },
   );
 }

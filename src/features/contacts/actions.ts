@@ -18,9 +18,13 @@ import {
   versionRef,
 } from "./schemas";
 import { readIdFormats } from "@/server/id-config";
+import { langOf } from "@/domain/countries";
+import { readCountries } from "@/server/country-config";
 
 // Optional contact fields a person may empty; creditLimit is already mapped to null.
-const CLEARABLE = Object.keys(contactSchema.shape).filter((k) => k !== "creditLimit");
+const CLEARABLE = Object.keys(contactSchema.shape).filter(
+  (k) => k !== "creditLimit" && k !== "lang",
+);
 
 const toRow = ({ creditLimit, ...rest }: ContactInput) => ({
   ...rest,
@@ -64,10 +68,12 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
   const taken = await vatTaken(parsed.data.vat, null);
   if (taken) return taken;
 
+  // No language chosen: the one the office writes to that country in (legacy langOf).
+  const lang = parsed.data.lang ?? langOf(await readCountries(), parsed.data.country);
   const id = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(contacts)
-      .values({ ...toRow(parsed.data), createdBy: user.id, updatedBy: user.id })
+      .values({ ...toRow(parsed.data), lang, createdBy: user.id, updatedBy: user.id })
       .returning({ id: contacts.id });
     await audit(tx, {
       action: "contact.create",

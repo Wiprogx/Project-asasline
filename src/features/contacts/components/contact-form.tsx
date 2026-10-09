@@ -12,6 +12,7 @@ import type { ActionResult } from "@/lib/action-result";
 import type { ContactFormValues } from "../form-values";
 import { checkedContactSchema } from "../schemas";
 import { useMemo } from "react";
+import { type Country } from "@/domain/countries";
 
 type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
 
@@ -37,6 +38,7 @@ export function ContactForm({
   professions,
   tags,
   idFormats,
+  countries,
 }: {
   action: Action;
   values?: ContactFormValues;
@@ -46,6 +48,8 @@ export function ContactForm({
   tags: readonly string[];
   /** The VAT and EORI formats (Settings › Number formats), checked in the browser as on the server. */
   idFormats: readonly IdFormat[];
+  /** The countries table (Settings › Countries), offered by name as the code is typed. */
+  countries: readonly Country[];
 }) {
   const schema = useMemo(() => checkedContactSchema(idFormats), [idFormats]);
   const [state, formAction, pending] = useToastedAction(action, undefined, schema);
@@ -80,8 +84,11 @@ export function ContactForm({
           <NativeSelect
             id="lang"
             name="lang"
-            defaultValue={values.lang ?? "en"}
-            options={LANGUAGES.map((l) => ({ value: l, label: l.toUpperCase() }))}
+            defaultValue={values.lang ?? (values.id ? "en" : "")}
+            options={[
+              ...(values.id ? [] : [{ value: "", label: "By country" }]),
+              ...LANGUAGES.map((l) => ({ value: l, label: l.toUpperCase() })),
+            ]}
           />
         </Field>
       </div>
@@ -94,10 +101,18 @@ export function ContactForm({
               type={type}
               defaultValue={values[name] ?? ""}
               aria-invalid={!!fe?.[name]}
+              list={name === "country" ? "countries-list" : undefined}
             />
           </Field>
         ))}
       </div>
+      <datalist id="countries-list">
+        {countries.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.name}
+          </option>
+        ))}
+      </datalist>
       <Field
         id="professions"
         label="Professions"

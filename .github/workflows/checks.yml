@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: public.ecr.aws/docker/library/postgres:17-alpine
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test
@@ -113,7 +113,7 @@ jobs:
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
       redis:
-        image: redis:8-alpine
+        image: public.ecr.aws/docker/library/redis:8-alpine
         ports: ["6379:6379"]
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
@@ -136,7 +136,7 @@ jobs:
     # The browser suite drives the production build against a real Postgres and Redis.
     services:
       postgres:
-        image: postgres:17-alpine
+        image: public.ecr.aws/docker/library/postgres:17-alpine
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: e2e
@@ -144,7 +144,7 @@ jobs:
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
       redis:
-        image: redis:8-alpine
+        image: public.ecr.aws/docker/library/redis:8-alpine
         ports: ["6379:6379"]
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/e2e
