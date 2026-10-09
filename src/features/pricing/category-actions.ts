@@ -9,6 +9,7 @@ import { invalidateTags } from "@/server/cache/cache";
 import { categoriesSchema, RATE_CATEGORIES_TAG } from "@/server/catalogue-config";
 import { writeTable } from "@/server/config-tables";
 import { db } from "@/server/db/client";
+import { rateItems } from "@/server/db/schema";
 import { ConflictError } from "@/server/versioned";
 
 const form = z.object({
@@ -42,8 +43,8 @@ export async function saveRateCategories(_p: ActionResult, fd: FormData): Promis
       'Each line reads "code | Label | sales account | purchase account" (six-digit accounts, e.g. ocean | Ocean freight | 700000 | 604000).',
     );
   const codes = new Set(checked.data.map((c) => c.code));
-  const inUse = await db.query.rateItems.findMany({ columns: { category: true } });
-  const orphaned = [...new Set(inUse.map((i) => i.category))].filter((c) => !codes.has(c));
+  const inUse = await db.selectDistinct({ category: rateItems.category }).from(rateItems);
+  const orphaned = inUse.map((i) => i.category).filter((c) => !codes.has(c));
   if (orphaned.length)
     return fail(
       `Items still use ${orphaned.join(", ")}: keep those categories, or move the items first.`,

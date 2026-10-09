@@ -5,6 +5,7 @@ import { type ActionResult, formToObject, invalid, nullMissing } from "@/lib/act
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db, type Tx } from "@/server/db/client";
+import { syncBookingRules } from "@/server/rules-sync";
 import { bookings, containers } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { addContainerSchema, containerSchema, removeContainerSchema } from "./schemas";
@@ -53,6 +54,8 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
           entityId: bookingId,
           detail: { container: id, number: values.number, seals: values.seals },
         });
+        // The per-box steps and the VGM wait on the boxes and their weights (rules-sync).
+        await syncBookingRules(tx, bookingId, user.id);
       }),
     "Container saved",
   );
@@ -90,6 +93,7 @@ export async function addContainer(_p: ActionResult, fd: FormData): Promise<Acti
           entityId: bookingId,
           detail: { container: row.id, type },
         });
+        await syncBookingRules(tx, bookingId, user.id);
       }),
     "Container added",
   );
@@ -129,6 +133,7 @@ export async function removeContainer(_p: ActionResult, fd: FormData): Promise<A
           entityId: bookingId,
           detail: { container: id, reason },
         });
+        await syncBookingRules(tx, bookingId, user.id);
       }),
     "Container removed",
   );

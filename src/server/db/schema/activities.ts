@@ -30,6 +30,7 @@ export const activities = pgTable(
     index("activities_link_idx").on(t.linkKind, t.linkId),
     index("activities_role_idx").on(t.role, t.state),
     index("activities_due_idx").on(t.due),
+    index("activities_state_due_idx").on(t.state, t.due),
   ],
 );
 

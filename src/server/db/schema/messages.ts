@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { CALL_OUTCOMES, CHANNELS, DIRECTIONS } from "../../../domain/messages";
 import { recordColumns } from "./_columns";
@@ -45,5 +46,11 @@ export const messages = pgTable(
     index("messages_link_idx").on(t.linkKind, t.linkId),
     index("messages_thread_idx").on(t.threadId),
     index("messages_room_idx").on(t.room, t.at),
+    // "Answered later" looks a message up by its link alone; the waiting queue reads the
+    // unclaimed incoming messages, a small slice of the table.
+    index("messages_link_id_idx").on(t.linkId),
+    index("messages_waiting_idx")
+      .on(t.at)
+      .where(sql`direction = 'in' and claimed_by is null and archived_at is null`),
   ],
 );

@@ -2,16 +2,8 @@ import { relations } from "drizzle-orm";
 import { activities } from "./activities";
 import { contactAddresses, contactBankAccounts, contacts } from "./contacts";
 import { users } from "./identity";
-import {
-  bookings,
-  containers,
-  priceListLines,
-  priceLists,
-  quotationLines,
-  quotationRoutes,
-  quotations,
-  rateItems,
-} from "./shipments";
+import { priceListLines, priceLists, rateItems } from "./pricing";
+import { bookings, containers, quotationLines, quotationRoutes, quotations } from "./shipments";
 
 export const contactsRelations = relations(contacts, ({ many }) => ({
   addresses: many(contactAddresses),

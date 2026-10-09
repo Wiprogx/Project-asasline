@@ -50,7 +50,8 @@ async function vatTaken(vat: string | undefined, exceptId: string | null) {
 }
 
 async function settle(id: string) {
-  await invalidateTags(tags.contacts, tags.contact(id));
+  // The bookings and quotations lists are cached with the contact's name on them.
+  await invalidateTags(tags.contacts, tags.contact(id), tags.bookings, tags.quotations);
   revalidatePath("/contacts");
   revalidatePath(`/contacts/${id}`);
 }

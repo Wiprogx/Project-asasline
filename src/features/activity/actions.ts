@@ -6,6 +6,7 @@ import { nextState, type TaskMove } from "@/domain/tasks";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
+import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { activities, bookings } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
@@ -26,6 +27,7 @@ async function run(
 ): Promise<ActionResult> {
   try {
     const link = await fn();
+    await invalidateTags(tags.dashboard); // the home panel counts the open steps
     refresh(link.linkKind, link.linkId);
     return { ok: true, data: undefined, message };
   } catch (e) {

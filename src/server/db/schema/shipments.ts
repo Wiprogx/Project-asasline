@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
-  char,
   date,
   index,
   integer,
@@ -16,84 +15,16 @@ import {
   bookingStatusEnum,
   quotationDisplayEnum,
   quotationStatusEnum,
-  rateTypeEnum,
   shipmentKindEnum,
   vesselStatusEnum,
 } from "./enums";
+import { rateItems } from "./pricing";
+
+// The rate catalogue lives in its own file (size); it stays part of the shipments schema here.
+export { priceListLines, priceLists, rateItems } from "./pricing";
 
 /** Dates are stored as `date` and read as "YYYY-MM-DD" strings — never as instants. */
 const day = () => date({ mode: "string" });
-
-/**
- * The rate catalogue (legacy RATE_ITEMS): every chargeable thing — an ocean leg, an inland
- * move, customs, a country document, VGM, free time, an extra — with its buy and sell price.
- * Which columns matter depends on the category (domain/pricing NEEDS). Archived, never deleted:
- * quotation lines point at it.
- */
-export const rateItems = pgTable(
-  "rate_items",
-  {
-    ...recordColumns,
-    category: text().notNull(),
-    name: text(),
-    pol: text(),
-    pod: text(),
-    country: char({ length: 2 }),
-    containerType: text(),
-    carrier: text(),
-    transitDays: integer(),
-    fromPlace: text(),
-    toPlace: text(),
-    docCode: text(),
-    freeDays: integer(),
-    sellCents: cents().notNull().default(0),
-    buyCents: cents().notNull().default(0),
-    vatCode: text().notNull().default("EX41"),
-    rateType: rateTypeEnum().notNull().default("contract"),
-    /** Export, import, or null for both: which shipments a customs or free-time item serves. */
-    scope: text(),
-    validUntil: day(),
-    note: text(),
-  },
-  (t) => [index("rate_items_category_idx").on(t.category), index("rate_items_pod_idx").on(t.pod)],
-);
-
-/** A customer's agreed prices for a period (legacy PRICE_LISTS). One live list per day. */
-export const priceLists = pgTable(
-  "price_lists",
-  {
-    ...recordColumns,
-    contactId: uuid()
-      .notNull()
-      .references(() => contacts.id),
-    name: text().notNull(),
-    validFrom: day(),
-    validUntil: day(),
-    active: boolean().notNull().default(true),
-  },
-  (t) => [index("price_lists_contact_idx").on(t.contactId)],
-);
-
-/** One agreed price; an item appears at most once among a list's lines still in use. */
-export const priceListLines = pgTable(
-  "price_list_lines",
-  {
-    ...recordColumns,
-    priceListId: uuid()
-      .notNull()
-      .references(() => priceLists.id),
-    itemId: uuid()
-      .notNull()
-      .references(() => rateItems.id),
-    sellCents: cents().notNull(),
-    buyCents: cents().notNull(),
-  },
-  (t) => [
-    uniqueIndex("price_list_lines_item_uq")
-      .on(t.priceListId, t.itemId)
-      .where(sql`${t.archivedAt} is null`),
-  ],
-);
 
 export const quotations = pgTable(
   "quotations",
@@ -122,40 +53,51 @@ export const quotations = pgTable(
 );
 
 /** One destination of a quotation; a quotation may offer several and some may be declined. */
-export const quotationRoutes = pgTable("quotation_routes", {
-  ...recordColumns,
-  quotationId: uuid()
-    .notNull()
-    .references(() => quotations.id),
-  position: integer().notNull().default(0),
-  pol: text().notNull(),
-  pod: text().notNull(),
-  finalPlace: text(),
-  containerType: text(),
-  declined: boolean().notNull().default(false),
-  /** Why the customer declined this destination; it stays on the quotation for the record. */
-  declinedReason: text(),
-});
+export const quotationRoutes = pgTable(
+  "quotation_routes",
+  {
+    ...recordColumns,
+    quotationId: uuid()
+      .notNull()
+      .references(() => quotations.id),
+    position: integer().notNull().default(0),
+    pol: text().notNull(),
+    pod: text().notNull(),
+    finalPlace: text(),
+    containerType: text(),
+    declined: boolean().notNull().default(false),
+    /** Why the customer declined this destination; it stays on the quotation for the record. */
+    declinedReason: text(),
+  },
+  (t) => [index("quotation_routes_quotation_idx").on(t.quotationId, t.position)],
+);
 
-export const quotationLines = pgTable("quotation_lines", {
-  ...recordColumns,
-  routeId: uuid()
-    .notNull()
-    .references(() => quotationRoutes.id),
-  position: integer().notNull().default(0),
-  itemCode: text(),
-  /** The catalogue item the line was priced from; null for a line typed by hand. */
-  itemId: uuid().references(() => rateItems.id),
-  description: text().notNull(),
-  qty: integer().notNull().default(1),
-  perBox: boolean().notNull().default(false),
-  sellCents: cents(),
-  costCents: cents(),
-  vatCode: text().notNull().default("EX41"),
-  priceSource: text(),
-  /** Named on an all-inclusive quotation (without its price). */
-  listed: boolean().notNull().default(true),
-});
+export const quotationLines = pgTable(
+  "quotation_lines",
+  {
+    ...recordColumns,
+    routeId: uuid()
+      .notNull()
+      .references(() => quotationRoutes.id),
+    position: integer().notNull().default(0),
+    itemCode: text(),
+    /** The catalogue item the line was priced from; null for a line typed by hand. */
+    itemId: uuid().references(() => rateItems.id),
+    description: text().notNull(),
+    qty: integer().notNull().default(1),
+    perBox: boolean().notNull().default(false),
+    sellCents: cents(),
+    costCents: cents(),
+    vatCode: text().notNull().default("EX41"),
+    priceSource: text(),
+    /** Named on an all-inclusive quotation (without its price). */
+    listed: boolean().notNull().default(true),
+  },
+  (t) => [
+    index("quotation_lines_route_idx").on(t.routeId, t.position),
+    index("quotation_lines_item_idx").on(t.itemId),
+  ],
+);
 
 /**
  * A sailing of the vessel register: one ship on one voyage between two ports. Bookings on it
@@ -224,6 +166,15 @@ export const bookings = pgTable(
     uniqueIndex("bookings_ref_uq").on(t.ref),
     index("bookings_client_idx").on(t.clientId),
     index("bookings_status_idx").on(t.status),
+    // The quotation's bookings, the route's booking, a vessel's bookings, and the parties
+    // (the archive guard on a contact looks through every party column).
+    index("bookings_quotation_idx").on(t.quotationId),
+    index("bookings_quotation_route_idx").on(t.quotationRouteId),
+    index("bookings_vessel_idx").on(t.vesselId),
+    index("bookings_payer_idx").on(t.payerId),
+    index("bookings_shipper_idx").on(t.shipperId),
+    index("bookings_consignee_idx").on(t.consigneeId),
+    index("bookings_notify_idx").on(t.notifyId),
   ],
 );
 

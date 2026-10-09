@@ -6,6 +6,7 @@ import type { DocRule } from "@/domain/rules/engine";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
+import { invalidateTags, tags } from "@/server/cache/cache";
 import { db, type Tx } from "@/server/db/client";
 import {
   docRuleSchema,
@@ -42,6 +43,7 @@ async function saveAndReplan(
   }
   await invalidateRuleBook();
   const n = await db.transaction((tx) => syncAllBookings(tx, user.id));
+  await invalidateTags(tags.bookings, tags.dashboard); // the month panel counts the open steps
   revalidatePath("/settings", "layout");
   revalidatePath("/bookings", "layout");
   revalidatePath("/activity", "layout");

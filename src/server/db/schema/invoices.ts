@@ -60,6 +60,9 @@ export const invoices = pgTable(
     index("invoices_customer_idx").on(t.customerId),
     index("invoices_booking_idx").on(t.bookingId),
     index("invoices_status_idx").on(t.status, t.kind),
+    // The credit notes of an invoice (read per open invoice) and the issued documents of a period.
+    index("invoices_credit_of_idx").on(t.creditOfId),
+    index("invoices_issue_date_idx").on(t.status, t.issueDate),
   ],
 );
 
@@ -79,5 +82,8 @@ export const invoiceLines = pgTable(
     vatCode: text().notNull(),
     account: text().notNull().default("700000"),
   },
-  (t) => [index("invoice_lines_invoice_idx").on(t.invoiceId)],
+  (t) => [
+    index("invoice_lines_invoice_idx").on(t.invoiceId),
+    index("invoice_lines_source_idx").on(t.sourceKey),
+  ],
 );

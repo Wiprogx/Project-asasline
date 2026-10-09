@@ -8,6 +8,7 @@ import { codeOfKey } from "@/domain/rules/plan";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
+import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { bookingFiles, bookings } from "@/server/db/schema";
 import { readFileHints } from "@/server/file-config";
@@ -15,7 +16,8 @@ import { storeFile } from "@/server/files";
 import { archiveFileSchema, fileMetaSchema, refileSchema } from "./file-schemas";
 import { settleStep } from "./file-store";
 
-const refresh = (bookingId: string) => {
+const refresh = async (bookingId: string, settled = false) => {
+  if (settled) await invalidateTags(tags.dashboard); // the home panel counts the open steps
   revalidatePath(`/bookings/${bookingId}`, "layout");
   revalidatePath("/activity");
 };
@@ -45,33 +47,38 @@ export async function uploadFile(_p: ActionResult, fd: FormData): Promise<Action
     fileCodeOf(file.name, await readFileHints());
   const storedName = `${randomUUID()}${ext}`;
   await storeFile(b.id, storedName, new Uint8Array(await file.arrayBuffer()));
-  const [row] = await db
-    .insert(bookingFiles)
-    .values({
-      bookingId: b.id,
-      containerId: d.containerId,
-      name: file.name.trim().slice(0, 200),
-      storedName,
-      mime: ALLOWED_TYPES[ext] ?? "application/octet-stream",
-      sizeBytes: file.size,
-      code,
-      stage: d.stage,
-      ruleCode: d.ruleCode,
-      note: d.note || null,
-      createdBy: user.id,
-      updatedBy: user.id,
-    })
-    .returning({ id: bookingFiles.id });
-  const settled =
-    d.ruleCode && d.stage === "final" ? await settleStep(db, b.id, d.ruleCode, user.id) : false;
-  await audit(db, {
-    action: "booking.file.add",
-    userId: user.id,
-    entity: "booking",
-    entityId: b.id,
-    detail: { file: row.id, name: file.name, code, stage: d.stage, ruleCode: d.ruleCode },
+  // One transaction: the file record, the step it settles (and the re-plan that follows) and
+  // the audit line commit together, or not at all.
+  const settled = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(bookingFiles)
+      .values({
+        bookingId: b.id,
+        containerId: d.containerId,
+        name: file.name.trim().slice(0, 200),
+        storedName,
+        mime: ALLOWED_TYPES[ext] ?? "application/octet-stream",
+        sizeBytes: file.size,
+        code,
+        stage: d.stage,
+        ruleCode: d.ruleCode,
+        note: d.note || null,
+        createdBy: user.id,
+        updatedBy: user.id,
+      })
+      .returning({ id: bookingFiles.id });
+    const settled =
+      d.ruleCode && d.stage === "final" ? await settleStep(tx, b.id, d.ruleCode, user.id) : false;
+    await audit(tx, {
+      action: "booking.file.add",
+      userId: user.id,
+      entity: "booking",
+      entityId: b.id,
+      detail: { file: row.id, name: file.name, code, stage: d.stage, ruleCode: d.ruleCode },
+    });
+    return settled;
   });
-  refresh(b.id);
+  await refresh(b.id, settled);
   return {
     ok: true,
     data: undefined,
@@ -89,30 +96,34 @@ export async function refileFile(_p: ActionResult, fd: FormData): Promise<Action
   const parsed = refileSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { bookingId, fileId, ...f } = parsed.data;
-  const [row] = await db
-    .update(bookingFiles)
-    .set({ ...f, updatedBy: user.id, updatedAt: new Date() })
-    .where(
-      and(
-        eq(bookingFiles.id, fileId),
-        eq(bookingFiles.bookingId, bookingId),
-        isNull(bookingFiles.archivedAt),
-      ),
-    )
-    .returning({ id: bookingFiles.id });
-  if (!row) return fail("This file is no longer on the booking.");
-  const settled =
-    f.ruleCode && f.stage === "final"
-      ? await settleStep(db, bookingId, f.ruleCode, user.id)
-      : false;
-  await audit(db, {
-    action: "booking.file.refile",
-    userId: user.id,
-    entity: "booking",
-    entityId: bookingId,
-    detail: { file: fileId, ...f },
+  const settled = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(bookingFiles)
+      .set({ ...f, updatedBy: user.id, updatedAt: new Date() })
+      .where(
+        and(
+          eq(bookingFiles.id, fileId),
+          eq(bookingFiles.bookingId, bookingId),
+          isNull(bookingFiles.archivedAt),
+        ),
+      )
+      .returning({ id: bookingFiles.id });
+    if (!row) return null;
+    const done =
+      f.ruleCode && f.stage === "final"
+        ? await settleStep(tx, bookingId, f.ruleCode, user.id)
+        : false;
+    await audit(tx, {
+      action: "booking.file.refile",
+      userId: user.id,
+      entity: "booking",
+      entityId: bookingId,
+      detail: { file: fileId, ...f },
+    });
+    return done;
   });
-  refresh(bookingId);
+  if (settled === null) return fail("This file is no longer on the booking.");
+  await refresh(bookingId, settled);
   return { ok: true, data: undefined, message: settled ? "Saved — the step is done" : "Saved" };
 }
 
@@ -133,6 +144,6 @@ export async function archiveFile(_p: ActionResult, fd: FormData): Promise<Actio
     entityId: bookingId,
     detail: { file: fileId, reason },
   });
-  refresh(bookingId);
+  await refresh(bookingId);
   return { ok: true, data: undefined, message: "Taken off the booking" };
 }

@@ -34,4 +34,17 @@ describe.skipIf(!url)("cached + invalidateTags on a real Redis", () => {
     );
     expect(fresh).toBe("new");
   });
+
+  it("does not keep a value computed while a write invalidated its tag", async () => {
+    const { cached, invalidateTags } = await import("./cache");
+    const tag = `test:${run}:c`;
+    const key = `test:${run}:racy`;
+    // The read starts, a write lands and invalidates the tag, then the read finishes computing.
+    const stale = await cached(key, { ttlSeconds: 300, tags: [tag] }, async () => {
+      await invalidateTags(tag);
+      return "stale";
+    });
+    expect(stale).toBe("stale"); // the caller still gets its answer
+    expect(await client!.get(`asl:cache:${key}`)).toBeNull(); // but nobody else does
+  });
 });

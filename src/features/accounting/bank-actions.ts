@@ -118,9 +118,11 @@ export async function autoMatch(): Promise<ActionResult> {
     .from(bankLines)
     .where(and(eq(bankLines.state, "open"), isNull(bankLines.archivedAt)));
   const ibanOf = await contactOfIbanLookup();
+  // Read once, not once per line: a booked line reduces what its invoice still has open here,
+  // and bookPayment re-checks the ledger under its own lock anyway.
+  let open = await openInvoices(db);
   let matched = 0;
   for (const line of lines) {
-    const open = await openInvoices(db);
     const best = certainMatch(
       line.amountCents,
       proposals(
@@ -151,7 +153,12 @@ export async function autoMatch(): Promise<ActionResult> {
         }),
       ),
     );
-    if (r.ok) matched++;
+    if (!r.ok) continue;
+    matched++;
+    const paid = Math.abs(line.amountCents);
+    open = open
+      .map((o) => (o.id === best.invoiceId ? { ...o, openCents: o.openCents - paid } : o))
+      .filter((o) => o.openCents > 0);
   }
   await audit(db, {
     action: "bank.automatch",

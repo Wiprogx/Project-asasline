@@ -163,7 +163,8 @@ export async function editorResult(
     if (e instanceof ConflictError || e instanceof Refused) return fail(e.message);
     throw e;
   }
-  await invalidateTags(tags.quotations, tags.bookings);
+  // The bookings list shows no quotation data; the home panel's value does.
+  await invalidateTags(tags.quotations, tags.dashboard);
   revalidatePath(`/quotations/${quotationId}`);
   revalidatePath("/bookings", "layout");
   return { ok: true, data: undefined, message };

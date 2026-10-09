@@ -1,12 +1,12 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { type CutoffRules, sailingProblem } from "@/domain/vessels";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
-import { invalidateTags } from "@/server/cache/cache";
+import { invalidateTags, tags } from "@/server/cache/cache";
 import { writeTable } from "@/server/config-tables";
 import { db } from "@/server/db/client";
 import { bookings, vessels } from "@/server/db/schema";
@@ -68,6 +68,8 @@ export async function updateVessel(_p: ActionResult, fd: FormData): Promise<Acti
       });
       return n;
     });
+    // The bookings list and the month panel are cached with the dates the sailing moved.
+    await invalidateTags(tags.bookings, tags.dashboard);
     revalidatePath("/settings/vessels", "layout");
     revalidatePath("/bookings", "layout");
     return {
@@ -111,6 +113,7 @@ export async function setBookingVessel(_p: ActionResult, fd: FormData): Promise<
     return null;
   });
   if (r) return r;
+  await invalidateTags(tags.bookings, tags.booking(bookingId), tags.dashboard);
   revalidatePath(`/bookings/${bookingId}`, "layout");
   return {
     ok: true,
@@ -131,7 +134,8 @@ export async function saveCutoffRules(_p: ActionResult, fd: FormData): Promise<A
       await writeTable(tx, "cutoffRules", parsed.data, version, user.id);
       // The new offsets, not the cached ones: the write is not committed yet.
       const rules = parsed.data as CutoffRules;
-      const all = await tx.select().from(vessels);
+      // Only the sailings still in the register; a withdrawn one has nothing live on it.
+      const all = await tx.select().from(vessels).where(isNull(vessels.archivedAt));
       let n = 0;
       for (const v of all) n += await moveBookingsOf(tx, v, rules, user.id);
       await audit(tx, {
@@ -143,7 +147,7 @@ export async function saveCutoffRules(_p: ActionResult, fd: FormData): Promise<A
       });
       return n;
     });
-    await invalidateTags(CUTOFF_TAG);
+    await invalidateTags(CUTOFF_TAG, tags.bookings, tags.dashboard);
     revalidatePath("/settings/vessels");
     return {
       ok: true,
