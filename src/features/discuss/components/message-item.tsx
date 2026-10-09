@@ -41,6 +41,7 @@ export function MessageItem({ m, actions }: { m: MessageRow; actions?: ReactNode
               ⚠ Sender is not a party on {m.linkRef} — check before replying
             </ToneBadge>
           )}
+          {m.auto && <ToneBadge tone="info">Sent automatically</ToneBadge>}
           {m.direction === "out" && !m.deliveredAt && (
             <ToneBadge tone="warning">Recorded — not sent by the app</ToneBadge>
           )}

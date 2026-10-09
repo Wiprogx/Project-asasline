@@ -39,7 +39,7 @@ export default async function ReleaseSettingsPage() {
       <LinesEditor
         action={saveTrackSteps}
         title="Journey steps"
-        description='The milestones of a shipment in order, one per line: "name | auto or manual". A new booking starts its journey with this list; auto steps are confirmed by hand until a carrier feed does it.'
+        description='The milestones of a shipment in order, one per line: "name | auto or manual | template". A new booking starts its journey with this list; auto steps are confirmed by hand until a carrier feed does it. A step with a template writes the customer by itself when it is ticked, if Settings › Routing lets tracking news go out.'
         label="Journey steps, one per line"
         submitLabel="Save journey steps"
         lines={trackStepLines(track.rows)}

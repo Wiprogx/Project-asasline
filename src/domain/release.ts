@@ -92,17 +92,18 @@ export const DEFAULT_PAPER_DOCS = ["ORIGINAL BL", "CMR"];
 export const isPaperDoc = (paperDocs: readonly string[], docType: string | null | undefined) =>
   paperDocs.some((p) => (docType ?? "").toUpperCase().includes(p.toUpperCase()));
 
-export type TrackStepDef = { name: string; source: "auto" | "manual" };
+/** A milestone; `template` is the letter that goes to the customer by itself when it is ticked (legacy autoSend). */
+export type TrackStepDef = { name: string; source: "auto" | "manual"; template?: string };
 
 export const DEFAULT_TRACK_STEPS: TrackStepDef[] = [
   { name: "Booking confirmed", source: "manual" },
   { name: "Trucker confirmed", source: "manual" },
-  { name: "Container pickup", source: "auto" },
-  { name: "Arrival at terminal", source: "auto" },
+  { name: "Container pickup", source: "auto", template: "PICKED_UP" },
+  { name: "Arrival at terminal", source: "auto", template: "AT_TERMINAL" },
   { name: "Customs hold", source: "manual" },
-  { name: "Vessel departure", source: "auto" },
+  { name: "Vessel departure", source: "auto", template: "SAILED" },
   { name: "Transit", source: "auto" },
-  { name: "Arrival at port", source: "auto" },
+  { name: "Arrival at port", source: "auto", template: "ARRIVED" },
 ];
 
 /** A booking's journey: the steps as they were when the journey started, each ticked or not. */
@@ -192,7 +193,11 @@ export function parseSendModeLines(text: string): { modes: SendMode[]; problems:
 }
 
 export const trackStepLines = (steps: readonly TrackStepDef[]) =>
-  steps.map((s) => `${s.name} | ${s.source}`).join("\n");
+  steps
+    .map((s) =>
+      s.template ? `${s.name} | ${s.source} | ${s.template}` : `${s.name} | ${s.source}`,
+    )
+    .join("\n");
 
 export function parseTrackStepLines(text: string): { steps: TrackStepDef[]; problems: string[] } {
   const steps: TrackStepDef[] = [];
@@ -202,12 +207,14 @@ export function parseTrackStepLines(text: string): { steps: TrackStepDef[]; prob
     .map((l) => l.trim())
     .filter(Boolean)
     .forEach((line, i) => {
-      const [name = "", source = "manual"] = line.split("|").map((x) => x.trim());
+      const [name = "", source = "manual", template = ""] = line.split("|").map((x) => x.trim());
       if (!name || name.length > 60) problems.push(`Line ${i + 1}: a name (up to 60 characters).`);
       else if (source !== "auto" && source !== "manual")
         problems.push(`Line ${i + 1}: "auto" or "manual" in the second place.`);
+      else if (template && !/^[A-Z][A-Z0-9_]{1,29}$/.test(template))
+        problems.push(`Line ${i + 1}: a template code in capitals in the third place, or nothing.`);
       else if (steps.some((s) => s.name === name)) problems.push(`Line ${i + 1}: ${name} twice.`);
-      else steps.push({ name, source });
+      else steps.push(template ? { name, source, template } : { name, source });
     });
   return { steps, problems };
 }

@@ -4,6 +4,7 @@ import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "@/env";
 import type { DbOrTx } from "./db/client";
 import { messages } from "./db/schema";
+import { activeWhatsApp } from "./channel-config";
 
 export type Attachment = { filename: string; content: Buffer; contentType: string };
 
@@ -55,7 +56,9 @@ async function sendMail(m: Outgoing): Promise<Delivery> {
 
 /** WhatsApp Business Cloud API: a text message to a number, free-form within the 24 h window. */
 async function sendWhatsApp(m: Outgoing): Promise<Delivery> {
-  const res = await fetch(`https://graph.facebook.com/v21.0/${env.WHATSAPP_PHONE_ID}/messages`, {
+  // From the office's active number (Settings › Routing), else the server's own.
+  const from = (await activeWhatsApp())?.phoneId || env.WHATSAPP_PHONE_ID;
+  const res = await fetch(`https://graph.facebook.com/v21.0/${from}/messages`, {
     method: "POST",
     headers: {
       authorization: `Bearer ${env.WHATSAPP_TOKEN}`,

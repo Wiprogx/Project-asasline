@@ -17,6 +17,7 @@ import { trackedSteps } from "@/domain/rules/closes";
 import { readRuleBook } from "@/server/rule-book";
 import { settleSteps } from "@/server/steps";
 import { invalidateTags, tags } from "@/server/cache/cache";
+import { autoSend } from "@/server/auto-send";
 
 const HOLD_TITLE = "Clear the hold on ";
 
@@ -142,12 +143,22 @@ export async function toggleTrackStep(_p: ActionResult, fd: FormData): Promise<A
               user.id,
             )
           : [];
+        // Its news goes to the customer by itself (legacy autoSend), once, if Settings allow.
+        const sent =
+          next[index].done && track[index].template
+            ? await autoSend(tx, {
+                bookingId: id,
+                code: track[index].template,
+                userId: user.id,
+                me: user.name,
+              })
+            : null;
         await audit(tx, {
           action: "booking.track",
           userId: user.id,
           entity: "booking",
           entityId: id,
-          detail: { step: track[index].name, done: next[index].done, closed },
+          detail: { step: track[index].name, done: next[index].done, closed, sent },
         });
         if (closed.length) await invalidateTags(tags.dashboard);
       }),

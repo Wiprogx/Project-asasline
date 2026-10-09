@@ -8,14 +8,10 @@ import { fillTemplate, templateScope } from "@/domain/templates";
 import { requirePermission } from "@/server/auth/dal";
 import { now } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookings, configTables, contacts, containers, messages, users } from "@/server/db/schema";
-import {
-  readEscalateMinutes,
-  readInbox,
-  readRoutes,
-  readTemplates,
-  signatureOf,
-} from "@/server/messaging";
+import { bookings, configTables, contacts, messages, users } from "@/server/db/schema";
+import { readEscalateMinutes, readInbox, readRoutes, readTemplates } from "@/server/messaging";
+import { bookingVars } from "@/server/letters";
+import { readAutoSend, readWhatsAppNumbers } from "@/server/channel-config";
 
 const claimer = alias(users, "claimer");
 
@@ -62,6 +58,7 @@ function base() {
       callSeconds: messages.callSeconds,
       callOutcome: messages.callOutcome,
       deliveredAt: messages.deliveredAt,
+      auto: messages.auto,
       cc: messages.cc,
       files: attachments,
       author: users.name,
@@ -211,12 +208,16 @@ export async function routingForEdit() {
   const rows = await db
     .select()
     .from(configTables)
-    .where(inArray(configTables.name, ["routes", "escalation", "inbox"]));
+    .where(
+      inArray(configTables.name, ["routes", "escalation", "inbox", "autoSend", "whatsappNumbers"]),
+    );
   const of = (name: string) => rows.find((r) => r.name === name);
-  const [routes, minutes, inbox] = await Promise.all([
+  const [routes, minutes, inbox, autoSend, whatsapp] = await Promise.all([
     readRoutes(),
     readEscalateMinutes(),
     readInbox(),
+    readAutoSend(),
+    readWhatsAppNumbers(),
   ]);
   return {
     routes,
@@ -225,6 +226,10 @@ export async function routingForEdit() {
     escalationVersion: of("escalation")?.version ?? 0,
     inbox,
     inboxVersion: of("inbox")?.version ?? 0,
+    autoSend,
+    autoSendVersion: of("autoSend")?.version ?? 0,
+    whatsapp,
+    whatsappVersion: of("whatsappNumbers")?.version ?? 0,
   };
 }
 
@@ -232,36 +237,8 @@ export async function routingForEdit() {
 export async function bookingTemplates(bookingId: string, me: string) {
   await requirePermission("app.discuss");
   if (!z.uuid().safeParse(bookingId).success) return [];
-  const [row] = await db
-    .select({ b: bookings, client: contacts.name })
-    .from(bookings)
-    .leftJoin(contacts, eq(contacts.id, bookings.clientId))
-    .where(eq(bookings.id, bookingId));
-  if (!row) return [];
-  const boxes = await db
-    .select({ number: containers.number, type: containers.type })
-    .from(containers)
-    .where(and(eq(containers.bookingId, bookingId), isNull(containers.archivedAt)));
-  const { b } = row;
-  const vars = {
-    client: row.client,
-    ref: b.ref,
-    pol: b.pol,
-    dest: b.pod,
-    containers: boxes.map((c) => c.number ?? c.type).join(", "),
-    vessel: b.vesselName,
-    voyage: b.voyage,
-    etd: b.etd,
-    eta: b.eta,
-    docName: b.docType,
-    customs: b.customsClosing,
-    portcut: b.portCutOff,
-    loadDate: b.loadDate,
-    loadTime: b.loadTime,
-    loadAddress: b.loadAddress,
-    me,
-    sign: await signatureOf(me),
-  };
+  const vars = await bookingVars(db, bookingId, me);
+  if (!vars) return [];
   return (await readTemplates())
     .filter((t) => t.active && templateScope(t.code) === "booking")
     .map((t) => ({

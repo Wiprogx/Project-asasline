@@ -15,7 +15,8 @@ export default async function DiscussLayout({ children }: LayoutProps<"/discuss"
           { href: "/discuss/queue", label: "Waiting" },
           { href: "/discuss/room/office", label: "Office" },
           { href: `/discuss/room/${user.role}`, label: ROLE_LABEL[user.role] },
-          { href: "/discuss/all", label: "All messages" },
+          { href: "/discuss/all", label: "All messages", exact: true },
+          { href: "/discuss/all?channel=call", label: "Calls" },
         ]}
       />
       <LiveRefresh />

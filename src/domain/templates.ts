@@ -95,6 +95,46 @@ export const DEFAULT_TEMPLATES: Template[] = [
     body: `Dear {client},\n\nYour cargo has sailed.\n\nBooking: {ref}\nContainer(s): {containers}\nVessel: {vessel} {voyage}\nSailed: {etd}\nDestination: {dest}\nEstimated arrival: {eta}\nDocument: {docName}\n\n${SIGN}`,
     active: true,
   },
+  {
+    code: "PICKED_UP",
+    name: "Container picked up (automatic)",
+    channel: "both",
+    subject: "{ref} — container collected",
+    body: "{client}: container(s) {containers} for {ref} have been collected from the depot and are on the way to loading.",
+    active: true,
+  },
+  {
+    code: "AT_TERMINAL",
+    name: "Container at the terminal (automatic)",
+    channel: "both",
+    subject: "{ref} — at the terminal",
+    body: "{client}: container(s) {containers} for {ref} are in at {pol}. Port cut-off {portcut}, vessel {vessel} {voyage} · ETD {etd}.",
+    active: true,
+  },
+  {
+    code: "SAILED",
+    name: "Vessel sailed (automatic)",
+    channel: "both",
+    subject: "{ref} — sailed {etd} — {containers}",
+    body: "{client}: container(s) {containers} sailed on {etd} with {vessel} {voyage} under booking {ref}. Estimated arrival {eta} at {dest}.",
+    active: true,
+  },
+  {
+    code: "DELAYED",
+    name: "Vessel delayed (automatic)",
+    channel: "both",
+    subject: "{ref} — sailing moved to {etd}",
+    body: "{client}: the sailing of {vessel} {voyage} with container(s) {containers} under {ref} has moved. New ETD {etd}, new ETA {eta}. The cut-offs move with it.",
+    active: true,
+  },
+  {
+    code: "ARRIVED",
+    name: "Vessel arrived (automatic)",
+    channel: "both",
+    subject: "{ref} — arrived {eta} — {containers}",
+    body: "{client}: container(s) {containers} arrived at {dest} on {eta} with {vessel} {voyage}, booking {ref}. The final documents follow.",
+    active: true,
+  },
 ];
 
 /**

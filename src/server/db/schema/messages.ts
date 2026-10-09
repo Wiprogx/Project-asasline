@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { CALL_OUTCOMES, CHANNELS, DIRECTIONS } from "../../../domain/messages";
 import { recordColumns } from "./_columns";
 import { contacts } from "./contacts";
@@ -45,6 +54,8 @@ export const messages = pgTable(
     claimedAt: timestamp({ withTimezone: true }),
     // Outgoing mail is recorded here; the mail server integration will set this when it leaves.
     deliveredAt: timestamp({ withTimezone: true }),
+    /** Sent by the app itself on a tracking milestone (legacy auto), not written by a person. */
+    auto: boolean().notNull().default(false),
   },
   (t) => [
     index("messages_at_idx").on(t.at),

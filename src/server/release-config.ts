@@ -40,7 +40,16 @@ export const sendModesSchema = z
   .max(30);
 
 export const trackStepsSchema = z
-  .array(z.object({ name: z.string().trim().min(1).max(60), source: z.enum(["auto", "manual"]) }))
+  .array(
+    z.object({
+      name: z.string().trim().min(1).max(60),
+      source: z.enum(["auto", "manual"]),
+      template: z
+        .string()
+        .regex(/^[A-Z][A-Z0-9_]{1,29}$/)
+        .optional(),
+    }),
+  )
   .min(1)
   .max(30);
 
