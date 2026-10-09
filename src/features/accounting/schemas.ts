@@ -154,3 +154,15 @@ export const accrualCancelSchema = z.object({
   id: z.uuid(),
   reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
 });
+
+/** A file kept with an invoice or a bill; the file itself comes beside these fields. */
+export const invoiceFileSchema = z.object({
+  invoiceId: z.uuid(),
+  note: z.string().trim().max(300).optional(),
+});
+
+export const removeInvoiceFileSchema = z.object({
+  invoiceId: z.uuid(),
+  fileId: z.uuid(),
+  reason: z.string().trim().min(3, "Say why — it stays on the record").max(300),
+});

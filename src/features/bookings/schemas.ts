@@ -4,6 +4,7 @@ import { BOOKING_FLOW, DOC_TYPES, SHIPMENT_KINDS, sailingProblem } from "@/domai
 import { dayField } from "@/lib/zod-fields";
 import { parseStopLines } from "@/domain/loading";
 import { parseHsLines } from "@/domain/goods";
+import { parseEmails } from "@/domain/messages";
 
 const day = dayField();
 const optional = z.string().max(200).optional();
@@ -60,6 +61,8 @@ export const bookingDetailsSchema = z
     commodity: optional,
     carrierBookingNo: optional,
     blNo: optional,
+    /** Copied on every message of the booking (legacy cc), typed comma-separated. */
+    cc: z.string().max(1000).optional().transform(parseEmails),
     docType: z.enum(DOC_TYPES).default("SEA WAYBILL"),
     vesselName: optional,
     voyage: optional,

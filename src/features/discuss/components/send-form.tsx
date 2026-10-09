@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { sendMessage } from "../actions";
 import { sendSchema } from "../schemas";
+import { ALLOWED_TYPES } from "@/domain/files";
 
 export type Recipient = {
   id: string;
@@ -34,10 +35,13 @@ export function SendForm({
   linkRef,
   recipients,
   templates = [],
+  cc = [],
 }: {
   linkRef: string;
   recipients: Recipient[];
   templates?: FilledTemplate[];
+  /** The file's copy list (legacy cc): on every e-mail unless taken off. */
+  cc?: string[];
 }) {
   const form = useRef<HTMLFormElement>(null);
   const [channel, setChannel] = useState<"email" | "whatsapp">("email");
@@ -129,19 +133,42 @@ export function SendForm({
         </Field>
       </div>
       {channel === "email" && (
-        <Field
-          id="s-subject"
-          label="Subject"
-          hint={`The key [${linkRef}/MSG] is added so the reply comes back here`}
-        >
-          <Input
+        <>
+          <Field
             id="s-subject"
-            name="subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-          />
-        </Field>
+            label="Subject"
+            hint={`The key [${linkRef}/MSG] is added so the reply comes back here`}
+          >
+            <Input
+              id="s-subject"
+              name="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+          </Field>
+          <Field
+            id="s-cc"
+            label="Copy to"
+            hint="The file's copy list; comma-separated e-mails."
+            error={fe?.cc}
+          >
+            <Input id="s-cc" name="cc" defaultValue={cc.join(", ")} />
+          </Field>
+        </>
       )}
+      <Field
+        id="s-files"
+        label="Attachments"
+        hint="Kept on the record; sent with the mail when the server sends it."
+      >
+        <Input
+          id="s-files"
+          name="files"
+          type="file"
+          multiple
+          accept={Object.keys(ALLOWED_TYPES).join(",")}
+        />
+      </Field>
       <Field id="s-body" label="Message" error={fe?.body}>
         <Textarea
           id="s-body"

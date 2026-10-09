@@ -18,6 +18,7 @@ import { deliver, outcomeOf } from "@/server/delivery";
 import { messages } from "@/server/db/schema";
 import { publish } from "@/server/events";
 import { resolveRef } from "@/server/messaging";
+import { attachFiles, filesOf } from "./file-store";
 import { claimSchema, logIncomingSchema, postInternalSchema, sendSchema } from "./schemas";
 
 function refresh(linkId?: string | null) {
@@ -67,6 +68,8 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
       fieldErrors: { linkRef: ["Unknown number"] },
     };
 
+  const { files, problem } = filesOf(fd);
+  if (problem) return fail(problem);
   const [row] = await db
     .insert(messages)
     .values({
@@ -83,10 +86,21 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
       createdBy: user.id,
     })
     .returning({ id: messages.id });
-  await audit(db, { action: "message.in", userId: user.id, entity: "message", entityId: row.id });
+  const kept = await attachFiles(db, { messageId: row.id, files, link, userId: user.id });
+  await audit(db, {
+    action: "message.in",
+    userId: user.id,
+    entity: "message",
+    entityId: row.id,
+    detail: kept.attached ? kept : undefined,
+  });
   await publish({ type: "message", linkId: link?.id });
   refresh(link?.id);
-  return { ok: true, data: undefined, message: "Logged" };
+  return {
+    ok: true,
+    data: undefined,
+    message: kept.filed ? `Logged — ${kept.filed} file(s) filed on ${link?.ref}` : "Logged",
+  };
 }
 
 /**
@@ -106,6 +120,8 @@ export async function sendMessage(
   if (problem) return fail(problem);
   const link = await resolveRef(db, d.linkRef);
   const subject = link ? withKey(d.subject, link.ref, d.code) : d.subject;
+  const { files, problem: badFile } = filesOf(fd);
+  if (badFile) return fail(badFile);
 
   const [row] = await db
     .insert(messages)
@@ -113,6 +129,7 @@ export async function sendMessage(
       channel: d.channel,
       direction: "out",
       toText: d.toText,
+      cc: d.channel === "email" ? d.cc : [],
       contactId: d.contactId,
       subject,
       body: d.body,
@@ -126,12 +143,31 @@ export async function sendMessage(
     })
     .returning({ id: messages.id });
   await audit(db, { action: "message.out", userId: user.id, entity: "message", entityId: row.id });
-  const letter = { channel: d.channel, to: d.toText, subject, body: d.body };
+  await attachFiles(db, { messageId: row.id, files, link, userId: user.id });
+  const attachments = await Promise.all(
+    files.map(async (f) => ({
+      filename: f.name,
+      content: Buffer.from(await f.arrayBuffer()),
+      contentType: f.type || "application/octet-stream",
+    })),
+  );
+  const letter = {
+    channel: d.channel,
+    to: d.toText,
+    cc: d.channel === "email" ? d.cc : [],
+    subject,
+    body: d.body,
+    attachments,
+  };
   const sent = await deliver(db, row.id, letter);
   await publish({ type: "message", linkId: link?.id });
   refresh(link?.id);
   const out = outcomeOf(sent, letter, "Recorded");
-  return { ok: true, data: { href: out.href ?? "" }, message: out.message };
+  const handOff =
+    !sent.sent && files.length
+      ? ` · ${files.length} file(s) kept on the record — add them in your own app`
+      : "";
+  return { ok: true, data: { href: out.href ?? "" }, message: out.message + handOff };
 }
 
 /** First to open it takes it; a second person is told who already has it. */

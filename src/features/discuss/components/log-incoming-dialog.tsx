@@ -20,6 +20,7 @@ import { CHANNEL_LABEL, type Route } from "@/domain/messages";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { logIncoming } from "../actions";
 import { logIncomingSchema } from "../schemas";
+import { ALLOWED_TYPES } from "@/domain/files";
 
 type Option = { id: string; name: string };
 
@@ -118,6 +119,19 @@ export function LogIncomingDialog({
           </Field>
           <Field id="in-body" label="Message">
             <Textarea id="in-body" name="body" rows={4} />
+          </Field>
+          <Field
+            id="in-files"
+            label="Attachments"
+            hint="What came with it; on a shipment's number they are filed on the shipment too."
+          >
+            <Input
+              id="in-files"
+              name="files"
+              type="file"
+              multiple
+              accept={Object.keys(ALLOWED_TYPES).join(",")}
+            />
           </Field>
           {!state.ok && state.error && (
             <p role="alert" className="text-sm text-destructive">

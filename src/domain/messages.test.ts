@@ -4,6 +4,7 @@ import {
   isWaiting,
   keyOf,
   outwardProblem,
+  parseEmails,
   refsInText,
   replySubject,
   routeCodeOf,
@@ -101,5 +102,15 @@ describe("escalation", () => {
     expect(inQueueOf(m, "team_lead", 30)).toBe(false);
     expect(inQueueOf({ ...m, waited: 30 }, "team_lead", 30)).toBe(true);
     expect(inQueueOf({ ...m, waited: 90 }, "docs_clerk", 30)).toBe(false);
+  });
+});
+
+describe("parseEmails", () => {
+  it("reads a copy list however it is typed, each address once, and drops what is not one", () => {
+    expect(parseEmails("Boss@Example.be; agent@y.com, boss@example.be\nnot an address")).toEqual([
+      "boss@example.be",
+      "agent@y.com",
+    ]);
+    expect(parseEmails(null)).toEqual([]);
   });
 });

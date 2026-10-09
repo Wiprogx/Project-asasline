@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CALL_OUTCOMES, OFFICE_CHANNEL } from "@/domain/messages";
+import { CALL_OUTCOMES, OFFICE_CHANNEL, parseEmails } from "@/domain/messages";
 import { ROLES } from "@/domain/permissions";
 
 /** Internal chat rooms: the whole office, and one per role (generated, never typed). */
@@ -33,6 +33,8 @@ export const logIncomingSchema = z.object({
 export const sendSchema = z.object({
   channel: z.enum(["email", "whatsapp"]),
   toText: z.string().min(3, "E-mail address or phone number").max(200),
+  /** Copies, typed comma-separated; the booking's copy list to start with. */
+  cc: z.string().max(1000).optional().transform(parseEmails),
   contactId: z.uuid().optional(),
   subject: z.string().max(300).default(""),
   body: z.string().min(1, "Write the message").max(10_000),

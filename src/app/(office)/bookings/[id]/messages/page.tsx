@@ -41,7 +41,7 @@ export default async function BookingMessagesPage({
           <CardTitle>Write</CardTitle>
         </CardHeader>
         <CardContent>
-          <SendForm linkRef={b.ref} recipients={recipients} templates={templates} />
+          <SendForm linkRef={b.ref} recipients={recipients} templates={templates} cc={b.cc} />
         </CardContent>
       </Card>
       <Card>

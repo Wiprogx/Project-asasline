@@ -5,11 +5,17 @@ import { env } from "@/env";
 import type { DbOrTx } from "./db/client";
 import { messages } from "./db/schema";
 
+export type Attachment = { filename: string; content: Buffer; contentType: string };
+
 export type Outgoing = {
   channel: "email" | "whatsapp";
   to: string;
+  /** Copies, e-mail only (legacy cc[]). */
+  cc?: string[];
   subject: string;
   body: string;
+  /** Files sent with an e-mail; a WhatsApp or a hand-off keeps them on the record only. */
+  attachments?: Attachment[];
 };
 
 export type Delivery =
@@ -21,8 +27,9 @@ const mailer = () => (transport ??= nodemailer.createTransport(env.SMTP_URL));
 
 /** The link that opens the letter in the person's own mail app or WhatsApp (the fallback). */
 export function handOffLink(m: Outgoing): string {
+  const cc = m.cc?.length ? `&cc=${encodeURIComponent(m.cc.join(","))}` : "";
   return m.channel === "email"
-    ? `mailto:${encodeURIComponent(m.to)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`
+    ? `mailto:${encodeURIComponent(m.to)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}${cc}`
     : `https://wa.me/${m.to.replace(/\D/g, "")}?text=${encodeURIComponent(m.body)}`;
 }
 
@@ -35,8 +42,10 @@ async function sendMail(m: Outgoing): Promise<Delivery> {
     const info = await mailer().sendMail({
       from: env.MAIL_FROM ?? "noreply@asasline.com",
       to: m.to,
+      cc: m.cc?.length ? m.cc : undefined,
       subject: m.subject,
       text: m.body,
+      attachments: m.attachments,
     });
     return { sent: true, id: info.messageId ?? null };
   } catch (e) {

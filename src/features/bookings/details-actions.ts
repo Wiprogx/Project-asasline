@@ -43,8 +43,10 @@ export async function updateBookingDetails(_p: ActionResult, fd: FormData): Prom
             throw new Refused("A chosen party is archived or no longer exists.");
         }
 
+        const same = (a: unknown, b: unknown) =>
+          Array.isArray(a) ? JSON.stringify(a) === JSON.stringify(b) : a === b;
         const changed = Object.keys(values).filter(
-          (k) => (values[k] ?? null) !== ((cur as Record<string, unknown>)[k] ?? null),
+          (k) => !same(values[k] ?? null, (cur as Record<string, unknown>)[k] ?? null),
         );
         if (changed.length === 0) return;
         await updateVersioned(

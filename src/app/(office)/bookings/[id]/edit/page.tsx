@@ -42,6 +42,7 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
     commodity: b.commodity,
     carrierBookingNo: b.carrierBookingNo,
     blNo: b.blNo,
+    cc: b.cc.join(", "),
     vesselName: b.vesselName,
     voyage: b.voyage,
     etd: b.etd,

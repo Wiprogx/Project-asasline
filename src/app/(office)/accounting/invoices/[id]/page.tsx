@@ -14,6 +14,8 @@ import {
 } from "@/features/accounting/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { invoiceAttachments } from "@/features/accounting/file-queries";
+import { InvoiceFiles } from "@/features/accounting/components/invoice-files";
 
 export const metadata: Metadata = { title: "Invoice" };
 
@@ -21,11 +23,12 @@ export const metadata: Metadata = { title: "Invoice" };
 export default async function InvoicePage({ params }: PageProps<"/accounting/invoices/[id]">) {
   const user = await requirePagePermission("app.accounting");
   const { id } = await params;
-  const [inv, terms, money, paid] = await Promise.all([
+  const [inv, terms, money, paid, files] = await Promise.all([
     getInvoice(id),
     paymentTerms(),
     invoiceSettlement(id),
     paymentsOfInvoice(id),
+    invoiceAttachments(id),
   ]);
   if (!inv) notFound();
   const i = inv.invoice;
@@ -64,6 +67,7 @@ export default async function InvoicePage({ params }: PageProps<"/accounting/inv
           />
         </CardContent>
       </Card>
+      <InvoiceFiles invoiceId={i.id} files={files} canEdit={may(user, "accounting.issue")} />
       {i.status === "issued" && i.kind !== "credit" && (
         <InvoicePayments
           invoiceId={i.id}

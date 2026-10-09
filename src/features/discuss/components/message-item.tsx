@@ -4,6 +4,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { CHANNEL_LABEL } from "@/domain/messages";
 import type { MessageRow } from "../queries";
 import { formatStamp } from "@/lib/stamp";
+import { NewTab } from "@/components/shared/new-tab";
 
 function who(m: MessageRow) {
   if (m.direction === "internal") return m.author ?? "someone";
@@ -56,6 +57,25 @@ export function MessageItem({ m, actions }: { m: MessageRow; actions?: ReactNode
         {actions}
       </div>
       {m.subject && <span className="text-sm font-medium">{m.subject}</span>}
+      {m.cc.length > 0 && (
+        <span className="text-xs text-muted-foreground">cc: {m.cc.join(", ")}</span>
+      )}
+      {m.files.length > 0 && (
+        <span className="flex flex-wrap gap-2 text-xs">
+          {m.files.map((f) => (
+            <a
+              key={f.id}
+              href={`/api/messages/${m.id}/files/${f.id}`}
+              target="_blank"
+              rel="noopener"
+              className="underline"
+            >
+              📎 {f.name}
+              <NewTab />
+            </a>
+          ))}
+        </span>
+      )}
       {m.body && (
         <p className="text-sm [overflow-wrap:anywhere] whitespace-pre-wrap text-muted-foreground">
           {m.body}

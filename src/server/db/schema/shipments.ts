@@ -157,6 +157,11 @@ export const bookings = pgTable(
     loadingMode: text(),
     carrierBookingNo: text(),
     blNo: text(),
+    /** Addresses copied on every message of the booking (legacy cc: they receive every document and answer for none). */
+    cc: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     docType: text().notNull().default("SEA WAYBILL"),
     vesselId: uuid().references(() => vessels.id),
     vesselName: text(),

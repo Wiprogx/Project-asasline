@@ -84,3 +84,29 @@ export const invoiceLines = pgTable(
     index("invoice_lines_source_idx").on(t.sourceKey),
   ],
 );
+
+/**
+ * What is kept with an invoice or a bill (legacy attachments): the supplier's own PDF, the
+ * UBL it was read from, a proof. The bytes live under FILES_DIR/invoices/<invoice>/<storedName>;
+ * taken off with a reason, never deleted (invariant 1).
+ */
+export const invoiceFiles = pgTable(
+  "invoice_files",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    invoiceId: uuid()
+      .notNull()
+      .references(() => invoices.id),
+    name: text().notNull(),
+    storedName: text().notNull(),
+    mime: text().notNull(),
+    sizeBytes: integer().notNull(),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid(),
+    archivedAt: timestamp({ withTimezone: true }),
+    archivedBy: uuid(),
+    archivedReason: text(),
+  },
+  (t) => [index("invoice_files_invoice_idx").on(t.invoiceId)],
+);

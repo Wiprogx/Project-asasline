@@ -24,6 +24,11 @@ export const messages = pgTable(
     room: text(),
     fromText: text(),
     toText: text(),
+    /** Who got a copy (legacy cc[]): the booking's copy list, edited on the message. */
+    cc: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     contactId: uuid().references(() => contacts.id),
     subject: text(),
     body: text().notNull().default(""),
@@ -53,4 +58,26 @@ export const messages = pgTable(
       .on(t.at)
       .where(sql`direction = 'in' and claimed_by is null and archived_at is null`),
   ],
+);
+
+/**
+ * What came with a message or went out with it (legacy files[] on MESSAGES): the bytes live
+ * under FILES_DIR/messages/<message>/<storedName>. An attachment on a message linked to a
+ * shipment is also filed on that shipment, so the Documents tab sees it.
+ */
+export const messageFiles = pgTable(
+  "message_files",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    messageId: uuid()
+      .notNull()
+      .references(() => messages.id),
+    name: text().notNull(),
+    storedName: text().notNull(),
+    mime: text().notNull(),
+    sizeBytes: integer().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid(),
+  },
+  (t) => [index("message_files_message_idx").on(t.messageId)],
 );

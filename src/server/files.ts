@@ -13,23 +13,35 @@ import { env } from "@/env";
  */
 const root = () => resolve(env.FILES_DIR);
 
+/** What a file hangs on: a booking's folder, a message's, or an invoice's. */
+export type FileOwner = "bookings" | "messages" | "invoices";
+
 /** The absolute path of a stored file, refused if it would leave the files folder. */
-export function storedPath(bookingId: string, storedName: string): string {
-  const p = resolve(join(root(), "bookings", bookingId, storedName));
+export function storedPath(ownerId: string, storedName: string, owner: FileOwner = "bookings") {
+  const p = resolve(join(root(), owner, ownerId, storedName));
   if (!p.startsWith(root() + sep)) throw new Error("A file path outside the files folder");
   return p;
 }
 
-export async function storeFile(bookingId: string, storedName: string, bytes: Uint8Array) {
-  const p = storedPath(bookingId, storedName);
-  await mkdir(join(root(), "bookings", bookingId), { recursive: true });
+export async function storeFile(
+  ownerId: string,
+  storedName: string,
+  bytes: Uint8Array,
+  owner: FileOwner = "bookings",
+) {
+  const p = storedPath(ownerId, storedName, owner);
+  await mkdir(join(root(), owner, ownerId), { recursive: true });
   await writeFile(p, bytes, { flag: "wx" });
   return p;
 }
 
 /** A web stream of the bytes, or null when the file is not on disk (moved, or a lost volume). */
-export async function openStoredFile(bookingId: string, storedName: string) {
-  const p = storedPath(bookingId, storedName);
+export async function openStoredFile(
+  ownerId: string,
+  storedName: string,
+  owner: FileOwner = "bookings",
+) {
+  const p = storedPath(ownerId, storedName, owner);
   try {
     const s = await stat(p);
     if (!s.isFile()) return null;

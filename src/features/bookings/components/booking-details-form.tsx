@@ -31,6 +31,7 @@ const TEXT = (
     ["commodity", "Commodity", "text"],
     ["carrierBookingNo", "Carrier booking no.", "text"],
     ["blNo", "B/L no.", "text"],
+    ["cc", "Copy to (e-mails)", "text"],
     ["vesselName", "Vessel", "text"],
     ["voyage", "Voyage", "text"],
     ["etd", "ETD", "date"],

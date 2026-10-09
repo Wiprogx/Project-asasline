@@ -54,9 +54,9 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Contacts** — documents tab · countries table · kanban view.
 - **Activity** — NEED_KINDS (what closes a step: file, ref, confirm, send, track) and checklists (L9444) ·
   NOTIFY_LEVELS and the bell (L11567) · COUNTRY_REQS (mandatory papers and lead days per country).
-- **Discuss** — cc, attachments, answeredBy and recording on a message · a calls tab · INBOX config
+- **Discuss** — a voice recording on a call · a calls tab · INBOX config
   (inbox address, signature, subject tag) · WA_NUMBERS and AUTO_SEND.
-- **Accounting** — exchange rate on USD/GBP documents · attachments on invoices and bills · catalogue
+- **Accounting** — exchange rate on USD/GBP documents · catalogue
   item per invoice line and general sale items (GL_ITEMS / SALE_ITEMS) · Peppol sent state · UBL import
   line → item memory and the migration key · remembered bank matching rules · statement vs book balance
   and a BANK_ACCOUNTS table · reports: cash flow, KPIs, DSO, profit per customer / destination / line,

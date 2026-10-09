@@ -30,6 +30,12 @@ const answeredLater = sql<boolean>`exists (select 1 from ${messages} as "later" 
   and "later"."at" > ${messages.at} and ("later"."thread_id" = ${messages.threadId}
   or (${messages.linkId} is not null and "later"."link_id" = ${messages.linkId})))`;
 
+/** What came with the message, as the item lists it. */
+const attachments = sql<
+  { id: string; name: string; sizeBytes: number }[]
+>`coalesce((select json_agg(json_build_object('id', f.id, 'name', f.name, 'sizeBytes', f.size_bytes) order by f.created_at)
+  from message_files f where f.message_id = ${messages.id}), '[]'::json)`;
+
 function base() {
   return db
     .select({
@@ -50,6 +56,8 @@ function base() {
       callSeconds: messages.callSeconds,
       callOutcome: messages.callOutcome,
       deliveredAt: messages.deliveredAt,
+      cc: messages.cc,
+      files: attachments,
       author: users.name,
       contactName: contacts.name,
       claimedByName: claimer.name,

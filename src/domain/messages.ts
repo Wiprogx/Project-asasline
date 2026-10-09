@@ -60,6 +60,16 @@ export function refsInText(text: string): string[] {
   return out;
 }
 
+/** "boss@x.be, agent@y.com" typed on a form → the addresses, each once, lower case (legacy cc[]). */
+export const parseEmails = (text: string | null | undefined): string[] => [
+  ...new Set(
+    (text ?? "")
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)),
+  ),
+];
+
 // ---- Routing: what a message is about decides which ROLE it goes to (legacy ROUTING) ----
 
 export type Route = { code: string; subject: string; role: Role; active: boolean };
