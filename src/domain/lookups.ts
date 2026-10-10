@@ -119,7 +119,6 @@ export const parseCommaList = (text: string | null | undefined): string[] => [
       .filter(Boolean),
   ),
 ];
-export const parseProfessions = parseCommaList;
 
 export type BoxOwner = { prefix: string; owner: string };
 

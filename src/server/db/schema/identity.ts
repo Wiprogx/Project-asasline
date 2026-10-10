@@ -2,10 +2,12 @@ import { sql } from "drizzle-orm";
 import {
   bigserial,
   boolean,
+  date,
   index,
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -78,3 +80,38 @@ export const configTables = pgTable("config_tables", {
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedBy: uuid(),
 });
+
+/**
+ * Time at work (legacy TIMELOG): seconds of real interaction per person, day and app, as the
+ * browser reported them. Upserted, never deleted; a day's figure only grows.
+ */
+export const timeLog = pgTable(
+  "time_log",
+  {
+    userId: uuid().notNull(),
+    day: date({ mode: "string" }).notNull(),
+    app: text().notNull(),
+    seconds: integer().notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day, t.app] })],
+);
+
+/**
+ * A stretch of work on one record (legacy VISITS): who, which record, how long that day. The
+ * person's log shows them; nothing else reads them.
+ */
+export const visits = pgTable(
+  "visits",
+  {
+    userId: uuid().notNull(),
+    day: date({ mode: "string" }).notNull(),
+    kind: text().notNull(),
+    recordId: uuid().notNull(),
+    seconds: integer().notNull().default(0),
+    lastAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.day, t.kind, t.recordId] }),
+    index("visits_record_idx").on(t.kind, t.recordId),
+  ],
+);

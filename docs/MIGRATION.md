@@ -55,8 +55,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Activity** — a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
   country) is covered by Settings › Document rules: a country's paper is a rule with its anchor, offset and blocking flag.
 - **Discuss** — a voice recording on a call.
-- **Settings and platform** — the "time" tab (a person's time per app, from the visits below; L10659) ·
-  Integrations and Demo material screens · time on a record kept as a visit (L15225).
+- **Settings and platform** — Integrations and Demo material screens.
 - **Go-live** — the one-off import of the legacy `records` table (section below).
 
 ## Data migration (when a module goes live)

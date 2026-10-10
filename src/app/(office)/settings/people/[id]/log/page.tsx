@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { LOG_RANGES, logWindow } from "@/domain/access";
 import { PersonLog } from "@/features/audit/components/person-log";
+import { PersonTime } from "@/features/audit/components/person-time";
 import { personLog } from "@/features/audit/queries";
+import { personTime } from "@/features/audit/time-queries";
 import { auditAccess } from "@/server/access";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
@@ -21,7 +23,7 @@ export default async function PersonLogPage({
   const sp = await searchParams;
   const range = LOG_RANGES.find((r) => r === sp.range) ?? "week";
   const window = logWindow(range, officeToday());
-  const log = await personLog(id.data, window);
+  const [log, time] = await Promise.all([personLog(id.data, window), personTime(id.data, window)]);
   if (!log) notFound();
   if (log.person.id !== user.id)
     await auditAccess("people", {
@@ -39,7 +41,10 @@ export default async function PersonLogPage({
           Edits on records, messages, files, tasks and the reads the office records.
         </p>
       </div>
-      <PersonLog userId={log.person.id} range={range} window={window} rows={log.rows} />
+      <div className="grid gap-4">
+        <PersonTime time={time} />
+        <PersonLog userId={log.person.id} range={range} window={window} rows={log.rows} />
+      </div>
     </>
   );
 }

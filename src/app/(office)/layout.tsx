@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { FocusHeading } from "@/components/layout/focus-heading";
 import { SkipLink } from "@/components/layout/skip-link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { TimeBeacon } from "@/components/layout/time-beacon";
 import { PortDatalist } from "@/components/shared/port-datalist";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -43,6 +44,7 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
           </span>
         </header>
         <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
+        <TimeBeacon />
         <PortDatalist ports={await readPorts()} />
       </SidebarInset>
     </SidebarProvider>

@@ -30,6 +30,7 @@ const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/templates", label: "Templates", permission: "app.settings" },
   { href: "/settings/quotation-document", label: "Quotation document", permission: "app.settings" },
   { href: "/settings/statuses", label: "Statuses", permission: "app.settings" },
+  { href: "/settings/time", label: "Time", permission: "audit.view" },
   { href: "/settings/audit", label: "Audit log", permission: "audit.view" },
 ];
 

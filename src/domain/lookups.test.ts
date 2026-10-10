@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CONTAINER_SPECS, vgm } from "./container";
 import {
+  parseCommaList,
   boxOwnerLines,
   containerSpecLines,
   DEFAULT_BOX_OWNERS,
@@ -9,7 +10,6 @@ import {
   ownerOf,
   parseBoxOwnerLines,
   parseContainerSpecLines,
-  parseProfessions,
   specsByType,
 } from "./lookups";
 
@@ -27,12 +27,12 @@ describe("the lookups", () => {
   });
 
   it("read the professions typed on a form, each once", () => {
-    expect(parseProfessions(" Transporter, Used clothing; Transporter\nSugar ")).toEqual([
+    expect(parseCommaList(" Transporter, Used clothing; Transporter\nSugar ")).toEqual([
       "Transporter",
       "Used clothing",
       "Sugar",
     ]);
-    expect(parseProfessions(null)).toEqual([]);
+    expect(parseCommaList(null)).toEqual([]);
   });
 
   it("name a box's owner by its prefix and round-trip the owners table", () => {
