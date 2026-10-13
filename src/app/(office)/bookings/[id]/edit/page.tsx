@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BookingDetailsForm } from "@/features/bookings/components/booking-details-form";
+import { toDetailsValues } from "@/features/bookings/form-values";
+import { bookingPlaces } from "@/features/bookings/place-queries";
 import { getBooking } from "@/features/bookings/queries";
 import { contactOptions } from "@/features/contacts/queries";
 import { BookingLegs } from "@/features/vessels/components/booking-legs";
@@ -25,39 +27,13 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
   ]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);
-  const [sailings, legs] = await Promise.all([
+  const [sailings, legs, places] = await Promise.all([
     sailingOptions(officeToday(), { pol: b.pol, pod: b.pod }),
     bookingLegs(id),
+    bookingPlaces(),
   ]);
 
-  const values = {
-    id: b.id,
-    version: b.version,
-    kind: b.kind,
-    docType: b.docType,
-    payerId: b.payerId,
-    shipperId: b.shipperId,
-    consigneeId: b.consigneeId,
-    notifyId: b.notifyId,
-    pol: b.pol,
-    pod: b.pod,
-    loadAddress: b.loadAddress,
-    loadDate: b.loadDate,
-    loadTime: b.loadTime,
-    loadingMode: b.loadingMode,
-    commodity: b.commodity,
-    carrierBookingNo: b.carrierBookingNo,
-    blNo: b.blNo,
-    cc: b.cc.join(", "),
-    vesselName: b.vesselName,
-    voyage: b.voyage,
-    etd: b.etd,
-    eta: b.eta,
-    customsClosing: b.customsClosing,
-    vgmClosing: b.vgmClosing,
-    siClosing: b.siClosing,
-    portCutOff: b.portCutOff,
-  };
+  const values = toDetailsValues(b);
   return (
     <div className="grid gap-4">
       <Card>
@@ -79,6 +55,7 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
         contacts={contacts}
         modes={modes}
         docTypes={docTypes}
+        places={places}
       />
     </div>
   );

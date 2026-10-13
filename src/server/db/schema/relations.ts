@@ -94,6 +94,37 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
     references: [contacts.id],
     relationName: "notify",
   }),
+  // The office's counterparts on the file (domain/booking-parties OFFICE_PARTIES).
+  docCheck: one(contacts, {
+    fields: [bookings.docCheckId],
+    references: [contacts.id],
+    relationName: "docCheck",
+  }),
+  shippingCo: one(contacts, {
+    fields: [bookings.shippingCoId],
+    references: [contacts.id],
+    relationName: "shippingCo",
+  }),
+  transporter: one(contacts, {
+    fields: [bookings.transporterId],
+    references: [contacts.id],
+    relationName: "transporter",
+  }),
+  destForwarder: one(contacts, {
+    fields: [bookings.destForwarderId],
+    references: [contacts.id],
+    relationName: "destForwarder",
+  }),
+  forwarder: one(contacts, {
+    fields: [bookings.forwarderId],
+    references: [contacts.id],
+    relationName: "forwarder",
+  }),
+  customsAgent: one(contacts, {
+    fields: [bookings.customsAgentId],
+    references: [contacts.id],
+    relationName: "customsAgent",
+  }),
   containers: many(containers),
 }));
 

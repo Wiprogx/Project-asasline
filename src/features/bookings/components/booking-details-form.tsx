@@ -11,9 +11,10 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { updateBookingDetails } from "../details-actions";
 import { bookingDetailsSchema } from "../schemas";
 import { modeNote, type LoadingMode } from "@/domain/loading";
+import { OfficePartiesCard } from "./office-parties-card";
 
 type Values = { id: string; version: number; [field: string]: string | number | null };
-type Option = { id: string; name: string };
+type Option = { id: string; name: string; professions?: string[] | null; tags?: string[] | null };
 
 const PARTY_FIELDS = [
   ["payerId", "Payer (invoiced)"],
@@ -48,12 +49,15 @@ export function BookingDetailsForm({
   contacts,
   modes,
   docTypes = DOC_TYPES,
+  places = { depots: [], terminals: [] },
 }: {
   values: Values;
   contacts: Option[];
   modes: readonly LoadingMode[];
   /** The transport documents (Settings › Lists › Document types). */
   docTypes?: readonly string[];
+  /** Depot and terminal suggestions from the contacts' addresses. */
+  places?: { depots: readonly string[]; terminals: readonly string[] };
 }) {
   const [state, action, pending] = useToastedAction(
     updateBookingDetails,
@@ -85,6 +89,7 @@ export function BookingDetailsForm({
           ))}
         </CardContent>
       </Card>
+      <OfficePartiesCard values={values} contacts={contacts} places={places} errors={fe} />
       <Card>
         <CardHeader>
           <CardTitle>Shipment</CardTitle>

@@ -20,9 +20,19 @@ if (testDb) {
 
 /**
  * Browser suite: drives the real app against the real database (docker compose up).
- * Reuses a running `npm run dev` on :3000, or starts one. Tests create uniquely named
- * records, so they can run against a dev database without clashing.
+ * It runs on its own port (E2E_PORT, 3001 by default) and builds into its own folder
+ * (NEXT_DIST_DIR=.next-e2e), so it can run while `npm run dev` serves the office on :3000.
+ * Tests create uniquely named records, so they can run against a dev database without clashing.
  */
+const port = process.env.E2E_PORT ?? "3001";
+// A production run (E2E_SERVER_CMD, after `npm run build`) serves whatever folder that build
+// wrote; only the suite's own dev server is sent to .next-e2e by default.
+const serverCmd = process.env.E2E_SERVER_CMD;
+if (!serverCmd) process.env.NEXT_DIST_DIR ??= ".next-e2e";
+// `npm run x` needs `--` before an argument meant for the script itself.
+const command = serverCmd
+  ? `${serverCmd}${serverCmd.startsWith("npm ") ? " --" : ""} --port ${port}`
+  : `npx next dev --port ${port}`;
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
@@ -31,7 +41,7 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    baseURL: process.env.E2E_BASE_URL ?? `http://localhost:${port}`,
     trace: "on-first-retry",
   },
   projects: [
@@ -40,8 +50,8 @@ export default defineConfig({
   ],
   webServer: {
     // CI serves the production build (E2E_SERVER_CMD=npm run start); locally, the dev server.
-    command: process.env.E2E_SERVER_CMD ?? "npm run dev",
-    url: "http://localhost:3000/login",
+    command,
+    url: `http://localhost:${port}/login`,
     reuseExistingServer: !testDb,
     timeout: 120_000,
   },

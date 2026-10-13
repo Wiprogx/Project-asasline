@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, ne, or } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type ActionResult, fail, formToObject, invalid, nullMissing } from "@/lib/action-result";
@@ -9,6 +9,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
+import { isPartyOn } from "@/server/booking-parties";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import {
   archiveSchema,
@@ -141,18 +142,7 @@ export async function archiveContact(_p: ActionResult, fd: FormData): Promise<Ac
   const inUse = await db
     .select({ ref: bookings.ref })
     .from(bookings)
-    .where(
-      and(
-        ne(bookings.status, "cancelled"),
-        or(
-          eq(bookings.clientId, id),
-          eq(bookings.payerId, id),
-          eq(bookings.shipperId, id),
-          eq(bookings.consigneeId, id),
-          eq(bookings.notifyId, id),
-        ),
-      ),
-    )
+    .where(and(ne(bookings.status, "cancelled"), isPartyOn(id)))
     .limit(3);
   if (inUse.length)
     return fail(

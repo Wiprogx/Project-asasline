@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, max } from "drizzle-orm";
+import { and, eq, isNull, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { legProblem } from "@/domain/legs";
@@ -70,9 +70,17 @@ export async function removeBookingLeg(_p: ActionResult, fd: FormData): Promise<
     const [b] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
     if (!b) return fail("This booking no longer exists.");
     if (b.status === "cancelled") return fail("Put the booking back before editing it.");
+    // Archived, not deleted (invariant 1): the leg stays in the record, out of the routing.
     const gone = await tx
-      .delete(bookingLegs)
-      .where(eq(bookingLegs.id, legId))
+      .update(bookingLegs)
+      .set({ archivedAt: new Date(), archivedBy: user.id })
+      .where(
+        and(
+          eq(bookingLegs.id, legId),
+          eq(bookingLegs.bookingId, bookingId),
+          isNull(bookingLegs.archivedAt),
+        ),
+      )
       .returning({ vesselId: bookingLegs.vesselId });
     if (gone.length === 0) return fail("That leg is already off.");
     await refreshArrival(tx, bookingId, user.id);

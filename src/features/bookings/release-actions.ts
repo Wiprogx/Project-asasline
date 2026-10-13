@@ -172,7 +172,14 @@ export async function setOriginals(_p: ActionResult, fd: FormData): Promise<Acti
   const parsed = originalsSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { id, version, ...fields } = parsed.data;
-  const values = nullMissing(fields, ["docReceiverId", "sendMode", "sendDate", "sendTracking"]);
+  const values = nullMissing(fields, [
+    "originalsPickup",
+    "originalsRequestedOn",
+    "docReceiverId",
+    "sendMode",
+    "sendDate",
+    "sendTracking",
+  ]);
   return guarded(
     id,
     () =>

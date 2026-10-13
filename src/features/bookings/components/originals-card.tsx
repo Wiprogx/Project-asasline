@@ -22,6 +22,8 @@ export function OriginalsCard({
   version,
   docType,
   paper,
+  pickup,
+  requestedOn,
   docReceiverId,
   sendMode,
   sendDate,
@@ -35,6 +37,9 @@ export function OriginalsCard({
   docType: string;
   /** Whether this document type travels on paper (Settings › Lists › Paper documents). */
   paper: boolean;
+  /** Step 1: where the courier collects the originals, and the day the pick-up was booked. */
+  pickup: string | null;
+  requestedOn: string | null;
   docReceiverId: string | null;
   sendMode: string | null;
   sendDate: string | null;
@@ -57,6 +62,9 @@ export function OriginalsCard({
           {paper
             ? `${docType}: the originals travel on paper.`
             : `${docType}: an electronic document — nothing to send, unless the customer asks for paper.`}
+          {!sendDate &&
+            requestedOn &&
+            ` Pick-up booked ${requestedOn}${pickup ? ` at ${pickup}` : ""}.`}
           {sendDate &&
             ` Sent ${sendDate}${sendMode ? ` by ${sendMode}` : ""}${receiver ? ` to ${receiver}` : ""}.`}
           {url && (
@@ -75,6 +83,22 @@ export function OriginalsCard({
           <ActionForm action={run} className="grid gap-3 sm:grid-cols-2">
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="version" value={version} />
+            <Field id="originalsPickup" label="Courier collects at" error={fe?.originalsPickup}>
+              <Input id="originalsPickup" name="originalsPickup" defaultValue={pickup ?? ""} />
+            </Field>
+            <Field
+              id="originalsRequestedOn"
+              label="Pick-up booked on"
+              hint="The day the pick-up was booked with the courier."
+              error={fe?.originalsRequestedOn}
+            >
+              <Input
+                id="originalsRequestedOn"
+                name="originalsRequestedOn"
+                type="date"
+                defaultValue={requestedOn ?? ""}
+              />
+            </Field>
             <Field id="docReceiverId" label="Who receives the originals" error={fe?.docReceiverId}>
               <NativeSelect
                 id="docReceiverId"

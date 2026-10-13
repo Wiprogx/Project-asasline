@@ -97,9 +97,16 @@ export const getContact = cache(async (id: string) => {
 /** Live contacts for pickers (client, shipper, consignee…). */
 export async function contactOptions() {
   await requirePermission("app.contacts");
-  return cached("contacts:options", { ttlSeconds: 300, tags: [tags.contacts] }, () =>
+  // Industries and tags come along: a booking's pickers list the contacts that fit the role first.
+  return cached("contacts:options:v2", { ttlSeconds: 300, tags: [tags.contacts] }, () =>
     db
-      .select({ id: contacts.id, name: contacts.name, country: contacts.country })
+      .select({
+        id: contacts.id,
+        name: contacts.name,
+        country: contacts.country,
+        professions: contacts.professions,
+        tags: contacts.tags,
+      })
       .from(contacts)
       .where(isNull(contacts.archivedAt))
       .orderBy(asc(contacts.name)),

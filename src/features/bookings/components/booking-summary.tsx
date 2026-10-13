@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { containerNumberOk } from "@/domain/container";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
+import { OFFICE_PARTIES } from "@/domain/booking-parties";
 import type { getBooking } from "../queries";
 import { VgmBadge } from "./vgm-badge";
 import { type BoxOwner, ownerOf } from "@/domain/lookups";
@@ -10,6 +11,9 @@ import { sealLabel, sealOf } from "@/domain/seals";
 
 type Booking = NonNullable<Awaited<ReturnType<typeof getBooking>>>;
 type Party = { id: string; name: string } | null;
+// The relation each office party is loaded under (docCheckId → docCheck).
+type OfficeRelation =
+  "docCheck" | "shippingCo" | "transporter" | "destForwarder" | "forwarder" | "customsAgent";
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
@@ -84,6 +88,17 @@ export function BookingSummary({
             <Row k="Shipper" v={party(b.shipper)} />
             <Row k="Consignee" v={party(b.consignee)} />
             <Row k="Notify" v={party(b.notify)} />
+            {OFFICE_PARTIES.map((p) => {
+              const who = b[p.key.replace(/Id$/, "") as OfficeRelation];
+              return who ? <Row key={p.key} k={p.label} v={party(who)} /> : null;
+            })}
+            {(b.pickupDepot || b.pickupDate) && (
+              <Row
+                k="Pick-up depot"
+                v={[b.pickupDepot, b.pickupDate].filter(Boolean).join(" · ")}
+              />
+            )}
+            {b.terminal && <Row k="Terminal" v={b.terminal} />}
             <Row k="Vessel / voyage" v={[b.vesselName, b.voyage].filter(Boolean).join(" · ")} />
             {routing && <Row k="Transhipment" v={routing} />}
             <Row k="ETD → ETA" v={b.etd || b.eta ? `${b.etd ?? "?"} → ${b.eta ?? "?"}` : null} />

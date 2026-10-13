@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { arrivalOf, type Leg } from "@/domain/legs";
 import type { DbOrTx } from "@/server/db/client";
 import { bookingLegs, bookings, vessels } from "@/server/db/schema";
@@ -20,7 +20,7 @@ export async function legsOf(tx: DbOrTx, bookingId: string) {
     })
     .from(bookingLegs)
     .innerJoin(vessels, eq(vessels.id, bookingLegs.vesselId))
-    .where(eq(bookingLegs.bookingId, bookingId))
+    .where(and(eq(bookingLegs.bookingId, bookingId), isNull(bookingLegs.archivedAt)))
     .orderBy(asc(bookingLegs.position));
   return rows satisfies (Leg & { id: string; vesselId: string })[];
 }

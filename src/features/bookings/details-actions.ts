@@ -9,9 +9,11 @@ import { bookings, contacts } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { bookingDetailsSchema, CLEARABLE_DETAILS } from "./schemas";
+import { PARTY_KEYS } from "@/domain/booking-parties";
 import { guarded, Refused } from "./settle";
 
-const PARTIES = ["payerId", "shipperId", "consigneeId", "notifyId"] as const;
+// Every party the form edits; the customer has its own path (domain/booking-parties).
+const PARTIES = PARTY_KEYS.filter((k) => k !== "clientId");
 
 /**
  * Saves the editable details. Parties are stored by contact id, never by name (legacy 10.1):
@@ -33,7 +35,8 @@ export async function updateBookingDetails(_p: ActionResult, fd: FormData): Prom
         if (cur.status === "cancelled")
           throw new Refused("Put the booking back before editing it.");
 
-        const ids = PARTIES.map((k) => values[k]).filter((v): v is string => typeof v === "string");
+        const picked = values as Record<string, unknown>;
+        const ids = PARTIES.map((k) => picked[k]).filter((v): v is string => typeof v === "string");
         if (ids.length) {
           const live = await tx
             .select({ id: contacts.id })

@@ -1,5 +1,6 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { newsRecipientId } from "@/domain/booking-parties";
 import { autoChannelFor } from "@/domain/channels";
 import { threadIdOf, withKey } from "@/domain/messages";
 import { fillTemplate, signed } from "@/domain/templates";
@@ -30,12 +31,17 @@ export async function autoSend(
       ref: bookings.ref,
       cc: bookings.cc,
       clientId: bookings.clientId,
+      docCheckId: bookings.docCheckId,
       email: contacts.email,
       whatsapp: contacts.whatsapp,
       mobile: contacts.mobile,
     })
     .from(bookings)
-    .leftJoin(contacts, eq(contacts.id, bookings.clientId))
+    // The news goes to whoever checks the papers, else the customer (legacy b.docCheck || b.client).
+    .leftJoin(
+      contacts,
+      eq(contacts.id, sql`coalesce(${bookings.docCheckId}, ${bookings.clientId})`),
+    )
     .where(eq(bookings.id, o.bookingId));
   if (!row) return null;
   const channel = autoChannelFor(setting, {
@@ -70,7 +76,7 @@ export async function autoSend(
       direction: "out",
       toText: to,
       cc,
-      contactId: row.clientId,
+      contactId: newsRecipientId(row),
       subject,
       body,
       linkKind: "booking",

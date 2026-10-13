@@ -267,6 +267,20 @@
       "when": 1791599456514,
       "tag": "0037_booking_legs",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791898449511,
+      "tag": "0038_booking_parties",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791900084269,
+      "tag": "0039_booking_legs_archive",
+      "breakpoints": true
     }
   ]
 }

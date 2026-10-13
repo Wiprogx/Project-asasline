@@ -61,7 +61,7 @@ export async function moveBookingsOf(tx: Tx, v: Vessel, rules: CutoffRules, user
   const via = await tx
     .select({ bookingId: bookingLegs.bookingId })
     .from(bookingLegs)
-    .where(eq(bookingLegs.vesselId, v.id));
+    .where(and(eq(bookingLegs.vesselId, v.id), isNull(bookingLegs.archivedAt)));
   for (const l of via) if (await refreshArrival(tx, l.bookingId, userId)) moved++;
   for (const b of on) {
     if (!(await applySailing(tx, b.id, v, rules, userId))) continue;

@@ -4,6 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { type Channel, routeCodeOf, routeRole, inQueueOf, waitedMinutes } from "@/domain/messages";
 import type { Role } from "@/domain/permissions";
+import { BOOKING_PARTIES, PARTY_KEYS } from "@/domain/booking-parties";
 import { fillTemplate, templateScope } from "@/domain/templates";
 import { requirePermission } from "@/server/auth/dal";
 import { now } from "@/server/clock";
@@ -20,9 +21,13 @@ const claimer = alias(users, "claimer");
  * BV VANGUY once wrote about Os Textile's shipment and nothing noticed; the reply would have
  * sent one customer's details to another.
  */
-const stranger = sql<boolean>`(${messages.contactId} is not null and ${bookings.id} is not null and ${messages.contactId} not in (
-  ${bookings.clientId}, coalesce(${bookings.payerId}, ${bookings.clientId}), coalesce(${bookings.shipperId}, ${bookings.clientId}),
-  coalesce(${bookings.consigneeId}, ${bookings.clientId}), coalesce(${bookings.notifyId}, ${bookings.clientId})))`;
+// Anyone on the file counts (domain/booking-parties): the legacy list was the trade parties,
+// the trucker and the line; the customs agent and the forwarders write about the box too.
+const onFile = sql.join(
+  PARTY_KEYS.map((k) => sql`coalesce(${bookings[k]}, ${bookings.clientId})`),
+  sql`, `,
+);
+const stranger = sql<boolean>`(${messages.contactId} is not null and ${bookings.id} is not null and ${messages.contactId} not in (${onFile}))`;
 
 /**
  * Something went back on the thread, or on the same file, after this message arrived. The
@@ -168,13 +173,8 @@ export async function bookingRecipients(bookingId: string) {
   if (!z.uuid().safeParse(bookingId).success) return [];
   const [b] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
   if (!b) return [];
-  const roles: [string, string | null][] = [
-    ["Customer", b.clientId],
-    ["Payer", b.payerId],
-    ["Shipper", b.shipperId],
-    ["Consignee", b.consigneeId],
-    ["Notify", b.notifyId],
-  ];
+  // Everyone on the file, in every role they hold (domain/booking-parties).
+  const roles: [string, string | null][] = BOOKING_PARTIES.map((p) => [p.label, b[p.key]]);
   const ids = [...new Set(roles.map(([, id]) => id).filter((id): id is string => !!id))];
   const people = await db
     .select({

@@ -7,6 +7,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { auditLog, bookings, containers, contacts, users } from "@/server/db/schema";
+import { isPartyOn } from "@/server/booking-parties";
 import { billMatches, billStatus, type BillFilter, type BillStatus } from "@/domain/invoicing";
 
 /** A malformed id is "not found", never a database error (pages render beside their layout). */
@@ -56,17 +57,8 @@ export async function listBookings(
       const where: SQL[] = [];
       if (opts.status) where.push(eq(bookings.status, opts.status));
       else if (!opts.cancelled) where.push(ne(bookings.status, "cancelled"));
-      // A contact's bookings: every one it is a party on (customer, payer, shipper, consignee, notify).
-      if (opts.contactId)
-        where.push(
-          or(
-            eq(bookings.clientId, opts.contactId),
-            eq(bookings.payerId, opts.contactId),
-            eq(bookings.shipperId, opts.contactId),
-            eq(bookings.consigneeId, opts.contactId),
-            eq(bookings.notifyId, opts.contactId),
-          )!,
-        );
+      // A contact's bookings: every one it is on, in any role (domain/booking-parties).
+      if (opts.contactId) where.push(isPartyOn(opts.contactId));
       if (q) {
         const like = `%${q}%`;
         where.push(
@@ -116,6 +108,12 @@ export const getBooking = cache(async (id: string) => {
       shipper: { columns: { id: true, name: true } },
       consignee: { columns: { id: true, name: true } },
       notify: { columns: { id: true, name: true } },
+      docCheck: { columns: { id: true, name: true } },
+      shippingCo: { columns: { id: true, name: true } },
+      transporter: { columns: { id: true, name: true } },
+      destForwarder: { columns: { id: true, name: true } },
+      forwarder: { columns: { id: true, name: true } },
+      customsAgent: { columns: { id: true, name: true } },
       quotation: { columns: { id: true, ref: true } },
       /** The register's dates, to see a date typed over them (domain/vessels scheduleConflict). */
       vessel: { columns: { id: true, etd: true, eta: true } },

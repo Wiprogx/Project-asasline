@@ -1,9 +1,10 @@
 import "server-only";
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { bookingFiles, bookings, invoiceFiles, invoices } from "@/server/db/schema";
+import { isPartyOn } from "@/server/booking-parties";
 
 export type ContactFile = {
   id: string;
@@ -35,18 +36,7 @@ export async function filesOfContact(contactId: string): Promise<ContactFile[]> 
       })
       .from(bookingFiles)
       .innerJoin(bookings, eq(bookings.id, bookingFiles.bookingId))
-      .where(
-        and(
-          isNull(bookingFiles.archivedAt),
-          or(
-            eq(bookings.clientId, contactId),
-            eq(bookings.payerId, contactId),
-            eq(bookings.shipperId, contactId),
-            eq(bookings.consigneeId, contactId),
-            eq(bookings.notifyId, contactId),
-          ),
-        ),
-      )
+      .where(and(isNull(bookingFiles.archivedAt), isPartyOn(contactId)))
       .orderBy(desc(bookingFiles.createdAt))
       .limit(300),
     db

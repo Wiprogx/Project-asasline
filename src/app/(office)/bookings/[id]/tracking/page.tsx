@@ -45,6 +45,8 @@ export default async function TrackingPage({ params }: PageProps<"/bookings/[id]
         version={b.version}
         docType={b.docType}
         paper={isPaperDoc(paperDocs, b.docType)}
+        pickup={b.originalsPickup}
+        requestedOn={b.originalsRequestedOn}
         docReceiverId={b.docReceiverId}
         sendMode={b.sendMode}
         sendDate={b.sendDate}
