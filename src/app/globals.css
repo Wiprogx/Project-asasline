@@ -25,6 +25,7 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-control: var(--control);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
@@ -66,7 +67,7 @@
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #0b7a61;
+  --primary: #0a7259;
   --primary-foreground: #ffffff;
   --secondary: #eef2f6;
   --secondary-foreground: #0f172a;
@@ -80,9 +81,13 @@
   --info: #1d5fb0;
   --gold: #8a6d2f;
   --border: #d5dce5;
-  --input: #d5dce5;
-  --ring: #0b7a61;
-  --chart-1: #0b7a61;
+  /* A form control's edge must stand out at 3:1 from what it sits on (WCAG 1.4.11): 3.3:1 or
+     more on white, muted, secondary and accent. --border stays soft — it only divides. */
+  --input: #738296;
+  /* A control's own fill (outline buttons, fields, selects): a surface, not an edge. */
+  --control: #ffffff;
+  --ring: #0a7259;
+  --chart-1: #0a7259;
   --chart-2: #1d5fb0;
   --chart-3: #9a5b00;
   --chart-4: #6d4fc2;
@@ -90,12 +95,12 @@
   --radius: 0.625rem;
   --sidebar: #f5f7fa;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #0b7a61;
+  --sidebar-primary: #0a7259;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #e6ebf1;
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #d5dce5;
-  --sidebar-ring: #0b7a61;
+  --sidebar-ring: #0a7259;
 }
 
 .dark {
@@ -114,16 +119,19 @@
   --muted-foreground: #8fa0b5;
   --accent: #22364f;
   --accent-foreground: #e9eef4;
-  --destructive: #f47474;
+  --destructive: #f68080;
   --success: #2dd4a7;
   --warning: #f2a649;
-  --info: #4b9fe8;
+  --info: #57a8ec;
   --gold: #c9a961;
   --border: #243448;
-  --input: #243448;
+  /* 3.2:1 or more on the background, card, popover and accent (WCAG 1.4.11). */
+  --input: #6a84a3;
+  /* A control's fill, used at 30–80%: the legacy surface tone, kept apart from the edge. */
+  --control: #243448;
   --ring: #2dd4a7;
   --chart-1: #2dd4a7;
-  --chart-2: #4b9fe8;
+  --chart-2: #57a8ec;
   --chart-3: #f2a649;
   --chart-4: #a78bfa;
   --chart-5: #c9a961;

@@ -1,4 +1,5 @@
 import "server-only";
+import { legsOf } from "./leg-store";
 import { and, asc, desc, eq, gte, ilike, isNull, or, sql } from "drizzle-orm";
 import { addDays } from "@/domain/dates";
 import { sailingLabel } from "@/domain/vessels";
@@ -74,4 +75,10 @@ export async function sailingOptions(
 export async function cutoffRulesForEdit() {
   await requirePermission("app.settings");
   return readCutoffRulesForEdit();
+}
+
+/** The booking's onward legs with their sailings (legacy legs[]), in order. */
+export async function bookingLegs(bookingId: string) {
+  await requirePermission("app.bookings");
+  return legsOf(db, bookingId);
 }

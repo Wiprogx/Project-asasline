@@ -33,7 +33,7 @@ export function QuotationsFigures({
       href={href(s)}
       aria-current={status === s ? "page" : undefined}
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs whitespace-nowrap",
+        "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs whitespace-nowrap",
         status === s ? "border-primary bg-primary/10 font-medium" : "text-muted-foreground",
       )}
     >

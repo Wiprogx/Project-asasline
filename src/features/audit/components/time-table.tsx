@@ -35,7 +35,7 @@ export function TimeTable({
             href={`/settings/time?range=${r}`}
             aria-current={r === range ? "page" : undefined}
             className={cn(
-              "rounded-full border px-2.5 py-0.5 text-xs",
+              "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs",
               r === range ? "border-primary bg-primary/10 font-medium" : "text-muted-foreground",
             )}
           >
@@ -63,7 +63,7 @@ export function TimeTable({
             <TableRow key={r.id}>
               <TableCell>{r.name}</TableCell>
               {SHOWN.map((a) => (
-                <TableCell key={a} className={cn(num, !r.byApp[a] && "text-muted-foreground/50")}>
+                <TableCell key={a} className={cn(num, !r.byApp[a] && "text-muted-foreground")}>
                   {r.byApp[a] ? hm(r.byApp[a]) : "—"}
                 </TableCell>
               ))}

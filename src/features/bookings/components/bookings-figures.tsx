@@ -32,7 +32,7 @@ export function BookingsFigures({
       href={href(b)}
       aria-current={billing === b ? "page" : undefined}
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs whitespace-nowrap",
+        "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs whitespace-nowrap",
         billing === b ? "border-primary bg-primary/10 font-medium" : "text-muted-foreground",
       )}
     >

@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BookingDetailsForm } from "@/features/bookings/components/booking-details-form";
 import { getBooking } from "@/features/bookings/queries";
 import { contactOptions } from "@/features/contacts/queries";
+import { BookingLegs } from "@/features/vessels/components/booking-legs";
 import { BookingSailing } from "@/features/vessels/components/booking-sailing";
-import { sailingOptions } from "@/features/vessels/queries";
+import { bookingLegs, sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readLoadingModes } from "@/server/loading-config";
@@ -24,7 +25,10 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
   ]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);
-  const sailings = await sailingOptions(officeToday(), { pol: b.pol, pod: b.pod });
+  const [sailings, legs] = await Promise.all([
+    sailingOptions(officeToday(), { pol: b.pol, pod: b.pod }),
+    bookingLegs(id),
+  ]);
 
   const values = {
     id: b.id,
@@ -62,6 +66,11 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
         </CardHeader>
         <CardContent>
           <BookingSailing bookingId={b.id} vesselId={b.vesselId} options={sailings} />
+          {b.vesselId && (
+            <div className="mt-3 border-t pt-3">
+              <BookingLegs bookingId={b.id} legs={legs} options={sailings} />
+            </div>
+          )}
         </CardContent>
       </Card>
       <BookingDetailsForm

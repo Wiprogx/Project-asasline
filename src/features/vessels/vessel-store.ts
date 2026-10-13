@@ -4,8 +4,9 @@ import { bookingFieldsOf, type CutoffRules } from "@/domain/vessels";
 import type { Tx } from "@/server/db/client";
 import { openAutoTask } from "@/server/auto-tasks";
 import { officeToday } from "@/server/clock";
-import { bookings, contacts, vessels } from "@/server/db/schema";
+import { bookingLegs, bookings, contacts, vessels } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
+import { refreshArrival } from "./leg-store";
 
 type Vessel = typeof vessels.$inferSelect;
 
@@ -31,6 +32,8 @@ export async function applySailing(
     .update(bookings)
     .set({ ...fields, version: b.version + 1, updatedBy: userId, updatedAt: new Date() })
     .where(eq(bookings.id, bookingId));
+  // With onward legs, the arrival is the last leg's, not this sailing's (legacy finalVessel).
+  await refreshArrival(tx, bookingId, userId);
   await syncBookingRules(tx, bookingId, userId);
   return true;
 }
@@ -54,6 +57,12 @@ export async function moveBookingsOf(tx: Tx, v: Vessel, rules: CutoffRules, user
     );
   let moved = 0;
   const today = officeToday();
+  // Bookings riding this sailing as an onward leg: their arrival follows it too.
+  const via = await tx
+    .select({ bookingId: bookingLegs.bookingId })
+    .from(bookingLegs)
+    .where(eq(bookingLegs.vesselId, v.id));
+  for (const l of via) if (await refreshArrival(tx, l.bookingId, userId)) moved++;
   for (const b of on) {
     if (!(await applySailing(tx, b.id, v, rules, userId))) continue;
     moved++;

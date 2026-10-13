@@ -31,10 +31,13 @@ export function BookingSummary({
   b,
   specs,
   owners,
+  routing = "",
 }: {
   b: Booking;
   specs: Record<string, { tareKg: number; maxGrossKg: number }>;
   owners: readonly BoxOwner[];
+  /** The vessels in order when the booking tranships (legacy legs[]); empty when direct. */
+  routing?: string;
 }) {
   const route = b.pol || b.pod ? `${b.pol ?? "?"} → ${b.pod ?? "?"}` : null;
   return (
@@ -82,6 +85,7 @@ export function BookingSummary({
             <Row k="Consignee" v={party(b.consignee)} />
             <Row k="Notify" v={party(b.notify)} />
             <Row k="Vessel / voyage" v={[b.vesselName, b.voyage].filter(Boolean).join(" · ")} />
+            {routing && <Row k="Transhipment" v={routing} />}
             <Row k="ETD → ETA" v={b.etd || b.eta ? `${b.etd ?? "?"} → ${b.eta ?? "?"}` : null} />
             <Row
               k="Closings"

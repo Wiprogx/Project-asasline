@@ -9,6 +9,8 @@ import { readBoxOwners, readContainerSpecs } from "@/server/container-config";
 import { specsByType } from "@/domain/lookups";
 import { scheduleConflict } from "@/domain/vessels";
 import { TakeSailingDates } from "@/features/vessels/components/take-sailing-dates";
+import { arrivalOf, routingLabel } from "@/domain/legs";
+import { bookingLegs } from "@/features/vessels/queries";
 
 export async function generateMetadata({ params }: PageProps<"/bookings/[id]">): Promise<Metadata> {
   const id = z.uuid().safeParse((await params).id);
@@ -24,10 +26,20 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
     readBoxOwners(),
   ]);
   if (!b) notFound();
-  const blocked = scheduleConflict(b, b.vessel);
+  const legs = await bookingLegs(b.id);
+  // The register's arrival is the last leg's when there are legs (legacy finalVessel).
+  const blocked = scheduleConflict(
+    b,
+    b.vessel && { etd: b.vessel.etd, eta: arrivalOf(b.vessel.eta, legs) },
+  );
   return (
     <>
-      <BookingSummary b={b} specs={specsByType(specList)} owners={owners} />
+      <BookingSummary
+        b={b}
+        specs={specsByType(specList)}
+        owners={owners}
+        routing={routingLabel({ name: b.vesselName, voyage: b.voyage }, legs)}
+      />
       {b.status !== "cancelled" && (
         <div className="grid gap-4 pt-4 lg:grid-cols-2">
           <CopiesCard

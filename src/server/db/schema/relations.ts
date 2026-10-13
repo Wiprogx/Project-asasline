@@ -4,6 +4,7 @@ import { contactAddresses, contactBankAccounts, contacts } from "./contacts";
 import { users } from "./identity";
 import { priceListLines, priceLists, rateItems } from "./pricing";
 import {
+  bookingLegs,
   bookings,
   containers,
   quotationLines,
@@ -66,6 +67,7 @@ export const quotationLinesRelations = relations(quotationLines, ({ one }) => ({
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   vessel: one(vessels, { fields: [bookings.vesselId], references: [vessels.id] }),
+  legs: many(bookingLegs),
   client: one(contacts, {
     fields: [bookings.clientId],
     references: [contacts.id],
@@ -101,4 +103,9 @@ export const containersRelations = relations(containers, ({ one }) => ({
 
 export const activitiesRelations = relations(activities, ({ one }) => ({
   assignee: one(users, { fields: [activities.assigneeId], references: [users.id] }),
+}));
+
+export const bookingLegsRelations = relations(bookingLegs, ({ one }) => ({
+  booking: one(bookings, { fields: [bookingLegs.bookingId], references: [bookings.id] }),
+  vessel: one(vessels, { fields: [bookingLegs.vesselId], references: [vessels.id] }),
 }));

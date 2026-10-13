@@ -46,8 +46,7 @@ item is ported as its own step; a [config] item becomes a `config_tables` row wi
 editor, never a constant (invariant 8). Legacy refs: §n of `legacy/ASASLINE_TMS_Technical_Reference.md`
 or Lnnnn of `legacy/asasline-demo.html`.
 
-- **Bookings** — `legs[]` for a multi-vessel routing and the transhipment ETA from the last leg
-  (L1500) · the list's column picker and period comparison ·
+- **Bookings** — the list's column picker and period comparison ·
   a Documents tab per side for a "Both" shipment.
 - **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison ·
   a "Rate sources" tab.

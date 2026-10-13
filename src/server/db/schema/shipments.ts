@@ -20,12 +20,13 @@ import {
   quotationDisplayEnum,
   quotationStatusEnum,
   shipmentKindEnum,
-  vesselStatusEnum,
 } from "./enums";
 import { rateItems } from "./pricing";
+import { vessels } from "./vessels";
 
 // The rate catalogue lives in its own file (size); it stays part of the shipments schema here.
 export { priceListLines, priceLists, rateItems } from "./pricing";
+export { vessels } from "./vessels";
 
 export const quotations = pgTable(
   "quotations",
@@ -105,30 +106,6 @@ export const quotationLines = pgTable(
     index("quotation_lines_route_idx").on(t.routeId, t.position),
     index("quotation_lines_item_idx").on(t.itemId),
   ],
-);
-
-/**
- * A sailing of the vessel register: one ship on one voyage between two ports. Bookings on it
- * take their dates and closings from here (domain/vessels); moving it moves them.
- */
-export const vessels = pgTable(
-  "vessels",
-  {
-    ...recordColumns,
-    name: text().notNull(),
-    imo: text(),
-    carrier: text(),
-    service: text(),
-    voyage: text().notNull(),
-    pol: text(),
-    pod: text(),
-    etd: day(),
-    eta: day(),
-    atd: day(),
-    ata: day(),
-    status: vesselStatusEnum().notNull().default("scheduled"),
-  },
-  (t) => [index("vessels_etd_idx").on(t.etd)],
 );
 
 export const bookings = pgTable(
@@ -289,4 +266,29 @@ export const requirementReviews = pgTable(
     createdBy: uuid(),
   },
   (t) => [index("requirement_reviews_booking_idx").on(t.bookingId, t.code)],
+);
+
+/**
+ * An onward leg of a booking after its main sailing (legacy legs[]): via a transhipment port,
+ * one connecting vessel per row in order. The main sailing stays on the booking (its cut-offs);
+ * the last leg's arrival is written back as the booking's ETA.
+ */
+export const bookingLegs = pgTable(
+  "booking_legs",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    bookingId: uuid()
+      .notNull()
+      .references(() => bookings.id),
+    position: integer().notNull(),
+    vesselId: uuid()
+      .notNull()
+      .references(() => vessels.id),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid(),
+  },
+  (t) => [
+    index("booking_legs_booking_idx").on(t.bookingId, t.position),
+    index("booking_legs_vessel_idx").on(t.vesselId),
+  ],
 );

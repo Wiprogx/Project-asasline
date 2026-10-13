@@ -36,7 +36,7 @@ export function PersonLog({
             href={`/settings/people/${userId}/log?range=${r}`}
             aria-current={r === range ? "page" : undefined}
             className={cn(
-              "rounded-full border px-2.5 py-0.5 text-xs",
+              "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs",
               r === range ? "border-primary bg-primary/10 font-medium" : "text-muted-foreground",
             )}
           >

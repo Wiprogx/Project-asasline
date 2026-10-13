@@ -260,6 +260,13 @@
       "when": 1791586552067,
       "tag": "0036_time_and_visits",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791599456514,
+      "tag": "0037_booking_legs",
+      "breakpoints": true
     }
   ]
 }
