@@ -68,6 +68,15 @@ unreachable or superseded before it lands here.
   superseded by the quotation's destination lines (the booking's price) and the supplier bills
   recorded against the booking (its cost).
 
+## Legacy behaviour waiting on a missing record
+
+- **Bookings — "sent to the customer" and "sent to the trucker"** (`b.sentClient`, `b.sentDriver`):
+  the new app prints both copies but does not yet record when each went out. Two things wait on
+  it: the booking-flow steps "Send the booking confirmation" and "Send the trucker copy", and the
+  Certiweight lock "ordered" (legacy `certiLocked`: once the trucker copy carried the weighing
+  request, Certiweight cannot be cancelled). Today Certiweight locks only once a certificate is
+  filed.
+
 ## Data migration (when a module goes live)
 
 1. Export the legacy `records` table per `kind` (JSON bodies).

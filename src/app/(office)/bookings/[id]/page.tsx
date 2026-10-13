@@ -14,6 +14,8 @@ import { bookingLegs } from "@/features/vessels/queries";
 import { AlertsCard } from "@/features/bookings/components/alerts-card";
 import { chargeItems } from "@/features/quotations/charge-queries";
 import { RaiseChargeForm } from "@/features/quotations/components/raise-charge-form";
+import { CertiweightCard } from "@/features/quotations/components/certiweight-card";
+import { certiweightOf } from "@/features/quotations/certi-queries";
 import { bookingAlertsOf } from "@/features/bookings/alert-queries";
 import { may } from "@/domain/permissions";
 import { requireUser } from "@/server/auth/dal";
@@ -39,6 +41,14 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
     chargeItems(),
   ]);
   const canEdit = b.status !== "cancelled" && may(user, "bookings.edit");
+  // Certiweight is an export service (legacy: the card is not shown on an import).
+  const certi =
+    b.quotation && b.quotationRouteId && b.kind !== "import"
+      ? {
+          file: { quotation: b.quotation, routeId: b.quotationRouteId, bookingId: b.id },
+          ...(await certiweightOf(b.quotationRouteId)),
+        }
+      : null;
   // The register's arrival is the last leg's when there are legs (legacy finalVessel).
   const blocked = scheduleConflict(
     b,
@@ -76,6 +86,9 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
               items={items}
               canSeeCost={may(user, "costs.view")}
             />
+          )}
+          {certi && (
+            <CertiweightCard {...certi} canEdit={canEdit} canSeeCost={may(user, "costs.view")} />
           )}
         </div>
       )}

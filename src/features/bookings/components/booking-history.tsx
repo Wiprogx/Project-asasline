@@ -8,6 +8,9 @@ const LABEL: AuditLabels = {
   "booking.restore": () => "Put back",
   "booking.charge": (d) =>
     `Charge on ${d.quotation}: ${d.item} ×${d.qty}${d.reason ? ` — ${d.reason}` : ""}`,
+  "booking.certiweight.on": (d) => `Certiweight switched on — ${d.item} added to ${d.quotation}`,
+  "booking.certiweight.off": (d) =>
+    `Certiweight cancelled — ${d.reason} · charge taken off ${d.quotation}`,
   "booking.alert.raise": (d) => `Alert raised (${d.level}) — ${d.text}`,
   "booking.alert.resolve": (d) => `Alert resolved — ${d.text}`,
   "container.add": (d) => `Container added (${d.type})`,
