@@ -67,5 +67,9 @@ test("the bookings list filters by period, type and line, searches the whole fil
   await expect(row()).toContainText(line);
   await page.getByRole("checkbox", { name: "Value" }).uncheck();
   await expect(page.getByRole("columnheader", { name: "Value" })).toHaveCount(0);
+  // Papers in / papers needed, from the document chain.
+  await page.getByRole("checkbox", { name: "Documents" }).check();
+  await expect(page.getByRole("columnheader", { name: "Documents" })).toBeVisible();
+  await expect(row()).toContainText(/\d+\/\d+ papers in|—/);
   await expect(page).toHaveURL(/cols=/);
 });

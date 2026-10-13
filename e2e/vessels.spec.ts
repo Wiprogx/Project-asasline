@@ -50,6 +50,14 @@ test("a booking on a sailing takes its dates and closings, and moves when the sa
   await expect(page.getByLabel("Port cut-off", { exact: true })).toHaveValue(day(19));
   await expect(page.getByLabel("Customs closing", { exact: true })).toHaveValue(day(17));
 
+  // Tracked from the booking: the ship, its schedule, the bookings on it.
+  await open(page, edit.replace(/\/edit$/, ""));
+  await page.getByRole("link", { name: `${ship} · V100` }).click();
+  await expect(page.getByRole("heading", { level: 1, name: `${ship} · V100` })).toBeVisible();
+  await expect(page.getByText("Bookings on this sailing (1)")).toBeVisible();
+  await expect(page.getByRole("link", { name: sb })).toBeVisible();
+  await expect(page.getByText(day(20)).first()).toBeVisible();
+
   // The carrier moves the ship five days: the booking moves with it.
   await open(page, "/settings/vessels");
   await page.getByRole("link", { name: `${ship} · V100` }).click();

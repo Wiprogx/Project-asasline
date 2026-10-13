@@ -99,7 +99,19 @@ export function BookingSummary({
               />
             )}
             {b.terminal && <Row k="Terminal" v={b.terminal} />}
-            <Row k="Vessel / voyage" v={[b.vesselName, b.voyage].filter(Boolean).join(" · ")} />
+            <Row
+              k="Vessel / voyage"
+              v={
+                b.vessel ? (
+                  // Track the sailing (legacy trackVessel): schedule and every booking on it.
+                  <Link className="hover:underline" href={`/vessels/${b.vessel.id}`}>
+                    {[b.vesselName, b.voyage].filter(Boolean).join(" · ") || "Track vessel"}
+                  </Link>
+                ) : (
+                  [b.vesselName, b.voyage].filter(Boolean).join(" · ")
+                )
+              }
+            />
             {routing && <Row k="Transhipment" v={routing} />}
             <Row k="ETD → ETA" v={b.etd || b.eta ? `${b.etd ?? "?"} → ${b.eta ?? "?"}` : null} />
             <Row

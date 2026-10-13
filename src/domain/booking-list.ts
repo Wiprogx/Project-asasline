@@ -95,6 +95,7 @@ export const BOOKING_COLUMNS = [
   { key: "etd", label: "ETD" },
   { key: "eta", label: "ETA" },
   { key: "steps", label: "Open steps" },
+  { key: "docs", label: "Documents" },
   { key: "value", label: "Value" },
   { key: "billing", label: "Invoiced" },
 ] as const;

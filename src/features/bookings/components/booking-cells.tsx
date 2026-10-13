@@ -53,6 +53,17 @@ function Steps({ open, late }: { open: number; late: number }) {
   );
 }
 
+/** Papers in out of papers needed; green once all are in (legacy docs column). */
+function Docs({ got, need }: { got: number; need: number }) {
+  if (!need) return none;
+  return (
+    <span className={got === need ? "font-medium text-primary tabular-nums" : "tabular-nums"}>
+      {got}/{need}
+      <span className="sr-only"> papers in</span>
+    </span>
+  );
+}
+
 type Cell = (b: BookingRow, today: string) => React.ReactNode;
 
 /** Each column of the list: one real field of the booking (legacy B_COLS). */
@@ -97,6 +108,7 @@ export const CELLS: Record<BookingColumnKey, Cell> = {
   etd: (b) => (b.etd ? <span className="font-mono text-xs">{b.etd}</span> : none),
   eta: (b) => (b.eta ? <span className="font-mono text-xs">{b.eta}</span> : none),
   steps: (b) => <Steps open={b.openSteps} late={b.lateSteps} />,
+  docs: (b) => <Docs got={b.docsIn} need={b.docsNeeded} />,
   value: (b) =>
     b.valueCents ? <span className="tabular-nums">{formatCents(b.valueCents)}</span> : none,
   billing: (b) =>

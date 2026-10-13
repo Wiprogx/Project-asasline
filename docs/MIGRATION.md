@@ -46,8 +46,6 @@ item is ported as its own step; a [config] item becomes a `config_tables` row wi
 editor, never a constant (invariant 8). Legacy refs: §n of `legacy/ASASLINE_TMS_Technical_Reference.md`
 or Lnnnn of `legacy/asasline-demo.html`.
 
-- **Bookings** — the list's "Documents" column (papers in / papers needed per file) ·
-  a Documents tab per side for a "Both" shipment · the vessel tracking sheet.
 - **Quotations and pricing** — a "Rate sources" tab on the list (the table itself is Settings › Rate sources).
 - **Contacts** — kanban view.
 - **Activity** — a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per

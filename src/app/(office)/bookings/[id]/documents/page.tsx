@@ -3,36 +3,61 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { missingCount } from "@/domain/files";
 import { may } from "@/domain/permissions";
+import { kindOfPaper, onSide, parseSide, type RuleKind, type Side } from "@/domain/sides";
 import { BookingFiles } from "@/features/bookings/components/booking-files";
 import { DocumentChain } from "@/features/bookings/components/document-chain";
 import { FileUploadForm } from "@/features/bookings/components/file-upload-form";
 import { RequirementsList } from "@/features/bookings/components/requirements-list";
+import { SideTabs } from "@/features/bookings/components/side-tabs";
 import { bookingDocuments } from "@/features/bookings/file-queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Documents" };
 
-/** The papers of the shipment: what it lacks, the steps that produce them, and what is filed. */
+/**
+ * The papers of the shipment: what it lacks, the steps that produce them, and what is filed.
+ * A shipment both ways shows one side at a time (legacy EXPORT Doc. / IMPORT Doc. tabs).
+ */
 export default async function BookingDocumentsPage({
   params,
+  searchParams,
 }: PageProps<"/bookings/[id]/documents">) {
   const user = await requirePagePermission("app.bookings");
   const d = await bookingDocuments((await params).id);
   if (!d) notFound();
   const canEdit = may(user, "documents.upload") && d.booking.status !== "cancelled";
-  const missing = missingCount(d.requirements);
+  const both = d.booking.kind === "both";
+  const side = parseSide((await searchParams).side);
+  const kinds: Record<string, RuleKind> = Object.fromEntries(
+    d.steps.map((s) => [s.rule.code, s.rule.kind]),
+  );
+  const papersOf = (s: Side) => d.requirements.filter((r) => onSide(kindOfPaper(r, kinds), s));
+  const reqs = both ? papersOf(side) : d.requirements;
+  const steps = both ? d.steps.filter((s) => onSide(s.rule.kind, side)) : d.steps;
+  const missing = missingCount(reqs);
   return (
     <div className="grid gap-4">
+      {both && (
+        <SideTabs
+          base={`/bookings/${d.booking.id}/documents`}
+          side={side}
+          missing={{
+            export: missingCount(papersOf("export")),
+            import: missingCount(papersOf("import")),
+          }}
+        />
+      )}
       <Card>
         <CardHeader>
           <h2 className="font-heading text-base font-medium">
-            Required papers{missing > 0 && ` · ${missing} missing`}
+            {both ? (side === "export" ? "Export papers" : "Import papers") : "Required papers"}
+            {missing > 0 && ` · ${missing} missing`}
           </h2>
         </CardHeader>
         <CardContent>
           <RequirementsList
-            reqs={d.requirements}
+            reqs={reqs}
             bookingId={d.booking.id}
             canEdit={canEdit}
             reviewed={d.reviewed}
@@ -62,7 +87,7 @@ export default async function BookingDocumentsPage({
           <h2 className="font-heading text-base font-medium">Document steps</h2>
         </CardHeader>
         <CardContent>
-          <DocumentChain steps={d.steps} today={officeToday()} />
+          <DocumentChain steps={steps} today={officeToday()} />
         </CardContent>
       </Card>
     </div>

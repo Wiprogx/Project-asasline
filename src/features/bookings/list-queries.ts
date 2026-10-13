@@ -7,6 +7,7 @@ import { isPartyOn } from "@/server/booking-parties";
 import { cached, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
+import { readRuleBook } from "@/server/rule-book";
 import { bookings, contacts } from "@/server/db/schema";
 
 /** The most serious open alert of a booking, then the newest (domain/alerts headline). */
@@ -41,6 +42,19 @@ const carrierOf = sql<
 const stepsOf = (today: string) =>
   sql<string>`(select count(*) || '|' || count(*) filter (where a.due < ${today}::date) from activities a
     where a.link_kind = 'booking' and a.link_id = ${bookings.id} and a.state = 'open')`;
+/**
+ * Papers in / papers needed (legacy docs column): the steps of rules closed by a document,
+ * per box for a per-box rule (key CODE#box), withdrawn ones not counted.
+ */
+const docsOf = (codes: readonly string[]) =>
+  codes.length
+    ? sql<string>`(select count(*) filter (where a.state = 'done') || '|' || count(*) from activities a
+        where a.link_kind = 'booking' and a.link_id = ${bookings.id} and a.state <> 'withdrawn'
+        and split_part(a.rule_code, '#', 1) in (${sql.join(
+          codes.map((c) => sql`${c}`),
+          sql`, `,
+        )}))`
+    : sql<string>`'0|0'`;
 /** The day a booking counts in a period: its sailing, else its loading, else today (legacy bDate). */
 const countedOn = (today: string) =>
   sql`coalesce(${bookings.etd}, ${bookings.loadDate}, ${today}::date)`;
@@ -99,7 +113,7 @@ const scopeKey = (s: ListScope, today: string) =>
     .concat((s.q ?? "").trim().toLowerCase())
     .join(":");
 
-async function selectRows(s: ListScope, today: string) {
+async function selectRows(s: ListScope, today: string, fileCodes: readonly string[]) {
   const b = bookings;
   const rows = await db
     .select({
@@ -130,6 +144,7 @@ async function selectRows(s: ListScope, today: string) {
       boxModes: boxModesOf,
       truckers: truckersOf,
       steps: stepsOf(today),
+      docs: docsOf(fileCodes),
       valueCents: valueOf,
       billedCents: billedOf,
       alert: headlineOf,
@@ -139,8 +154,9 @@ async function selectRows(s: ListScope, today: string) {
     .where(scopeWhere(s, today))
     .orderBy(desc(b.ref))
     .limit(500);
-  return rows.map(({ steps, boxLoads, boxModes, ...r }) => {
+  return rows.map(({ steps, docs, boxLoads, boxModes, ...r }) => {
     const [open, late] = steps.split("|").map(Number);
+    const [docsIn, docsNeeded] = docs.split("|").map(Number);
     return {
       ...r,
       // A box's own detail wins; the booking's stands in when no box says one (legacy boxValues).
@@ -149,6 +165,8 @@ async function selectRows(s: ListScope, today: string) {
       boxes: r.boxNos.length,
       openSteps: open,
       lateSteps: late,
+      docsIn,
+      docsNeeded,
       billing: billStatus(r.valueCents, r.billedCents),
     };
   });
@@ -160,10 +178,14 @@ export type BookingRow = Awaited<ReturnType<typeof selectRows>>[number];
 export async function listBookings(s: ListScope = {}): Promise<BookingRow[]> {
   await requirePermission("app.bookings");
   const today = officeToday();
+  // The rules closed by a document (need "file", the default), as the Documents tab counts them.
+  const fileCodes = (await readRuleBook())
+    .filter((r) => (r.need ?? "file") === "file")
+    .map((r) => r.code);
   const rows = await cached(
-    `bookings:list:v2:${scopeKey(s, today)}`,
+    `bookings:list:v3:${scopeKey(s, today)}:${fileCodes.join(",")}`,
     { ttlSeconds: 30, tags: [tags.bookings] },
-    () => selectRows(s, today),
+    () => selectRows(s, today, fileCodes),
   );
   return rows.filter((r) => billMatches(r.billing, s.billing));
 }
