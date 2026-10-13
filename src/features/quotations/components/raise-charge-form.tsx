@@ -26,7 +26,12 @@ export function RaiseChargeForm({
   boxes,
   items,
   canSeeCost,
+  title = "Raise a charge",
+  preset,
 }: {
+  title?: string;
+  /** Filled in for a known charge (legacy chargeExtraTime): the item, how many, why. */
+  preset?: { itemId: string | null; qty: number; reason: string };
   quotation: { id: string; ref: string; version: number };
   routeId: string;
   bookingId: string;
@@ -35,7 +40,7 @@ export function RaiseChargeForm({
   canSeeCost: boolean;
 }) {
   const form = useRef<HTMLFormElement>(null);
-  const [item, setItem] = useState<Item | null>(null);
+  const [item, setItem] = useState<Item | null>(items.find((i) => i.id === preset?.itemId) ?? null);
   const [state, run, pending] = useToastedAction(
     raiseCharge,
     () => {
@@ -48,7 +53,7 @@ export function RaiseChargeForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Raise a charge</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>
           It goes on {quotation.ref}, the destination this booking ships, so it is invoiced instead
           of forgotten.
@@ -66,12 +71,19 @@ export function RaiseChargeForm({
               name="itemId"
               required
               placeholder="Waiting time, scanner, storage…"
+              defaultValue={preset?.itemId ?? undefined}
               onChange={(e) => setItem(items.find((i) => i.id === e.target.value) ?? null)}
               options={items.map((i) => ({ value: i.id, label: i.label }))}
             />
           </Field>
           <Field id="charge-qty" label="Quantity, days or hours" error={fe?.qty}>
-            <Input id="charge-qty" name="qty" type="number" min={1} defaultValue={1} />
+            <Input
+              id="charge-qty"
+              name="qty"
+              type="number"
+              min={1}
+              defaultValue={preset?.qty ?? 1}
+            />
           </Field>
           <Field
             id="charge-sell"
@@ -121,6 +133,7 @@ export function RaiseChargeForm({
             <Input
               id="charge-reason"
               name="reason"
+              defaultValue={preset?.reason}
               placeholder="Customs pulled the box for scanning"
             />
           </Field>

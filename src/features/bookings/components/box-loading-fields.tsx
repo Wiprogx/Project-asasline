@@ -13,6 +13,8 @@ export type BoxLoading = {
   loadTime: string | null;
   loadingMode: string | null;
   transporterId: string | null;
+  loadEndDate: string | null;
+  loadEndTime: string | null;
   pickBackDate: string | null;
   pickBackTime: string | null;
   stops: Stop[];
@@ -108,6 +110,31 @@ export function BoxLoadingFields({
           options={truckers.map((t) => ({ value: t.id, label: t.name }))}
         />
       </Field>
+      {!drop && (
+        <>
+          <Field
+            id={`${p}-end-date`}
+            label="Loading finished — date"
+            hint="From the CMR: compared with the hours the mode includes."
+            error={fe?.loadEndDate}
+          >
+            <Input
+              id={`${p}-end-date`}
+              name="loadEndDate"
+              type="date"
+              defaultValue={box.loadEndDate ?? ""}
+            />
+          </Field>
+          <Field id={`${p}-end-time`} label="Loading finished — time" error={fe?.loadEndTime}>
+            <Input
+              id={`${p}-end-time`}
+              name="loadEndTime"
+              type="time"
+              defaultValue={box.loadEndTime ?? ""}
+            />
+          </Field>
+        </>
+      )}
       {drop && (
         <>
           <Field

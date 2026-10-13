@@ -153,6 +153,8 @@ export const containerSchema = z.object({
   loadTime: time,
   loadingMode: z.string().max(80).optional(),
   transporterId: z.uuid().optional(),
+  loadEndDate: day.optional(),
+  loadEndTime: time,
   pickBackDate: day.optional(),
   pickBackTime: time,
   stops: z
@@ -225,6 +227,8 @@ export const CLEARABLE_CONTAINER = [
   "loadTime",
   "loadingMode",
   "transporterId",
+  "loadEndDate",
+  "loadEndTime",
   "pickBackDate",
   "pickBackTime",
   "packages",

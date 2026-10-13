@@ -134,6 +134,9 @@ export const containers = pgTable(
     loadTime: text(),
     loadingMode: text(),
     transporterId: uuid().references(() => contacts.id),
+    /** When the loading finished, from the CMR: measured against the agreed hours. */
+    loadEndDate: day(),
+    loadEndTime: text(),
     /** When the truck comes back for a box left on site (a drop mode). */
     pickBackDate: day(),
     pickBackTime: text(),

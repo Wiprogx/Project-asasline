@@ -288,6 +288,13 @@
       "when": 1791901207088,
       "tag": "0040_booking_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791904610311,
+      "tag": "0041_container_load_end",
+      "breakpoints": true
     }
   ]
 }

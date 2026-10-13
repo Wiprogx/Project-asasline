@@ -15,6 +15,7 @@ import { parseIdFormatLines } from "@/domain/contacts";
 import { ID_FORMATS_TAG, idFormatsSchema } from "@/server/id-config";
 import { parseCountryLines } from "@/domain/countries";
 import { COUNTRIES_TAG, countriesSchema } from "@/server/country-config";
+import { LOADING_GRACE_TAG, loadingGraceSchema } from "@/server/loading-config";
 import { parseLineItemLines } from "@/domain/line-items";
 import { LINE_ITEMS_TAG, lineItemsSchema } from "@/server/line-items-config";
 
@@ -125,4 +126,24 @@ export async function saveLineItems(_p: ActionResult, fd: FormData): Promise<Act
     detail: { count: checked.data.length },
   });
   return bad ?? { ok: true, data: undefined, message: `Saved · ${checked.data.length} line items` };
+}
+
+/** The grace before waiting time is billable, in minutes (legacy LOADING_GRACE_H). */
+export async function saveLoadingGrace(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.settings");
+  const parsed = versioned.extend({ lines: z.string().max(20) }).safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const minutes = Number(parsed.data.lines.trim());
+  const checked = loadingGraceSchema.safeParse({ minutes });
+  if (!checked.success) return fail("The grace in whole minutes, 0 to 240.");
+  const bad = await saveTable({
+    userId: user.id,
+    name: "loadingGrace",
+    value: checked.data,
+    version: parsed.data.version,
+    tag: LOADING_GRACE_TAG,
+    path: "/settings/loading",
+    detail: checked.data,
+  });
+  return bad ?? { ok: true, data: undefined, message: `Saved · ${minutes} minutes of grace` };
 }

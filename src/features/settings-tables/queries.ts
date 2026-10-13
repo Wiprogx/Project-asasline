@@ -9,7 +9,7 @@ import { readActivityRulesForEdit } from "@/server/activity-config";
 import { readBooksForEdit } from "@/server/books-config";
 import { readBoxOwnersForEdit, readContainerSpecsForEdit } from "@/server/container-config";
 import { readHsCodesForEdit } from "@/server/goods-config";
-import { readLoadingModesForEdit } from "@/server/loading-config";
+import { readLoadingGraceForEdit, readLoadingModesForEdit } from "@/server/loading-config";
 import {
   readReleaseStatesForEdit,
   readSendModesForEdit,
@@ -101,7 +101,8 @@ export async function hsCodesForEdit() {
 
 export async function loadingModesForEdit() {
   await requirePermission("app.settings");
-  return readLoadingModesForEdit();
+  const [modes, grace] = await Promise.all([readLoadingModesForEdit(), readLoadingGraceForEdit()]);
+  return { ...modes, grace };
 }
 
 export async function permissionsForEdit() {
