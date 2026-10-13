@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull, like, ne } from "drizzle-orm";
+import { and, eq, isNull, like, max, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { remainingQty } from "@/domain/invoicing";
 import { type ActionResult, fail } from "@/lib/action-result";
@@ -125,7 +125,18 @@ type PricedLine = {
   typed?: { sellCents?: number; costCents?: number };
   /** Multiplied by the destination's containers; the default for a catalogue line. */
   perBox?: boolean;
+  /** Raised as a charge (from a booking): never a term, even from the free-time category. */
+  charge?: boolean;
 };
+
+/** The next position on a destination's lines. */
+export async function nextPosition(tx: DbOrTx, routeId: string) {
+  const [{ last }] = await tx
+    .select({ last: max(quotationLines.position) })
+    .from(quotationLines)
+    .where(eq(quotationLines.routeId, routeId));
+  return (last ?? -1) + 1;
+}
 
 /** A catalogue item as a line, priced for the customer: agreement → last price → catalogue. */
 export async function insertPricedLine(tx: DbOrTx, p: PricedLine) {
@@ -150,7 +161,7 @@ export async function insertPricedLine(tx: DbOrTx, p: PricedLine) {
     priceSource: sell === price.sellCents ? price.source : "manual",
     perBox: p.perBox ?? true,
     // Free time is a term, not a charge: named on the paper, never totalled (legacy).
-    condition: item.category === "freetime",
+    condition: !p.charge && item.category === "freetime",
     createdBy: p.userId,
   });
   return { item, label, price };

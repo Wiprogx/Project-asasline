@@ -11,6 +11,8 @@ const LABEL: AuditLabels = {
   "quotation.route.update": () => "Destination edited",
   "quotation.route.decline": (d) => `Destination declined${text(d.reason) ? ` — ${d.reason}` : ""}`,
   "quotation.route.restore": () => "Destination put back",
+  "quotation.charge": (d) =>
+    `Charge raised from ${text(d.booking) ?? "a booking"}: ${text(d.item) ?? ""} ×${d.qty}${text(d.reason) ? ` — ${d.reason}` : ""}`,
   "quotation.line.add": (d) => `Line added${text(d.description) ? ` · ${d.description}` : ""}`,
   "quotation.line.update": () => "Line edited",
   "quotation.line.remove": (d) => `Line removed${text(d.reason) ? ` — ${d.reason}` : ""}`,

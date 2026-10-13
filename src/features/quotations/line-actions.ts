@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, max } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
@@ -17,18 +17,11 @@ import {
   Refused,
   resyncBookingOf,
   routeIn,
+  nextPosition,
   touchQuotation,
 } from "./editor-store";
 
 type NewLine = ReturnType<typeof addLineSchema.parse>;
-
-async function nextPosition(tx: Tx, routeId: string) {
-  const [{ last }] = await tx
-    .select({ last: max(quotationLines.position) })
-    .from(quotationLines)
-    .where(eq(quotationLines.routeId, routeId));
-  return (last ?? -1) + 1;
-}
 
 /** A line typed by hand: its own description and price. */
 async function insertTypedLine(tx: Tx, d: NewLine, position: number, userId: string) {

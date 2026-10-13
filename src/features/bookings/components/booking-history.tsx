@@ -6,6 +6,8 @@ const LABEL: AuditLabels = {
   "booking.edit": (d) => `Edited ${(d.fields as string[] | undefined)?.join(", ") ?? ""}`,
   "booking.cancel": (d) => `Cancelled — ${d.reason}`,
   "booking.restore": () => "Put back",
+  "booking.charge": (d) =>
+    `Charge on ${d.quotation}: ${d.item} ×${d.qty}${d.reason ? ` — ${d.reason}` : ""}`,
   "booking.alert.raise": (d) => `Alert raised (${d.level}) — ${d.text}`,
   "booking.alert.resolve": (d) => `Alert resolved — ${d.text}`,
   "container.add": (d) => `Container added (${d.type})`,

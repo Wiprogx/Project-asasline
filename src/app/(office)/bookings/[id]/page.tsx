@@ -12,6 +12,8 @@ import { TakeSailingDates } from "@/features/vessels/components/take-sailing-dat
 import { arrivalOf, routingLabel } from "@/domain/legs";
 import { bookingLegs } from "@/features/vessels/queries";
 import { AlertsCard } from "@/features/bookings/components/alerts-card";
+import { chargeItems } from "@/features/quotations/charge-queries";
+import { RaiseChargeForm } from "@/features/quotations/components/raise-charge-form";
 import { bookingAlertsOf } from "@/features/bookings/alert-queries";
 import { may } from "@/domain/permissions";
 import { requireUser } from "@/server/auth/dal";
@@ -30,11 +32,13 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
     readBoxOwners(),
   ]);
   if (!b) notFound();
-  const [legs, alerts, user] = await Promise.all([
+  const [legs, alerts, user, items] = await Promise.all([
     bookingLegs(b.id),
     bookingAlertsOf(b.id),
     requireUser(),
+    chargeItems(),
   ]);
+  const canEdit = b.status !== "cancelled" && may(user, "bookings.edit");
   // The register's arrival is the last leg's when there are legs (legacy finalVessel).
   const blocked = scheduleConflict(
     b,
@@ -43,11 +47,7 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
   return (
     <>
       <div className="pb-4">
-        <AlertsCard
-          bookingId={b.id}
-          alerts={alerts}
-          canEdit={b.status !== "cancelled" && may(user, "bookings.edit")}
-        />
+        <AlertsCard bookingId={b.id} alerts={alerts} canEdit={canEdit} />
       </div>
       <BookingSummary
         b={b}
@@ -67,6 +67,16 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
               gaps: truckerCopyGaps({ ...b, boxCount: b.containers.length }, c),
             }))}
           />
+          {canEdit && b.quotation && b.quotationRouteId && (
+            <RaiseChargeForm
+              quotation={b.quotation}
+              routeId={b.quotationRouteId}
+              bookingId={b.id}
+              boxes={b.containers.length}
+              items={items}
+              canSeeCost={may(user, "costs.view")}
+            />
+          )}
         </div>
       )}
     </>
