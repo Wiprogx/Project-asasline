@@ -24,12 +24,12 @@ type Raised = {
 /** The open alerts, the most serious first, then the newest (legacy: unresolved, in order). */
 export function openAlerts<T extends Raised>(alerts: readonly T[]): T[] {
   const rank = (l: AlertLevel) => ALERT_LEVELS.indexOf(l);
+  // Instants compared as ISO text: the domain never builds a date (invariant 4).
+  const iso = (v: Date | string) => (typeof v === "string" ? v : v.toISOString());
   return alerts
     .filter((a) => !a.resolvedAt)
     .sort(
-      (a, b) =>
-        rank(a.level) - rank(b.level) ||
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) => rank(a.level) - rank(b.level) || iso(b.createdAt).localeCompare(iso(a.createdAt)),
     );
 }
 

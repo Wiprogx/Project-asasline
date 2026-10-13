@@ -11,6 +11,8 @@ import { type NeedKind } from "@/domain/rules/engine";
 import { FormDialog } from "@/components/shared/form-dialog";
 import { Field } from "@/components/shared/field";
 import { Input } from "@/components/ui/input";
+import { BL_STEP } from "@/domain/bl-confirm";
+import { BlConfirmDialog } from "./bl-confirm-dialog";
 
 /** Checked, or sent back with a reason — the office's word on a paper (legacy verified / rejected). */
 /** What the close is called, by what closes the step (legacy NEED_KINDS). */
@@ -60,7 +62,8 @@ export function RequirementActions({
           )}
         </FormDialog>
       )}
-      {state !== "checked" && !list && need !== "ref" && (
+      {state !== "checked" && code === BL_STEP && <BlConfirmDialog bookingId={bookingId} />}
+      {state !== "checked" && !list && need !== "ref" && code !== BL_STEP && (
         <ActionForm action={check}>
           <input type="hidden" name="bookingId" value={bookingId} />
           <input type="hidden" name="code" value={code} />

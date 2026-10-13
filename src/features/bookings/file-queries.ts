@@ -1,4 +1,5 @@
 import "server-only";
+import { fillStep } from "@/domain/rules/engine";
 import { and, eq } from "drizzle-orm";
 import { type FileStage, requirementsOf, type ReviewState } from "@/domain/files";
 import { requirePermission } from "@/server/auth/dal";
@@ -37,7 +38,8 @@ export async function bookingDocuments(id: string) {
     destinationDocs: docs,
     steps: steps.map((s) => ({
       code: s.key,
-      doc: s.box ? `${s.rule.doc} — ${s.box.label}` : s.rule.doc,
+      // "{docName}" reads as the document the customer chose, as the task titles do.
+      doc: s.box ? `${fillStep(s.rule.doc, b)} — ${s.box.label}` : fillStep(s.rule.doc, b),
       status: s.status,
       checklist: s.rule.checklist ?? null,
       need: s.rule.need,

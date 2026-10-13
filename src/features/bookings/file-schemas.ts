@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BL_CHANNELS, type BlChannel, BL_OUTCOMES } from "@/domain/bl-confirm";
 import { FILE_STAGES } from "@/domain/files";
 
 const code = z
@@ -55,6 +56,14 @@ export const checkSchema = z.object({
     .trim()
     .regex(/^[A-Z][A-Z0-9_]{1,29}(#[0-9a-f-]{36})?$/, "A step"),
   reason: z.string().trim().max(300).optional(),
+});
+
+/** What came back on the draft B/L (domain/bl-confirm). */
+export const blConfirmSchema = z.object({
+  bookingId: z.uuid(),
+  outcome: z.enum(BL_OUTCOMES),
+  channel: z.enum(BL_CHANNELS.map((c) => c.key) as [BlChannel, ...BlChannel[]]),
+  text: z.string().trim().max(300).optional().default(""),
 });
 
 export const sendBackSchema = checkSchema.extend({

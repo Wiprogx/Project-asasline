@@ -9,14 +9,15 @@ import {
 } from "./activity-rules";
 
 describe("automatic activities", () => {
-  it("ship the legacy six rules and the sailing-moved one, five of them active, and seven task types", () => {
-    expect(DEFAULT_ACTIVITY_RULES).toHaveLength(7);
+  it("ship the legacy six rules, the sailing-moved and B/L-correction ones, six of them active, and seven task types", () => {
+    expect(DEFAULT_ACTIVITY_RULES).toHaveLength(8);
     expect(DEFAULT_ACTIVITY_RULES.filter((r) => r.active).map((r) => r.trigger)).toEqual([
       "quote_created",
       "quote_sent",
       "dest_added",
       "booking_created",
       "sailing_moved",
+      "bl_correction",
     ]);
     expect(DEFAULT_ACTIVITY_TYPES).toHaveLength(7);
   });

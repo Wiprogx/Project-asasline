@@ -57,6 +57,17 @@ or Lnnnn of `legacy/asasline-demo.html`.
 - **Settings and platform** — Integrations and Demo material screens.
 - **Go-live** — the one-off import of the legacy `records` table (section below).
 
+## Legacy items deliberately not ported
+
+Found by the field-by-field review against `docs/legacy-inventory/`; each one is checked to be
+unreachable or superseded before it lands here.
+
+- **Bookings — B/L correction after sailing** (`blCorrection`, L7841): defined, never called from
+  any screen in the legacy file; the live path is the B/L confirmation, which is ported.
+- **Bookings — order lines and cost lines typed on the booking** (`addLine`, `addCost`, L4013–4030):
+  superseded by the quotation's destination lines (the booking's price) and the supplier bills
+  recorded against the booking (its cost).
+
 ## Data migration (when a module goes live)
 
 1. Export the legacy `records` table per `kind` (JSON bodies).
