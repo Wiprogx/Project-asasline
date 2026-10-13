@@ -13,6 +13,11 @@ import { billMatches, billStatus, type BillFilter, type BillStatus } from "@/dom
 /** A malformed id is "not found", never a database error (pages render beside their layout). */
 const isUuid = (id: string) => z.uuid().safeParse(id).success;
 
+/** The most serious open alert of a booking, then the newest (domain/alerts headline). */
+const headlineOf = sql<string | null>`(select a.level || '|' || a.text from booking_alerts a
+  where a.booking_id = ${bookings.id} and a.resolved_at is null
+  order by case a.level when 'urgent' then 0 when 'alert' then 1 else 2 end, a.created_at desc limit 1)`;
+
 export type BookingRow = {
   id: string;
   ref: string;
@@ -27,6 +32,8 @@ export type BookingRow = {
   valueCents: number;
   billedCents: number;
   billing: BillStatus;
+  /** The file's most serious open alert, "level|text" (legacy lastAlert); null without one. */
+  alert: string | null;
 };
 
 /** The destination's lines sold: qty × boxes for a per-container line, terms bill nothing. */
@@ -84,6 +91,7 @@ export async function listBookings(
           etd: bookings.etd,
           valueCents: valueOf,
           billedCents: billedOf,
+          alert: headlineOf,
         })
         .from(bookings)
         .innerJoin(contacts, eq(contacts.id, bookings.clientId))

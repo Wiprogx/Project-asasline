@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { HsLine } from "../../../domain/goods";
 import type { Stop } from "../../../domain/loading";
+import type { AlertLevel } from "../../../domain/alerts";
 import type { TrackStep } from "../../../domain/release";
 import { day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
@@ -224,4 +225,25 @@ export const bookingLegs = pgTable(
     index("booking_legs_booking_idx").on(t.bookingId, t.position),
     index("booking_legs_vessel_idx").on(t.vesselId),
   ],
+);
+
+/**
+ * An alert on a booking (legacy b.alerts): urgent, alert or info, and what it says. Resolved with
+ * who and when, never deleted (invariant 1).
+ */
+export const bookingAlerts = pgTable(
+  "booking_alerts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    bookingId: uuid()
+      .notNull()
+      .references(() => bookings.id),
+    level: text().$type<AlertLevel>().notNull(),
+    text: text().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid(),
+    resolvedAt: timestamp({ withTimezone: true }),
+    resolvedBy: uuid(),
+  },
+  (t) => [index("booking_alerts_booking_idx").on(t.bookingId, t.resolvedAt)],
 );

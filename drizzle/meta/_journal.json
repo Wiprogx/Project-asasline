@@ -281,6 +281,13 @@
       "when": 1791900084269,
       "tag": "0039_booking_legs_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791901207088,
+      "tag": "0040_booking_alerts",
+      "breakpoints": true
     }
   ]
 }

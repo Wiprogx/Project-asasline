@@ -12,7 +12,21 @@ import type { BookingRow } from "../queries";
 import { BookingStatusBadge } from "./booking-status-badge";
 import { BILL_STATUS_LABEL, BILL_STATUS_TONE } from "@/domain/invoicing";
 import { formatCents } from "@/domain/money";
+import { ALERT_META, type AlertLevel } from "@/domain/alerts";
 import { ToneBadge } from "@/components/shared/tone-badge";
+
+/** The file's most serious open alert under its ref (legacy lastAlert). */
+function AlertLine({ alert }: { alert: string | null }) {
+  if (!alert) return null;
+  const [level, ...rest] = alert.split("|");
+  const meta = ALERT_META[level as AlertLevel] ?? ALERT_META.alert;
+  return (
+    <div className="mt-1 flex max-w-64 items-center gap-1.5 text-xs">
+      <ToneBadge tone={meta.tone}>{meta.label}</ToneBadge>
+      <span className="truncate">{rest.join("|")}</span>
+    </div>
+  );
+}
 
 export function BookingsTable({ rows }: { rows: BookingRow[] }) {
   if (rows.length === 0) {
@@ -39,6 +53,7 @@ export function BookingsTable({ rows }: { rows: BookingRow[] }) {
               <Link href={`/bookings/${b.id}`} className="font-mono font-medium hover:underline">
                 {b.ref}
               </Link>
+              <AlertLine alert={b.alert} />
             </TableCell>
             <TableCell className="max-w-48 truncate">{b.clientName}</TableCell>
             <TableCell className="hidden md:table-cell">

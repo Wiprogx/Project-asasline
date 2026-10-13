@@ -11,6 +11,10 @@ import { scheduleConflict } from "@/domain/vessels";
 import { TakeSailingDates } from "@/features/vessels/components/take-sailing-dates";
 import { arrivalOf, routingLabel } from "@/domain/legs";
 import { bookingLegs } from "@/features/vessels/queries";
+import { AlertsCard } from "@/features/bookings/components/alerts-card";
+import { bookingAlertsOf } from "@/features/bookings/alert-queries";
+import { may } from "@/domain/permissions";
+import { requireUser } from "@/server/auth/dal";
 
 export async function generateMetadata({ params }: PageProps<"/bookings/[id]">): Promise<Metadata> {
   const id = z.uuid().safeParse((await params).id);
@@ -26,7 +30,11 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
     readBoxOwners(),
   ]);
   if (!b) notFound();
-  const legs = await bookingLegs(b.id);
+  const [legs, alerts, user] = await Promise.all([
+    bookingLegs(b.id),
+    bookingAlertsOf(b.id),
+    requireUser(),
+  ]);
   // The register's arrival is the last leg's when there are legs (legacy finalVessel).
   const blocked = scheduleConflict(
     b,
@@ -34,6 +42,13 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
   );
   return (
     <>
+      <div className="pb-4">
+        <AlertsCard
+          bookingId={b.id}
+          alerts={alerts}
+          canEdit={b.status !== "cancelled" && may(user, "bookings.edit")}
+        />
+      </div>
       <BookingSummary
         b={b}
         specs={specsByType(specList)}
