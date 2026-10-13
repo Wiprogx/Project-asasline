@@ -46,4 +46,29 @@ test("the quotations list carries its figures, a value per quotation and status 
   await expect(figures).toContainText("Booked 1");
   await expect(figures).toContainText("Booked value €900.00");
   await expect(figures).toContainText("Win rate 100%");
+
+  // The period and the one before (legacy statsPanel): made this month, so it is in, and up on last month.
+  await page
+    .getByRole("navigation", { name: "Period" })
+    .getByRole("link", { name: "This month" })
+    .click();
+  await expect(page).toHaveURL(/period=month/);
+  await expect(figures).toContainText("Booked 1");
+  await page
+    .getByRole("navigation", { name: "Period" })
+    .getByRole("link", { name: "vs previous" })
+    .click();
+  await expect(page).toHaveURL(/cmp=prev/);
+  await expect(figures).toContainText(/Booked 1\s*▲ 100%/);
+
+  // The figures chosen are a link; the rankings name the customer.
+  await page.getByText("Choose the figures").click();
+  await page.getByLabel("Shown", { exact: true }).uncheck();
+  await expect(page).toHaveURL(/figs=/);
+  await expect(figures).not.toContainText("Shown");
+  await expect(figures).toContainText("Win rate 100%");
+  await expect(page.getByRole("region", { name: "Top 5 customers" })).toContainText(client);
+  await expect(page.getByRole("region", { name: "Top 5 port-to-port" })).toContainText(
+    "BEANR → TRMER",
+  );
 });

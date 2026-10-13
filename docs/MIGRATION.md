@@ -48,8 +48,7 @@ or Lnnnn of `legacy/asasline-demo.html`.
 
 - **Bookings** — the list's column picker and period comparison ·
   a Documents tab per side for a "Both" shipment.
-- **Quotations and pricing** — the list's figure picker, top-5 rankings and period comparison ·
-  a "Rate sources" tab.
+- **Quotations and pricing** — a "Rate sources" tab on the list (the table itself is Settings › Rate sources).
 - **Contacts** — kanban view.
 - **Activity** — a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
   country) is covered by Settings › Document rules: a country's paper is a rule with its anchor, offset and blocking flag.

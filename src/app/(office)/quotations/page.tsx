@@ -3,12 +3,16 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { buttonVariants } from "@/components/ui/button";
-import { QuotationsTable } from "@/features/quotations/components/quotations-table";
-import { listQuotations } from "@/features/quotations/queries";
-import { requirePagePermission } from "@/server/auth/dal";
+import { parseFigureKeys } from "@/domain/quotation-list";
+import { parsePeriodKey, periodScope } from "@/domain/periods";
 import { QUOTATION_STATUSES } from "@/domain/shipments";
 import { QuotationsFigures } from "@/features/quotations/components/quotations-figures";
+import { QuotationsTable } from "@/features/quotations/components/quotations-table";
+import { topLanes } from "@/features/quotations/figure-queries";
+import { listQuotations } from "@/features/quotations/queries";
 import { QUOTATION_TONE } from "@/features/quotations/status";
+import { requirePagePermission } from "@/server/auth/dal";
+import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Quotations" };
 
@@ -17,7 +21,17 @@ export default async function QuotationsPage({ searchParams }: PageProps<"/quota
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const status = QUOTATION_STATUSES.find((s) => s === sp.status);
-  const rows = await listQuotations({ q, status });
+  const period = parsePeriodKey(sp.period);
+  const cmp = sp.cmp === "prev" && period !== "all";
+  const figs = typeof sp.figs === "string" ? sp.figs : undefined;
+  const today = officeToday();
+  const now = periodScope(period, today);
+  const scope = { q, status, period: now };
+  const [rows, before, lanes] = await Promise.all([
+    listQuotations(scope),
+    cmp ? listQuotations({ q, status, period: periodScope(period, today, 1) }) : null,
+    topLanes(scope),
+  ]);
   return (
     <>
       <PageHeader
@@ -32,7 +46,14 @@ export default async function QuotationsPage({ searchParams }: PageProps<"/quota
       <div className="mb-4">
         <SearchInput placeholder="Search QT ref or customer…" />
       </div>
-      <QuotationsFigures rows={rows} q={q} status={status} />
+      <QuotationsFigures
+        rows={rows}
+        before={before}
+        shown={parseFigureKeys(figs)}
+        params={{ q, status, period, cmp, figs }}
+        periodLabel={now ? `${now.label} · ${now.from} → ${now.to}` : "All time"}
+        lanes={lanes}
+      />
       <QuotationsTable rows={rows} />
     </>
   );

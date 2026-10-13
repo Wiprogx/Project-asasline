@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { formatCents } from "@/domain/money";
 import { itemLabel } from "@/domain/pricing";
 import { destinationsPhrase, letterLines, quotationDoc } from "@/domain/quotation-doc";
@@ -17,6 +17,7 @@ import {
   rateItems,
 } from "@/server/db/schema";
 import { cache } from "react";
+import { scopeWhere, type ListScope } from "./figure-queries";
 
 export type QuotationRow = {
   id: string;
@@ -36,16 +37,14 @@ const valueOf = sql<number>`(select coalesce(sum(ql.qty * (case when ql.per_box 
 const destinationsOf = sql<number>`(select count(*) from quotation_routes qr
   where qr.quotation_id = ${quotations.id} and qr.archived_at is null)::int`;
 
-export async function listQuotations(
-  opts: { q?: string; clientId?: string; status?: QuotationStatus } = {},
-) {
+export async function listQuotations(opts: ListScope & { clientId?: string } = {}) {
   await requirePermission("app.quotations");
   const q = opts.q?.trim() ?? "";
+  const when = opts.period ? `${opts.period.from}_${opts.period.to}` : "*";
   return cached(
-    `quotations:list:${opts.clientId ?? "*"}:${opts.status ?? "*"}:${q.toLowerCase()}`,
+    `quotations:list:${opts.clientId ?? "*"}:${opts.status ?? "*"}:${q.toLowerCase()}:${when}`,
     { ttlSeconds: 30, tags: [tags.quotations] },
     (): Promise<QuotationRow[]> => {
-      const like = `%${q}%`;
       return db
         .select({
           id: quotations.id,
@@ -59,11 +58,7 @@ export async function listQuotations(
         .from(quotations)
         .innerJoin(contacts, eq(contacts.id, quotations.clientId))
         .where(
-          and(
-            opts.clientId ? eq(quotations.clientId, opts.clientId) : undefined,
-            opts.status ? eq(quotations.status, opts.status) : undefined,
-            q ? or(ilike(quotations.ref, like), ilike(contacts.name, like)) : undefined,
-          ),
+          and(opts.clientId ? eq(quotations.clientId, opts.clientId) : undefined, scopeWhere(opts)),
         )
         .orderBy(desc(quotations.ref))
         .limit(500);
