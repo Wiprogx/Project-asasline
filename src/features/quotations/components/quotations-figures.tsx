@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatCents } from "@/domain/money";
 import {
+  DEFAULT_FIGURE_KEYS,
   FIGURE_DEFS,
   type FigureKey,
   quotationFigures,
@@ -12,7 +13,7 @@ import { QUOTATION_STATUSES, type QuotationStatus } from "@/domain/shipments";
 import { cn } from "@/lib/utils";
 import type { QuotationRow } from "../queries";
 import { QUOTATION_TONE } from "../status";
-import { FigurePicker } from "./figure-picker";
+import { UrlPicks } from "@/components/shared/url-picks";
 
 type Params = {
   q?: string;
@@ -119,7 +120,13 @@ export function QuotationsFigures({
           })}
         </dl>
       )}
-      <FigurePicker shown={shown} />
+      <UrlPicks
+        param="figs"
+        title="Choose the figures"
+        defs={FIGURE_DEFS}
+        defaults={DEFAULT_FIGURE_KEYS}
+        shown={shown}
+      />
       {(customers.length > 0 || lanes.length > 0) && (
         <div className="grid gap-2 text-sm sm:grid-cols-2">
           <Ranking title="Top 5 customers" rows={customers} money />

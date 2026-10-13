@@ -1,30 +1,62 @@
 import { describe, expect, it } from "vitest";
-import { listFigures } from "./booking-list";
-import { billMatches, billStatus } from "./invoicing";
+import {
+  BOOKING_COLUMNS,
+  bookingFigures,
+  closingLate,
+  DEFAULT_BOOKING_COLUMNS,
+  parsePicks,
+  topDestinations,
+} from "./booking-list";
 
-describe("the bookings list", () => {
-  it("sums what the shown bookings are worth and were invoiced, and counts what still waits", () => {
-    expect(
-      listFigures([
-        { valueCents: 125_000, billedCents: 0, billing: "not" },
-        { valueCents: 90_000, billedCents: 45_000, billing: "partly" },
-        { valueCents: 90_000, billedCents: 90_000, billing: "done" },
-        { valueCents: 0, billedCents: 0, billing: "none" },
-      ]),
-    ).toEqual({
-      count: 4,
-      valueCents: 305_000,
-      billedCents: 135_000,
-      notInvoiced: 1,
-      partly: 1,
-      over: 0,
+const row = (o: Partial<Parameters<typeof bookingFigures>[0][number]> = {}) => ({
+  status: "confirmed",
+  pod: "TRMER",
+  boxes: 1,
+  valueCents: 1000,
+  billedCents: 0,
+  billing: "not" as const,
+  lateSteps: 0,
+  ...o,
+});
+
+describe("the bookings figures", () => {
+  it("counts boxes, destinations, the voyage and the money, never a cancelled one", () => {
+    const f = bookingFigures([
+      row({ boxes: 2 }),
+      row({ pod: "CNSHA", status: "in_transit", billing: "done", billedCents: 1000, lateSteps: 2 }),
+      row({ status: "cancelled", boxes: 9, valueCents: 99999 }),
+    ]);
+    expect(f).toMatchObject({
+      count: 2,
+      boxes: 3,
+      dests: 2,
+      transit: 1,
+      value: 2000,
+      billed: 1000,
+      waiting: 1,
+      late: 2,
     });
   });
-  it("filters as the legacy list did: open is not or partly, a status is itself, nothing is all", () => {
-    expect(billMatches(billStatus(1000, 0), "open")).toBe(true);
-    expect(billMatches(billStatus(1000, 500), "open")).toBe(true);
-    expect(billMatches(billStatus(1000, 1000), "open")).toBe(false);
-    expect(billMatches(billStatus(1000, 1200), "over")).toBe(true);
-    expect(billMatches("none", undefined)).toBe(true);
+
+  it("ranks the destinations by bookings, then boxes", () => {
+    const top = topDestinations([row(), row({ boxes: 3 }), row({ pod: "CNSHA", boxes: 5 })]);
+    expect(top[0]).toEqual({ label: "TRMER", n: 2, boxes: 4 });
+    expect(top[1].label).toBe("CNSHA");
+  });
+});
+
+describe("the columns and figures chosen", () => {
+  it("reads the URL value, keeps the table order, and falls back to the defaults", () => {
+    expect(parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, "eta,ref")).toEqual(["ref", "eta"]);
+    expect(parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, "bogus")).toEqual(
+      DEFAULT_BOOKING_COLUMNS,
+    );
+    expect(parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, "none")).toEqual([]);
+  });
+
+  it("marks a closing passed before sailing", () => {
+    expect(closingLate("2026-10-01", "confirmed", "2026-10-13")).toBe(true);
+    expect(closingLate("2026-10-01", "in_transit", "2026-10-13")).toBe(false);
+    expect(closingLate(null, "confirmed", "2026-10-13")).toBe(false);
   });
 });

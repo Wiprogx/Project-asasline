@@ -46,8 +46,8 @@ item is ported as its own step; a [config] item becomes a `config_tables` row wi
 editor, never a constant (invariant 8). Legacy refs: §n of `legacy/ASASLINE_TMS_Technical_Reference.md`
 or Lnnnn of `legacy/asasline-demo.html`.
 
-- **Bookings** — the list's column picker and period comparison ·
-  a Documents tab per side for a "Both" shipment.
+- **Bookings** — the list's "Documents" column (papers in / papers needed per file) ·
+  a Documents tab per side for a "Both" shipment · the vessel tracking sheet.
 - **Quotations and pricing** — a "Rate sources" tab on the list (the table itself is Settings › Rate sources).
 - **Contacts** — kanban view.
 - **Activity** — a push to the phone for what stops a shipment (L11567). COUNTRY_REQS (mandatory papers and lead days per
@@ -66,6 +66,14 @@ unreachable or superseded before it lands here.
 - **Bookings — order lines and cost lines typed on the booking** (`addLine`, `addCost`, L4013–4030):
   superseded by the quotation's destination lines (the booking's price) and the supplier bills
   recorded against the booking (its cost).
+
+## Differences kept on purpose
+
+- **Bookings list — the period starts on "All time"**, not the legacy "This month": the office
+  keeps reaching every file from one search box, and a file without dates would otherwise count
+  on today and older dated ones drop out of view. The period, its comparison, the figures and
+  the columns chosen live in the URL, so a view can be bookmarked and shared (legacy: session
+  state lost on reload).
 
 ## Legacy behaviour waiting on a missing record
 

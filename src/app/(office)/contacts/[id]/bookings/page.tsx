@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BookingsTable } from "@/features/bookings/components/bookings-table";
-import { listBookings } from "@/features/bookings/queries";
+import { listBookings } from "@/features/bookings/list-queries";
+import { officeToday } from "@/server/clock";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export const metadata: Metadata = { title: "Bookings" };
@@ -12,5 +13,5 @@ export default async function ContactBookingsPage({
   await requirePagePermission("app.bookings");
   const { id } = await params;
   const rows = await listBookings({ contactId: id, cancelled: true });
-  return <BookingsTable rows={rows} />;
+  return <BookingsTable rows={rows} today={officeToday()} />;
 }
