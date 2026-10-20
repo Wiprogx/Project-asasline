@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { PageHeader } from "@/components/shared/page-header";
 import { Pager } from "@/components/shared/pager";
 import { SearchInput } from "@/components/shared/search-input";
 import { UrlPicks } from "@/components/shared/url-picks";
-import { buttonVariants } from "@/components/ui/button";
 import { parsePicks } from "@/domain/picks";
 import {
   CONTACT_COLUMNS,
@@ -16,6 +13,7 @@ import { countryName } from "@/domain/countries";
 import { pageOf } from "@/domain/period";
 import { ContactCards } from "@/features/contacts/components/contact-cards";
 import { ContactFilters } from "@/features/contacts/components/contact-filters";
+import { ContactsHeader } from "@/features/contacts/components/contacts-header";
 import { ContactsTable } from "@/features/contacts/components/contacts-table";
 import { ViewSwitch } from "@/features/contacts/components/view-switch";
 import { contactFilterValues, listContacts } from "@/features/contacts/list-queries";
@@ -49,23 +47,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
   };
   return (
     <>
-      <PageHeader
-        title="Contacts"
-        description={`${rows.length} ${archived ? "archived " : ""}contacts`}
-        actions={
-          <>
-            <Link
-              href={archived ? "/contacts" : "/contacts?archived=1"}
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
-            >
-              {archived ? "Show active" : "Show archived"}
-            </Link>
-            <Link href="/contacts/new" className={buttonVariants({ size: "sm" })}>
-              New contact
-            </Link>
-          </>
-        }
-      />
+      <ContactsHeader count={rows.length} archived={archived} />
       <div className="mb-4 grid gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="min-w-64 flex-1">

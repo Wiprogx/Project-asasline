@@ -1,12 +1,10 @@
 import { cache } from "react";
 import "server-only";
-import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, type SQL, sql } from "drizzle-orm";
+import { asc, eq, isNull } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { contactAddresses, contactBankAccounts, contacts } from "@/server/db/schema";
-import { countryName } from "@/domain/countries";
-import { readCountries } from "@/server/country-config";
 
 /** One contact with its addresses and accounts; cached per request (layout + page share it). */
 export const getContact = cache(async (id: string) => {
