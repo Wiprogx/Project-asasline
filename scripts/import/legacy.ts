@@ -1,0 +1,70 @@
+/**
+ * The go-live import of the legacy office (docs/MIGRATION.md, "Data migration").
+ *
+ *   npm run import:legacy -- <export.json>            → a preview: everything is run, then rolled back
+ *   npm run import:legacy -- <export.json> --apply    → the same, kept
+ *   add --verbose to list every skipped row and warning
+ *
+ * The export is phpMyAdmin's JSON export of the legacy database (the `records` and `users`
+ * tables) or `{ records, users }`. Every record imported is written to `legacy_links`, so a
+ * second run adds only what the first one had not.
+ */
+import { readFileSync } from "node:fs";
+import { config } from "dotenv";
+
+config({ path: ".env.local" });
+
+class Preview extends Error {}
+
+/** The kinds this script carries today, in the order their links are needed. */
+const DONE = new Set(["contacts"]);
+
+async function main() {
+  const args = process.argv.slice(2);
+  const file = args.find((a) => !a.startsWith("--"));
+  const apply = args.includes("--apply");
+  const verbose = args.includes("--verbose");
+  if (!file) throw new Error("Usage: npm run import:legacy -- <export.json> [--apply] [--verbose]");
+
+  const { readLegacyExport, countByKind } = await import("../../src/domain/legacy-export");
+  const { db } = await import("../../src/server/db/client");
+  const { audit } = await import("../../src/server/audit");
+  const { importContacts } = await import("./contacts");
+  const { importUsers } = await import("./users");
+  const { printReport } = await import("./report");
+
+  const read = readLegacyExport(readFileSync(file, "utf8"));
+  if ("error" in read) throw new Error(read.error);
+  const counts = countByKind(read.records);
+  console.log(`${file}: ${read.records.length} records, ${read.users.length} users`);
+  for (const [kind, n] of Object.entries(counts)) console.log(`  ${kind.padEnd(12)} ${n}`);
+  for (const u of read.unreadable) console.log(`  ! unreadable: ${u}`);
+
+  try {
+    await db.transaction(async (tx) => {
+      const reports = {
+        users: await importUsers(tx, read.users),
+        contacts: await importContacts(tx, read.records),
+      };
+      for (const [kind, r] of Object.entries(reports)) printReport(kind, r, verbose);
+      const waiting = Object.entries(counts).filter(([k]) => !DONE.has(k));
+      if (waiting.length)
+        console.log(`\nNot carried yet: ${waiting.map(([k, n]) => `${k} ${n}`).join(", ")}`);
+      const detail = Object.fromEntries(
+        Object.entries(reports).map(([k, r]) => [k, { added: r.added, matched: r.matched }]),
+      );
+      await audit(tx, { action: "legacy.import", entity: "legacy", entityId: file, detail });
+      if (!apply) throw new Preview();
+    });
+    console.log("\n✓ applied");
+  } catch (e) {
+    if (!(e instanceof Preview)) throw e;
+    console.log("\nPreview only — nothing kept. Run again with --apply to import.");
+  }
+  process.exit(0);
+}
+
+main().catch((e) => {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+});

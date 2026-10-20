@@ -84,9 +84,15 @@ unreachable or superseded before it lands here.
 
 ## Data migration (when a module goes live)
 
-1. Export the legacy `records` table per `kind` (JSON bodies).
-2. A one-off script under `scripts/import/` maps each kind to its table, resolving party
-   names to contact ids (the legacy 10.1 linking) and money to cents.
+`npm run import:legacy -- <export.json>` previews (runs and rolls back); `--apply` keeps it.
+Every imported record is written to `legacy_links` (kind, legacy id → new id), so a rerun adds
+only what is new. Carried today: **users** and **contacts** (with child addresses and bank
+accounts). Still to carry: quotations, bookings, activities, invoices, payments, bank lines,
+entries, assets, price lists, messages; the config tables; the sequences.
+
+1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
+2. `scripts/import/` maps each kind to its table, resolving party ids to contact ids
+   through `legacy_links` (the legacy 10.1 linking) and money to cents.
 3. Set each `sequences` row to the highest issued number per month so numbering continues.
 4. Users: copy email, name, role and the bcrypt hash; staff keep their passwords.
 5. Verify counts and totals against the legacy office before switching the module over.

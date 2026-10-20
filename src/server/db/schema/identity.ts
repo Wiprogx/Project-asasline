@@ -115,3 +115,6 @@ export const visits = pgTable(
     index("visits_record_idx").on(t.kind, t.recordId),
   ],
 );
+
+/** The go-live import's legacy id → new id map (scripts/import). */
+export { legacyLinks } from "./legacy";

@@ -302,6 +302,13 @@
       "when": 1791913101898,
       "tag": "0042_contact_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792506178457,
+      "tag": "0043_legacy_links",
+      "breakpoints": true
     }
   ]
 }
