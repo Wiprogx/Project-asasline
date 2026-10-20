@@ -4,9 +4,9 @@ import {
   bookingFigures,
   closingLate,
   DEFAULT_BOOKING_COLUMNS,
-  parsePicks,
   topDestinations,
 } from "./booking-list";
+import { parsePicks } from "./picks";
 
 const row = (o: Partial<Parameters<typeof bookingFigures>[0][number]> = {}) => ({
   status: "confirmed",

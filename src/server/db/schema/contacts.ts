@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { ContactKind } from "@/domain/contact-list";
 import { boolean, char, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { cents, day, recordColumns } from "./_columns";
 import { contactTypeEnum } from "./enums";
@@ -9,6 +10,8 @@ export const contacts = pgTable(
     ...recordColumns,
     name: text().notNull(),
     type: contactTypeEnum().notNull().default("company"),
+    /** Customer, supplier or both (legacy kind; domain/contact-list CONTACT_KINDS). */
+    kind: text().$type<ContactKind>().notNull().default("customer"),
     professions: text()
       .array()
       .notNull()

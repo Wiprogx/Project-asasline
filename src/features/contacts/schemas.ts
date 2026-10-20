@@ -3,12 +3,14 @@ import { CONTACT_TYPES, idClean, type IdFormat, idProblem, LANGUAGES } from "@/d
 import { ibanOk } from "@/domain/iban";
 import { toCents } from "@/domain/money";
 import { parseCommaList } from "@/domain/lookups";
+import { CONTACT_KINDS } from "@/domain/contact-list";
 
 const optional = z.string().max(500).optional();
 
 export const contactSchema = z.object({
   name: z.string().min(1, "A contact needs a name").max(200),
   type: z.enum(CONTACT_TYPES).default("company"),
+  kind: z.enum(CONTACT_KINDS).default("customer"),
   country: z
     .string()
     .regex(/^[A-Za-z]{2}$/, "Two-letter ISO code, e.g. BE")

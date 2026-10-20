@@ -9,8 +9,8 @@ import {
   BOOKING_FIGURE_DEFS,
   DEFAULT_BOOKING_COLUMNS,
   DEFAULT_BOOKING_FIGURES,
-  parsePicks,
 } from "@/domain/booking-list";
+import { parsePicks } from "@/domain/picks";
 import { BILL_FILTERS } from "@/domain/invoicing";
 import { parsePeriodKey, periodScope } from "@/domain/periods";
 import { may } from "@/domain/permissions";

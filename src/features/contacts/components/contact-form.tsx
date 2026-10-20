@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CONTACT_TYPES, type IdFormat, LANGUAGES } from "@/domain/contacts";
+import { CONTACT_KIND_LABEL, CONTACT_KINDS } from "@/domain/contact-list";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import type { ActionResult } from "@/lib/action-result";
 import type { ContactFormValues } from "../form-values";
@@ -59,7 +60,7 @@ export function ContactForm({
     <ActionForm action={formAction} className="grid gap-4">
       {values.id && <input type="hidden" name="id" value={values.id} />}
       {values.version && <input type="hidden" name="version" value={values.version} />}
-      <div className="grid gap-4 sm:grid-cols-[1fr_10rem_8rem]">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_10rem_13rem_8rem]">
         <Field id="name" label="Name" error={fe?.name}>
           <Input
             id="name"
@@ -78,6 +79,14 @@ export function ContactForm({
               value: t,
               label: t === "company" ? "Company" : "Person",
             }))}
+          />
+        </Field>
+        <Field id="kind" label="Customer / Supplier">
+          <NativeSelect
+            id="kind"
+            name="kind"
+            defaultValue={values.kind ?? "customer"}
+            options={CONTACT_KINDS.map((k) => ({ value: k, label: CONTACT_KIND_LABEL[k] }))}
           />
         </Field>
         <Field id="lang" label="Language">

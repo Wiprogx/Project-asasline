@@ -3,6 +3,7 @@ import { centsToInput } from "@/domain/money";
 export const CONTACT_TEXT_FIELDS = [
   "name",
   "type",
+  "kind",
   "lang",
   "email",
   "phone",
