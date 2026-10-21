@@ -6,10 +6,15 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { may } from "@/domain/permissions";
 import { creditStanding } from "@/features/accounting/reminder-queries";
+import { contactOptions } from "@/features/contacts/queries";
+import { EditQuotationDialog } from "@/features/quotations/components/edit-quotation-dialog";
 import { QuotationActions } from "@/features/quotations/components/quotation-actions";
 import { getQuotation, quotationLetter } from "@/features/quotations/queries";
+import { QuotationStatusControls } from "@/features/quotations/components/quotation-status-controls";
 import { QUOTATION_TONE } from "@/features/quotations/status";
+import { readPaymentTerms } from "@/server/accounting-config";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readConfig } from "@/server/config-tables";
 
 /** The quotation's header, actions and tabs (legacy quotation tabs); each tab is its own URL. */
 export default async function QuotationLayout({
@@ -24,6 +29,14 @@ export default async function QuotationLayout({
   const [label, tone] = QUOTATION_TONE[q.status];
   const letter = q.status !== "cancelled" ? await quotationLetter(q, user.name) : null;
   const credit = may(user, "app.accounting") ? await creditStanding(q.client.id) : null;
+  const [clients, docTypes, terms, cancelReasons] = await Promise.all([
+    contactOptions(),
+    readConfig("docTypes"),
+    readPaymentTerms(),
+    readConfig("cancelReasons"),
+  ]);
+  const reason =
+    q.status === "cancelled" ? q.cancelReason : q.status === "declined" ? q.declinedReason : null;
   const base = `/quotations/${q.id}`;
   const tabs = [
     { href: base, label: "Quotation", exact: true },
@@ -43,6 +56,7 @@ export default async function QuotationLayout({
             </Link>
             {q.validUntil && <span>· valid until {q.validUntil}</span>}
             {credit?.problem && <ToneBadge tone="danger">{credit.problem}</ToneBadge>}
+            {reason && <span>· {reason}</span>}
             {q.sentOn && (
               <span>
                 · sent {q.sentOn} by {q.sentVia === "whatsapp" ? "WhatsApp" : "e-mail"}
@@ -50,7 +64,25 @@ export default async function QuotationLayout({
             )}
           </span>
         }
-        actions={letter && <QuotationActions q={q} letter={letter} />}
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {q.status !== "cancelled" && (
+              <EditQuotationDialog
+                q={q}
+                clients={clients.map((c) => ({ value: c.id, label: c.name }))}
+                docTypes={docTypes}
+                terms={terms.map((t) => ({ value: t.id, label: t.name }))}
+              />
+            )}
+            <QuotationStatusControls
+              id={q.id}
+              version={q.version}
+              status={q.status}
+              cancelReasons={cancelReasons}
+            />
+            {letter && <QuotationActions q={q} letter={letter} />}
+          </div>
+        }
       />
       <SubNav items={tabs} />
       {children}

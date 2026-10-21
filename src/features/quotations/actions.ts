@@ -142,6 +142,8 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           pol: route.pol,
           pod: route.pod,
           loadingMode: route.loadingMode,
+          commodity: q.commodity,
+          ...(q.docType ? { docType: q.docType } : {}),
           createdBy: user.id,
           updatedBy: user.id,
         })

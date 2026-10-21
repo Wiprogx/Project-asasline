@@ -23,6 +23,14 @@ export const quotations = pgTable(
     display: quotationDisplayEnum().notNull().default("itemized"),
     sentOn: day(),
     sentVia: text(),
+    /** What is shipped (legacy q.commodity), and the transport document asked for (Settings › Lists). */
+    commodity: text(),
+    docType: text(),
+    /** Why the customer rejected the whole quotation (legacy lostReason); status is then "declined". */
+    declinedReason: text(),
+    /** Cancelled with a reason; put back, it returns to the status it had (legacy statusBefore). */
+    cancelReason: text(),
+    statusBeforeCancel: quotationStatusEnum("status_before_cancel"),
   },
   (t) => [
     uniqueIndex("quotations_ref_uq").on(t.ref),

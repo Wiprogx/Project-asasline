@@ -309,6 +309,13 @@
       "when": 1792506178457,
       "tag": "0043_legacy_links",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792521619433,
+      "tag": "0044_quotation_edit",
+      "breakpoints": true
     }
   ]
 }

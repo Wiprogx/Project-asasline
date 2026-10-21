@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, isNull, like, max, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { remainingQty } from "@/domain/invoicing";
+import { statusAfterRoutes } from "@/domain/quotation-status";
 import { type ActionResult, fail } from "@/lib/action-result";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import type { DbOrTx } from "@/server/db/client";
@@ -67,6 +68,25 @@ export async function bookingOn(tx: DbOrTx, routeId: string) {
       ),
     );
   return b ?? null;
+}
+
+/** After a destination is declined or put back: lost when all are declined, open again after. */
+export async function settleQuotationStatus(tx: DbOrTx, quotationId: string) {
+  const [q] = await tx.select().from(quotations).where(eq(quotations.id, quotationId));
+  if (!q) return;
+  const routes = await tx
+    .select({ id: quotationRoutes.id, declined: quotationRoutes.declined })
+    .from(quotationRoutes)
+    .where(and(eq(quotationRoutes.quotationId, quotationId), isNull(quotationRoutes.archivedAt)));
+  const states = await Promise.all(
+    routes.map(async (r) => ({ declined: r.declined, booked: !!(await bookingOn(tx, r.id)) })),
+  );
+  const status = statusAfterRoutes(q.status, states, !!q.sentOn);
+  if (status !== q.status)
+    await tx
+      .update(quotations)
+      .set({ status, declinedReason: status === "declined" ? "Every destination declined" : null })
+      .where(eq(quotations.id, quotationId));
 }
 
 /** How much of a line issued invoices took, credit notes given back. */

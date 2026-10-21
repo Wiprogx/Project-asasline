@@ -37,7 +37,7 @@ test("a destination quoted for two containers multiplies its per-container lines
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
 
   // Two containers: the title says so and the line doubles.
-  await page.getByRole("button", { name: "Edit" }).first().click();
+  await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Containers").fill("2");
   await submit(page, dialog.getByRole("button", { name: "Save destination" }));

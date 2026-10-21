@@ -12,7 +12,14 @@ import {
   restoreRouteSchema,
   updateRouteSchema,
 } from "./editor-schemas";
-import { bookingOn, editorResult, Refused, routeIn, touchQuotation } from "./editor-store";
+import {
+  bookingOn,
+  editorResult,
+  Refused,
+  routeIn,
+  settleQuotationStatus,
+  touchQuotation,
+} from "./editor-store";
 import { fillFromLane, oceanLeg } from "./lane-store";
 import { openAutoTask } from "@/server/auto-tasks";
 import { officeToday } from "@/server/clock";
@@ -115,6 +122,7 @@ export async function declineRoute(_p: ActionResult, fd: FormData): Promise<Acti
         .update(quotationRoutes)
         .set({ declined: true, declinedReason: reason, updatedBy: user.id, updatedAt: new Date() })
         .where(eq(quotationRoutes.id, routeId));
+      await settleQuotationStatus(tx, quotationId);
       await audit(tx, {
         action: "quotation.route.decline",
         userId: user.id,
@@ -139,6 +147,7 @@ export async function restoreRoute(_p: ActionResult, fd: FormData): Promise<Acti
         .update(quotationRoutes)
         .set({ declined: false, declinedReason: null, updatedBy: user.id, updatedAt: new Date() })
         .where(eq(quotationRoutes.id, routeId));
+      await settleQuotationStatus(tx, quotationId);
       await audit(tx, {
         action: "quotation.route.restore",
         userId: user.id,
