@@ -11,6 +11,7 @@ import {
 import type { QuotationRow } from "../queries";
 import { QUOTATION_TONE } from "../status";
 import { formatCents } from "@/domain/money";
+import { PagerSource } from "@/components/shared/pager-source";
 
 export function QuotationsTable({ rows }: { rows: QuotationRow[] }) {
   if (rows.length === 0) {
@@ -18,6 +19,7 @@ export function QuotationsTable({ rows }: { rows: QuotationRow[] }) {
   }
   return (
     <Table aria-label="Quotations">
+      <PagerSource kind="quotations" ids={rows.map((r) => r.id)} />
       <TableHeader>
         <TableRow>
           <TableHead>Ref</TableHead>

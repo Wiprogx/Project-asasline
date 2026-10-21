@@ -84,8 +84,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   (L4746–4757); detach an address into its own contact (L5062–5140); sending from the contact
   logged to its messages (L4772–4790); the Map and Tasks views and the kanban (L4614, L4641);
   industries as a multi-pick; the dial code from the country.
-- **Settings and platform** — the record pager with arrow keys and the "Back to" bar
-  (L2420–2501); choosing "use theirs / keep mine" on a conflict (L16567); a global saved /
+- **Settings and platform** — the "Back to" bar (L2420); choosing "use theirs / keep mine" on a conflict (L16567); a global saved /
   offline indicator (L16464); the Integrations panel (L15133–15184); rename a person (L14833);
   link a carrier to its agent (L15076); the Settings overview with counts (L14851); demo
   material on a screen (L15081).

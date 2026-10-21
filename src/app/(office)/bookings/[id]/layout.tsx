@@ -13,6 +13,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { readReleaseStates } from "@/server/release-config";
 import { creditStanding } from "@/features/accounting/reminder-queries";
 import { scheduleConflict } from "@/domain/vessels";
+import { RecordPager } from "@/components/shared/record-pager";
 
 /** The booking's header, status controls and tabs; each tab is its own URL. */
 export default async function BookingLayout({ params, children }: LayoutProps<"/bookings/[id]">) {
@@ -62,14 +63,17 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
           </span>
         }
         actions={
-          <BookingControls
-            id={b.id}
-            version={b.version}
-            status={b.status}
-            canEdit={may(user, "bookings.edit")}
-            canCancel={may(user, "bookings.cancel")}
-            cancelReasons={cancelReasons}
-          />
+          <>
+            <RecordPager kind="bookings" id={b.id} />
+            <BookingControls
+              id={b.id}
+              version={b.version}
+              status={b.status}
+              canEdit={may(user, "bookings.edit")}
+              canCancel={may(user, "bookings.cancel")}
+              cancelReasons={cancelReasons}
+            />
+          </>
         }
       />
       <SubNav items={tabs} />

@@ -15,6 +15,7 @@ import { QUOTATION_TONE } from "@/features/quotations/status";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readConfig } from "@/server/config-tables";
+import { RecordPager } from "@/components/shared/record-pager";
 
 /** The quotation's header, actions and tabs (legacy quotation tabs); each tab is its own URL. */
 export default async function QuotationLayout({
@@ -66,6 +67,7 @@ export default async function QuotationLayout({
         }
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <RecordPager kind="quotations" id={q.id} />
             {q.status !== "cancelled" && (
               <EditQuotationDialog
                 q={q}

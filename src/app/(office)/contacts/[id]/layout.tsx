@@ -9,6 +9,7 @@ import { ContactArchive } from "@/features/contacts/components/contact-archive";
 import { ContactReach } from "@/features/contacts/components/contact-reach";
 import { getContact } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { RecordPager } from "@/components/shared/record-pager";
 
 /** The contact's header and tabs (legacy contact tabs); each tab is its own URL. */
 export default async function ContactLayout({ params, children }: LayoutProps<"/contacts/[id]">) {
@@ -45,6 +46,7 @@ export default async function ContactLayout({ params, children }: LayoutProps<"/
         }
         actions={
           <>
+            <RecordPager kind="contacts" id={c.id} />
             <ContactReach phone={c.phone} mobile={c.mobile} whatsapp={c.whatsapp} email={c.email} />
             <ContactArchive id={c.id} version={c.version} archived={!!c.archivedAt} />
           </>

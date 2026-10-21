@@ -17,6 +17,7 @@ import {
 } from "@/domain/contact-list";
 import { lettermark } from "@/domain/contacts";
 import type { ContactRow } from "../list-queries";
+import { PagerSource } from "@/components/shared/pager-source";
 
 const none = <span className="text-muted-foreground">—</span>;
 
@@ -71,6 +72,7 @@ export function ContactsTable({
       aria-label="Contacts"
       style={{ minWidth: `${Math.max(560, 260 + cols.length * 110)}px` }}
     >
+      <PagerSource kind="contacts" ids={rows.map((r) => r.id)} />
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>

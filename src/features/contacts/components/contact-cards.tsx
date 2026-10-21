@@ -5,6 +5,7 @@ import { CONTACT_KIND_LABEL, CONTACT_KIND_TONE } from "@/domain/contact-list";
 import { lettermark } from "@/domain/contacts";
 import type { ContactRow } from "../list-queries";
 import { Matched, Tasks } from "./contacts-table";
+import { PagerSource } from "@/components/shared/pager-source";
 
 /**
  * The contacts as cards (legacy cvKanban): the mark, where they are, how to write to them,
@@ -16,6 +17,7 @@ export function ContactCards({ rows }: { rows: ContactRow[] }) {
   }
   return (
     <ul aria-label="Contacts" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <PagerSource kind="contacts" ids={rows.map((r) => r.id)} />
       {rows.map((c) => (
         <li key={c.id} className="flex gap-3 rounded-lg border p-3">
           <Avatar className="size-12 shrink-0">

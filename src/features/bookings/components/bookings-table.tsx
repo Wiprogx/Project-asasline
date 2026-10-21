@@ -9,6 +9,7 @@ import {
 import { BOOKING_COLUMNS, type BookingColumnKey } from "@/domain/booking-list";
 import type { BookingRow } from "../list-queries";
 import { CELLS } from "./booking-cells";
+import { PagerSource } from "@/components/shared/pager-source";
 
 /**
  * The bookings, in the columns the office chose (legacy B_COLS): the reference always first,
@@ -29,6 +30,7 @@ export function BookingsTable({
   const cols = BOOKING_COLUMNS.filter((c) => c.key === "ref" || columns.includes(c.key));
   return (
     <Table aria-label="Bookings" style={{ minWidth: `${Math.max(640, cols.length * 120)}px` }}>
+      <PagerSource kind="bookings" ids={rows.map((r) => r.id)} />
       <TableHeader>
         <TableRow>
           {cols.map((c) => (
