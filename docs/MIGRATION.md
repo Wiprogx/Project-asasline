@@ -36,12 +36,12 @@ as partial. Score = (done + ½ partial) / total, every feature weighing the same
 | App                   | Legacy lines            | Done | Partial | Missing | Score   |
 | --------------------- | ----------------------- | ---- | ------- | ------- | ------- |
 | Accounting            | 12625–14741             | 55   | 4       | 5       | 89%     |
-| Settings and platform | 10236–11550, 14742–end  | 45   | 7       | 3       | 88%     |
+| Settings and platform | 10236–11550, 14742–end  | 46   | 7       | 2       | 90%     |
 | Bookings              | 2501–4480, 7680–8320    | 44   | 7       | 11      | 77%     |
-| Quotations            | 5828–7680               | 37   | 11      | 9       | 75%     |
-| Activity and Discuss  | 8317–10236, 11550–12625 | 28   | 8       | 7       | 74%     |
-| Home and Contacts     | 2283–2500, 4478–5830    | 38   | 9       | 11      | 73%     |
-| **Total**             |                         | 247  | 46      | 46      | **80%** |
+| Quotations            | 5828–7680               | 38   | 11      | 8       | 76%     |
+| Activity and Discuss  | 8317–10236, 11550–12625 | 29   | 7       | 7       | 76%     |
+| Home and Contacts     | 2283–2500, 4478–5830    | 40   | 7       | 11      | 75%     |
+| **Total**             |                         | 252  | 43      | 44      | **81%** |
 
 The go-live import (below) carries users and contacts so far.
 
