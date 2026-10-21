@@ -138,9 +138,11 @@ only what is new. Carried today:
 - the **tasks** (open, done or withdrawn as they stood; rule steps keep their code, per box);
 - the **invoices, credit notes and supplier bills** (sales numbers kept; a bill gets its BILL
   number; totals stored; a booking's lines linked to its quotation lines; credit notes to the
-  invoice lines they give back). A supplier's credit note is reported, not carried.
+  invoice lines they give back). A supplier's credit note is reported, not carried;
+- the **payments** (each invoice's part, write-offs, charges booked to an account, reversals)
+  and the **bank lines** (matched lines tied to their payment both ways).
 
-Still to carry: the booking files and history, payments, bank lines, entries,
+Still to carry: the booking files and history, entries,
 assets, price lists, messages; the other settings (the script lists them); the sequences.
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
