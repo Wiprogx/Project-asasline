@@ -1,5 +1,6 @@
 "use server";
 
+import { changesOf } from "@/domain/changes";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -119,6 +120,7 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
         userId: user.id,
         entity: "contact",
         entityId: ref.data.id,
+        detail: { changes: changesOf(cur ?? {}, values) },
       });
     });
   } catch (e) {

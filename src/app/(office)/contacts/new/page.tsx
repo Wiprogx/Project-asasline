@@ -5,17 +5,19 @@ import { ContactForm } from "@/features/contacts/components/contact-form";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readConfig } from "@/server/config-tables";
 import { readIdFormats } from "@/server/id-config";
+import { readPaymentTerms } from "@/server/accounting-config";
 import { readCountries } from "@/server/country-config";
 
 export const metadata: Metadata = { title: "New contact" };
 
 export default async function NewContactPage() {
   await requirePagePermission("app.contacts");
-  const [professions, tags, idFormats, countries] = await Promise.all([
+  const [professions, tags, idFormats, countries, terms] = await Promise.all([
     readConfig("professions"),
     readConfig("contactTags"),
     readIdFormats(),
     readCountries(),
+    readPaymentTerms(),
   ]);
   return (
     <>
@@ -27,6 +29,7 @@ export default async function NewContactPage() {
         tags={tags}
         idFormats={idFormats}
         countries={countries}
+        terms={terms.map((t) => ({ value: t.id, label: t.name }))}
       />
     </>
   );

@@ -18,6 +18,7 @@ export const CONTACT_TEXT_FIELDS = [
   "website",
   "creditLimit",
   "note",
+  "paymentTermId",
 ] as const;
 
 export type ContactFormValues = Partial<
@@ -27,12 +28,14 @@ export type ContactFormValues = Partial<
   version?: number;
   professions?: string | null;
   tags?: string | null;
+  usesLastPrice?: boolean;
 };
 
 type ContactRecord = {
   id: string;
   version: number;
   creditLimitCents: number | null;
+  usesLastPrice?: boolean;
   professions?: string[];
   tags?: string[];
 } & Partial<Record<(typeof CONTACT_TEXT_FIELDS)[number], string | null>>;
@@ -43,5 +46,6 @@ export function toContactFormValues(c: ContactRecord): ContactFormValues {
   out.creditLimit = c.creditLimitCents === null ? null : centsToInput(c.creditLimitCents);
   out.professions = c.professions?.join(", ") ?? null;
   out.tags = c.tags?.join(", ") ?? null;
+  out.usesLastPrice = c.usesLastPrice ?? false;
   return out;
 }

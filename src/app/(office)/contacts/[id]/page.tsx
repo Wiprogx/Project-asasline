@@ -17,6 +17,7 @@ import { officeToday } from "@/server/clock";
 import { readConfig } from "@/server/config-tables";
 import { IdChecks } from "@/features/contacts/components/id-checks";
 import { readIdFormats } from "@/server/id-config";
+import { readPaymentTerms } from "@/server/accounting-config";
 import { readCountries } from "@/server/country-config";
 
 export async function generateMetadata({ params }: PageProps<"/contacts/[id]">): Promise<Metadata> {
@@ -34,11 +35,12 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
   const credit = may(user, "app.accounting") ? await creditStanding(c.id) : null;
   const agreements = may(user, "catalogue.edit") ? await listPriceLists({ contactId: c.id }) : null;
 
-  const [professions, tags, idFormats, countries] = await Promise.all([
+  const [professions, tags, idFormats, countries, terms] = await Promise.all([
     readConfig("professions"),
     readConfig("contactTags"),
     readIdFormats(),
     readCountries(),
+    readPaymentTerms(),
   ]);
   return (
     <>
@@ -58,6 +60,7 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
         tags={tags}
         idFormats={idFormats}
         countries={countries}
+        terms={terms.map((t) => ({ value: t.id, label: t.name }))}
       />
       <div className="grid gap-4 pt-4">
         <ContactAddresses contactId={c.id} addresses={c.addresses} types={addressTypes} />

@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
+import { PricingFields } from "./pricing-fields";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CONTACT_TYPES, type IdFormat, LANGUAGES } from "@/domain/contacts";
@@ -40,6 +41,7 @@ export function ContactForm({
   tags,
   idFormats,
   countries,
+  terms,
 }: {
   action: Action;
   values?: ContactFormValues;
@@ -51,6 +53,8 @@ export function ContactForm({
   idFormats: readonly IdFormat[];
   /** The countries table (Settings › Countries), offered by name as the code is typed. */
   countries: readonly Country[];
+  /** The payment terms (Settings › Accounting), offered as the customer's own. */
+  terms: readonly { value: string; label: string }[];
 }) {
   const schema = useMemo(() => checkedContactSchema(idFormats), [idFormats]);
   const [state, formAction, pending] = useToastedAction(action, undefined, schema);
@@ -160,6 +164,11 @@ export function ContactForm({
           <option key={t} value={t} />
         ))}
       </datalist>
+      <PricingFields
+        terms={terms}
+        paymentTermId={values.paymentTermId}
+        usesLastPrice={values.usesLastPrice}
+      />
       <Field id="note" label="Note">
         <Textarea id="note" name="note" defaultValue={values.note ?? ""} rows={3} />
       </Field>

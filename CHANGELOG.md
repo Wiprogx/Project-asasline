@@ -16,6 +16,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Contacts: a History tab — created, edited, archived and put back, addresses, bank accounts and number checks in plain words, each edit saying what changed from what to what (legacy contact history; `domain/changes`). The payment terms and the last-price choice on the contact form (legacy CF term / pricing): both were stored but not on the form, so every save turned the last-price choice off.
 - Contacts: an address or person under a contact edited in place (legacy editChild), with the version read guarding a colleague's edit; the address's note shows in the list.
 - Activity: a task's words, type, due day and note corrected in place (legacy editActivity); a step a rule opened follows its rule and is not edited by hand.
 - Bookings: the two copies sent from the booking (legacy sendCopy, BOOKING_FLOW sentClient / sentDriver) — "Send the confirmation" and "Send to the trucker" open the booking's message form on the BK_CONFIRM or DRIVER_COPY template, already written from the file; two default rules, CONFIRM_OUT and TRUCKER_OUT, are steps on the documents tab that close when that message goes out. The default rule book's import rules and its row helper live in their own modules.

@@ -26,6 +26,7 @@ export default async function ContactLayout({ params, children }: LayoutProps<"/
     ...(may(user, "app.accounting") ? [{ href: `${base}/invoices`, label: "Invoices" }] : []),
     ...(may(user, "app.discuss") ? [{ href: `${base}/messages`, label: "Messages" }] : []),
     ...(may(user, "app.activity") ? [{ href: `${base}/tasks`, label: "Tasks" }] : []),
+    { href: `${base}/history`, label: "History" },
   ];
   return (
     <>
