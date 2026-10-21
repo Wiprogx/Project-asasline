@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NewTab } from "@/components/shared/new-tab";
@@ -9,8 +10,11 @@ export function CopiesCard({
   boxes,
   blocked = [],
   fix,
+  canSend = false,
 }: {
   bookingId: string;
+  /** Opens the booking's message form on the copy's template; sending it closes the step. */
+  canSend?: boolean;
   /** Each box with what its copy still lacks (domain/loading truckerCopyGaps). */
   boxes: { id: string; number: string | null; gaps: string[] }[];
   /** Why no copy may go out (domain/vessels scheduleConflict); empty when the dates agree. */
@@ -61,6 +65,21 @@ export function CopiesCard({
             </span>
           )}
           {boxes.length > 1 && link(`${base}/trucker`, `All ${boxes.length} boxes on one sheet`)}
+          {canSend &&
+            (
+              [
+                ["BK_CONFIRM", "Send the confirmation"],
+                ["DRIVER_COPY", "Send to the trucker"],
+              ] as const
+            ).map(([tpl, label]) => (
+              <Link
+                key={tpl}
+                href={`/bookings/${bookingId}/messages?tpl=${tpl}`}
+                className={buttonVariants({ size: "sm" })}
+              >
+                {label}
+              </Link>
+            ))}
         </CardContent>
       )}
     </Card>

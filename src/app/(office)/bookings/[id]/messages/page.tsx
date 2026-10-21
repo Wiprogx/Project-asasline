@@ -13,6 +13,7 @@ import {
   messagesForRecord,
   routingTable,
 } from "@/features/discuss/queries";
+import { replyDraft } from "@/domain/message-reply";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export const metadata: Metadata = { title: "Booking messages" };
@@ -20,9 +21,11 @@ export const metadata: Metadata = { title: "Booking messages" };
 /** The booking's correspondence (legacy Messages tab): the route composes Bookings and Discuss. */
 export default async function BookingMessagesPage({
   params,
+  searchParams,
 }: PageProps<"/bookings/[id]/messages">) {
   const user = await requirePagePermission("app.discuss");
   const { id } = await params;
+  const { tpl, reply } = await searchParams;
   const b = await getBooking(id);
   if (!b) notFound();
   const [rows, recipients, contacts, routes, templates] = await Promise.all([
@@ -33,6 +36,7 @@ export default async function BookingMessagesPage({
     bookingTemplates(id, user.name),
   ]);
 
+  const answering = rows.find((m) => m.id === reply && m.direction === "in");
   return (
     <div className="grid gap-4">
       <LiveRefresh linkId={id} />
@@ -41,7 +45,15 @@ export default async function BookingMessagesPage({
           <CardTitle>Write</CardTitle>
         </CardHeader>
         <CardContent>
-          <SendForm linkRef={b.ref} recipients={recipients} templates={templates} cc={b.cc} />
+          <SendForm
+            key={answering?.id ?? "new"}
+            reply={answering && replyDraft(answering)}
+            linkRef={b.ref}
+            recipients={recipients}
+            templates={templates}
+            cc={b.cc}
+            initial={typeof tpl === "string" ? tpl : undefined}
+          />
         </CardContent>
       </Card>
       <Card>

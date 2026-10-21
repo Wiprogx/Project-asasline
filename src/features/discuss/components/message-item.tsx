@@ -42,6 +42,7 @@ export function MessageItem({ m, actions }: { m: MessageRow; actions?: ReactNode
             </ToneBadge>
           )}
           {m.auto && <ToneBadge tone="info">Sent automatically</ToneBadge>}
+          {m.replyToId && <span className="text-xs text-muted-foreground">↳ a reply</span>}
           {m.direction === "out" && !m.deliveredAt && (
             <ToneBadge tone="warning">Recorded — not sent by the app</ToneBadge>
           )}
@@ -55,7 +56,17 @@ export function MessageItem({ m, actions }: { m: MessageRow; actions?: ReactNode
             <span className="text-xs text-muted-foreground">taken by {m.claimedByName}</span>
           )}
         </span>
-        {actions}
+        <span className="flex flex-wrap items-center gap-2">
+          {m.direction === "in" && m.linkKind === "booking" && m.linkId && (
+            <Link
+              href={`/bookings/${m.linkId}/messages?reply=${m.id}`}
+              className="text-xs font-medium hover:underline"
+            >
+              Reply
+            </Link>
+          )}
+          {actions}
+        </span>
       </div>
       {m.subject && <span className="text-sm font-medium">{m.subject}</span>}
       {m.cc.length > 0 && (

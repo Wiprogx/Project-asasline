@@ -11,6 +11,7 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { sendMessage } from "../actions";
 import { sendSchema } from "../schemas";
 import { ALLOWED_TYPES } from "@/domain/files";
+import type { ReplyDraft } from "@/domain/message-reply";
 
 export type Recipient = {
   id: string;
@@ -36,20 +37,29 @@ export function SendForm({
   recipients,
   templates = [],
   cc = [],
+  initial,
+  reply,
 }: {
   linkRef: string;
   recipients: Recipient[];
   templates?: FilledTemplate[];
   /** The file's copy list (legacy cc): on every e-mail unless taken off. */
   cc?: string[];
+  /** A template already chosen (a "Send" button elsewhere on the file opened this form). */
+  initial?: string;
+  /** Answering a message on the file: its channel, sender and "Re:" subject (domain/message-reply). */
+  reply?: ReplyDraft;
 }) {
   const form = useRef<HTMLFormElement>(null);
-  const [channel, setChannel] = useState<"email" | "whatsapp">("email");
-  const [to, setTo] = useState("");
-  const [contactId, setContactId] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [template, setTemplate] = useState("");
+  const first = templates.find((t) => t.code === initial);
+  const [channel, setChannel] = useState<"email" | "whatsapp">(
+    reply?.channel ?? (first?.channel === "whatsapp" ? "whatsapp" : "email"),
+  );
+  const [to, setTo] = useState(reply?.to ?? "");
+  const [contactId, setContactId] = useState(reply?.contactId ?? "");
+  const [subject, setSubject] = useState(reply?.subject ?? first?.subject ?? "");
+  const [body, setBody] = useState(first?.body ?? "");
+  const [template, setTemplate] = useState(first?.code ?? "");
   const [state, run, pending] = useToastedAction(
     sendMessage,
     (data) => {
@@ -86,6 +96,7 @@ export function SendForm({
       <input type="hidden" name="linkRef" value={linkRef} />
       <input type="hidden" name="contactId" value={contactId} />
       <input type="hidden" name="code" value={template} />
+      {reply && <input type="hidden" name="replyToId" value={reply.replyToId} />}
       {templates.length > 0 && (
         <Field id="s-template" label="Template">
           <NativeSelect

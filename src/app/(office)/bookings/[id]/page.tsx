@@ -70,6 +70,7 @@ export default async function BookingPage({ params }: PageProps<"/bookings/[id]"
           <CopiesCard
             bookingId={b.id}
             blocked={blocked}
+            canSend={may(user, "app.discuss")}
             fix={b.vessel && <TakeSailingDates bookingId={b.id} vesselId={b.vessel.id} />}
             boxes={b.containers.map((c) => ({
               id: c.id,
