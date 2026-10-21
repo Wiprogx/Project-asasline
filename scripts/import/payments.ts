@@ -61,15 +61,13 @@ export async function importPayments(
       .values({ ...m.payment, contactId })
       .returning({ id: payments.id });
     if (parts.length)
-      await tx
-        .insert(paymentAllocations)
-        .values(
-          parts.map((a) => ({
-            paymentId: row.id,
-            invoiceId: a.invoiceId!,
-            amountCents: a.amountCents,
-          })),
-        );
+      await tx.insert(paymentAllocations).values(
+        parts.map((a) => ({
+          paymentId: row.id,
+          invoiceId: a.invoiceId!,
+          amountCents: a.amountCents,
+        })),
+      );
     report.added++;
     await tx.insert(legacyLinks).values({ kind: "payments", legacyId: rec.id, recordId: row.id });
     links.set(rec.id, row.id);
