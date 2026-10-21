@@ -65,21 +65,28 @@ export function CopiesCard({
             </span>
           )}
           {boxes.length > 1 && link(`${base}/trucker`, `All ${boxes.length} boxes on one sheet`)}
+          {canSend && (
+            <Link
+              href={`/bookings/${bookingId}/messages?tpl=BK_CONFIRM`}
+              className={buttonVariants({ size: "sm" })}
+            >
+              Send the confirmation
+            </Link>
+          )}
+          {/* One message, one trucker, one container (legacy driverCopyOut); a box whose loading
+              is not agreed yet gets no copy. */}
           {canSend &&
-            (
-              [
-                ["BK_CONFIRM", "Send the confirmation"],
-                ["DRIVER_COPY", "Send to the trucker"],
-              ] as const
-            ).map(([tpl, label]) => (
-              <Link
-                key={tpl}
-                href={`/bookings/${bookingId}/messages?tpl=${tpl}`}
-                className={buttonVariants({ size: "sm" })}
-              >
-                {label}
-              </Link>
-            ))}
+            boxes.map((c, i) =>
+              c.gaps.length ? null : (
+                <Link
+                  key={`send-${c.id}`}
+                  href={`/bookings/${bookingId}/messages?tpl=DRIVER_COPY&box=${i + 1}`}
+                  className={buttonVariants({ size: "sm" })}
+                >
+                  {boxes.length > 1 ? `Send to the trucker — box ${i + 1}` : "Send to the trucker"}
+                </Link>
+              ),
+            )}
         </CardContent>
       )}
     </Card>

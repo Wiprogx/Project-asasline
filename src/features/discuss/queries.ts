@@ -9,7 +9,7 @@ import { fillTemplate, templateScope } from "@/domain/templates";
 import { requirePermission } from "@/server/auth/dal";
 import { now } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookings, configTables, contacts, messages, users } from "@/server/db/schema";
+import { bookings, configTables, contacts, containers, messages, users } from "@/server/db/schema";
 import { readEscalateMinutes, readInbox, readRoutes, readTemplates } from "@/server/messaging";
 import { bookingVars } from "@/server/letters";
 import { readAutoSend, readWhatsAppNumbers } from "@/server/channel-config";
@@ -187,6 +187,13 @@ export async function bookingRecipients(bookingId: string) {
   if (!b) return [];
   // Everyone on the file, in every role they hold (domain/booking-parties).
   const roles: [string, string | null][] = BOOKING_PARTIES.map((p) => [p.label, b[p.key]]);
+  // Each box's own trucker (legacy c.transporter): the trucker copy of that box goes to them.
+  const boxes = await db
+    .select({ position: containers.position, transporterId: containers.transporterId })
+    .from(containers)
+    .where(and(eq(containers.bookingId, bookingId), isNull(containers.archivedAt)));
+  for (const c of boxes)
+    if (c.transporterId) roles.push([`Trucker, box ${c.position + 1}`, c.transporterId]);
   const ids = [...new Set(roles.map(([, id]) => id).filter((id): id is string => !!id))];
   const people = await db
     .select({
@@ -246,10 +253,10 @@ export async function routingForEdit() {
 }
 
 /** The booking's templates, filled from the file: choosing one fills the subject and the text. */
-export async function bookingTemplates(bookingId: string, me: string) {
+export async function bookingTemplates(bookingId: string, me: string, box?: number) {
   await requirePermission("app.discuss");
   if (!z.uuid().safeParse(bookingId).success) return [];
-  const vars = await bookingVars(db, bookingId, me);
+  const vars = await bookingVars(db, bookingId, me, box);
   if (!vars) return [];
   return (await readTemplates())
     .filter((t) => t.active && templateScope(t.code) === "booking")

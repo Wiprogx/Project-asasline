@@ -39,6 +39,7 @@ export function SendForm({
   cc = [],
   initial,
   reply,
+  party,
 }: {
   linkRef: string;
   recipients: Recipient[];
@@ -49,14 +50,21 @@ export function SendForm({
   initial?: string;
   /** Answering a message on the file: its channel, sender and "Re:" subject (domain/message-reply). */
   reply?: ReplyDraft;
+  /** A party on the file chosen already (a box's trucker for its copy). */
+  party?: string;
 }) {
   const form = useRef<HTMLFormElement>(null);
   const first = templates.find((t) => t.code === initial);
   const [channel, setChannel] = useState<"email" | "whatsapp">(
     reply?.channel ?? (first?.channel === "whatsapp" ? "whatsapp" : "email"),
   );
-  const [to, setTo] = useState(reply?.to ?? "");
-  const [contactId, setContactId] = useState(reply?.contactId ?? "");
+  const chosen = recipients.find((r) => r.id === party);
+  const startChannel = reply?.channel ?? (first?.channel === "whatsapp" ? "whatsapp" : "email");
+  const [to, setTo] = useState(
+    reply?.to ??
+      (chosen ? ((startChannel === "email" ? chosen.email : chosen.whatsapp) ?? "") : ""),
+  );
+  const [contactId, setContactId] = useState(reply?.contactId ?? chosen?.id ?? "");
   const [subject, setSubject] = useState(reply?.subject ?? first?.subject ?? "");
   const [body, setBody] = useState(first?.body ?? "");
   const [template, setTemplate] = useState(first?.code ?? "");

@@ -25,7 +25,8 @@ export default async function BookingMessagesPage({
 }: PageProps<"/bookings/[id]/messages">) {
   const user = await requirePagePermission("app.discuss");
   const { id } = await params;
-  const { tpl, reply } = await searchParams;
+  const { tpl, reply, box } = await searchParams;
+  const boxNo = typeof box === "string" && /^\d+$/.test(box) ? Number(box) : undefined;
   const b = await getBooking(id);
   if (!b) notFound();
   const [rows, recipients, contacts, routes, templates] = await Promise.all([
@@ -33,7 +34,7 @@ export default async function BookingMessagesPage({
     bookingRecipients(id),
     contactOptions(),
     routingTable(),
-    bookingTemplates(id, user.name),
+    bookingTemplates(id, user.name, boxNo),
   ]);
 
   const answering = rows.find((m) => m.id === reply && m.direction === "in");
@@ -46,13 +47,18 @@ export default async function BookingMessagesPage({
         </CardHeader>
         <CardContent>
           <SendForm
-            key={answering?.id ?? "new"}
+            key={answering?.id ?? `new-${boxNo ?? 0}`}
             reply={answering && replyDraft(answering)}
             linkRef={b.ref}
             recipients={recipients}
             templates={templates}
             cc={b.cc}
             initial={typeof tpl === "string" ? tpl : undefined}
+            party={
+              boxNo
+                ? (b.containers[boxNo - 1]?.transporterId ?? b.transporterId ?? undefined)
+                : undefined
+            }
           />
         </CardContent>
       </Card>
