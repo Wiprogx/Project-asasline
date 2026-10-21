@@ -144,11 +144,13 @@ only what is new. Carried today:
   and the **bank lines** (matched lines tied to their payment both ways);
 - the **messages** (every channel; authors and takers by name; times in the office's zone;
   replies tied; what went out taken as delivered);
-- the **fixed assets** (each on its imported supplier bill; disposals kept);
+- the **fixed assets** (each on its imported supplier bill; disposals kept) and the **journal
+  entries written by hand** (a cancelled one with its reversal; an opening entry only while the
+  app has no opening balance);
 - the **number counters**, last: each QT/SB month and INV/CN/BILL year raised to the highest
   number in use, never lowered, so the next number continues the series.
 
-Still to carry: the booking files and history, journal entries written by hand, files; the other settings (the script lists them).
+Still to carry: the booking files and history, files; the other settings (the script lists them).
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
 2. `scripts/import/` maps each kind to its table, resolving party ids to contact ids
