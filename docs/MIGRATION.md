@@ -36,12 +36,12 @@ as partial. Score = (done + ½ partial) / total, every feature weighing the same
 | App                   | Legacy lines            | Done | Partial | Missing | Score   |
 | --------------------- | ----------------------- | ---- | ------- | ------- | ------- |
 | Settings and platform | 10236–11550, 14742–end  | 45   | 7       | 3       | 88%     |
-| Accounting            | 12625–14741             | 51   | 4       | 9       | 83%     |
+| Accounting            | 12625–14741             | 53   | 4       | 7       | 86%     |
 | Quotations            | 5828–7680               | 37   | 11      | 9       | 75%     |
+| Activity and Discuss  | 8317–10236, 11550–12625 | 28   | 8       | 7       | 74%     |
 | Bookings              | 2501–4480, 7680–8320    | 42   | 8       | 12      | 74%     |
-| Activity and Discuss  | 8317–10236, 11550–12625 | 26   | 10      | 7       | 72%     |
-| Home and Contacts     | 2283–2500, 4478–5830    | 36   | 10      | 12      | 71%     |
-| **Total**             |                         | 237  | 50      | 52      | **77%** |
+| Home and Contacts     | 2283–2500, 4478–5830    | 38   | 9       | 11      | 73%     |
+| **Total**             |                         | 243  | 47      | 49      | **79%** |
 
 The go-live import (below) carries users and contacts so far.
 
@@ -79,8 +79,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   the task list (L12491, L12578); the message guard asking before a reply (L8793–8834); voice
   notes (L11941–12034).
 - **Accounting** — a bank line settling several invoices from the matching screen (L13415);
-  miscellaneous journal entries and their reversal (L13691–13717); the
-  payment-term gate (L12975); the chart of accounts in Settings, not a constant, and its Odoo
+  the payment-term gate (L12975); the chart of accounts in Settings, not a constant, and its Odoo
   import (L13936, L14600); the close-period preview (L13913); the Odoo number during the
   parallel run (L12894); VAT and payer per draft line (L12812, L12865); a booking picker in
   Accounting (L14717); loading a saved copy (L14443).
@@ -149,7 +148,7 @@ only what is new. Carried today:
 - the **number counters**, last: each QT/SB month and INV/CN/BILL year raised to the highest
   number in use, never lowered, so the next number continues the series.
 
-Still to carry: the booking files and history, journal entries (the app has no hand-made entries yet), files; the other settings (the script lists them).
+Still to carry: the booking files and history, journal entries written by hand, files; the other settings (the script lists them).
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
 2. `scripts/import/` maps each kind to its table, resolving party ids to contact ids

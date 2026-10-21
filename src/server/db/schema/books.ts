@@ -107,3 +107,25 @@ export const openingBalances = pgTable(
       .where(sql`archived_at is null`),
   ],
 );
+
+/**
+ * Entries written by hand in the miscellaneous journal (legacy newEntry): balanced lines,
+ * debit + / credit − in cents. Never edited; a reversal is a second entry pointing at the one
+ * it undoes (`reversalOf`), both kept (invariant 1).
+ */
+export const journalEntries = pgTable(
+  "journal_entries",
+  {
+    ...recordColumns,
+    ref: text().notNull(),
+    date: date({ mode: "string" }).notNull(),
+    label: text().notNull(),
+    lines: jsonb().$type<{ account: string; cents: number; label?: string }[]>().notNull(),
+    reversalOf: uuid(),
+  },
+  (t) => [
+    uniqueIndex("journal_entries_ref_uq").on(t.ref),
+    index("journal_entries_date_idx").on(t.date),
+    uniqueIndex("journal_entries_reversal_uq").on(t.reversalOf),
+  ],
+);

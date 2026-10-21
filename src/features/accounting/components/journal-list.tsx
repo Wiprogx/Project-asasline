@@ -19,6 +19,7 @@ const SOURCE_PAGE = {
   asset: "/accounting/assets",
   accrual: "/accounting/accruals",
   opening: "/accounting/odoo",
+  manual: "/accounting/entries",
 } as const;
 
 /** Where an entry comes from: its document, or the screen that made it. */

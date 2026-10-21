@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { formatInvoiceNumber, type InvoiceKind, invoiceSequenceKey } from "@/domain/invoicing";
 import { formatRef, type RefPrefix, sequenceKey } from "@/domain/refs";
+import { entrySequenceKey, formatEntryRef } from "@/domain/journal-entries";
 import type { Tx } from "./db/client";
 import { sequences } from "./db/schema";
 
@@ -27,4 +28,9 @@ export async function nextRef(tx: Tx, prefix: RefPrefix, day: string): Promise<s
 /** The next invoice or credit-note number of the year of `day` (INV/2026/00001). */
 export async function nextInvoiceNumber(tx: Tx, kind: InvoiceKind, day: string): Promise<string> {
   return formatInvoiceNumber(kind, day, await nextCounter(tx, invoiceSequenceKey(kind, day)));
+}
+
+/** The next number of the miscellaneous journal for the year of `day` (OD/2026/00001). */
+export async function nextEntryRef(tx: Tx, day: string): Promise<string> {
+  return formatEntryRef(day, await nextCounter(tx, entrySequenceKey(day)));
 }

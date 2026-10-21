@@ -29,6 +29,7 @@ export default async function AccountingLayout({ children }: LayoutProps<"/accou
           { href: "/accounting/sepa", label: "Pay suppliers" },
           { href: "/accounting/reminders", label: "Reminders" },
           { href: "/accounting/journal", label: "Journal" },
+          { href: "/accounting/entries", label: "Entries" },
           { href: "/accounting/reports", label: "Reports" },
           { href: "/accounting/cash-flow", label: "Cash flow" },
           { href: "/accounting/aged", label: "Aged" },

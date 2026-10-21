@@ -188,3 +188,15 @@ export const removeInvoiceFileSchema = z.object({
   fileId: z.uuid(),
   reason: z.string().trim().min(3, "Say why — it stays on the record").max(300),
 });
+
+/** An entry written by hand: its day, its words, its lines as typed (domain/journal-entries). */
+export const journalEntrySchema = z.object({
+  date: dayField(),
+  label: z.string().trim().min(3, "Say what the entry is for").max(200),
+  lines: z.string().min(1, "Write the lines").max(20_000),
+});
+
+export const reverseEntrySchema = z.object({
+  id: z.uuid(),
+  reason: z.string().trim().min(3, "Say why it is reversed").max(500),
+});

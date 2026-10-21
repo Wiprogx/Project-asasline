@@ -330,6 +330,13 @@
       "when": 1792581164339,
       "tag": "0046_message_escalated",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792584215666,
+      "tag": "0047_journal_entries",
+      "breakpoints": true
     }
   ]
 }
