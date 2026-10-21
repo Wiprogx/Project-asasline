@@ -17,6 +17,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Go-live import, eleventh part: the legacy fixed assets — each on its imported supplier bill (the bill's line found by its words when it can), its cost in cents, years, account and a disposal with its note; one whose bill was not imported is skipped and said.
 - Go-live import, tenth part: the legacy messages, every channel — e-mail ("both" read as e-mail), WhatsApp, calls with their length and outcome, web, internal notes in their room; the author and whoever took it by name among the users; the booking or quotation by its reference; the time as the office wrote it, in its own zone; replies tied to what they answer once every message has its id; what went out taken as delivered, what was escalated kept so. Attached files are reported, not carried by this step.
 - Go-live import, ninth part: the vessel register (legacy VESSELS setting; ports as UN/LOCODEs; a sailing the app already holds by vessel and voyage is linked) before the bookings, which now point at their sailing; and the customers' price agreements (legacy PRICE_LISTS) with their agreed prices in cents, each item once, a price whose catalogue item is unknown left out and said.
 - Go-live import, eighth part: the number counters, last in every run — each QT/SB month and each INV/CN/BILL year raised to the highest number now in use (imported or not), never lowered, so the first number the app issues after the cut-over continues the legacy series instead of repeating one (`domain/refs` refFloors).

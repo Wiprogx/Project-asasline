@@ -67,3 +67,22 @@ export function mapLegacyPriceList(
     warnings,
   };
 }
+
+/** A legacy fixed asset (legacy assetFromLine): bought on a supplier bill, written off over years. */
+export function mapLegacyAsset(a: Record<string, unknown>) {
+  const acquiredOn = day(a.date);
+  if (!acquiredOn) return null;
+  const disposed = a.st === "disposed";
+  return {
+    asset: {
+      name: text(a.name) ?? "Equipment",
+      acquiredOn,
+      costCents: cents(a.cost),
+      years: Math.max(1, Math.round(Number(a.years) || 5)),
+      account: text(a.acct) ?? "230000",
+      disposedOn: disposed ? (day(a.disposedAt) ?? acquiredOn) : null,
+      disposeNote: disposed ? text(a.disposeNote) : null,
+    },
+    legacyInvoiceId: a.invoiceId === undefined || a.invoiceId === null ? null : String(a.invoiceId),
+  };
+}

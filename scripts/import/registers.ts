@@ -6,10 +6,16 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { configValueOf } from "../../src/domain/legacy-config";
 import type { LegacyRecord } from "../../src/domain/legacy-export";
-import { mapLegacyPriceList, mapLegacyVessel } from "../../src/domain/legacy-registers";
+import {
+  mapLegacyAsset,
+  mapLegacyPriceList,
+  mapLegacyVessel,
+} from "../../src/domain/legacy-registers";
 import type { DbOrTx } from "../../src/server/db/client";
 import {
   contacts,
+  fixedAssets,
+  invoiceLines,
   legacyLinks,
   priceListLines,
   priceLists,
@@ -99,6 +105,46 @@ export async function importPriceLists(
       .insert(legacyLinks)
       .values({ kind: "PRICE_LISTS", legacyId: rec.id, recordId: list.id });
     links.set(rec.id, list.id);
+  }
+  return report;
+}
+
+/** Legacy fixed assets, each on its imported supplier bill (the line by its words when it can). */
+export async function importAssets(
+  tx: DbOrTx,
+  records: readonly LegacyRecord[],
+): Promise<KindReport> {
+  const report = emptyReport();
+  const links = await linksOf(tx, "assets");
+  const invoiceLinks = await linksOf(tx, "invoices");
+  for (const rec of records.filter((r) => r.kind === "assets")) {
+    if (links.has(rec.id)) {
+      report.already++;
+      continue;
+    }
+    const m = mapLegacyAsset(rec.body);
+    if (!m) {
+      report.skipped.push(`asset ${rec.id}: no purchase day`);
+      continue;
+    }
+    const invoiceId = m.legacyInvoiceId ? invoiceLinks.get(m.legacyInvoiceId) : undefined;
+    if (!invoiceId) {
+      report.skipped.push(`"${m.asset.name}": its supplier bill was not imported`);
+      continue;
+    }
+    const [line] = await tx
+      .select({ id: invoiceLines.id })
+      .from(invoiceLines)
+      .where(
+        and(eq(invoiceLines.invoiceId, invoiceId), eq(invoiceLines.description, m.asset.name)),
+      );
+    const [row] = await tx
+      .insert(fixedAssets)
+      .values({ ...m.asset, invoiceId, invoiceLineId: line?.id ?? null })
+      .returning({ id: fixedAssets.id });
+    report.added++;
+    await tx.insert(legacyLinks).values({ kind: "assets", legacyId: rec.id, recordId: row.id });
+    links.set(rec.id, row.id);
   }
   return report;
 }

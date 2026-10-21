@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapLegacyPriceList, mapLegacyVessel } from "./legacy-registers";
+import { mapLegacyAsset, mapLegacyPriceList, mapLegacyVessel } from "./legacy-registers";
 
 describe("mapLegacyVessel", () => {
   it("reads a sailing with its ports as UN/LOCODEs", () => {
@@ -70,5 +70,38 @@ describe("mapLegacyPriceList", () => {
       { itemId: "rate-2", sellCents: 405050, buyCents: 244500 },
     ]);
     expect(r?.warnings).toEqual(["catalogue item 99 not found — its agreed price left out"]);
+  });
+});
+
+describe("mapLegacyAsset", () => {
+  it("keeps the cost in cents, the years, the account and a disposal", () => {
+    expect(
+      mapLegacyAsset({
+        name: "Laptop",
+        invoiceId: 77,
+        date: "2026-03-10",
+        cost: 1299.99,
+        years: 3,
+        acct: "230000",
+        st: "disposed",
+        disposedAt: "2026-09-30",
+        disposeNote: "Stolen",
+      }),
+    ).toEqual({
+      asset: {
+        name: "Laptop",
+        acquiredOn: "2026-03-10",
+        costCents: 129999,
+        years: 3,
+        account: "230000",
+        disposedOn: "2026-09-30",
+        disposeNote: "Stolen",
+      },
+      legacyInvoiceId: "77",
+    });
+  });
+
+  it("needs the day it was bought", () => {
+    expect(mapLegacyAsset({ name: "x" })).toBeNull();
   });
 });
