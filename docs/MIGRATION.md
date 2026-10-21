@@ -132,7 +132,9 @@ only what is new. Carried today:
 - **users** and **contacts** (with child addresses and bank accounts);
 - the settings **word lists** (cancel reasons, container types, address types, package types,
   paper documents, activity types, professions, seal sources, document types — a list the app
-  already saved is kept) and the **rate catalogue** (RATE_ITEMS, linked by id);
+  already saved is kept), the **rate catalogue** (RATE_ITEMS, linked by id), the **vessel
+  register** (VESSELS; the bookings point at their sailing) and the customers' **price
+  agreements** (PRICE_LISTS);
 - the **quotations** (destinations and lines; the QT number kept as issued);
 - the **bookings** (boxes, goods, seals, loading and alerts; the SB number kept);
 - the **tasks** (open, done or withdrawn as they stood; rule steps keep their code, per box);
@@ -144,7 +146,7 @@ only what is new. Carried today:
 - the **number counters**, last: each QT/SB month and INV/CN/BILL year raised to the highest
   number in use, never lowered, so the next number continues the series.
 
-Still to carry: the booking files and history, journal entries, fixed assets, price lists,
+Still to carry: the booking files and history, journal entries, fixed assets,
 messages, files; the other settings (the script lists them).
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).

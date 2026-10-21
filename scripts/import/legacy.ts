@@ -25,9 +25,10 @@ const DONE = new Set([
   "invoices",
   "payments",
   "bankLines",
+  "PRICE_LISTS",
 ]);
-/** The settings (config records) it carries: the word lists and the rate catalogue. */
-const CONFIG_DONE = new Set(["RATE_ITEMS"]);
+/** The settings (config records) it carries: the word lists, the catalogue, the vessels. */
+const CONFIG_DONE = new Set(["RATE_ITEMS", "VESSELS"]);
 
 async function main() {
   const args = process.argv.slice(2);
@@ -48,6 +49,7 @@ async function main() {
   const { importInvoices } = await import("./invoices");
   const { importBankLines, importPayments } = await import("./payments");
   const { raiseSequences } = await import("./sequences");
+  const { importPriceLists, importVessels } = await import("./registers");
   const { LEGACY_LISTS } = await import("../../src/domain/legacy-config");
   for (const k of Object.keys(LEGACY_LISTS)) CONFIG_DONE.add(k);
   const { printReport } = await import("./report");
@@ -65,7 +67,9 @@ async function main() {
         users: await importUsers(tx, read.users),
         "settings lists": await importLists(tx, read.records),
         "rate catalogue": await importRates(tx, read.records),
+        vessels: await importVessels(tx, read.records),
         contacts: await importContacts(tx, read.records),
+        "price agreements": await importPriceLists(tx, read.records),
         quotations: await importQuotations(tx, read.records),
         bookings: await importBookings(tx, read.records),
         activities: await importActivities(tx, read.records),

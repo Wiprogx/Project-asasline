@@ -81,6 +81,7 @@ export async function importBookings(
   const report = emptyReport();
   const links = await linksOf(tx, "bookings");
   const party = await partyLookup(tx);
+  const vesselLinks = await linksOf(tx, "VESSELS");
   for (const rec of records.filter((r) => r.kind === "bookings")) {
     if (links.has(rec.id)) {
       report.already++;
@@ -116,6 +117,7 @@ export async function importBookings(
           clientId,
           quotationId: origin.quotationId,
           quotationRouteId: origin.routeId,
+          vesselId: vesselLinks.get(String(rec.body.vesselId ?? "")) ?? null,
           pol: ports?.pol ?? null,
           pod: ports?.pod ?? null,
           ...archived,
