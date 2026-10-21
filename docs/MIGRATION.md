@@ -28,20 +28,20 @@ keep the legacy app serving the rest until each module has parity and tests.
 
 ## Module status
 
-Measured from the code on 2026-10-20, not from this file: every legacy screen, button and rule
-in the app's line range was listed and looked for in `src/`. Done means a page or action
-actually uses it; a domain function nothing calls counts as partial. Score = (done + ½ partial)
-/ total, every feature weighing the same.
+Measured from the code on 2026-10-20, not from this file, and moved on 2026-10-21 as gaps were
+closed: every legacy screen, button and rule in the app's line range was listed and looked for
+in `src/`. Done means a page or action actually uses it; a domain function nothing calls counts
+as partial. Score = (done + ½ partial) / total, every feature weighing the same.
 
 | App                   | Legacy lines            | Done | Partial | Missing | Score   |
 | --------------------- | ----------------------- | ---- | ------- | ------- | ------- |
 | Settings and platform | 10236–11550, 14742–end  | 45   | 7       | 3       | 88%     |
-| Accounting            | 12625–14741             | 49   | 5       | 10      | 80%     |
+| Accounting            | 12625–14741             | 51   | 4       | 9       | 83%     |
+| Quotations            | 5828–7680               | 37   | 11      | 9       | 75%     |
 | Bookings              | 2501–4480, 7680–8320    | 42   | 8       | 12      | 74%     |
-| Activity and Discuss  | 8317–10236, 11550–12625 | 24   | 11      | 8       | 69%     |
-| Quotations            | 5828–7680               | 32   | 11      | 14      | 66%     |
-| Home and Contacts     | 2283–2500, 4478–5830    | 32   | 12      | 14      | 65%     |
-| **Total**             |                         | 224  | 54      | 61      | **74%** |
+| Activity and Discuss  | 8317–10236, 11550–12625 | 26   | 10      | 7       | 72%     |
+| Home and Contacts     | 2283–2500, 4478–5830    | 36   | 10      | 12      | 71%     |
+| **Total**             |                         | 237  | 50      | 52      | **77%** |
 
 The go-live import (below) carries users and contacts so far.
 
@@ -51,10 +51,7 @@ Ranked by what the office would notice first. Each item is ported as its own ste
 or rule becomes a `config_tables` row with a Settings editor, never a constant (invariant 8).
 Lnnnn is a line of `legacy/asasline-demo.html`.
 
-- **Quotations** — edit the header after creation (customer, valid until, commodity, document
-  type, payment terms; L6997); change the status by hand (L7065); cancel with a reason and put
-  back (L2977); reject the whole quotation as lost (L10142) and turn it lost when every
-  destination is declined (L10231); door/port service, loading address, stops, per-box
+- **Quotations** — door/port service, loading address, stops, per-box
   address and loading mode (L7091–7120); a new quotation with several destinations from the
   ocean-leg picker (L6738–6990); "save to the customer's price list" when a line's price is
   edited and the last/agreed price hints (L10013, L7206); comparing other lines to the same
@@ -63,9 +60,9 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   L7076); the follow-up letter on a second send (L10119); Export/Import filter and richer list
   rows (L6712–6731); search over destination and commodity (L6708); validity editable with an
   expired badge; the free-time picker and its warning (L9920, L7177).
-- **Bookings** — send the customer and trucker copies from the booking, one message per box,
-  and record when each went out (L4422–4470); the booking flow steps that open and close on
-  evidence (L7691), a status change closing "Confirm booking" (L3506); the originals' third
+- **Bookings** — the trucker copy as one message per box to each box's trucker (L4447–4470);
+  the carrier step of the booking flow closing on the carrier's booking number, and a status
+  change closing "Confirm booking" (L7691, L3506); the originals' third
   step (received / came back, signed by) and the courier label (L3613–3622); "Send" per
   document (L3920); the loading-after-cut-off warning and the box totals (L3556, L3690–3708);
   the CMR asked for when loading runs over (L3550); the extra customs declaration (L8071–8105);
@@ -73,8 +70,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   card with actual dates and delay on the booking (L3514); the seal history (L3645); the
   cancellation-reasons report (L3008) and cancel from the list row (L2923); "quoted with X,
   booked with Y" (L3568, L3746).
-- **Activity and Discuss** — reply into a thread and a threaded Messages tab (L8879, L8714);
-  edit a task (L12557); the call log (duration, outgoing calls, caller lookup, missed call →
+- **Activity and Discuss** — a threaded Messages tab (L8714); the call log (duration, outgoing calls, caller lookup, missed call →
   call-back task; L12133–12238); an unclaimed message escalating into a task (L11747); the bell
   counting unanswered messages (L2540); pop-up notifications (L11646–11735); direct messages,
   unread counts and files in the internal chat (L11825–11872); re-link a message, mark it
@@ -82,16 +78,14 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   automatic triggers; scope tabs, blocking first, the "X covers" badge and the orphan filter on
   the task list (L12491, L12578); the message guard asking before a reply (L8793–8834); voice
   notes (L11941–12034).
-- **Accounting** — a credit note for part of an invoice (L13658); one payment over several
-  invoices (L13415); miscellaneous journal entries and their reversal (L13691–13717); the
+- **Accounting** — a bank line settling several invoices from the matching screen (L13415);
+  miscellaneous journal entries and their reversal (L13691–13717); the
   payment-term gate (L12975); the chart of accounts in Settings, not a constant, and its Odoo
   import (L13936, L14600); the close-period preview (L13913); the Odoo number during the
   parallel run (L12894); VAT and payer per draft line (L12812, L12865); a booking picker in
   Accounting (L14717); loading a saved copy (L14443).
-- **Home and Contacts** — edit an address (L5816); the contact's history with before and after
-  (L4871); documents of the contact's own (L4860, L5200); "+ Activity" on a contact and its
-  full task list (L4768, L4852); the money summary on the Invoices tab (L4823); payment terms
-  and the "last price" choice on the form (L5390–5398); the VAT register lookup and the EORI
+- **Home and Contacts** — documents of the contact's own (L4860, L5200); "+ Activity" on a contact and its
+  full task list (L4768, L4852); the money summary on the Invoices tab (L4823); the VAT register lookup and the EORI
   duplicate check (L5270, L5362); the stats strip, "used as" badges and tab counts
   (L4746–4757); detach an address into its own contact (L5062–5140); sending from the contact
   logged to its messages (L4772–4790); the Map and Tasks views and the kanban (L4614, L4641);
@@ -124,12 +118,10 @@ unreachable or superseded before it lands here.
 
 ## Legacy behaviour waiting on a missing record
 
-- **Bookings — "sent to the customer" and "sent to the trucker"** (`b.sentClient`, `b.sentDriver`):
-  the new app prints both copies but does not yet record when each went out. Two things wait on
-  it: the booking-flow steps "Send the booking confirmation" and "Send the trucker copy", and the
-  Certiweight lock "ordered" (legacy `certiLocked`: once the trucker copy carried the weighing
-  request, Certiweight cannot be cancelled). Today Certiweight locks only once a certificate is
-  filed.
+- **Bookings — the Certiweight lock "ordered"** (legacy `certiLocked`: once the trucker copy
+  carried the weighing request, Certiweight cannot be cancelled). The copies are now sent from
+  the booking and their steps (CONFIRM_OUT, TRUCKER_OUT) close on the message; the lock does not
+  read the TRUCKER_OUT step yet, so Certiweight still locks only once a certificate is filed.
 
 ## Data migration (when a module goes live)
 
