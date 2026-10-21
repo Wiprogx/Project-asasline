@@ -255,13 +255,15 @@ export async function listPayments() {
     .select({
       payment: payments,
       customer: contacts.name,
-      invoiceId: invoices.id,
-      invoiceNumber: invoices.number,
+      // One row per payment; a payment over several invoices names each of them.
+      settles: sql<
+        { id: string; number: string | null }[]
+      >`coalesce((select json_agg(json_build_object('id', i.id, 'number', i.number) order by i.number)
+        from payment_allocations pa join invoices i on i.id = pa.invoice_id
+        where pa.payment_id = "payments"."id"), '[]'::json)`,
     })
     .from(payments)
     .leftJoin(contacts, eq(contacts.id, payments.contactId))
-    .leftJoin(paymentAllocations, eq(paymentAllocations.paymentId, payments.id))
-    .leftJoin(invoices, eq(invoices.id, paymentAllocations.invoiceId))
     .orderBy(desc(payments.date), desc(payments.createdAt))
     .limit(500);
 }

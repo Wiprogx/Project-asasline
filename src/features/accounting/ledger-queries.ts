@@ -17,7 +17,6 @@ import {
   fixedAssets,
   invoices,
   openingBalances,
-  paymentAllocations,
   payments,
 } from "@/server/db/schema";
 import { issuedDocs } from "./ledger-store";
@@ -39,14 +38,15 @@ export const readJournal = cache(async () => {
         chargeAccount: payments.chargeAccount,
         partner: contacts.name,
         reference: payments.reference,
-        invoiceNumber: invoices.number,
+        // One row per payment even when it settles several invoices: they are named together.
+        invoiceNumber: sql<string | null>`(select string_agg(i.number, ', ' order by i.number)
+          from payment_allocations pa join invoices i on i.id = pa.invoice_id
+          where pa.payment_id = "payments"."id")`,
         status: payments.status,
         reversedOn: payments.reversedOn,
       })
       .from(payments)
-      .leftJoin(contacts, eq(contacts.id, payments.contactId))
-      .leftJoin(paymentAllocations, eq(paymentAllocations.paymentId, payments.id))
-      .leftJoin(invoices, eq(invoices.id, paymentAllocations.invoiceId)),
+      .leftJoin(contacts, eq(contacts.id, payments.contactId)),
     db.select().from(fixedAssets).where(isNull(fixedAssets.archivedAt)),
     db.select().from(accrualRuns).where(isNull(accrualRuns.archivedAt)),
     db.select().from(openingBalances).where(isNull(openingBalances.archivedAt)),

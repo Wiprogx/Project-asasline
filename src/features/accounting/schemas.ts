@@ -67,6 +67,14 @@ export const listFilterSchema = z.object({
   q: z.string().max(100).optional().catch(undefined),
 });
 
+/** One payment over several invoices of a customer; the parts come as part.<invoiceId>. */
+export const splitPaymentSchema = z.object({
+  customerId: z.uuid("Choose the customer"),
+  date: dayField(),
+  method: z.enum(PAYMENT_METHODS).default("bank"),
+  reference: z.string().max(200).optional(),
+});
+
 export const registerPaymentSchema = z.object({
   invoiceId: z.uuid(),
   date: dayField(),

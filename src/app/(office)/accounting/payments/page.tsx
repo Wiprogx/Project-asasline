@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -25,6 +26,14 @@ export default async function PaymentsPage() {
       <PageHeader
         title="Payments"
         description="Money received, newest first; reversals stay in view."
+        actions={
+          <Link
+            href="/accounting/payments/new"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Payment over several invoices
+          </Link>
+        }
       />
       <Card>
         <CardContent className="pt-2">
@@ -42,21 +51,22 @@ export default async function PaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map(({ payment: p, customer, invoiceId, invoiceNumber }) => (
+                {rows.map(({ payment: p, customer, settles }) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-mono text-xs">{p.date}</TableCell>
                     <TableCell className="max-w-48 truncate">{customer ?? "—"}</TableCell>
                     <TableCell>
-                      {invoiceId ? (
-                        <Link
-                          className="font-mono hover:underline"
-                          href={`/accounting/invoices/${invoiceId}`}
-                        >
-                          {invoiceNumber}
-                        </Link>
-                      ) : (
-                        "on account"
-                      )}
+                      {settles.length
+                        ? settles.map((i) => (
+                            <Link
+                              key={i.id}
+                              className="mr-2 font-mono hover:underline"
+                              href={`/accounting/invoices/${i.id}`}
+                            >
+                              {i.number}
+                            </Link>
+                          ))
+                        : "on account"}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatCents(p.amountCents)}
