@@ -19,6 +19,7 @@ import type { TaskState } from "@/domain/tasks";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { completeTask, handOverTask, putBackTask, reopenTask, withdrawTask } from "../actions";
 import { handOverSchema } from "../schemas";
+import { EditTaskDialog, type TaskWords } from "./edit-task-dialog";
 
 type Staff = { id: string; name: string }[];
 
@@ -94,10 +95,13 @@ export function TaskActions({
   state,
   staff,
   withdrawReasons,
+  words,
 }: {
   id: string;
   version: number;
   state: TaskState;
+  /** What the task says, when it may be edited by hand (not a step a rule opened). */
+  words?: TaskWords;
   staff: Staff;
   /** The reasons offered when withdrawing (Settings › Lists). */
   withdrawReasons: readonly string[];
@@ -108,6 +112,7 @@ export function TaskActions({
     return <Move action={putBackTask} id={id} version={version} label="Put back" />;
   return (
     <div className="flex flex-wrap items-center justify-end gap-1">
+      {words && <EditTaskDialog id={id} version={version} task={words} />}
       <HandOver id={id} version={version} staff={staff} />
       <ReasonDialog
         action={withdrawTask}

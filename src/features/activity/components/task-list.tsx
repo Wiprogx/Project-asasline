@@ -62,6 +62,7 @@ function TaskItem({
         state={t.state}
         staff={staff}
         withdrawReasons={withdrawReasons}
+        words={t.ruleCode ? undefined : t}
       />
     </li>
   );

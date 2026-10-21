@@ -39,6 +39,14 @@ export const withdrawTaskSchema = taskRef.extend({
   reason: z.string().min(3, "Say why — it stays on the task").max(500),
 });
 
+/** What the task says and when it is due (legacy editActivity); who has it is a hand-over. */
+export const editTaskSchema = taskRef.extend({
+  title: z.string().trim().min(2, "What needs doing?").max(200),
+  type: z.string().trim().max(40).optional(),
+  due: day.optional(),
+  note: z.string().max(2000).optional(),
+});
+
 /** Hand over: to a person, or back to a role for whoever picks it up. */
 export const handOverSchema = taskRef.extend(owner).superRefine(ownerRequired);
 

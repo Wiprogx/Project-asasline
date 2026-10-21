@@ -22,6 +22,7 @@ function baseQuery() {
       state: activities.state,
       role: activities.role,
       note: activities.note,
+      ruleCode: activities.ruleCode,
       withdrawReason: activities.withdrawReason,
       blocking: activities.blocking,
       assigneeId: activities.assigneeId,

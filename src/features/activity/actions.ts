@@ -1,41 +1,16 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { nextState, type TaskMove } from "@/domain/tasks";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
-import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { activities, bookings } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { handOverSchema, newTaskSchema, taskRef, withdrawTaskSchema } from "./schemas";
-
-class Refused extends Error {}
-
-function refresh(linkKind: string | null, linkId: string | null) {
-  revalidatePath("/activity", "layout");
-  revalidatePath("/");
-  if (linkKind === "booking" && linkId) revalidatePath(`/bookings/${linkId}`, "layout");
-  if (linkKind === "quotation" && linkId) revalidatePath(`/quotations/${linkId}`, "layout");
-}
-
-async function run(
-  fn: () => Promise<{ linkKind: string | null; linkId: string | null }>,
-  message: string,
-): Promise<ActionResult> {
-  try {
-    const link = await fn();
-    await invalidateTags(tags.dashboard); // the home panel counts the open steps
-    refresh(link.linkKind, link.linkId);
-    return { ok: true, data: undefined, message };
-  } catch (e) {
-    if (e instanceof ConflictError || e instanceof Refused) return fail(e.message);
-    throw e;
-  }
-}
+import { Refused, run } from "./task-store";
 
 export async function createTask(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.activity");
