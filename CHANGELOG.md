@@ -17,6 +17,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Contacts: a task added on the contact itself (legacy t.contact), from its Tasks tab; the tab lists those, its quotations' tasks and the tasks of every booking it is a party to in any role (it read only the bookings where it was the client), and the activity list links such a task to its contact.
 - Accounting: one transfer settling several invoices of a customer (legacy pfApply) — Payments › "Payment over several invoices": the customer, then the part each open invoice takes, booked as one payment with one allocation per invoice, never more than an invoice has open. The journal and the payments list read a payment once whatever it settles (a payment over two invoices would otherwise have counted twice) and name every invoice it paid.
 - Accounting: part of an issued invoice credited (legacy creditPart) — how many of each line are given back, never more than is left, the invoice staying; each credit note line names the invoice line it credits (migration 0045), and the full credit now gives back what is still left rather than refusing after a part.
 - Contacts: a History tab — created, edited, archived and put back, addresses, bank accounts and number checks in plain words, each edit saying what changed from what to what (legacy contact history; `domain/changes`). The payment terms and the last-price choice on the contact form (legacy CF term / pricing): both were stored but not on the form, so every save turned the last-price choice off.

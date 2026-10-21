@@ -6,9 +6,11 @@ import type { TaskState } from "@/domain/tasks";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { activities, bookings, covers, quotations, users } from "@/server/db/schema";
+import { PARTY_KEYS } from "@/domain/booking-parties";
+import { activities, bookings, contacts, covers, quotations, users } from "@/server/db/schema";
 
 const doneBy = alias(users, "done_by_user");
+const linkedContact = alias(contacts, "linked_contact");
 
 /** Tasks as every screen shows them: owner, linked booking ref, who closed them. */
 function baseQuery() {
@@ -29,7 +31,9 @@ function baseQuery() {
       assigneeName: users.name,
       linkKind: activities.linkKind,
       linkId: activities.linkId,
-      linkRef: sql<string | null>`coalesce(${bookings.ref}, ${quotations.ref})`,
+      linkRef: sql<
+        string | null
+      >`coalesce(${bookings.ref}, ${quotations.ref}, ${linkedContact.name})`,
       doneAt: activities.doneAt,
       doneByName: doneBy.name,
     })
@@ -40,6 +44,10 @@ function baseQuery() {
     .leftJoin(
       quotations,
       and(eq(activities.linkKind, "quotation"), eq(quotations.id, activities.linkId)),
+    )
+    .leftJoin(
+      linkedContact,
+      and(eq(activities.linkKind, "contact"), eq(linkedContact.id, activities.linkId)),
     );
 }
 
@@ -105,12 +113,21 @@ export async function tasksForRecord(kind: "booking" | "quotation", id: string) 
     .orderBy(...byDue);
 }
 
-/** Every task on a contact's bookings and quotations, whatever its state (the contact's Tasks tab). */
+/**
+ * Every task of a contact, whatever its state (the contact's Tasks tab, legacy cvAct): those on
+ * the contact itself, on its quotations, and on every booking it is a party to, in any role.
+ */
 export async function tasksForContact(contactId: string) {
   await requirePermission("app.activity");
   if (!z.uuid().safeParse(contactId).success) return [];
   return baseQuery()
-    .where(or(eq(bookings.clientId, contactId), eq(quotations.clientId, contactId)))
+    .where(
+      or(
+        and(eq(activities.linkKind, "contact"), eq(activities.linkId, contactId)),
+        eq(quotations.clientId, contactId),
+        ...PARTY_KEYS.map((k) => eq(bookings[k], contactId)),
+      ),
+    )
     .orderBy(...byDue)
     .limit(500);
 }

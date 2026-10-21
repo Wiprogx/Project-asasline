@@ -14,6 +14,7 @@ function refresh(linkKind: string | null, linkId: string | null) {
   revalidatePath("/");
   if (linkKind === "booking" && linkId) revalidatePath(`/bookings/${linkId}`, "layout");
   if (linkKind === "quotation" && linkId) revalidatePath(`/quotations/${linkId}`, "layout");
+  if (linkKind === "contact" && linkId) revalidatePath(`/contacts/${linkId}`, "layout");
 }
 
 /** Runs a task write; a stale version or a refusal becomes the form's error. */

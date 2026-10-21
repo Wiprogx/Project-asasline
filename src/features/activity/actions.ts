@@ -6,7 +6,7 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { activities, bookings } from "@/server/db/schema";
+import { activities, bookings, contacts } from "@/server/db/schema";
 import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { handOverSchema, newTaskSchema, taskRef, withdrawTaskSchema } from "./schemas";
@@ -27,6 +27,13 @@ export async function createTask(_p: ActionResult, fd: FormData): Promise<Action
           .from(bookings)
           .where(eq(bookings.id, d.linkId!));
         if (!b) throw new Refused("That booking no longer exists.");
+      }
+      if (d.linkKind === "contact") {
+        const [c] = await tx
+          .select({ id: contacts.id })
+          .from(contacts)
+          .where(eq(contacts.id, d.linkId!));
+        if (!c) throw new Refused("That contact no longer exists.");
       }
       const [row] = await tx
         .insert(activities)
