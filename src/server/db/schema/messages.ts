@@ -56,6 +56,8 @@ export const messages = pgTable(
     deliveredAt: timestamp({ withTimezone: true }),
     /** Sent by the app itself on a tracking milestone (legacy auto), not written by a person. */
     auto: boolean().notNull().default(false),
+    /** When nobody took it in time and it became the Team lead's task (legacy escalated): once, ever. */
+    escalatedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
     index("messages_at_idx").on(t.at),

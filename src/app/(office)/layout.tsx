@@ -14,6 +14,7 @@ import { requireUser } from "@/server/auth/dal";
 import { readPorts } from "@/server/port-config";
 import { Bell } from "@/components/layout/bell";
 import { myTaskCounts } from "@/features/activity/queries";
+import { waitingCount } from "@/features/discuss/queries";
 import { officeToday } from "@/server/clock";
 
 export default async function OfficeLayout({ children }: LayoutProps<"/">) {
@@ -22,7 +23,12 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
   const allowed = NAV.filter((i) => i.permission === null || may(user, i.permission)).map(
     (i) => i.href,
   );
-  const counts = may(user, "app.activity") ? await myTaskCounts(officeToday()) : null;
+  const [tasks, waiting] = await Promise.all([
+    may(user, "app.activity") ? myTaskCounts(officeToday()) : null,
+    may(user, "app.discuss") ? waitingCount(user.role) : 0,
+  ]);
+  const counts =
+    tasks || waiting ? { ...(tasks ?? { overdue: 0, today: 0, stop: 0 }), waiting } : null;
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>

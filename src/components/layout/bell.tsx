@@ -14,7 +14,7 @@ export function Bell({ counts }: { counts: BellCounts }) {
   const b = bellOf(counts);
   return (
     <Link
-      href="/activity"
+      href={b.href}
       aria-label={b.label}
       title={b.label}
       className="relative inline-flex size-8 items-center justify-center rounded-md hover:bg-accent"

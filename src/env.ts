@@ -18,6 +18,8 @@ const schema = z.object({
   /** WhatsApp Business (Cloud API): unset, WhatsApp opens in the app instead. */
   WHATSAPP_TOKEN: z.string().min(10).optional(),
   WHATSAPP_PHONE_ID: z.string().min(3).optional(),
+  /** The scheduled jobs' key (POST /api/jobs/tick): unset, the endpoint does not exist. */
+  JOBS_TOKEN: z.string().min(24).optional(),
 });
 
 export const env = schema.parse({
@@ -31,4 +33,5 @@ export const env = schema.parse({
   MAIL_FROM: process.env.MAIL_FROM || undefined,
   WHATSAPP_TOKEN: process.env.WHATSAPP_TOKEN || undefined,
   WHATSAPP_PHONE_ID: process.env.WHATSAPP_PHONE_ID || undefined,
+  JOBS_TOKEN: process.env.JOBS_TOKEN || undefined,
 });

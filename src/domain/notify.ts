@@ -33,21 +33,28 @@ export type BellCounts = {
   today: number;
   /** Among them, the steps that stop a shipment (a blocking rule) at or past their day. */
   stop: number;
+  /** Messages in my role's waiting queue that nobody has taken (legacy bell: unclaimed for my role). */
+  waiting?: number;
 };
 
-export type Bell = { level: NotifyLevel; count: number; label: string };
+export type Bell = { level: NotifyLevel; count: number; label: string; href: string };
 
 /** What the bell shows: the highest level with something in it, and how many things want me. */
 export function bellOf(c: BellCounts): Bell {
-  const count = c.overdue + c.today;
+  const tasks = c.overdue + c.today;
+  const waiting = c.waiting ?? 0;
+  const count = tasks + waiting;
   const parts = [
     c.stop > 0 && `${c.stop} stopping a shipment`,
     c.overdue > 0 && `${c.overdue} overdue`,
     c.today > 0 && `${c.today} due today`,
+    waiting > 0 && `${waiting} message${waiting > 1 ? "s" : ""} waiting`,
   ].filter((x): x is string => !!x);
   return {
     level: c.stop > 0 ? "stop" : count > 0 ? "today" : "news",
     count,
     label: count === 0 ? "Nothing due today" : `${count} to do: ${parts.join(", ")}`,
+    // Only messages waiting: the bell opens the queue they wait in.
+    href: tasks === 0 && waiting > 0 ? "/discuss/queue" : "/activity",
   };
 }

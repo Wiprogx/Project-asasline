@@ -111,6 +111,8 @@ export async function waitingQueue(role: Role | null) {
         eq(messages.direction, "in"),
         isNull(messages.claimedBy),
         isNull(messages.archivedAt),
+        // Escalated by the scheduled job, it is the Team lead's task now, no longer a queue entry.
+        isNull(messages.escalatedAt),
         sql`not (${messages.channel} = 'call' and ${messages.callOutcome} = 'answered')`,
         sql`not ${answeredLater}`,
       ),
@@ -128,6 +130,12 @@ export async function waitingQueue(role: Role | null) {
       };
     })
     .filter((m) => role === null || inQueueOf(m, role, escalateAfter));
+}
+
+/** How many messages wait in my role's queue (the bell). */
+export async function waitingCount(role: Role): Promise<number> {
+  await requirePermission("app.discuss");
+  return (await waitingQueue(role)).length;
 }
 
 export async function messagesForRecord(linkKind: "booking" | "quotation", id: string) {
