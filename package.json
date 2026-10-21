@@ -18,7 +18,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
-    "import:legacy": "tsx --env-file-if-exists=.env.local scripts/import/legacy.ts",
+    "import:legacy": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/import/legacy.ts",
     "db:up": "docker compose up -d",
     "graph": "depcruise src --config .dependency-cruiser.cjs --ignore-known --output-type err",
     "graph:mermaid": "depcruise src --config .dependency-cruiser.cjs --output-type mermaid",

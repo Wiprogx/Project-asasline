@@ -29,6 +29,7 @@ const DONE = new Set([
   "MESSAGES",
   "assets",
   "entries",
+  "FILES",
 ]);
 /** The settings (config records) it carries: the word lists, the catalogue, the vessels. */
 const CONFIG_DONE = new Set(["RATE_ITEMS", "VESSELS"]);
@@ -55,6 +56,7 @@ async function main() {
   const { importAssets, importPriceLists, importVessels } = await import("./registers");
   const { importMessages } = await import("./messages");
   const { importEntries } = await import("./entries");
+  const { importFiles } = await import("./files");
   const { LEGACY_LISTS } = await import("../../src/domain/legacy-config");
   for (const k of Object.keys(LEGACY_LISTS)) CONFIG_DONE.add(k);
   const { printReport } = await import("./report");
@@ -84,6 +86,8 @@ async function main() {
         messages: await importMessages(tx, read.records),
         "fixed assets": await importAssets(tx, read.records),
         "journal entries": await importEntries(tx, read.records),
+        // The bytes go to disk only when applied: a preview writes nothing.
+        files: await importFiles(tx, read.records, apply),
         // Last: the counters continue after every number now in use.
         "number counters": await raiseSequences(tx),
       };

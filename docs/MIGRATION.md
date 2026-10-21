@@ -147,10 +147,13 @@ only what is new. Carried today:
 - the **fixed assets** (each on its imported supplier bill; disposals kept) and the **journal
   entries written by hand** (a cancelled one with its reversal; an opening entry only while the
   app has no opening balance);
+- the **booking files** (the bytes from the export stored under FILES_DIR on each booking they
+  were filed on, the step they settled named per box; a preview writes nothing to disk);
 - the **number counters**, last: each QT/SB month and INV/CN/BILL year raised to the highest
   number in use, never lowered, so the next number continues the series.
 
-Still to carry: the booking files and history, files; the other settings (the script lists them).
+Still to carry: a booking's legacy history lines, and the other settings (the script lists
+them); files on contacts, invoices and messages.
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
 2. `scripts/import/` maps each kind to its table, resolving party ids to contact ids
