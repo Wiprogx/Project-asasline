@@ -113,6 +113,9 @@ export function LogIncomingDialog({
                 ]}
               />
             </Field>
+            <Field id="in-minutes" label="Call minutes" error={fe?.callMinutes}>
+              <Input id="in-minutes" name="callMinutes" type="number" min="0" step="0.5" />
+            </Field>
           </div>
           <Field id="in-subject" label="Subject">
             <Input id="in-subject" name="subject" />

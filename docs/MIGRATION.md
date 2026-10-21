@@ -67,8 +67,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   card with actual dates and delay on the booking (L3514); the seal history (L3645); the
   cancellation-reasons report (L3008) and cancel from the list row (L2923); "quoted with X,
   booked with Y" (L3568, L3746).
-- **Activity and Discuss** — a threaded Messages tab (L8714); the call log (duration, outgoing calls, caller lookup, missed call →
-  call-back task; L12133–12238); an unclaimed message escalating into a task (L11747); the bell
+- **Activity and Discuss** — a threaded Messages tab (L8714); the call log's outgoing calls and caller lookup with what the caller has open (L12133–12238); an unclaimed message escalating into a task (L11747); the bell
   counting unanswered messages (L2540); pop-up notifications (L11646–11735); direct messages,
   unread counts and files in the internal chat (L11825–11872); re-link a message, mark it
   general or turn it into a task (L12615–12620); the "document missing" and "invoice overdue"

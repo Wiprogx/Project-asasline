@@ -25,7 +25,8 @@ export const logIncomingSchema = z.object({
   body: z.string().max(10_000).default(""),
   linkRef: ref,
   topic: z.string().max(30).optional(),
-  callSeconds: z.coerce.number().int().min(0).max(36_000).optional(),
+  /** How long the call lasted, typed in minutes. */
+  callMinutes: z.coerce.number().min(0).max(600).optional(),
   callOutcome: z.enum(CALL_OUTCOMES).optional(),
 });
 

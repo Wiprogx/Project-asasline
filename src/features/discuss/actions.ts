@@ -7,6 +7,8 @@ import {
   keyOf,
   outwardProblem,
   refsInText,
+  routeCodeOf,
+  routeRole,
   threadIdOf,
   withKey,
 } from "@/domain/messages";
@@ -15,9 +17,11 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { deliver, outcomeOf } from "@/server/delivery";
-import { messages } from "@/server/db/schema";
+import { activities, messages } from "@/server/db/schema";
+import { officeToday } from "@/server/clock";
+import { callBackTitle, callSecondsOf, needsCallBack } from "@/domain/call-back";
 import { publish } from "@/server/events";
-import { resolveRef, signatureOf } from "@/server/messaging";
+import { readRoutes, resolveRef, signatureOf } from "@/server/messaging";
 import { attachFiles, filesOf } from "./file-store";
 import { claimSchema, logIncomingSchema, postInternalSchema, sendSchema } from "./schemas";
 import { signed } from "@/domain/templates";
@@ -59,7 +63,7 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
   const user = await requirePermission("app.discuss");
   const parsed = logIncomingSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const d = parsed.data;
+  const { callMinutes, ...d } = parsed.data;
   const bare = CHANNELS_READ_BARE.includes(d.channel)
     ? refsInText(`${d.subject ?? ""} ${d.body}`)[0]
     : undefined;
@@ -79,6 +83,7 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
     .insert(messages)
     .values({
       ...d,
+      callSeconds: callSecondsOf(callMinutes),
       direction: "in",
       linkKind: link?.kind,
       linkId: link?.id,
@@ -92,6 +97,21 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
     })
     .returning({ id: messages.id });
   const kept = await attachFiles(db, { messageId: row.id, files, link, userId: user.id });
+  // A missed call is work: a task for the role its topic routes to, due today (legacy 7.5).
+  if (needsCallBack(d.channel, d.callOutcome)) {
+    const routes = await readRoutes();
+    const role = routeRole(routeCodeOf({ ...d, linkRef: link?.ref }, routes), routes);
+    await db.insert(activities).values({
+      title: callBackTitle(d.fromText, link?.ref),
+      type: "Call",
+      role,
+      due: officeToday(),
+      linkKind: link?.kind ?? (d.contactId ? "contact" : null),
+      linkId: link?.id ?? d.contactId ?? null,
+      createdBy: user.id,
+      updatedBy: user.id,
+    });
+  }
   await audit(db, {
     action: "message.in",
     userId: user.id,
