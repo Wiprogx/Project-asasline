@@ -11,7 +11,14 @@ import { readPaymentTerms } from "@/server/accounting-config";
 import { officeToday } from "@/server/clock";
 import { assertOpen } from "./books-store";
 import { db, type Tx } from "@/server/db/client";
-import { bookingFiles, contacts, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
+import {
+  bookingFiles,
+  bookings,
+  contacts,
+  invoiceLines,
+  invoices,
+  quotationLines,
+} from "@/server/db/schema";
 import { nextInvoiceNumber } from "@/server/sequences";
 import { updateVersioned } from "@/server/versioned";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
@@ -82,6 +89,12 @@ export async function issueInvoice(_p: ActionResult, fd: FormData): Promise<Acti
       await assertOpen(tx, today);
       const termId = parsed.data.paymentTermId ?? inv.paymentTermId;
       const number = await nextInvoiceNumber(tx, inv.kind, today);
+      const [shipment] = inv.bookingId
+        ? await tx
+            .select({ eta: bookings.eta })
+            .from(bookings)
+            .where(eq(bookings.id, inv.bookingId))
+        : [];
       await updateVersioned(
         tx,
         invoices,
@@ -91,7 +104,11 @@ export async function issueInvoice(_p: ActionResult, fd: FormData): Promise<Acti
           status: "issued",
           number,
           issueDate: today,
-          dueDate: dueDateOf(today, terms.find((t) => t.id === termId) ?? null),
+          dueDate: dueDateOf(
+            today,
+            terms.find((t) => t.id === termId) ?? null,
+            shipment?.eta ?? null,
+          ),
           paymentTermId: termId,
           ogm: inv.kind === "invoice" ? ogmMake(number) : null,
           updatedBy: user.id,

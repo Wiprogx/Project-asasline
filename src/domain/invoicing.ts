@@ -66,9 +66,15 @@ export function vatMentions(lines: readonly Line[]): string[] {
  * payment, before confirmation…) is due at once: the condition is on the shipment, not the
  * calendar.
  */
-export function dueDateOf(issueDay: string, term: { rule: string; days?: number } | null): string {
+export function dueDateOf(
+  issueDay: string,
+  term: { rule: string; days?: number } | null,
+  /** The shipment's arrival: a "before arrival" invoice falls due then (legacy dueUnderTerm). */
+  eta: string | null = null,
+): string {
   if (term?.rule === "days" && typeof term.days === "number")
     return addDays(issueDay, term.days) || issueDay;
+  if (term?.rule === "before_arrival" && eta && eta >= issueDay) return eta;
   return issueDay;
 }
 

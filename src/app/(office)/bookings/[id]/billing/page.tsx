@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +6,9 @@ import { BILL_STATUS_LABEL } from "@/domain/invoicing";
 import { formatCents } from "@/domain/money";
 import { may } from "@/domain/permissions";
 import { BillingPanel } from "@/features/accounting/components/billing-panel";
-import { InvoiceBadge } from "@/features/accounting/components/invoice-badge";
+import { BookingInvoices } from "@/features/accounting/components/booking-invoices";
 import { bookingBilling } from "@/features/accounting/queries";
+import { bookingTermGate } from "@/features/accounting/term-queries";
 import { NewBillForm } from "@/features/accounting/components/bill-controls";
 import { contactOptions } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
@@ -26,9 +26,11 @@ const TONE = {
 /** The booking's invoicing (legacy "Invoicing" tab): the route composes Bookings and Accounting. */
 export default async function BookingBillingPage({ params }: PageProps<"/bookings/[id]/billing">) {
   const user = await requirePagePermission("app.accounting");
-  const [billing, suppliers] = await Promise.all([
-    bookingBilling((await params).id),
+  const id = (await params).id;
+  const [billing, suppliers, gate] = await Promise.all([
+    bookingBilling(id),
     contactOptions(),
+    bookingTermGate(id),
   ]);
   if (!billing) notFound();
   const { booking: b } = billing;
@@ -45,6 +47,12 @@ export default async function BookingBillingPage({ params }: PageProps<"/booking
               {formatCents(billing.billedCents - billing.costCents)}
             </span>
           </CardTitle>
+          {gate && (
+            <p role="status" className="text-sm text-amber-700 dark:text-amber-400">
+              Payment terms: <b>{gate.term}</b> — payment is expected {gate.when}
+              {gate.unpaid ? " · still unpaid" : ""}.
+            </p>
+          )}
           <CardDescription className="flex flex-wrap items-center justify-between gap-2">
             Lines come from the quotation; credit notes give their quantities back.
             {may(user, "accounting.issue") && (
@@ -69,33 +77,7 @@ export default async function BookingBillingPage({ params }: PageProps<"/booking
           )}
         </CardContent>
       </Card>
-      {billing.invoices.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoices on this booking</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-2">
-              {billing.invoices.map((i) => (
-                <li
-                  key={i.id}
-                  className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                >
-                  <Link href={`/accounting/invoices/${i.id}`} className="font-mono hover:underline">
-                    {i.number ?? "draft"}
-                  </Link>
-                  <span className="text-muted-foreground">{i.customer}</span>
-                  <span className="tabular-nums">
-                    {i.kind === "credit" ? "−" : ""}
-                    {formatCents(i.grossCents)}
-                  </span>
-                  <InvoiceBadge kind={i.kind} status={i.status} />
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+      <BookingInvoices rows={billing.invoices} />
     </div>
   );
 }

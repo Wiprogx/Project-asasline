@@ -57,6 +57,13 @@ describe("due date", () => {
     expect(dueDateOf("2026-09-23", { rule: "docs" })).toBe("2026-09-23");
     expect(dueDateOf("2026-09-23", null)).toBe("2026-09-23");
   });
+
+  it("falls due on the arrival when paid before arrival, never before the invoice", () => {
+    const t = { rule: "before_arrival" };
+    expect(dueDateOf("2026-09-23", t, "2026-10-15")).toBe("2026-10-15");
+    expect(dueDateOf("2026-09-23", t, "2026-09-01")).toBe("2026-09-23");
+    expect(dueDateOf("2026-09-23", t)).toBe("2026-09-23");
+  });
 });
 
 describe("billing", () => {

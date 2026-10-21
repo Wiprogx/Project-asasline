@@ -88,3 +88,18 @@ export function sequenceLabel(key: string): string {
   if (ref) return `${ref[1] === "QT" ? "Quotations" : "Bookings"} · 20${ref[2]}-${ref[3]}`;
   return key;
 }
+
+/** The term a shipment is under (legacy termFor): its quotation's, else its customer's, else 30 days. */
+export const termIdFor = (quotationTerm: string | null, customerTerm: string | null) =>
+  quotationTerm || customerTerm || "d30";
+
+/**
+ * When the money is expected under a term that is a condition, not a delay (legacy termGate):
+ * the booking's Invoicing tab says so. Null for a term of days.
+ */
+export function termGate(rule: TermRule): string | null {
+  if (rule === "before_confirm") return "before the booking is confirmed";
+  if (rule === "before_arrival") return "before the container arrives at the port of discharge";
+  if (rule === "docs") return "before the documents are released";
+  return null;
+}

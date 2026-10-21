@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  termGate,
+  termIdFor,
   DEFAULT_BOOKS,
   DEFAULT_TERMS,
   parsePaymentTermLines,
@@ -47,5 +49,20 @@ describe("parallelRun", () => {
     expect(parallelRun({ parallelUntil: "2026-12-31" }, "2026-12-31")).toBe(true);
     expect(parallelRun({ parallelUntil: "2026-12-31" }, "2027-01-01")).toBe(false);
     expect(parallelRun({ parallelUntil: null }, "2026-10-09")).toBe(false);
+  });
+});
+
+describe("the payment-term gate", () => {
+  it("says when the money is expected under a condition, and nothing for days", () => {
+    expect(termGate("before_confirm")).toBe("before the booking is confirmed");
+    expect(termGate("before_arrival")).toMatch(/before the container arrives/);
+    expect(termGate("docs")).toBe("before the documents are released");
+    expect(termGate("days")).toBeNull();
+  });
+
+  it("takes the quotation's term, else the customer's, else 30 days", () => {
+    expect(termIdFor("dap", "d15")).toBe("dap");
+    expect(termIdFor(null, "d15")).toBe("d15");
+    expect(termIdFor(null, null)).toBe("d30");
   });
 });
