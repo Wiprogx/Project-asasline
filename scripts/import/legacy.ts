@@ -18,6 +18,8 @@ class Preview extends Error {}
 
 /** The kinds this script carries today, in the order their links are needed. */
 const DONE = new Set(["contacts"]);
+/** The settings (config records) it carries: the word lists and the rate catalogue. */
+const CONFIG_DONE = new Set(["RATE_ITEMS"]);
 
 async function main() {
   const args = process.argv.slice(2);
@@ -31,6 +33,9 @@ async function main() {
   const { audit } = await import("../../src/server/audit");
   const { importContacts } = await import("./contacts");
   const { importUsers } = await import("./users");
+  const { importLists, importRates } = await import("./config");
+  const { LEGACY_LISTS } = await import("../../src/domain/legacy-config");
+  for (const k of Object.keys(LEGACY_LISTS)) CONFIG_DONE.add(k);
   const { printReport } = await import("./report");
 
   const read = readLegacyExport(readFileSync(file, "utf8"));
@@ -44,12 +49,18 @@ async function main() {
     await db.transaction(async (tx) => {
       const reports = {
         users: await importUsers(tx, read.users),
+        "settings lists": await importLists(tx, read.records),
+        "rate catalogue": await importRates(tx, read.records),
         contacts: await importContacts(tx, read.records),
       };
       for (const [kind, r] of Object.entries(reports)) printReport(kind, r, verbose);
-      const waiting = Object.entries(counts).filter(([k]) => !DONE.has(k));
+      const waiting = Object.entries(counts).filter(([k]) => k !== "config" && !DONE.has(k));
       if (waiting.length)
         console.log(`\nNot carried yet: ${waiting.map(([k, n]) => `${k} ${n}`).join(", ")}`);
+      const settings = read.records
+        .filter((r) => r.kind === "config" && !CONFIG_DONE.has(r.id))
+        .map((r) => r.id);
+      if (settings.length) console.log(`Settings not carried yet: ${settings.join(", ")}`);
       const detail = Object.fromEntries(
         Object.entries(reports).map(([k, r]) => [k, { added: r.added, matched: r.matched }]),
       );
