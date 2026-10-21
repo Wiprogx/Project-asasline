@@ -143,11 +143,12 @@ only what is new. Carried today:
   invoice lines they give back). A supplier's credit note is reported, not carried;
 - the **payments** (each invoice's part, write-offs, charges booked to an account, reversals)
   and the **bank lines** (matched lines tied to their payment both ways);
+- the **messages** (every channel; authors and takers by name; times in the office's zone;
+  replies tied; what went out taken as delivered);
 - the **number counters**, last: each QT/SB month and INV/CN/BILL year raised to the highest
   number in use, never lowered, so the next number continues the series.
 
-Still to carry: the booking files and history, journal entries, fixed assets,
-messages, files; the other settings (the script lists them).
+Still to carry: the booking files and history, journal entries, fixed assets, files; the other settings (the script lists them).
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
 2. `scripts/import/` maps each kind to its table, resolving party ids to contact ids
