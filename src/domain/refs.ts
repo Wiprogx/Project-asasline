@@ -23,3 +23,18 @@ export function parseRef(ref: string) {
   if (!m) return null;
   return { prefix: m[1] as RefPrefix, yy: +m[2], mm: +m[3], n: +m[4] };
 }
+
+/**
+ * The counters the numbers in use call for (the go-live import): for each QT/SB month the
+ * highest counter issued, so the next number continues the series instead of repeating one.
+ */
+export function refFloors(refs: readonly string[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const ref of refs) {
+    const p = parseRef(ref);
+    if (!p) continue;
+    const key = `${p.prefix}${String(p.yy).padStart(2, "0")}${String(p.mm).padStart(2, "0")}`;
+    out[key] = Math.max(out[key] ?? 0, p.n);
+  }
+  return out;
+}

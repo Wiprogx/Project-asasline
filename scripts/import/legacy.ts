@@ -47,6 +47,7 @@ async function main() {
   const { importActivities } = await import("./activities");
   const { importInvoices } = await import("./invoices");
   const { importBankLines, importPayments } = await import("./payments");
+  const { raiseSequences } = await import("./sequences");
   const { LEGACY_LISTS } = await import("../../src/domain/legacy-config");
   for (const k of Object.keys(LEGACY_LISTS)) CONFIG_DONE.add(k);
   const { printReport } = await import("./report");
@@ -71,6 +72,8 @@ async function main() {
         invoices: await importInvoices(tx, read.records),
         payments: await importPayments(tx, read.records),
         "bank lines": await importBankLines(tx, read.records),
+        // Last: the counters continue after every number now in use.
+        "number counters": await raiseSequences(tx),
       };
       for (const [kind, r] of Object.entries(reports)) printReport(kind, r, verbose);
       const waiting = Object.entries(counts).filter(([k]) => k !== "config" && !DONE.has(k));
