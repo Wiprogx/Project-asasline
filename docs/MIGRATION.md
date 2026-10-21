@@ -60,8 +60,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   L7076); the follow-up letter on a second send (L10119); Export/Import filter and richer list
   rows (L6712–6731); search over destination and commodity (L6708); validity editable with an
   expired badge; the free-time picker and its warning (L9920, L7177).
-- **Bookings** — the carrier step of the booking flow closing on the carrier's booking number, and a status
-  change closing "Confirm booking" (L7691, L3506); the originals' third
+- **Bookings** — the carrier step closing on the carrier's booking number (L7691); the originals' third
   step (received / came back, signed by) and the courier label (L3613–3622); "Send" per
   document (L3920); the loading-after-cut-off warning and the box totals (L3556, L3690–3708);
   the CMR asked for when loading runs over (L3550); the extra customs declaration (L8071–8105);

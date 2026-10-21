@@ -18,6 +18,8 @@ export const activities = pgTable(
     role: roleEnum(),
     due: date({ mode: "string" }),
     ruleCode: text(),
+    /** The event an automatic task was opened for (domain/activity-rules Trigger), to close it on its own. */
+    trigger: text(),
     blocking: boolean().notNull().default(false),
     state: activityStateEnum().notNull().default("open"),
     withdrawReason: text(),

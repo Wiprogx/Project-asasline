@@ -34,6 +34,7 @@ describe("mapLegacyActivity", () => {
       assigneeId: "u-nadia",
       due: "2026-09-28",
       ruleCode: "CERTIWEIGHT#box-1",
+      trigger: null,
       state: "open",
       withdrawReason: null,
       note: null,
@@ -72,6 +73,15 @@ describe("mapLegacyActivity", () => {
       "its record SB0000000 was not found — kept unlinked",
     ]);
     expect(mapLegacyActivity({}, find)).toBeNull();
+  });
+});
+
+describe("the carrier task", () => {
+  it("keeps closing on the carrier's confirmation", () => {
+    expect(
+      mapLegacyActivity({ title: "Confirm booking SB1 with the carrier", auto: true }, find)?.task
+        .trigger,
+    ).toBe("booking_created");
   });
 });
 

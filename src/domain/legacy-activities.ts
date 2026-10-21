@@ -61,6 +61,8 @@ export function mapLegacyActivity(t: Record<string, unknown>, find: ActivityLook
       assigneeId,
       due: day(t.due),
       ruleCode,
+      // The legacy closed it by its words (closeAutoActivities "Confirm booking"); here by its trigger.
+      trigger: t.auto === true && /^Confirm booking/.test(title) ? "booking_created" : null,
       state,
       withdrawReason: reason,
       note: text(t.note),

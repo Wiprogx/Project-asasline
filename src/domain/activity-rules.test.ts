@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activityRuleLines,
+  closesCarrierTask,
   DEFAULT_ACTIVITY_RULES,
   DEFAULT_ACTIVITY_TYPES,
   fillTitle,
@@ -57,5 +58,14 @@ describe("automatic activities", () => {
     expect(
       parseActivityRuleLines("quote_sent | L | T | Call | admin | 1 | maybe").problems[0],
     ).toMatch(/on/);
+  });
+});
+
+describe("closesCarrierTask", () => {
+  it("closes the carrier task once the booking is confirmed or further on", () => {
+    expect(closesCarrierTask("confirmed")).toBe(true);
+    expect(closesCarrierTask("arrived")).toBe(true);
+    expect(closesCarrierTask("sent")).toBe(false);
+    expect(closesCarrierTask("cancelled")).toBe(false);
   });
 });

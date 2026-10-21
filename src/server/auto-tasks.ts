@@ -43,6 +43,7 @@ export async function openAutoTask(
       assigneeId: p.userId,
       role: task.role,
       due: task.due,
+      trigger: p.trigger,
       linkKind: p.link.kind,
       linkId: p.link.id,
       createdBy: p.userId,

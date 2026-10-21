@@ -14,6 +14,7 @@ import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
 import { guarded, settle } from "./settle";
 import { openAutoTask } from "@/server/auto-tasks";
+import { closesCarrierTask } from "@/domain/activity-rules";
 
 /** The SB number is issued inside the insert's transaction: no gaps from failed saves. */
 export async function createBooking(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -78,6 +79,19 @@ export async function setBookingStatus(_p: ActionResult, fd: FormData): Promise<
           { status, updatedBy: user.id },
           "This booking",
         );
+        // The carrier confirmed: the task the booking opened to get it is done.
+        if (closesCarrierTask(status))
+          await tx
+            .update(activities)
+            .set({ state: "done", doneAt: new Date(), doneBy: user.id, updatedBy: user.id })
+            .where(
+              and(
+                eq(activities.linkKind, "booking"),
+                eq(activities.linkId, id),
+                eq(activities.trigger, "booking_created"),
+                eq(activities.state, "open"),
+              ),
+            );
         await audit(tx, {
           action: "booking.status",
           userId: user.id,

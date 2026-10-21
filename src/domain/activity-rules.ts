@@ -212,3 +212,11 @@ export function parseActivityRuleLines(text: string): {
     });
   return { rules, problems };
 }
+
+/**
+ * The carrier's confirmation is in once a booking reaches "confirmed" or beyond: the task the
+ * booking opened to get it closes by itself (legacy setSt closeAutoActivities "Confirm booking").
+ */
+export const CONFIRMED_ON = ["confirmed", "in_transit", "customs", "arrived"] as const;
+export const closesCarrierTask = (status: string) =>
+  (CONFIRMED_ON as readonly string[]).includes(status);
