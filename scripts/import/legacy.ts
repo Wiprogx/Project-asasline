@@ -17,7 +17,7 @@ config({ path: ".env.local" });
 class Preview extends Error {}
 
 /** The kinds this script carries today, in the order their links are needed. */
-const DONE = new Set(["contacts", "quotations", "bookings"]);
+const DONE = new Set(["contacts", "quotations", "bookings", "activities"]);
 /** The settings (config records) it carries: the word lists and the rate catalogue. */
 const CONFIG_DONE = new Set(["RATE_ITEMS"]);
 
@@ -36,6 +36,7 @@ async function main() {
   const { importLists, importRates } = await import("./config");
   const { importQuotations } = await import("./quotations");
   const { importBookings } = await import("./bookings");
+  const { importActivities } = await import("./activities");
   const { LEGACY_LISTS } = await import("../../src/domain/legacy-config");
   for (const k of Object.keys(LEGACY_LISTS)) CONFIG_DONE.add(k);
   const { printReport } = await import("./report");
@@ -56,6 +57,7 @@ async function main() {
         contacts: await importContacts(tx, read.records),
         quotations: await importQuotations(tx, read.records),
         bookings: await importBookings(tx, read.records),
+        activities: await importActivities(tx, read.records),
       };
       for (const [kind, r] of Object.entries(reports)) printReport(kind, r, verbose);
       const waiting = Object.entries(counts).filter(([k]) => k !== "config" && !DONE.has(k));

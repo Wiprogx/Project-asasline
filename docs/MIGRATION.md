@@ -127,14 +127,18 @@ unreachable or superseded before it lands here.
 
 `npm run import:legacy -- <export.json>` previews (runs and rolls back); `--apply` keeps it.
 Every imported record is written to `legacy_links` (kind, legacy id → new id), so a rerun adds
-only what is new. Carried today: **users**, **contacts** (with child addresses and bank
-accounts), the settings **word lists** (cancel reasons, container types, address types,
-package types, paper documents, activity types, professions, seal sources, document types —
-a list the app already saved is kept), the **rate catalogue** (RATE_ITEMS, linked by id) and
-the **quotations** (their destinations and lines; the QT number kept as issued) and the
-**bookings** (their boxes, goods, seals, loading and alerts; the SB number kept). Still to
-carry: the booking files and history, activities, invoices, payments, bank lines, entries, assets, price lists,
-messages; the other settings (the script lists them); the sequences.
+only what is new. Carried today:
+
+- **users** and **contacts** (with child addresses and bank accounts);
+- the settings **word lists** (cancel reasons, container types, address types, package types,
+  paper documents, activity types, professions, seal sources, document types — a list the app
+  already saved is kept) and the **rate catalogue** (RATE_ITEMS, linked by id);
+- the **quotations** (destinations and lines; the QT number kept as issued);
+- the **bookings** (boxes, goods, seals, loading and alerts; the SB number kept);
+- the **tasks** (open, done or withdrawn as they stood; rule steps keep their code, per box).
+
+Still to carry: the booking files and history, invoices, payments, bank lines, entries,
+assets, price lists, messages; the other settings (the script lists them); the sequences.
 
 1. Export the legacy database as JSON from phpMyAdmin (the `records` and `users` tables).
 2. `scripts/import/` maps each kind to its table, resolving party ids to contact ids
