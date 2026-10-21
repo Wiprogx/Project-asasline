@@ -2,7 +2,7 @@
   "$schema": "https://abatty.io/schema/abatty.config.json",
   "baseBranch": "main",
   "branchPrefix": "adopt/standards",
-  "directPushToBase": false,
+  "directPushToBase": true,
   "commands": {
     "gate": "npm run gate:fast",
     "gateFull": "npm run gate",
@@ -64,7 +64,8 @@
     "exclude": [],
     "hard": [],
     "ratchet": [],
-    "enable": []
+    "enable": [],
+    "authCalls": ["requirePermission", "requirePagePermission", "requireUser"]
   },
   "lintOnEdit": true,
   "lintExtensions": [".ts", ".tsx", ".js", ".jsx", ".mjs"],
@@ -75,5 +76,5 @@
     "REDIS_URL": "redis://localhost:6379/1"
   },
   "stack": "next",
-  "abatty": "0.6.0"
+  "abatty": "0.8.1"
 }
