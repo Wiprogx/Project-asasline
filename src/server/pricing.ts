@@ -1,5 +1,6 @@
 import "server-only";
 import { and, eq, isNull, ne } from "drizzle-orm";
+import { addDays } from "@/domain/dates";
 import { itemLabel, latestQuoted, listIsLive, type Price, priceFor } from "@/domain/pricing";
 import type { DbOrTx } from "./db/client";
 import {
@@ -78,4 +79,77 @@ export async function priceOf(
     usesLastPrice ? quotedBefore(tx, q.clientId, item.id, q.exceptQuotationId) : null,
   ]);
   return { item, label: itemLabel(item), price: priceFor({ item, agreed, usesLastPrice, last }) };
+}
+
+/**
+ * A price saved to the customer's agreement (legacy setAgreedPrice): into the agreement in force
+ * today, else a new one from today — ending the day before the customer's next agreement, so two
+ * never overlap. The item's agreed price is set, or replaced. Returns the agreement's name.
+ */
+export async function saveAgreedPrice(
+  tx: DbOrTx,
+  p: {
+    clientId: string;
+    itemId: string;
+    sellCents: number;
+    buyCents: number;
+    day: string;
+    userId: string;
+  },
+): Promise<string> {
+  const lists = await tx
+    .select()
+    .from(priceLists)
+    .where(and(eq(priceLists.contactId, p.clientId), isNull(priceLists.archivedAt)));
+  let list = lists.find((l) => listIsLive(l, p.day));
+  if (!list) {
+    const [client] = await tx
+      .select({ name: contacts.name })
+      .from(contacts)
+      .where(eq(contacts.id, p.clientId));
+    const next = lists
+      .filter((l) => l.active && l.validFrom && l.validFrom > p.day)
+      .map((l) => l.validFrom!)
+      .sort()[0];
+    [list] = await tx
+      .insert(priceLists)
+      .values({
+        contactId: p.clientId,
+        name: `${client?.name ?? "Customer"} — agreed prices`,
+        validFrom: p.day,
+        validUntil: next ? addDays(next, -1) : null,
+        createdBy: p.userId,
+        updatedBy: p.userId,
+      })
+      .returning();
+  }
+  const [line] = await tx
+    .select({ id: priceListLines.id })
+    .from(priceListLines)
+    .where(
+      and(
+        eq(priceListLines.priceListId, list.id),
+        eq(priceListLines.itemId, p.itemId),
+        isNull(priceListLines.archivedAt),
+      ),
+    );
+  if (line)
+    await tx
+      .update(priceListLines)
+      .set({
+        sellCents: p.sellCents,
+        buyCents: p.buyCents,
+        updatedBy: p.userId,
+        updatedAt: new Date(),
+      })
+      .where(eq(priceListLines.id, line.id));
+  else
+    await tx.insert(priceListLines).values({
+      priceListId: list.id,
+      itemId: p.itemId,
+      sellCents: p.sellCents,
+      buyCents: p.buyCents,
+      createdBy: p.userId,
+    });
+  return list.name;
 }

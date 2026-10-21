@@ -94,6 +94,8 @@ export const updateLineSchema = z.object({
   costCents: amount("Cost").optional(),
   vatCode,
   perBox: checkbox,
+  /** Keep the price in the customer's agreement for the next quotations (legacy ql-save-list). */
+  saveToList: checkbox,
 });
 
 export const removeLineSchema = z.object({ ...onQuotation, lineId: z.uuid(), reason });

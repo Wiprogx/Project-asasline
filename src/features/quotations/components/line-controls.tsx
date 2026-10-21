@@ -18,6 +18,8 @@ type Line = {
   vatCode: string;
   perBox: boolean;
   condition: boolean;
+  /** The catalogue item it was priced from; null for a line typed by hand. */
+  itemId: string | null;
 };
 
 /** Change a line's text, quantity or price, or take it off with a reason. */
@@ -41,11 +43,23 @@ export function LineControls({
         hidden={hidden}
         trigger="Edit"
         title={l.description}
-        description="A sell price you change is marked as typed."
+        description="A sell price you change is marked as typed — or kept as the customer's agreed price."
         submitLabel="Save line"
       >
         {(fe) => (
           <>
+            {l.itemId && (
+              <label className="flex items-center gap-2 text-sm" htmlFor={id("saveToList")}>
+                <input
+                  id={id("saveToList")}
+                  name="saveToList"
+                  type="checkbox"
+                  defaultChecked
+                  className="size-4"
+                />
+                Save a changed price to the customer&apos;s price agreement
+              </label>
+            )}
             <Field id={id("description")} label="Service" error={fe?.description}>
               <Input id={id("description")} name="description" defaultValue={l.description} />
             </Field>

@@ -7,6 +7,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db, type Tx } from "@/server/db/client";
 import { quotationLines } from "@/server/db/schema";
+import { saveAgreedPrice } from "@/server/pricing";
 import { addLineSchema, removeLineSchema, updateLineSchema } from "./editor-schemas";
 import {
   certificateFiled,
@@ -84,10 +85,22 @@ export async function updateLine(_p: ActionResult, fd: FormData): Promise<Action
   const parsed = updateLineSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { quotationId, version, lineId, ...f } = parsed.data;
-  return editorResult(quotationId, "Line saved", () =>
+  let saved: string | null = null;
+  const result = await editorResult(quotationId, "Line saved", () =>
     db.transaction(async (tx) => {
-      await touchQuotation(tx, quotationId, version, user.id);
+      const q = await touchQuotation(tx, quotationId, version, user.id);
       const { line, route } = await lineIn(tx, quotationId, lineId);
+      const changed =
+        f.sellCents !== line.sellCents || (f.costCents ?? line.costCents) !== line.costCents;
+      if (f.saveToList && changed && line.itemId)
+        saved = await saveAgreedPrice(tx, {
+          clientId: q.clientId,
+          itemId: line.itemId,
+          sellCents: f.sellCents,
+          buyCents: f.costCents ?? line.costCents ?? 0,
+          day: officeToday(),
+          userId: user.id,
+        });
       const taken = await invoicedQty(tx, line);
       if (f.qty < taken)
         throw new Refused(`${taken} already invoiced on this line; the quantity cannot go below.`);
@@ -100,7 +113,11 @@ export async function updateLine(_p: ActionResult, fd: FormData): Promise<Action
           sellCents: f.sellCents,
           costCents: f.costCents ?? line.costCents,
           vatCode: f.vatCode,
-          priceSource: f.sellCents === line.sellCents ? line.priceSource : "manual",
+          priceSource: saved
+            ? "agreement"
+            : f.sellCents === line.sellCents
+              ? line.priceSource
+              : "manual",
           version: line.version + 1,
           updatedAt: new Date(),
         })
@@ -111,10 +128,19 @@ export async function updateLine(_p: ActionResult, fd: FormData): Promise<Action
         userId: user.id,
         entity: "quotation",
         entityId: quotationId,
-        detail: { lineId, sellCents: f.sellCents, was: line.sellCents, qty: f.qty },
+        detail: {
+          lineId,
+          sellCents: f.sellCents,
+          was: line.sellCents,
+          qty: f.qty,
+          ...(saved ? { agreement: saved } : {}),
+        },
       });
     }),
   );
+  return result.ok && saved
+    ? { ...result, message: `Line saved · price kept in ${saved}` }
+    : result;
 }
 
 /** Taken off with a reason, never deleted; a line already invoiced is credited first. */

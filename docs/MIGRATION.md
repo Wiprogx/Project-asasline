@@ -53,8 +53,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
 
 - **Quotations** — door/port service, loading address, stops, per-box
   address and loading mode (L7091–7120); a new quotation with several destinations from the
-  ocean-leg picker (L6738–6990); "save to the customer's price list" when a line's price is
-  edited and the last/agreed price hints (L10013, L7206); comparing other lines to the same
+  ocean-leg picker (L6738–6990); the last/agreed price hints in the line dialog (L7206); comparing other lines to the same
   port and the auto-created inland item "Needs pricing" (L7300–7350, L7406); accepting several
   destinations at once (L10149); release mode and contract/spot on the quotation (L7885,
   L7076); the follow-up letter on a second send (L10119); Export/Import filter and richer list

@@ -74,6 +74,10 @@ test("a quotation with two destinations, priced from the agreement and the catal
   // A price changed by hand is marked as typed.
   await docLine.getByRole("button", { name: "Edit" }).click();
   await page.getByRole("dialog").getByLabel("Sell (EUR)").fill("250");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Save a changed price to the customer's price agreement")
+    .uncheck();
   await submit(page, page.getByRole("button", { name: "Save line" }));
   await expectToast(page, "Line saved");
   await expect(docLine).toContainText("Typed");
