@@ -56,6 +56,11 @@ export const creditSchema = ref.extend({
     .transform((v) => v === "on"),
 });
 
+/** Part of an invoice credited: why, printed on the note; the quantities come as qty.<lineId>. */
+export const creditPartSchema = ref.extend({
+  reason: z.string().min(3, "Say why — it is printed on the credit note").max(500),
+});
+
 export const listFilterSchema = z.object({
   status: z.enum(["draft", "issued", "discarded"]).optional().catch(undefined),
   kind: z.enum(["invoice", "credit"]).optional().catch(undefined),

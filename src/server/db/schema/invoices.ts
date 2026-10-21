@@ -86,9 +86,12 @@ export const invoiceLines = pgTable(
     unitCents: cents().notNull(),
     vatCode: text().notNull(),
     account: text().notNull().default("700000"),
+    /** On a credit note: the invoice line it gives back, so a line is never credited twice. */
+    creditOfLineId: uuid(),
   },
   (t) => [
     index("invoice_lines_invoice_idx").on(t.invoiceId),
+    index("invoice_lines_credit_of_idx").on(t.creditOfLineId),
     index("invoice_lines_source_idx").on(t.sourceKey),
   ],
 );

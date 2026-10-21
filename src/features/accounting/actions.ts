@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq, inArray, isNull, ne } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { dueDateOf, remainingQty } from "@/domain/invoicing";
 import { ogmMake } from "@/domain/ogm";
 import { creditProblem } from "@/domain/reminders";
@@ -17,7 +16,7 @@ import { nextInvoiceNumber } from "@/server/sequences";
 import { updateVersioned } from "@/server/versioned";
 import { draftOf, guarded, liveLines, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import { exposureOf } from "./reminder-store";
-import { creditSchema, discardSchema, issueSchema } from "./schemas";
+import { discardSchema, issueSchema } from "./schemas";
 import { EXEMPTION_WARNING, exemptionProofMissing } from "@/domain/exemption";
 
 /**
@@ -164,89 +163,4 @@ export async function discardDraft(_p: ActionResult, fd: FormData): Promise<Acti
   if (!r.ok) return r;
   await refreshInvoice(id, r.value);
   return { ok: true, data: undefined, message: "Draft discarded" };
-}
-
-/**
- * Correct an issued invoice: a credit note for the whole of it, issued at once in its own
- * series, and — if asked — a new draft with the same lines to fix and issue again.
- */
-export async function creditInvoice(_p: ActionResult, fd: FormData): Promise<ActionResult> {
-  const user = await requirePermission("accounting.issue");
-  const parsed = creditSchema.safeParse(formToObject(fd));
-  if (!parsed.success) return invalid(parsed.error);
-  const { id, version, reason, redraft } = parsed.data;
-
-  const r = await guarded(() =>
-    db.transaction(async (tx) => {
-      const [orig] = await tx.select().from(invoices).where(eq(invoices.id, id));
-      if (!orig || orig.kind !== "invoice" || orig.status !== "issued")
-        throw new Refused("Only an issued invoice can be credited.");
-      const [already] = await tx
-        .select({ id: invoices.id })
-        .from(invoices)
-        .where(and(eq(invoices.creditOfId, id), eq(invoices.status, "issued")));
-      if (already) throw new Refused("This invoice is already credited.");
-      await updateVersioned(tx, invoices, id, version, { updatedBy: user.id }, "This invoice");
-
-      const lines = await liveLines(tx, id);
-      const today = officeToday();
-      await assertOpen(tx, today);
-      const number = await nextInvoiceNumber(tx, "credit", today);
-      const base = {
-        customerId: orig.customerId,
-        bookingId: orig.bookingId,
-        createdBy: user.id,
-        updatedBy: user.id,
-      };
-      const [cn] = await tx
-        .insert(invoices)
-        .values({
-          ...base,
-          kind: "credit",
-          status: "issued",
-          number,
-          creditOfId: id,
-          reason,
-          issueDate: today,
-          dueDate: today,
-        })
-        .returning({ id: invoices.id });
-      const copy = (invoiceId: string) =>
-        lines.map((l, i) => ({
-          invoiceId,
-          position: i,
-          sourceKey: l.sourceKey,
-          description: l.description,
-          qty: l.qty,
-          unitCents: l.unitCents,
-          vatCode: l.vatCode,
-          account: l.account,
-          createdBy: user.id,
-        }));
-      await tx.insert(invoiceLines).values(copy(cn.id));
-      await storeTotals(tx, cn.id);
-      await audit(tx, {
-        action: "invoice.credit",
-        userId: user.id,
-        entity: "invoice",
-        entityId: id,
-        detail: { creditNote: number, reason },
-      });
-
-      let draftId: string | null = null;
-      if (redraft) {
-        const [d] = await tx
-          .insert(invoices)
-          .values({ ...base, paymentTermId: orig.paymentTermId })
-          .returning({ id: invoices.id });
-        await tx.insert(invoiceLines).values(copy(d.id));
-        await storeTotals(tx, d.id);
-        draftId = d.id;
-      }
-      return { bookingId: orig.bookingId, creditId: cn.id, draftId };
-    }),
-  );
-  if (!r.ok) return r;
-  await refreshInvoice(id, r.value.bookingId);
-  redirect(`/accounting/invoices/${r.value.draftId ?? r.value.creditId}`);
 }

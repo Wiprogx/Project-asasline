@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToastedAction } from "@/hooks/use-action-toast";
-import { creditInvoice, discardDraft, issueInvoice } from "../actions";
+import { discardDraft, issueInvoice } from "../actions";
+import { creditInvoice } from "../credit-actions";
+import { type CreditableLine, CreditPartDialog } from "./credit-part-dialog";
 import { creditSchema, issueSchema } from "../schemas";
 import { NewTab } from "@/components/shared/new-tab";
 
@@ -64,8 +66,8 @@ function Credit({ id, version }: { id: string; version: number }) {
           <DialogHeader>
             <DialogTitle>Credit this invoice</DialogTitle>
             <DialogDescription>
-              An issued invoice is never edited. A credit note for all of it is issued now, in its
-              own series.
+              An issued invoice is never edited. A credit note for all of it still to credit is
+              issued now, in its own series.
             </DialogDescription>
           </DialogHeader>
           <input type="hidden" name="id" value={id} />
@@ -108,7 +110,8 @@ export function InvoiceActions(p: {
   version: number;
   status: "draft" | "issued" | "discarded";
   kind: "invoice" | "credit";
-  credited: boolean;
+  /** Its lines with what is left to credit; nothing left once fully credited. */
+  creditable: CreditableLine[];
   termId: string | null;
   terms: Term[];
   canIssue: boolean;
@@ -151,8 +154,11 @@ export function InvoiceActions(p: {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {print}
-      {p.status === "issued" && p.kind === "invoice" && !p.credited && (
-        <Credit id={p.id} version={p.version} />
+      {p.status === "issued" && p.kind === "invoice" && p.creditable.some((l) => l.left > 0) && (
+        <>
+          <Credit id={p.id} version={p.version} />
+          <CreditPartDialog id={p.id} version={p.version} lines={p.creditable} />
+        </>
       )}
     </div>
   );

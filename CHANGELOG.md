@@ -16,6 +16,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Accounting: part of an issued invoice credited (legacy creditPart) — how many of each line are given back, never more than is left, the invoice staying; each credit note line names the invoice line it credits (migration 0045), and the full credit now gives back what is still left rather than refusing after a part.
 - Contacts: a History tab — created, edited, archived and put back, addresses, bank accounts and number checks in plain words, each edit saying what changed from what to what (legacy contact history; `domain/changes`). The payment terms and the last-price choice on the contact form (legacy CF term / pricing): both were stored but not on the form, so every save turned the last-price choice off.
 - Contacts: an address or person under a contact edited in place (legacy editChild), with the version read guarding a colleague's edit; the address's note shows in the list.
 - Activity: a task's words, type, due day and note corrected in place (legacy editActivity); a step a rule opened follows its rule and is not edited by hand.

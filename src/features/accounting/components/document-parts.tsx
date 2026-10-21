@@ -6,6 +6,7 @@ import { lineOptionsFor } from "../item-queries";
 import { BillActions } from "./bill-controls";
 import { CurrencyForm } from "./currency-form";
 import { AddLineForm, RemoveLine } from "./draft-editor";
+import { creditLeftOf } from "../credit-queries";
 import { InvoiceActions } from "./invoice-actions";
 import { InvoiceView } from "./invoice-view";
 
@@ -13,7 +14,7 @@ type Doc = NonNullable<Awaited<ReturnType<typeof getInvoice>>>;
 type Term = { id: string; name: string };
 
 /** The header's actions: a sales invoice is issued or credited; a supplier bill recorded or approved. */
-export function DocumentActions({
+export async function DocumentActions({
   inv,
   terms,
   today,
@@ -40,13 +41,14 @@ export function DocumentActions({
         supplierRef={i.supplierRef}
       />
     );
+  const creditable = i.kind === "invoice" && i.status === "issued" ? await creditLeftOf(i.id) : [];
   return (
     <InvoiceActions
       id={i.id}
       version={i.version}
       status={i.status}
       kind={i.kind}
-      credited={inv.credits.some((c) => c.status === "issued")}
+      creditable={creditable}
       termId={i.paymentTermId}
       terms={terms}
       canIssue={can.issue}
