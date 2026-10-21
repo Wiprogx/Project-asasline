@@ -10,14 +10,18 @@ import { readCountries } from "@/server/country-config";
 import { db } from "@/server/db/client";
 import { bookings, contactAddresses, contacts } from "@/server/db/schema";
 
+// The list selects from contacts alone, and in a single-table select Drizzle drops the table
+// prefix: ${contacts.id} would read as a bare "id" and bind to the subquery's own table.
+const contactId = sql.raw(`"contacts"."id"`);
+
 /** One address's words, as the search reads them (legacy childHay). */
 const childHay = sql`concat_ws(' ', a.name, a.type, a.street, a.zip, a.city, a.country, a.email, a.phone, a.note)`;
 const children = sql<
   { name: string | null; type: string; hay: string }[]
 >`coalesce((select json_agg(json_build_object('name', a.name, 'type', a.type, 'hay', ${childHay}))
-  from contact_addresses a where a.contact_id = ${contacts.id} and a.archived_at is null), '[]'::json)`;
+  from contact_addresses a where a.contact_id = ${contactId} and a.archived_at is null), '[]'::json)`;
 /** The contact on a booking, in any role (domain/booking-parties). */
-const onBooking = sql`${contacts.id} in (${sql.join(
+const onBooking = sql`${contactId} in (${sql.join(
   PARTY_KEYS.map((k) => bookings[k]),
   sql`, `,
 )})`;
@@ -26,7 +30,7 @@ const bookingsOf = sql<number>`(select count(*)::int from ${bookings} where ${bo
 const tasksOf = (
   today: string,
 ) => sql<string>`(select count(*) || '|' || count(*) filter (where t.due < ${today}::date)
-  from activities t where t.state = 'open' and ((t.link_kind = 'contact' and t.link_id = ${contacts.id})
+  from activities t where t.state = 'open' and ((t.link_kind = 'contact' and t.link_id = ${contactId})
   or (t.link_kind = 'booking' and t.link_id in (select ${bookings.id} from ${bookings} where ${onBooking}))))`;
 
 export type ContactScope = { q?: string; archived?: boolean; filters?: readonly ContactFilter[] };

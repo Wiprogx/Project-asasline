@@ -128,6 +128,12 @@ export const addressSchema = z.object({
   note: opt(1000),
 });
 
+/** The same fields, on an address that exists: the version read guards a colleague's edit. */
+export const editAddressSchema = addressSchema.extend({
+  id: z.uuid(),
+  version: z.coerce.number().int().positive(),
+});
+
 export const addressArchiveSchema = z.object({
   id: z.uuid(),
   contactId: z.uuid(),

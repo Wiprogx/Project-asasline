@@ -10,9 +10,12 @@ import { Input } from "@/components/ui/input";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { addAddress, archiveAddress } from "../address-actions";
 import { addressSchema } from "../schemas";
+import { EditAddressDialog } from "./edit-address-dialog";
 
 type Address = {
   id: string;
+  version: number;
+  note: string | null;
   type: string;
   name: string | null;
   street: string | null;
@@ -67,15 +70,19 @@ export function ContactAddresses({
                     {a.phone && ` · ${a.phone}`}
                     {a.email && ` · ${a.email}`}
                   </span>
+                  {a.note && <span className="block text-muted-foreground italic">{a.note}</span>}
                 </span>
-                <ReasonDialog
-                  action={archiveAddress}
-                  hidden={{ id: a.id, contactId }}
-                  trigger="Remove"
-                  title="Remove this address?"
-                  description="It stays on the record with your reason; bookings keep pointing at it."
-                  confirmLabel="Remove"
-                />
+                <span className="flex flex-wrap gap-2">
+                  <EditAddressDialog contactId={contactId} address={a} types={types} />
+                  <ReasonDialog
+                    action={archiveAddress}
+                    hidden={{ id: a.id, contactId }}
+                    trigger="Remove"
+                    title="Remove this address?"
+                    description="It stays on the record with your reason; bookings keep pointing at it."
+                    confirmLabel="Remove"
+                  />
+                </span>
               </li>
             ))}
           </ul>

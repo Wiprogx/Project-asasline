@@ -8,7 +8,9 @@ import { db } from "@/server/db/client";
 import { bookings, contacts, vessels } from "@/server/db/schema";
 import { readCutoffRulesForEdit } from "@/server/vessel-config";
 
-const onBoard = sql<number>`(select count(*) from bookings b where b.vessel_id = ${vessels.id}
+// Spelled out: the list selects from vessels alone, where Drizzle drops the table prefix and
+// ${vessels.id} would read as the booking's own "id" inside the subquery.
+const onBoard = sql<number>`(select count(*) from bookings b where b.vessel_id = "vessels"."id"
   and b.status <> 'cancelled' and b.archived_at is null)::int`;
 
 /** The register, soonest sailing first; past ones after a month drop off unless searched. */

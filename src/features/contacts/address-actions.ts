@@ -2,13 +2,14 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
+import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { contactAddresses } from "@/server/db/schema";
-import { addressArchiveSchema, addressSchema } from "./schemas";
+import { ConflictError, updateVersioned } from "@/server/versioned";
+import { addressArchiveSchema, addressSchema, editAddressSchema } from "./schemas";
 
 async function settle(contactId: string) {
   await invalidateTags(tags.contacts, tags.contact(contactId));
@@ -33,6 +34,43 @@ export async function addAddress(_p: ActionResult, fd: FormData): Promise<Action
   });
   await settle(parsed.data.contactId);
   return { ok: true, data: undefined, message: `${parsed.data.type} added` };
+}
+
+/** An address corrected in place (legacy editChild): bookings that point at it follow. */
+export async function updateAddress(_p: ActionResult, fd: FormData): Promise<ActionResult> {
+  const user = await requirePermission("app.contacts");
+  const parsed = editAddressSchema.safeParse(formToObject(fd));
+  if (!parsed.success) return invalid(parsed.error);
+  const { id, version, contactId, ...fields } = parsed.data;
+  try {
+    await db.transaction(async (tx) => {
+      const [cur] = await tx
+        .select({ id: contactAddresses.id })
+        .from(contactAddresses)
+        .where(and(eq(contactAddresses.id, id), eq(contactAddresses.contactId, contactId)));
+      if (!cur) throw new ConflictError("This address");
+      await updateVersioned(
+        tx,
+        contactAddresses,
+        id,
+        version,
+        { ...fields, updatedBy: user.id },
+        "This address",
+      );
+      await audit(tx, {
+        action: "contact.address.edit",
+        userId: user.id,
+        entity: "contact",
+        entityId: contactId,
+        detail: { address: id, type: fields.type },
+      });
+    });
+  } catch (e) {
+    if (e instanceof ConflictError) return fail(e.message);
+    throw e;
+  }
+  await settle(contactId);
+  return { ok: true, data: undefined, message: "Address saved" };
 }
 
 /** Removed from use with a reason, never deleted: bookings may still point at it. */

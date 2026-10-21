@@ -16,6 +16,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Contacts: an address or person under a contact edited in place (legacy editChild), with the version read guarding a colleague's edit; the address's note shows in the list.
 - Activity: a task's words, type, due day and note corrected in place (legacy editActivity); a step a rule opened follows its rule and is not edited by hand.
 - Bookings: the two copies sent from the booking (legacy sendCopy, BOOKING_FLOW sentClient / sentDriver) — "Send the confirmation" and "Send to the trucker" open the booking's message form on the BK_CONFIRM or DRIVER_COPY template, already written from the file; two default rules, CONFIRM_OUT and TRUCKER_OUT, are steps on the documents tab that close when that message goes out. The default rule book's import rules and its row helper live in their own modules.
 - Discuss: a message received on a booking is answered in place (legacy replyTo) — "Reply" opens the booking's message form on the same channel (WhatsApp stays WhatsApp, the rest by e-mail), to the sender (the contact's own address first), with "Re:" on the subject; the answer is recorded as a reply to it and marked so in the list.
@@ -88,6 +89,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Fixed
 
+- Contacts list and vessel register: the counts and lines read through a subquery were wrong — the address count, the "↳ which address matched" line, the bookings and open tasks per contact, and the bookings on board per vessel. In a select from one table Drizzle drops the table prefix, so the outer id read as the subquery's own; the outer table is now named explicitly, as `accounting/money` already does.
 - Bookings — adding, editing or removing a container now re-plans the booking's document steps in the same transaction: the per-box steps (Certiweight) and the VGM wait follow the boxes and their weights, where before they went stale until another change touched the booking.
 - Bookings — filing or refiling a document writes the file record, the step it settles (and the re-plan that follows) and the audit line in one transaction; a failure midway no longer leaves a file without its step, or a step without its audit line.
 - Cache — a sailing moved, a booking put on a sailing, the cut-off offsets saved, a contact renamed, a task created or moved and the rule book re-planned now drop the cached bookings and quotations lists and the home panel that show those dates, names and counts; a quotation edit no longer flushes the bookings list (it shows no quotation data) but the home panel's value.
