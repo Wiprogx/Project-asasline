@@ -10,6 +10,7 @@ import {
 } from "@/features/accounting/components/report-tables";
 import { readJournal } from "@/features/accounting/ledger-queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readChart } from "@/server/chart-config";
 import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Reports" };
@@ -18,7 +19,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/accounti
   await requirePagePermission("app.accounting");
   const today = officeToday();
   const period = periodOf(await searchParams, today);
-  const tb = trialBalance(await readJournal(), period.from, period.to);
+  const tb = trialBalance(await readJournal(), period.from, period.to, await readChart());
   return (
     <div className="grid gap-4">
       <PageHeader title="Reports" description={`${period.from} to ${period.to}`} />

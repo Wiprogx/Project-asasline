@@ -6,6 +6,7 @@ import { EntriesList } from "@/features/accounting/components/entries-list";
 import { EntryForm } from "@/features/accounting/components/entry-form";
 import { listEntries } from "@/features/accounting/entry-queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readChart } from "@/server/chart-config";
 import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Journal entries" };
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "Journal entries" };
 export default async function EntriesPage() {
   const user = await requirePagePermission("app.accounting");
   const canWrite = may(user, "accounting.closePeriods");
-  const rows = await listEntries();
+  const [rows, chart] = await Promise.all([listEntries(), readChart()]);
   return (
     <div className="grid gap-4">
       <PageHeader
@@ -30,7 +31,7 @@ export default async function EntriesPage() {
       )}
       <Card>
         <CardContent className="pt-4">
-          <EntriesList rows={rows} canWrite={canWrite} />
+          <EntriesList rows={rows} canWrite={canWrite} chart={chart} />
         </CardContent>
       </Card>
     </div>

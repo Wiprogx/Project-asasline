@@ -53,7 +53,9 @@ export const CHART: Record<string, string> = {
   "758000": "Payment differences — income",
 };
 
-export const accountName = (a: string) => CHART[a] ?? "";
+/** An account's name in the office's chart (server/chart-config), the built-in one by default. */
+export const accountName = (a: string, chart: Readonly<Record<string, string>> = CHART) =>
+  chart[a] ?? "";
 
 export type JournalCode = "SAL" | "PUR" | "BNK" | "MISC";
 export type EntryLine = { account: string; cents: number; label?: string };

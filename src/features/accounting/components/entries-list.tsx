@@ -8,7 +8,15 @@ import type { listEntries } from "../entry-queries";
 type Row = Awaited<ReturnType<typeof listEntries>>[number];
 
 /** Each entry with its lines, what reversed it, and — while it stands — its Reverse button. */
-export function EntriesList({ rows, canWrite }: { rows: Row[]; canWrite: boolean }) {
+export function EntriesList({
+  rows,
+  canWrite,
+  chart,
+}: {
+  rows: Row[];
+  canWrite: boolean;
+  chart?: Readonly<Record<string, string>>;
+}) {
   if (rows.length === 0)
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">No entry written by hand.</p>
@@ -40,7 +48,9 @@ export function EntriesList({ rows, canWrite }: { rows: Row[]; canWrite: boolean
               {e.lines.map((l, i) => (
                 <tr key={i}>
                   <td className="w-24 font-mono">{l.account}</td>
-                  <td className="text-muted-foreground">{l.label ?? accountName(l.account)}</td>
+                  <td className="text-muted-foreground">
+                    {l.label ?? accountName(l.account, chart)}
+                  </td>
                   <td className="w-28 text-right tabular-nums">
                     {l.cents > 0 ? formatCents(l.cents) : ""}
                   </td>

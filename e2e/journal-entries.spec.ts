@@ -10,11 +10,15 @@ test("an entry is written by hand only when it balances, shows in the journal, a
   await open(page, "/accounting/entries");
 
   await page.getByLabel("What it is for").fill(label);
-  await page.getByLabel("Lines").fill("612000 | 100 | | Rent\n440000 | | 90 | Supplier");
+  await page
+    .getByRole("textbox", { name: "Lines" })
+    .fill("612000 | 100 | | Rent\n440000 | | 90 | Supplier");
   await submit(page, page.getByRole("button", { name: "Book the entry" }));
   await expectToast(page, "The entry does not balance: debits and credits differ by 10.00.");
 
-  await page.getByLabel("Lines").fill("612000 | 100 | | Rent\n440000 | | 100 | Supplier");
+  await page
+    .getByRole("textbox", { name: "Lines" })
+    .fill("612000 | 100 | | Rent\n440000 | | 100 | Supplier");
   await submit(page, page.getByRole("button", { name: "Book the entry" }));
   await expectToast(page, /Booked as OD\/\d{4}\/\d{5}/);
   const item = page.getByRole("listitem").filter({ hasText: label });

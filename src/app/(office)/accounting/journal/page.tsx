@@ -10,6 +10,7 @@ import { Pager } from "@/components/shared/pager";
 import { PeriodPicker } from "@/features/accounting/components/period-picker";
 import { readJournal } from "@/features/accounting/ledger-queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readChart } from "@/server/chart-config";
 import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Journal" };
@@ -32,7 +33,7 @@ export default async function JournalPage({ searchParams }: PageProps<"/accounti
     <div className="grid gap-4">
       <PageHeader
         title="Journal"
-        description="Every entry comes from a numbered document or a payment — nothing is typed in."
+        description="Every entry comes from a numbered document, a payment, or an entry written by hand under Entries."
         actions={
           <>
             <a
@@ -54,7 +55,7 @@ export default async function JournalPage({ searchParams }: PageProps<"/accounti
       <SearchInput placeholder="Search a number, a partner or a label…" />
       <Card>
         <CardContent className="grid gap-3 pt-2">
-          <JournalList entries={shown.items} period={period} />
+          <JournalList entries={shown.items} period={period} chart={await readChart()} />
           <Pager path="/accounting/journal" params={period} noun="entries" {...shown} />
         </CardContent>
       </Card>

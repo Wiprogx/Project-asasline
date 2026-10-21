@@ -15,14 +15,19 @@ export type AccountTotal = {
 };
 
 /** Per account: the balance before `from`, the debits and credits inside the period, the close. */
-export function trialBalance(entries: readonly Entry[], from: string, to: string): AccountTotal[] {
+export function trialBalance(
+  entries: readonly Entry[],
+  from: string,
+  to: string,
+  chart?: Readonly<Record<string, string>>,
+): AccountTotal[] {
   const t = new Map<string, AccountTotal>();
   for (const e of entries) {
     if (e.date > to) continue;
     for (const l of e.lines) {
       const a = t.get(l.account) ?? {
         account: l.account,
-        name: accountName(l.account),
+        name: accountName(l.account, chart),
         openCents: 0,
         debitCents: 0,
         creditCents: 0,

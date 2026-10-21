@@ -134,7 +134,10 @@ export const csvAmount = (cents: number) => euros(cents).replace(".", ",");
 /** Cents as the accountant's software reads them: a comma decimal, two places. */
 const csvNum = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
 
-export function journalCsv(entries: readonly Entry[]): string {
+export function journalCsv(
+  entries: readonly Entry[],
+  chart?: Readonly<Record<string, string>>,
+): string {
   const rows: (string | number)[][] = [
     [
       "Date",
@@ -155,7 +158,7 @@ export function journalCsv(entries: readonly Entry[]): string {
         e.journal,
         e.ref,
         l.account,
-        accountName(l.account),
+        accountName(l.account, chart),
         l.label && l.label !== e.partner ? `${e.label} · ${l.label}` : e.label,
         e.partner ?? "",
         l.cents > 0 ? csvAmount(l.cents) : "",

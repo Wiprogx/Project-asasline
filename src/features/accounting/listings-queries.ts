@@ -10,6 +10,7 @@ import {
 } from "@/domain/listings";
 import type { Period } from "@/domain/period";
 import { vatPeriodRange } from "@/domain/vat";
+import { readChart } from "@/server/chart-config";
 import { requirePermission } from "@/server/auth/dal";
 import { readJournal } from "./ledger-queries";
 import { issuedDocs } from "./ledger-store";
@@ -41,7 +42,7 @@ export async function intraListingFile(period: string) {
 export async function journalFile(period: Period) {
   await requirePermission("app.accounting");
   const entries = (await readJournal()).filter((e) => e.date >= period.from && e.date <= period.to);
-  return journalCsv(entries);
+  return journalCsv(entries, await readChart());
 }
 
 /** The period's documents as a CSV for the accountant. */

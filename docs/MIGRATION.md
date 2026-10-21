@@ -79,8 +79,7 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   the task list (L12491, L12578); the message guard asking before a reply (L8793–8834); voice
   notes (L11941–12034).
 - **Accounting** — a bank line settling several invoices from the matching screen (L13415);
-  the chart of accounts in Settings, not a constant, and its Odoo
-  import (L13936, L14600); the close-period preview (L13913); the Odoo number during the
+  the chart of accounts' Odoo import (L14600); the close-period preview (L13913); the Odoo number during the
   parallel run (L12894); VAT and payer per draft line (L12812, L12865); a booking picker in
   Accounting (L14717); loading a saved copy (L14443).
 - **Home and Contacts** — documents of the contact's own (L4860, L5200); "+ Activity" on a contact and its

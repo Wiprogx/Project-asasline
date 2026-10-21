@@ -12,6 +12,7 @@ import { Pager } from "@/components/shared/pager";
 import { PeriodPicker } from "@/features/accounting/components/period-picker";
 import { readJournal } from "@/features/accounting/ledger-queries";
 import { requirePagePermission } from "@/server/auth/dal";
+import { readChart } from "@/server/chart-config";
 import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Ledger" };
@@ -43,7 +44,7 @@ export default async function LedgerPage({
   return (
     <div className="grid gap-4">
       <PageHeader
-        title={`${account} ${accountName(account)}`}
+        title={`${account} ${accountName(account, await readChart())}`}
         description={`Opening ${formatCents(l.openCents)} · closing ${formatCents(l.closeCents)}`}
       />
       <PeriodPicker path={`/accounting/ledger/${account}`} period={period} today={today} />

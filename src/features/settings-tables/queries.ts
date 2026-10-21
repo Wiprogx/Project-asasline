@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
+import { readChartForEdit } from "@/server/chart-config";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { bookings, contacts, rateItems, sequences, vessels } from "@/server/db/schema";
@@ -37,14 +38,15 @@ export async function fileHintsForEdit() {
 /** Payment terms, the books' figures and the counters, for Settings › Accounting. */
 export async function accountingSettingsForEdit() {
   await requirePermission("app.settings");
-  const [terms, books, bank, rules, seq] = await Promise.all([
+  const [terms, books, bank, rules, seq, chart] = await Promise.all([
     readPaymentTermsForEdit(),
     readBooksForEdit(),
     readBankAccountsForEdit(),
     readBankRulesForEdit(),
     db.select().from(sequences).orderBy(asc(sequences.key)),
+    readChartForEdit(),
   ]);
-  return { terms, books, bank, rules, sequences: seq };
+  return { terms, books, bank, rules, sequences: seq, chart };
 }
 
 /** The container specs and the box owners, for Settings › Containers. */

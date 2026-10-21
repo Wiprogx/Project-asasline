@@ -30,7 +30,16 @@ export function sourceHref(e: Entry) {
 }
 
 /** The journal as the accountant reads it: one block per entry, debit and credit columns. */
-export function JournalList({ entries, period }: { entries: Entry[]; period: Period }) {
+export function JournalList({
+  entries,
+  period,
+  chart,
+}: {
+  entries: Entry[];
+  period: Period;
+  /** The office's chart of accounts (Settings › Accounting). */
+  chart?: Readonly<Record<string, string>>;
+}) {
   if (entries.length === 0)
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
@@ -66,7 +75,7 @@ export function JournalList({ entries, period }: { entries: Entry[]; period: Per
               <TableCell colSpan={2} />
               <TableCell>
                 <AccountLink account={l.account} period={period} />{" "}
-                <span className="text-muted-foreground">{accountName(l.account)}</span>
+                <span className="text-muted-foreground">{accountName(l.account, chart)}</span>
               </TableCell>
               <TableCell className="max-w-48 truncate">{l.label}</TableCell>
               <TableCell className={num}>{l.cents > 0 ? formatCents(l.cents) : ""}</TableCell>

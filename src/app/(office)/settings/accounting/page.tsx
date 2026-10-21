@@ -12,6 +12,8 @@ import { accountingSettingsForEdit } from "@/features/settings-tables/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { bankAccountLines } from "@/domain/bank-accounts";
 import { bankRuleLines } from "@/domain/bank-rules";
+import { chartLines } from "@/domain/chart";
+import { saveChart } from "@/features/settings-tables/chart-actions";
 
 export const metadata: Metadata = { title: "Accounting settings" };
 
@@ -20,7 +22,7 @@ const TERMS_DESCRIPTION = `When an invoice is due, one term per line: "id | Name
 /** Payment terms, the books' two figures and the numbering (legacy Accounting › settings). */
 export default async function AccountingSettingsPage() {
   await requirePagePermission("app.settings");
-  const { terms, books, bank, rules, sequences } = await accountingSettingsForEdit();
+  const { terms, books, bank, rules, sequences, chart } = await accountingSettingsForEdit();
   return (
     <div className="grid gap-4">
       <BooksSettingsForm books={books.books} version={books.version} />
@@ -57,6 +59,16 @@ export default async function AccountingSettingsPage() {
         lines={bankRuleLines(rules.rules)}
         version={rules.version}
         count={rules.rules.length}
+      />
+      <LinesEditor
+        action={saveChart}
+        title="Chart of accounts"
+        description='One account per line: "account | name". Add the accounts the office needs and rename any; the built-in ones the books post to stay.'
+        label="Chart of accounts, one per line"
+        submitLabel="Save the chart"
+        lines={chartLines(chart.chart)}
+        version={chart.version}
+        count={Object.keys(chart.chart).length}
       />
       <SequenceForm rows={sequences} />
     </div>
