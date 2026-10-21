@@ -59,7 +59,12 @@ export function mapRateItem(
   return {
     row: {
       category,
-      name: text(it.name),
+      // A legacy free-time item has no name; the new catalogue names it (domain/pricing NEEDS).
+      name:
+        text(it.name) ??
+        (category === "freetime" && ftype
+          ? `${ftype[0].toUpperCase()}${ftype.slice(1)}${side ? ` — ${side}` : ""}`
+          : null),
       pol: portCode(it.pol),
       pod: portCode(it.pod),
       country: country && /^[A-Z]{2}$/.test(country) ? country : null,

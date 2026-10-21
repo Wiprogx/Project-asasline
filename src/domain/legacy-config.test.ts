@@ -58,7 +58,12 @@ describe("mapRateItem", () => {
 
   it("keeps a free-time kind the new catalogue lacks as a note, and says so", () => {
     const r = mapRateItem({ cat: "freetime", ftype: "storage", side: "origin", freeDays: 5 });
-    expect(r?.row).toMatchObject({ freeKind: null, side: "origin", freeDays: 5 });
+    expect(r?.row).toMatchObject({
+      name: "Storage — origin",
+      freeKind: null,
+      side: "origin",
+      freeDays: 5,
+    });
     expect(r?.row.note).toBe("Legacy free time: storage");
     expect(r?.warnings).toHaveLength(1);
   });
