@@ -39,6 +39,11 @@ export const LIST_META: Record<string, { title: string; description: string }> =
     description:
       "The trades a contact is in: the five a booking picks its parties from, then what the cargo is (legacy PROFESSIONS). Offered as you type on a contact.",
   },
+  contactDocTypes: {
+    title: "Contact document kinds",
+    description:
+      "What a paper kept on a contact is: a contract, a power of attorney, an ID (legacy contact docs).",
+  },
   contactTags: {
     title: "Contact tags",
     description:

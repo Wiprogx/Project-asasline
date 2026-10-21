@@ -139,3 +139,16 @@ export const addressArchiveSchema = z.object({
   contactId: z.uuid(),
   reason: z.string().trim().min(3, "Why? It stays on the record.").max(500),
 });
+
+/** A paper kept on the contact: its kind from Settings › Lists, a note if needed. */
+export const contactFileSchema = z.object({
+  contactId: z.uuid(),
+  kind: z.string().trim().min(1, "What kind of paper").max(60),
+  note: z.string().trim().max(300).optional(),
+});
+
+export const removeContactFileSchema = z.object({
+  contactId: z.uuid(),
+  fileId: z.uuid(),
+  reason: z.string().trim().min(3, "Say why — it stays on the record").max(300),
+});

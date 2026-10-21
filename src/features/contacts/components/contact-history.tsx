@@ -40,6 +40,8 @@ const LABEL: AuditLabels = {
   "contact.address.edit": (d) => `${d.type ?? "Address"} edited`,
   "contact.address.archive": (d) => `Address removed — ${d.reason ?? ""}`,
   "contact.bank.add": () => "Bank account added",
+  "contact.file.add": (d) => `${d.kind ?? "Paper"} kept — ${d.name ?? ""}`,
+  "contact.file.remove": (d) => `Paper taken off — ${d.reason ?? ""}`,
   "contact.bank.archive": (d) => `Bank account removed — ${d.reason ?? ""}`,
   "contact.idChecked": (d) =>
     `${String(d.kind ?? "Number").toUpperCase()} ${d.value ?? ""} checked`,

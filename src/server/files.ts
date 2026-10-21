@@ -13,8 +13,8 @@ import { env } from "@/env";
  */
 const root = () => resolve(env.FILES_DIR);
 
-/** What a file hangs on: a booking's folder, a message's, or an invoice's. */
-export type FileOwner = "bookings" | "messages" | "invoices";
+/** What a file hangs on: a booking's folder, a message's, an invoice's, or a contact's. */
+export type FileOwner = "bookings" | "messages" | "invoices" | "contacts";
 
 /** The absolute path of a stored file, refused if it would leave the files folder. */
 export function storedPath(ownerId: string, storedName: string, owner: FileOwner = "bookings") {

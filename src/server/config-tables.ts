@@ -5,6 +5,7 @@ import { DEFAULT_ACTIVITY_TYPES } from "@/domain/activity-rules";
 import { ADDRESS_TYPES } from "@/domain/contacts";
 import { DEFAULT_PACKAGE_TYPES } from "@/domain/goods";
 import {
+  DEFAULT_CONTACT_DOC_TYPES,
   DEFAULT_CONTACT_TAGS,
   DEFAULT_PROFESSIONS,
   DEFAULT_WITHDRAW_REASONS,
@@ -36,6 +37,7 @@ const TABLES = {
   contactTags: { schema: LIST, fallback: DEFAULT_CONTACT_TAGS },
   sealSources: { schema: LIST, fallback: DEFAULT_SEAL_SOURCES },
   docTypes: { schema: LIST, fallback: [...DOC_TYPES] },
+  contactDocTypes: { schema: LIST, fallback: DEFAULT_CONTACT_DOC_TYPES },
 } as const;
 
 export type ConfigName = keyof typeof TABLES;

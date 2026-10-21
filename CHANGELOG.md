@@ -18,6 +18,7 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Added
 
+- Contacts: papers kept on the contact itself (legacy contact docs) — a contract, a power of attorney, an ID — from the Documents tab: the kind from a new Settings list (Contact document kinds), the file stored under FILES_DIR/contacts/<contact>, a note; opened like any file (the download logged when watched), taken off with a reason, never deleted. They list with the papers filed on the contact's shipments and documents, and its history names them. Migration 0049 (`contact_files`).
 - The record pager (legacy pagerFrom): a booking, contact or quotation opened from its list shows "3 / 80 ‹ ›" — its place in the list as it was filtered, searched and sorted — with links to the previous and next one; ← and → step through them when no field has the cursor. The list's order is kept for the browser tab only (`components/shared` PagerSource, RecordPager).
 - Discuss: a missed call is work (legacy 7.5) — a call logged as missed or as a voicemail opens "Call back … [about SB…]", a Call task due today for the role the routing table gives its topic, linked to its booking or quotation, else to the caller's contact. The call log takes the call's minutes.
 - Contacts: the Invoices tab says where the office stands with the contact (legacy contact Invoices tab) — what they owe us on issued invoices and how much of it is overdue, what we owe them on their recorded bills, credit notes and payments already taken off — and lists their payments, a reversed one struck through.

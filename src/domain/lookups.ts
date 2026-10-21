@@ -228,3 +228,11 @@ export function parseContainerSpecLines(text: string): {
 /** The specs as domain/container's vgm reads them: by type. */
 export const specsByType = (specs: readonly ContainerSpec[]) =>
   Object.fromEntries(specs.map((s) => [s.type, { tareKg: s.tareKg, maxGrossKg: s.maxGrossKg }]));
+
+/** What a paper kept on a contact is (legacy contact docs t): Settings › Lists. */
+export const DEFAULT_CONTACT_DOC_TYPES = [
+  "Contract",
+  "Power of attorney",
+  "Passport or ID",
+  "Other",
+];

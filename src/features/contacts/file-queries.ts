@@ -3,7 +3,9 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookingFiles, bookings, invoiceFiles, invoices } from "@/server/db/schema";
+import { bookingFiles, bookings, contactFiles, invoiceFiles, invoices } from "@/server/db/schema";
+import { openStoredFile } from "@/server/files";
+import { auditAccess } from "@/server/access";
 import { isPartyOn } from "@/server/booking-parties";
 
 export type ContactFile = {
@@ -12,8 +14,8 @@ export type ContactFile = {
   code: string | null;
   sizeBytes: number;
   on: string;
-  /** Where it is filed: a shipment the contact is a party on, or a document in its name. */
-  where: { kind: "booking" | "invoice"; id: string; ref: string };
+  /** Where it is filed: on the contact itself, a shipment it is a party on, or a document in its name. */
+  where: { kind: "contact" | "booking" | "invoice"; id: string; ref: string };
   href: string;
 };
 
@@ -23,7 +25,13 @@ export type ContactFile = {
  */
 export async function filesOfContact(contactId: string): Promise<ContactFile[]> {
   await requirePermission("app.contacts");
-  const [onBookings, onInvoices] = await Promise.all([
+  const [own, onBookings, onInvoices] = await Promise.all([
+    db
+      .select()
+      .from(contactFiles)
+      .where(and(eq(contactFiles.contactId, contactId), isNull(contactFiles.archivedAt)))
+      .orderBy(desc(contactFiles.createdAt))
+      .limit(300),
     db
       .select({
         id: bookingFiles.id,
@@ -55,6 +63,18 @@ export async function filesOfContact(contactId: string): Promise<ContactFile[]> 
       .limit(300),
   ]);
   const rows: { at: Date; file: ContactFile }[] = [
+    ...own.map((f) => ({
+      at: f.createdAt,
+      file: {
+        id: f.id,
+        name: f.name,
+        code: f.kind,
+        sizeBytes: f.sizeBytes,
+        on: officeToday(f.createdAt),
+        where: { kind: "contact" as const, id: contactId, ref: "The contact" },
+        href: `/api/contacts/${contactId}/files/${f.id}`,
+      },
+    })),
     ...onBookings.map((f) => ({
       at: f.createdAt,
       file: {
@@ -81,4 +101,24 @@ export async function filesOfContact(contactId: string): Promise<ContactFile[]> 
     })),
   ];
   return rows.sort((a, b) => b.at.getTime() - a.at.getTime()).map((r) => r.file);
+}
+
+/** A paper kept on the contact, for the browser; the download is logged when watched. */
+export async function contactFileForDownload(contactId: string, fileId: string) {
+  const user = await requirePermission("app.contacts");
+  const [f] = await db
+    .select()
+    .from(contactFiles)
+    .where(and(eq(contactFiles.id, fileId), eq(contactFiles.contactId, contactId)));
+  if (!f) return null;
+  const stream = await openStoredFile(contactId, f.storedName, "contacts");
+  if (stream)
+    await auditAccess("download", {
+      action: "file.download",
+      userId: user.id,
+      entity: "contact",
+      entityId: contactId,
+      detail: { file: f.id, name: f.name },
+    });
+  return stream ? { stream, name: f.name, mime: f.mime, size: f.sizeBytes } : null;
 }

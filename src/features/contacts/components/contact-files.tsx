@@ -8,6 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ReasonDialog } from "@/components/shared/reason-dialog";
+import { removeContactFile } from "../file-actions";
 import type { ContactFile } from "../file-queries";
 
 const size = (n: number) =>
@@ -16,11 +18,17 @@ const size = (n: number) =>
     : `${(n / 1024 / 1024).toFixed(1)} MB`;
 
 /** Every paper on the contact's file, and where it is filed. */
-export function ContactFiles({ rows }: { rows: ContactFile[] }) {
+export function ContactFiles({
+  rows,
+  canRemove = false,
+}: {
+  rows: ContactFile[];
+  canRemove?: boolean;
+}) {
   if (rows.length === 0)
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        Nothing filed on this contact&apos;s shipments or documents yet.
+        Nothing kept on this contact, its shipments or its documents yet.
       </p>
     );
   return (
@@ -52,16 +60,32 @@ export function ContactFiles({ rows }: { rows: ContactFile[] }) {
               {f.code ?? "—"}
             </TableCell>
             <TableCell>
-              <Link
-                className="font-mono text-xs hover:underline"
-                href={
-                  f.where.kind === "booking"
-                    ? `/bookings/${f.where.id}/documents`
-                    : `/accounting/invoices/${f.where.id}`
-                }
-              >
-                {f.where.ref}
-              </Link>
+              {f.where.kind === "contact" ? (
+                <span className="flex flex-wrap items-center gap-2 text-xs">
+                  {f.where.ref}
+                  {canRemove && (
+                    <ReasonDialog
+                      action={removeContactFile}
+                      hidden={{ contactId: f.where.id, fileId: f.id }}
+                      trigger="Remove"
+                      title={`Take ${f.name} off the contact?`}
+                      description="It stays on the record with your reason."
+                      confirmLabel="Take it off"
+                    />
+                  )}
+                </span>
+              ) : (
+                <Link
+                  className="font-mono text-xs hover:underline"
+                  href={
+                    f.where.kind === "booking"
+                      ? `/bookings/${f.where.id}/documents`
+                      : `/accounting/invoices/${f.where.id}`
+                  }
+                >
+                  {f.where.ref}
+                </Link>
+              )}
             </TableCell>
             <TableCell className="hidden font-mono text-xs md:table-cell">{f.on}</TableCell>
           </TableRow>

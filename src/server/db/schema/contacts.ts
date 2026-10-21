@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { ContactKind } from "@/domain/contact-list";
-import { boolean, char, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { boolean, char, index, integer, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { cents, day, recordColumns } from "./_columns";
 import { contactTypeEnum } from "./enums";
 
@@ -80,4 +80,25 @@ export const contactBankAccounts = pgTable(
     label: text(),
   },
   (t) => [index("contact_bank_contact_idx").on(t.contactId)],
+);
+
+/**
+ * Papers kept on the contact itself (legacy contact docs): a contract, a power of attorney, an
+ * ID. The bytes live under FILES_DIR/contacts/<contact>/; taken off with a reason, never deleted.
+ */
+export const contactFiles = pgTable(
+  "contact_files",
+  {
+    ...recordColumns,
+    contactId: uuid()
+      .notNull()
+      .references(() => contacts.id),
+    kind: text().notNull(),
+    name: text().notNull(),
+    storedName: text().notNull(),
+    mime: text().notNull(),
+    sizeBytes: integer().notNull(),
+    note: text(),
+  },
+  (t) => [index("contact_files_contact_idx").on(t.contactId)],
 );
