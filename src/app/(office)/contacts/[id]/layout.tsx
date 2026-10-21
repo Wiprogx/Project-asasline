@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CONTACT_KIND_LABEL, CONTACT_KIND_TONE } from "@/domain/contact-list";
 import { z } from "zod";
 import { SubNav } from "@/components/layout/sub-nav";
+import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { may } from "@/domain/permissions";
@@ -48,6 +50,14 @@ export default async function ContactLayout({ params, children }: LayoutProps<"/
           <>
             <RecordPager kind="contacts" id={c.id} />
             <ContactReach phone={c.phone} mobile={c.mobile} whatsapp={c.whatsapp} email={c.email} />
+            {may(user, "app.activity") && (
+              <Link
+                href={`${base}/tasks?new=1`}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                + Activity
+              </Link>
+            )}
             <ContactArchive id={c.id} version={c.version} archived={!!c.archivedAt} />
           </>
         }

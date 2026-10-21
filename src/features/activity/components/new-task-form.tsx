@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
@@ -18,11 +18,18 @@ type Props = {
   meId: string;
   link?: { kind: "booking" | "quotation" | "contact"; id: string };
   defaultDue?: string;
+  /** Opened from a "+ Activity" button: the cursor waits in the task's words. */
+  autoFocus?: boolean;
 };
 
 /** Assigned to me by default; clear the person and pick a role to leave it for anyone in it. */
-export function NewTaskForm({ staff, meId, link, defaultDue, types }: Props) {
+export function NewTaskForm({ staff, meId, link, defaultDue, types, autoFocus }: Props) {
   const form = useRef<HTMLFormElement>(null);
+  const title = useRef<HTMLInputElement>(null);
+  // An effect, not the autoFocus attribute: it runs after the navigation has settled focus.
+  useEffect(() => {
+    if (autoFocus) title.current?.focus();
+  }, [autoFocus]);
   const [state, run, pending] = useToastedAction(
     createTask,
     () => form.current?.reset(),
@@ -43,7 +50,13 @@ export function NewTaskForm({ staff, meId, link, defaultDue, types }: Props) {
         </>
       )}
       <Field id="t-title" label="New task" error={fe?.title}>
-        <Input id="t-title" name="title" required placeholder="e.g. Send the VGM to the line" />
+        <Input
+          id="t-title"
+          name="title"
+          required
+          ref={title}
+          placeholder="e.g. Send the VGM to the line"
+        />
       </Field>
       <Field id="t-type" label="Type" error={fe?.type}>
         <NativeSelect

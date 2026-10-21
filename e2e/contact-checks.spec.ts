@@ -40,5 +40,5 @@ test("a contact's numbers carry the day they were checked, its tags are searched
     .getByRole("navigation", { name: "Section" })
     .getByRole("link", { name: "Tasks" })
     .click();
-  await expect(page.getByText("No tasks here.")).toBeVisible();
+  await expect(page.getByText("No tasks here.")).toHaveCount(2);
 });

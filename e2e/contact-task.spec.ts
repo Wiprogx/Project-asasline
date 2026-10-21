@@ -13,12 +13,20 @@ test("a task is added on a contact itself, and the contact's tab lists it with i
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   const url = page.url();
 
-  await open(page, `${url}/tasks`);
+  // "+ Activity" in the header opens the Tasks tab with the cursor in the task's words.
+  await page.getByRole("link", { name: "+ Activity" }).click();
+  await expect(page).toHaveURL(/\/tasks\?new=1$/);
+  await expect(page.locator("form[data-action-form]").first()).toHaveAttribute(
+    "data-hydrated",
+    "1",
+  );
+  await expect(page.getByLabel("New task")).toBeFocused();
   const title = `Call about the new rates ${t}`;
   await page.getByLabel("New task").fill(title);
   await submit(page, page.getByRole("button", { name: "Add task" }));
   await expectToast(page, "Task added");
-  const item = page.getByRole("listitem").filter({ hasText: title });
+  const own = page.getByRole("region", { name: /On the contact itself/ });
+  const item = own.getByRole("listitem").filter({ hasText: title });
   await expect(item.getByRole("link", { name })).toHaveAttribute("href", new URL(url).pathname);
 
   // It is in the activity list too, linked to the contact.
