@@ -6,6 +6,8 @@ Keep a Changelog, SemVer. Every commit that touches source, tests, scripts, CI, 
 
 ### Changed
 
+- Contacts: the form in titled sections — Identity, VAT & EORI, Reach (email, phone, mobile, WhatsApp, website), Address, Professions & tags, Billing — with a jump bar to each; the side menu lists Contacts right after Home.
+- Toolchain: Next.js and eslint-config-next 16.4.0 → 16.4.3, out of the critical advisory on the Image Optimization API with SVG files (`npm audit`).
 - docs/MIGRATION.md: the status table moved by the price kept in the agreement, the contact's balance and own papers, the missed-call task and the record pager (252 done, 43 partial, 44 missing — 81%).
 - docs/MIGRATION.md: the status table moved by the payment-term gate, the chart of accounts, the trucker copy per box and the carrier task closing on confirmation (247 done, 46 partial, 46 missing — 80%).
 - docs/MIGRATION.md: the status table moved as gaps closed on 2026-10-21 (237 done, 50 partial, 52 missing — 77%) and the backlog shortened by what landed: quotation editing and status, the booking copies sent, replies, task and address editing, the contact history and pricing fields, the part credit and the payment over several invoices; the Certiweight "ordered" lock is what still waits on the trucker copy's step.

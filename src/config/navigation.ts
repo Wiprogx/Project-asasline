@@ -23,6 +23,13 @@ export type NavItem = {
 export const NAV: NavItem[] = [
   { href: "/", label: "Home", icon: HomeIcon, permission: null, migrated: true },
   {
+    href: "/contacts",
+    label: "Contacts",
+    icon: UsersIcon,
+    permission: "app.contacts",
+    migrated: true,
+  },
+  {
     href: "/activity",
     label: "Activity",
     icon: ListTodoIcon,
@@ -41,13 +48,6 @@ export const NAV: NavItem[] = [
     label: "Bookings",
     icon: ShipIcon,
     permission: "app.bookings",
-    migrated: true,
-  },
-  {
-    href: "/contacts",
-    label: "Contacts",
-    icon: UsersIcon,
-    permission: "app.contacts",
     migrated: true,
   },
   {
