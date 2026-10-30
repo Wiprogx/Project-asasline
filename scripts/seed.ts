@@ -15,7 +15,6 @@ async function main() {
   const { hashPassword } = await import("../src/server/auth/password");
   const { MIN_PASSWORD_LENGTH } = await import("../src/domain/users");
   const { DEFAULT_PAYMENT_TERMS } = await import("../src/domain/accounting");
-  const { DEFAULT_RATE_CATEGORIES } = await import("../src/domain/pricing");
   const { DEMO_RATE_ITEMS } = await import("./demo-catalogue");
 
   const email = process.env.SEED_ADMIN_EMAIL;
@@ -39,10 +38,7 @@ async function main() {
 
   await db
     .insert(configTables)
-    .values([
-      { name: "paymentTerms", value: DEFAULT_PAYMENT_TERMS },
-      { name: "rateCategories", value: DEFAULT_RATE_CATEGORIES },
-    ])
+    .values([{ name: "paymentTerms", value: DEFAULT_PAYMENT_TERMS }])
     .onConflictDoNothing();
   console.log("✓ config tables present");
 

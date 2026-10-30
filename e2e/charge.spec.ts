@@ -4,6 +4,7 @@ import {
   expectToast,
   fillMandatory,
   login,
+  newItem,
   newQuotation,
   open,
   submit,
@@ -19,12 +20,12 @@ test("a charge raised from the booking lands on its quotation, priced from the c
   await login(page);
 
   // A charge item in the catalogue (Other services).
-  await open(page, "/settings/catalogue");
+  await newItem(page);
   await choose(page.getByLabel("Category"), { label: "Other services" });
   await page.getByRole("textbox", { name: "Name" }).fill(item);
-  await page.getByLabel("Sell (EUR)").fill("85");
-  await page.getByLabel("Buy (EUR)").fill("60");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await page.getByLabel("Sell price (€)").fill("85");
+  await page.getByLabel("Buy price / cost (€)").fill("60");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
 
   await open(page, "/contacts/new");

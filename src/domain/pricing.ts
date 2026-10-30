@@ -5,33 +5,20 @@
  *   agreement → (the contact says so) the last price quoted → catalogue.
  */
 
-/** Seed for the `rateCategories` Settings table; the running app reads the table. */
-export const DEFAULT_RATE_CATEGORIES = [
-  { code: "ocean", label: "Ocean freight", salesAccount: "700000", purchaseAccount: "604000" },
-  { code: "inland", label: "Inland transport", salesAccount: "700100", purchaseAccount: "604100" },
-  {
-    code: "customs",
-    label: "Customs clearance",
-    salesAccount: "700200",
-    purchaseAccount: "604200",
-  },
-  { code: "docs", label: "Country document", salesAccount: "700300", purchaseAccount: "604300" },
-  { code: "vgm", label: "VGM / weighing", salesAccount: "700300", purchaseAccount: "604400" },
-  {
-    code: "freetime",
-    label: "Free time & charges",
-    salesAccount: "700500",
-    purchaseAccount: "604600",
-  },
-  { code: "other", label: "Other services", salesAccount: "700400", purchaseAccount: "604500" },
+/**
+ * The catalogue's categories (legacy RATE_CATEGORIES): what an item is, which decides the
+ * fields that identify it and where the quotation editor offers it. The app's own words — the
+ * pricing rules key on these codes — so a fixed list, each with its own form.
+ */
+export const RATE_CATEGORIES = [
+  { code: "ocean", label: "Ocean freight" },
+  { code: "inland", label: "Inland transport" },
+  { code: "customs", label: "Customs clearance" },
+  { code: "docs", label: "Country document" },
+  { code: "vgm", label: "VGM / weighing" },
+  { code: "freetime", label: "Free time & charges" },
+  { code: "other", label: "Other services" },
 ] as const;
-
-export type RateCategory = {
-  code: string;
-  label: string;
-  salesAccount: string;
-  purchaseAccount: string;
-};
 
 export const RATE_TYPES = ["contract", "spot"] as const;
 export type RateType = (typeof RATE_TYPES)[number];
@@ -55,7 +42,8 @@ export type RateItemFields = {
   pol: string | null;
   pod: string | null;
   containerType: string | null;
-  carrier: string | null;
+  /** The carrier contact's name, when the row was read with it (a label, never a check). */
+  carrier?: string | null;
   fromPlace: string | null;
   toPlace: string | null;
   docCode: string | null;

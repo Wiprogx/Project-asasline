@@ -5,6 +5,7 @@ import {
   expectToast,
   fillMandatory,
   login,
+  newItem,
   newQuotation,
   open,
   submit,
@@ -20,12 +21,12 @@ test("a loading that ran over the agreed hours is measured from the CMR and char
   await login(page);
 
   // Waiting time in the catalogue (Other services).
-  await open(page, "/settings/catalogue");
+  await newItem(page);
   await choose(page.getByLabel("Category"), { label: "Other services" });
   await page.getByRole("textbox", { name: "Name" }).fill(waiting);
-  await page.getByLabel("Sell (EUR)").fill("55");
-  await page.getByLabel("Buy (EUR)").fill("40");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await page.getByLabel("Sell price (€)").fill("55");
+  await page.getByLabel("Buy price / cost (€)").fill("40");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
 
   await open(page, "/contacts/new");

@@ -5,7 +5,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RateItemArchive } from "@/features/pricing/components/rate-item-archive";
 import { RateItemForm } from "@/features/pricing/components/rate-item-form";
-import { getRateItem, rateCategories } from "@/features/pricing/queries";
+import { catalogueLists, getRateItem } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readRateSources } from "@/server/rate-sources-config";
 
@@ -16,9 +16,9 @@ export default async function RateItemPage({ params }: PageProps<"/settings/cata
   await requirePagePermission("catalogue.edit");
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
-  const [it, categories, sources] = await Promise.all([
+  const [it, lists, sources] = await Promise.all([
     getRateItem(id.data),
-    rateCategories(),
+    catalogueLists(),
     readRateSources(),
   ]);
   if (!it) notFound();
@@ -35,7 +35,7 @@ export default async function RateItemPage({ params }: PageProps<"/settings/cata
         <RateItemArchive id={it.id} archived={!!it.archivedAt} />
       </CardHeader>
       <CardContent>
-        <RateItemForm categories={categories} values={it} sources={sources} />
+        <RateItemForm lists={lists} values={it} sources={sources} />
       </CardContent>
     </Card>
   );

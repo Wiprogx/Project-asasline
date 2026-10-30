@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { RateItemForm } from "@/features/pricing/components/rate-item-form";
+import { RATE_CATEGORIES } from "@/domain/pricing";
+import { NewRateItemDialog } from "@/features/pricing/components/new-rate-item-dialog";
 import { RateItemsTable } from "@/features/pricing/components/rate-items-table";
-import { LinesEditor } from "@/components/shared/lines-editor";
-import { may } from "@/domain/permissions";
-import { saveRateCategories } from "@/features/pricing/category-actions";
-import { listRateItems, rateCategories, rateCategoriesForEdit } from "@/features/pricing/queries";
+import { catalogueLists, listRateItems } from "@/features/pricing/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readRateSources } from "@/server/rate-sources-config";
@@ -16,18 +14,21 @@ export const metadata: Metadata = { title: "Catalogue" };
 
 const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
-/** One catalogue for everything chargeable: a quotation line, a booking charge, an invoice line. */
+/**
+ * One catalogue for everything chargeable: a quotation line, a booking charge, an invoice line.
+ * The list with its categories, filters and search; a new item is made in a dialog.
+ */
 export default async function CataloguePage({ searchParams }: PageProps<"/settings/catalogue">) {
-  const user = await requirePagePermission("catalogue.edit");
+  await requirePagePermission("catalogue.edit");
   const sp = await searchParams;
-  const editable = may(user, "app.settings") ? await rateCategoriesForEdit() : null;
   const category = str(sp.category);
   const archived = sp.archived === "1";
-  const [categories, rows, sources] = await Promise.all([
-    rateCategories(),
+  const [rows, sources, lists] = await Promise.all([
     listRateItems({ q: str(sp.q), category, archived }),
     readRateSources(),
+    catalogueLists(),
   ]);
+  const categories = [...RATE_CATEGORIES];
   const chip = (href: string, label: string, on: boolean) => (
     <Link
       key={href}
@@ -42,21 +43,16 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
   );
   return (
     <div className="grid gap-4">
-      <Card>
-        <CardHeader>
-          <h2 className="font-heading text-base font-medium">New item</h2>
-        </CardHeader>
-        <CardContent>
-          <RateItemForm categories={categories} sources={sources} />
-        </CardContent>
-      </Card>
-      <nav className="flex flex-wrap gap-2" aria-label="Categories">
-        {chip("/settings/catalogue", "All", !category && !archived)}
-        {categories.map((c) =>
-          chip(`/settings/catalogue?category=${c.code}`, c.label, category === c.code),
-        )}
-        {chip("/settings/catalogue?archived=1", "Out of use", archived)}
-      </nav>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <nav className="flex flex-wrap gap-2" aria-label="Categories">
+          {chip("/settings/catalogue", "All", !category && !archived)}
+          {categories.map((c) =>
+            chip(`/settings/catalogue?category=${c.code}`, c.label, category === c.code),
+          )}
+          {chip("/settings/catalogue?archived=1", "Out of use", archived)}
+        </nav>
+        <NewRateItemDialog lists={lists} sources={sources} />
+      </div>
       <Card>
         <CardContent className="pt-2">
           <RateItemsTable
@@ -67,20 +63,6 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
           />
         </CardContent>
       </Card>
-      {editable && (
-        <LinesEditor
-          action={saveRateCategories}
-          title="Categories & accounts"
-          description="Every item belongs to one; the category decides the sales account and the purchase account (to confirm with the accountant). One per line: code | Label | sales account | purchase account."
-          label="Categories, one per line"
-          submitLabel="Save categories"
-          lines={editable.categories
-            .map((c) => `${c.code} | ${c.label} | ${c.salesAccount} | ${c.purchaseAccount}`)
-            .join("\n")}
-          version={editable.version}
-          count={editable.categories.length}
-        />
-      )}
     </div>
   );
 }

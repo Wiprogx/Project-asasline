@@ -3,7 +3,7 @@ import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
 import { readChartForEdit } from "@/server/chart-config";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { bookings, contacts, rateItems, sequences, vessels } from "@/server/db/schema";
+import { bookings, contacts, sequences, vessels } from "@/server/db/schema";
 import { readFileHintsForEdit } from "@/server/file-config";
 import { readPaymentTermsForEdit } from "@/server/accounting-config";
 import { readActivityRulesForEdit } from "@/server/activity-config";
@@ -120,19 +120,12 @@ export async function linksReport() {
       await db.select({ name: contacts.name }).from(contacts).where(isNull(contacts.archivedAt))
     ).map((c) => c.name.trim().toLowerCase()),
   );
-  const [onSailings, onLegs] = await Promise.all([
-    db
-      .selectDistinct({ carrier: vessels.carrier })
-      .from(vessels)
-      .where(and(isNull(vessels.archivedAt), sql`${vessels.carrier} is not null`)),
-    db
-      .selectDistinct({ carrier: rateItems.carrier })
-      .from(rateItems)
-      .where(and(isNull(rateItems.archivedAt), eq(rateItems.category, "ocean"))),
-  ]);
-  const carriers = [
-    ...new Set([...onSailings, ...onLegs].map((r) => r.carrier?.trim()).filter(Boolean)),
-  ]
+  // The catalogue's carriers are contacts now; only a sailing's can still be words.
+  const onSailings = await db
+    .selectDistinct({ carrier: vessels.carrier })
+    .from(vessels)
+    .where(and(isNull(vessels.archivedAt), sql`${vessels.carrier} is not null`));
+  const carriers = [...new Set(onSailings.map((r) => r.carrier?.trim()).filter(Boolean))]
     .sort()
     .map((name) => ({ name: name!, linked: names.has(name!.toLowerCase()) }));
 

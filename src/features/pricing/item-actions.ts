@@ -2,16 +2,15 @@
 
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { itemProblem } from "@/domain/pricing";
+import { itemProblem, RATE_CATEGORIES } from "@/domain/pricing";
 import { type ActionResult, fail, formToObject, invalid, nullMissing } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
-import { readRateCategories } from "@/server/catalogue-config";
 import { readCountries } from "@/server/countries";
 import { db } from "@/server/db/client";
 import { liveLookupIdByLabel } from "@/server/lookups";
-import { portIds } from "@/server/ports";
-import { rateItems } from "@/server/db/schema";
+import { portCountry, portIds } from "@/server/ports";
+import { contacts, rateItems } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { archiveSchema, rateItemSchema, rateItemUpdateSchema, restoreSchema } from "./schemas";
 
@@ -23,7 +22,7 @@ const OPTIONAL = [
   "podId",
   "country",
   "containerTypeId",
-  "carrier",
+  "carrierId",
   "transitDays",
   "fromPlace",
   "toPlace",
@@ -37,8 +36,8 @@ const OPTIONAL = [
 ] as const;
 
 async function problemOf(d: Fields): Promise<ActionResult | null> {
-  const cats = await readRateCategories();
-  if (!cats.some((c) => c.code === d.category)) return fail("Choose a category from the list.");
+  if (!RATE_CATEGORIES.some((c) => c.code === d.category))
+    return fail("Choose a category from the list.");
   if (d.country && !(await readCountries()).some((c) => c.code === d.country && !c.archived))
     return fail(`${d.country} is not a country of Settings › Countries.`);
   const p = itemProblem(d);
@@ -60,8 +59,18 @@ async function rowOf({ containerType, pol, pod, ...rest }: Fields, userId: strin
         `Container type "${containerType}" is not in Settings › Bookings › Container types.`,
       ),
     };
+  if (rest.carrierId) {
+    const [c] = await db
+      .select({ id: contacts.id })
+      .from(contacts)
+      .where(and(eq(contacts.id, rest.carrierId), isNull(contacts.archivedAt)));
+    if (!c) return { row: null, problem: fail("Pick the carrier from the contacts.") };
+  }
   const ports = await portIds(db, { pol, pod }, userId);
-  return { row: { ...rest, ...ports, containerTypeId }, problem: null };
+  // An ocean leg's country is its port of discharge's, never typed beside it: the destination's
+  // documents are found by it.
+  const country = rest.category === "ocean" ? await portCountry(db, ports.podId) : rest.country;
+  return { row: { ...rest, ...ports, containerTypeId, country }, problem: null };
 }
 
 const done = (message: string, id?: string): ActionResult => {

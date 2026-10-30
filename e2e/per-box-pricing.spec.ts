@@ -4,6 +4,7 @@ import {
   expectToast,
   fillMandatory,
   login,
+  newItem,
   newQuotation,
   open,
   submit,
@@ -26,16 +27,16 @@ test("a destination quoted for two containers multiplies its per-container lines
   await login(page);
 
   // A free-time item in the catalogue: demurrage at destination, by kind not by name.
-  await open(page, "/settings/catalogue");
+  await newItem(page);
   await choose(page.getByLabel("Category"), { label: "Free time & charges" });
   await page.getByLabel("Name", { exact: true }).fill(`Container terms ${t}`);
   await page.getByLabel("Free days").fill("14");
-  await choose(page.getByLabel("Free time of"), "demurrage");
-  await choose(page.getByLabel("At", { exact: true }), "destination");
+  await choose(page.getByLabel("Charge kind"), "demurrage");
+  await choose(page.getByLabel("Where"), "destination");
   await choose(page.getByLabel("Applies to"), "");
-  await page.getByLabel("Sell (EUR)").fill("65");
-  await page.getByLabel("Buy (EUR)").fill("45");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await page.getByLabel("Sell price (€)").fill("65");
+  await page.getByLabel("Buy price / cost (€)").fill("45");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
 
   const client = `E2E Boxes ${t}`;

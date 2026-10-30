@@ -1,5 +1,6 @@
 import { expect, test } from "./fixtures";
 import {
+  addOceanLeg,
   choose,
   expectToast,
   fillMandatory,
@@ -14,18 +15,14 @@ import {
 test("a price changed on a quotation line is kept in the customer's agreement and offered next time", async ({
   page,
 }) => {
+  // The whole office in one journey: carrier, catalogue, agreement, quotation.
+  test.slow();
   const t = tag();
   const pod = portTag();
   const client = `E2E Agreed ${t}`;
   await login(page);
 
-  await open(page, "/settings/catalogue");
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill(pod);
-  await page.getByLabel("Sell (EUR)").fill("3000");
-  await page.getByLabel("Buy (EUR)").fill("2000");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
-  await expectToast(page, "Added to the catalogue");
+  await addOceanLeg(page, { pod, sell: "3000", buy: "2000" });
 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
@@ -41,7 +38,7 @@ test("a price changed on a quotation line is kept in the customer's agreement an
       sell: "900",
       service: "Ocean freight to Mersin",
     });
-    await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod}` });
+    await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod} · 40HC` });
     await submit(page, page.getByRole("button", { name: "Add destination" }));
     await expectToast(page, "Destination added");
     return page

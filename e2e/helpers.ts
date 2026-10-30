@@ -271,16 +271,8 @@ export type QuoteSpec = {
  * "BEANR › TRMER · <service> <tag>" at the sell price given.
  */
 export async function newQuotation(page: Page, q: QuoteSpec) {
-  const carrier = `${q.service ?? "E2E line"} ${tag()}`.slice(0, 60);
-  await open(page, "/settings/catalogue");
-  await page.getByLabel("Port of loading").fill(q.pol ?? "BEANR");
-  await page.getByLabel("Port of discharge").fill(q.pod ?? "TRMER");
-  await page.getByLabel("Container type").fill("40HC");
-  await page.getByLabel("Carrier", { exact: true }).fill(carrier);
-  await page.getByLabel("Sell (EUR)").fill(q.sell);
-  await page.getByLabel("Buy (EUR)").fill(q.cost ?? "0");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
-  await expectToast(page, "Added to the catalogue");
+  const carrier = await makeCarrier(page, `${q.service ?? "E2E line"} ${tag()}`.slice(0, 60));
+  await addOceanLeg(page, { pol: q.pol, pod: q.pod, carrier, sell: q.sell, buy: q.cost });
 
   await open(page, "/quotations/new");
   if (q.kind) await choose(page.getByLabel("Type", { exact: true }), q.kind);
@@ -296,6 +288,54 @@ export async function newQuotation(page: Page, q: QuoteSpec) {
   await page.getByRole("button", { name: "Create quotation" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
   return carrier;
+}
+
+/** A shipping line: a company contact with the Carrier profession, as the catalogue picks one. */
+export async function makeCarrier(page: Page, name: string) {
+  await open(page, "/contacts/new");
+  await page.getByLabel("Name", { exact: true }).fill(name);
+  await page.getByLabel(/^Professions/).fill("Carrier");
+  await fillMandatory(page);
+  await page.getByRole("button", { name: "Create contact" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  return name;
+}
+
+/** Picks an option of a searchable picker by what is typed: its first match. */
+export async function pick(page: Page, box: Locator, words: string) {
+  await box.click();
+  await box.fill(words);
+  const first = page.getByRole("listbox").getByRole("option").first();
+  // A free picker (a port code the table lacks) offers nothing: what is typed is kept on blur.
+  const found = await first.waitFor({ state: "visible", timeout: 2000 }).then(
+    () => true,
+    () => false,
+  );
+  if (found) await first.click();
+  else await box.press("Tab");
+}
+
+/** The catalogue's "New item" dialog, open: the item's form (legacy fItem). */
+export async function newItem(page: Page) {
+  await open(page, "/settings/catalogue");
+  await page.getByRole("button", { name: "New item" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+}
+
+/** An ocean leg in the catalogue (legacy fItem): ports, box and the carrier contact picked. */
+export async function addOceanLeg(
+  page: Page,
+  leg: { pol?: string; pod?: string; carrier?: string; sell: string; buy?: string },
+) {
+  await newItem(page);
+  await pick(page, page.getByRole("combobox", { name: "Port of loading" }), leg.pol ?? "BEANR");
+  await pick(page, page.getByRole("combobox", { name: "Port of discharge" }), leg.pod ?? "TRMER");
+  if (leg.carrier)
+    await pick(page, page.getByRole("combobox", { name: "Shipping line" }), leg.carrier);
+  await page.getByLabel("Sell price (€)").fill(leg.sell);
+  await page.getByLabel("Buy price / cost (€)").fill(leg.buy ?? "0");
+  await submit(page, page.getByRole("button", { name: "Save" }));
+  await expectToast(page, "Added to the catalogue");
 }
 
 /** Every live catalogue item whose words hold `query`, taken out of use: a journey's own leaves. */

@@ -1,0 +1,1 @@
+ALTER TABLE "rate_items" DROP COLUMN "carrier";

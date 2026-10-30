@@ -5,8 +5,10 @@ import {
   expectToast,
   fillMandatory,
   login,
+  newItem,
   newQuotation,
   open,
+  pick,
   portTag,
   submit,
   tag,
@@ -18,14 +20,17 @@ const card = (page: Page, title: RegExp) =>
 test("a quotation with two destinations, priced from the agreement and the catalogue", async ({
   page,
 }) => {
+  // The whole office in one journey: carrier, catalogue, agreement, quotation.
+  test.slow();
   const t = tag();
-  const pod = portTag();
   // A country no real one uses (ISO keeps XA–XZ and QM–QZ for private use), added to Settings ›
   // Countries; other runs may have left documents for it, so totals are compared, not fixed.
   const codes = [..."ABCDEFGHIJLMNOPQRSTUVWXYZ"]
     .map((c) => `X${c}`)
     .concat([..."MNOPQRSTUVWXYZ"].map((c) => `Q${c}`));
   const country = codes[Math.floor(Math.random() * codes.length)];
+  // A port of that country: an ocean leg's country is its port of discharge's.
+  const pod = `${country}${portTag().slice(2)}`;
   const doc = `E2EDOC${t.slice(-4).toUpperCase()}`;
   await login(page);
   await open(page, "/settings/countries");
@@ -41,20 +46,20 @@ test("a quotation with two destinations, priced from the agreement and the catal
   ).toBeVisible();
 
   // The catalogue: an ocean leg and the document its country requires.
-  await open(page, "/settings/catalogue");
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill(pod);
-  await page.getByLabel("Country").fill(country);
-  await page.getByLabel("Sell (EUR)").fill("3000");
-  await page.getByLabel("Buy (EUR)").fill("2000");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await newItem(page);
+  await pick(page, page.getByRole("combobox", { name: "Port of loading" }), "BEANR");
+  await pick(page, page.getByRole("combobox", { name: "Port of discharge" }), pod);
+  await page.getByLabel("Sell price (€)").fill("3000");
+  await page.getByLabel("Buy price / cost (€)").fill("2000");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
+  await page.getByRole("button", { name: "New item" }).click();
   await choose(page.getByLabel("Category"), { label: "Country document" });
-  await page.getByLabel("Document code").fill(doc);
-  await page.getByLabel("Country").fill(country);
-  await page.getByLabel("Sell (EUR)").fill("200");
-  await page.getByLabel("Buy (EUR)").fill("120");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await page.getByLabel(/^Document code/).fill(doc);
+  await pick(page, page.getByRole("combobox", { name: "Required for country" }), country);
+  await page.getByLabel("Sell price (€)").fill("200");
+  await page.getByLabel("Buy price / cost (€)").fill("120");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
 
   // A customer with an agreed price for the leg.
@@ -69,7 +74,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await page.getByLabel("Agreement").fill("Editor deal");
   await page.getByRole("button", { name: "Add agreement" }).click();
   await expect(page.getByRole("heading", { name: "Editor deal" })).toBeVisible();
-  await choose(page.getByLabel("Catalogue item"), { label: `BEANR › ${pod} · ocean` });
+  await choose(page.getByLabel("Catalogue item"), { label: `BEANR › ${pod} · 40HC · ocean` });
   await page.getByLabel("Agreed sell (EUR)").fill("2800");
   await submit(page, page.getByRole("button", { name: "Set price" }));
   await expectToast(page, "Agreed price saved");
@@ -84,7 +89,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   });
 
   // A second destination from the leg: its lines come priced, agreement first.
-  await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod}` });
+  await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod} · 40HC` });
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");
   const leg = card(page, new RegExp(`BEANR → ${pod}`));

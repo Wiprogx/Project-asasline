@@ -1,30 +1,48 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, portTag, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  makeCarrier,
+  newItem,
+  open,
+  pick,
+  portTag,
+  submit,
+  tag,
+} from "./helpers";
 
 test("the catalogue prices an item, and a customer agreement overrides it", async ({ page }) => {
+  // The whole office in one journey: carrier, catalogue, agreement, quotation.
+  test.slow();
   const t = tag();
   const pod = portTag();
   await login(page);
 
-  // An ocean leg without its port of discharge is refused, then added.
-  await open(page, "/settings/catalogue");
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Carrier", { exact: true }).fill("E2E LINE");
-  await page.getByLabel("Sell (EUR)").fill("3100");
-  await page.getByLabel("Buy (EUR)").fill("2000");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  // The shipping line is a contact with the Carrier profession, picked — never typed.
+  const line = await makeCarrier(page, `E2E LINE ${t}`);
+  // An ocean leg without its port of discharge is refused — the dialog stays — then added.
+  await newItem(page);
+  await pick(page, page.getByRole("combobox", { name: "Port of loading" }), "BEANR");
+  await pick(page, page.getByRole("combobox", { name: "Shipping line" }), line);
+  await page.getByLabel("Sell price (€)").fill("3100");
+  await page.getByLabel("Buy price / cost (€)").fill("2000");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "An ocean leg needs its port of loading and discharge.");
-  await expect(page.getByLabel("Carrier", { exact: true })).toHaveValue("E2E LINE");
-  await page.getByLabel("Port of discharge").fill(pod);
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await expect(page.getByRole("combobox", { name: "Shipping line" })).toHaveValue(line);
+  await pick(page, page.getByRole("combobox", { name: "Port of discharge" }), pod);
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
-  const label = `BEANR › ${pod} · E2E LINE`;
+  const label = `BEANR › ${pod} · 40HC · ${line}`;
   await expect(page.getByRole("link", { name: label })).toBeVisible();
 
-  // Its category shows the fields that identify it.
+  // Each category has its own form (legacy fItem): a document's, not the leg's.
+  await page.getByRole("button", { name: "New item" }).click();
   await choose(page.getByLabel("Category"), { label: "Country document" });
-  await expect(page.getByLabel("Document code")).toBeVisible();
-  await expect(page.getByLabel("Port of discharge")).toHaveCount(0);
+  await expect(page.getByLabel(/^Document code/)).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Port of discharge" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   const client = `E2E Agreement Client ${t}`;
   await open(page, "/contacts/new");

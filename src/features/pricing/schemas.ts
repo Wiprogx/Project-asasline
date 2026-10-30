@@ -37,7 +37,12 @@ export const rateItemSchema = z.object({
   pod: port,
   country: upper(2).refine((v) => v === null || /^[A-Z]{2}$/.test(v), "Two letters, e.g. CM"),
   containerType: upper(10),
-  carrier: text(60),
+  /** The shipping line or the trucker: a contact (Settings › Lists › Professions). */
+  carrierId: z
+    .string()
+    .optional()
+    .transform((v) => v || null)
+    .pipe(z.uuid().nullable()),
   transitDays: count,
   fromPlace: text(120),
   toPlace: text(120),

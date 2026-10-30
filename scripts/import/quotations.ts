@@ -21,7 +21,7 @@ import { lookupIdFor } from "./lookups";
 import { ensureLookup, lookupLabels } from "../../src/server/lookups";
 import { linksOf } from "./contacts";
 import { importPortId } from "./ports";
-import { withPorts } from "../../src/server/ports";
+import { withRouteWords } from "../../src/server/route-words";
 import { emptyReport, type KindReport } from "./report";
 
 async function importedItems(tx: DbOrTx): Promise<Map<string, ImportedItem>> {
@@ -31,7 +31,7 @@ async function importedItems(tx: DbOrTx): Promise<Map<string, ImportedItem>> {
     .innerJoin(rateItems, eq(rateItems.id, legacyLinks.recordId))
     .where(eq(legacyLinks.kind, "RATE_ITEMS"));
   const types = await lookupLabels("container-types");
-  const named = await withPorts(
+  const named = await withRouteWords(
     rows.map((r) => r.item),
     tx,
   );
@@ -41,7 +41,10 @@ async function importedItems(tx: DbOrTx): Promise<Map<string, ImportedItem>> {
       {
         id: item.id,
         category: item.category,
-        label: itemLabel({ ...item, containerType: types.get(item.containerTypeId ?? "") ?? null }),
+        label: itemLabel({
+          ...item,
+          containerType: types.get(item.containerTypeId ?? "") ?? null,
+        }),
         vatCode: item.vatCode,
         pol: item.pol,
         pod: item.pod,

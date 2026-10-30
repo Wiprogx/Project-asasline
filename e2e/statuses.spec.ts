@@ -1,5 +1,15 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, optionsOf, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  newItem,
+  open,
+  optionsOf,
+  submit,
+  tag,
+} from "./helpers";
 
 test("the statuses are shown with their counts and next numbers; document types and rate sources are Settings tables", async ({
   page,
@@ -55,9 +65,11 @@ test("the statuses are shown with their counts and next numbers; document types 
     await submit(page, page.getByRole("button", { name: "Save rate sources" }));
     await expectToast(page, /Saved · \d+ rate sources/);
   }
-  await open(page, "/settings/catalogue");
+  await newItem(page);
   await expect(
-    (await optionsOf(page.getByLabel("Rate", { exact: true }))).filter({ hasText: "Tender" }),
+    (await optionsOf(page.getByLabel("Rate source", { exact: true }))).filter({
+      hasText: "Tender",
+    }),
   ).toHaveCount(1);
   await page.keyboard.press("Escape");
 });

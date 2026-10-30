@@ -33,7 +33,8 @@ export const rateItems = pgTable(
     country: char({ length: 2 }).references(() => countries.code),
     /** The box this price is for (Settings › Lists › Container types); none: any box. */
     containerTypeId: uuid().references(() => containerTypes.id),
-    carrier: text(),
+    /** The line that operates the sailing, or the trucker: a contact with that profession. */
+    carrierId: uuid().references(() => contacts.id),
     transitDays: integer(),
     fromPlace: text(),
     toPlace: text(),

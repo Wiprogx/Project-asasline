@@ -1,5 +1,16 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, pickCity, submit, tag } from "./helpers";
+import {
+  addOceanLeg,
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  makeCarrier,
+  open,
+  pickCity,
+  submit,
+  tag,
+} from "./helpers";
 
 test("a door-to-port quotation for two containers, each box asked separately, its delivery address made on the spot, books into one booking", async ({
   page,
@@ -13,17 +24,9 @@ test("a door-to-port quotation for two containers, each box asked separately, it
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  // The ocean leg the destination is built from.
-  const carrier = `DOOR LINE ${t}`;
-  await open(page, "/settings/catalogue");
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("CMDLA");
-  await page.getByLabel("Container type").fill("40HC");
-  await page.getByLabel("Carrier", { exact: true }).fill(carrier);
-  await page.getByLabel("Sell (EUR)").fill("4250");
-  await page.getByLabel("Buy (EUR)").fill("3500");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
-  await expectToast(page, "Added to the catalogue");
+  // The ocean leg the destination is built from, its shipping line a contact.
+  const carrier = await makeCarrier(page, `DOOR LINE ${t}`);
+  await addOceanLeg(page, { pod: "CMDLA", carrier, sell: "4250", buy: "3500" });
 
   await open(page, "/quotations/new");
   const customer = page.getByRole("combobox", { name: "Customer", exact: true });

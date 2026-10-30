@@ -86,6 +86,13 @@ export async function portId(tx: DbOrTx, code: string | null | undefined, userId
   return made.id;
 }
 
+/** The country a port lies in: an ocean leg's country is its port of discharge's. */
+export async function portCountry(tx: DbOrTx, id: string | null): Promise<string | null> {
+  if (!id) return null;
+  const [row] = await tx.select({ country: ports.country }).from(ports).where(eq(ports.id, id));
+  return row?.country ?? null;
+}
+
 /** A record's two ports by their typed codes. */
 export async function portIds(
   tx: DbOrTx,

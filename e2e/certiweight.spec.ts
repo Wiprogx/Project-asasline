@@ -4,6 +4,7 @@ import {
   expectToast,
   fillMandatory,
   login,
+  newItem,
   newQuotation,
   open,
   submit,
@@ -18,12 +19,12 @@ test("Certiweight is switched on from the booking onto its quotation, and cancel
   await login(page);
 
   // A Certiweight item in the catalogue, in case the office has none.
-  await open(page, "/settings/catalogue");
+  await newItem(page);
   await choose(page.getByLabel("Category"), { label: "Other services" });
   await page.getByRole("textbox", { name: "Name" }).fill(`Certiweight weighing ${t}`);
-  await page.getByLabel("Sell (EUR)").fill("120");
-  await page.getByLabel("Buy (EUR)").fill("60");
-  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await page.getByLabel("Sell price (€)").fill("120");
+  await page.getByLabel("Buy price / cost (€)").fill("60");
+  await submit(page, page.getByRole("button", { name: "Save" }));
   await expectToast(page, "Added to the catalogue");
 
   await open(page, "/contacts/new");
