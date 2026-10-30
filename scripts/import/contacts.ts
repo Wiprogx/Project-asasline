@@ -13,6 +13,7 @@ import {
   contacts,
   legacyLinks,
 } from "../../src/server/db/schema";
+import { setContactLabels } from "../../src/server/contact-labels";
 import { emptyReport, type KindReport } from "./report";
 
 export async function linksOf(tx: DbOrTx, kind: string): Promise<Map<string, string>> {
@@ -68,10 +69,12 @@ export async function importContacts(
       report.matched++;
     } else {
       const archived = rec.archived ? { archivedAt: new Date(), archivedReason: ARCHIVED } : {};
+      const { professions, tags: words, ...contact } = rows.contact;
       [{ id }] = await tx
         .insert(contacts)
-        .values({ ...rows.contact, ...archived })
+        .values({ ...contact, ...archived })
         .returning({ id: contacts.id });
+      await setContactLabels(tx, id, { professions, tags: words }, null);
       if (rows.addresses.length)
         await tx
           .insert(contactAddresses)

@@ -3,7 +3,10 @@ import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { cache } from "react";
 import { z } from "zod";
 import { requirePermission } from "@/server/auth/dal";
+import { goodsOf } from "@/server/container-goods";
 import { db } from "@/server/db/client";
+import { withLabel } from "@/server/lookups";
+import { withPorts } from "@/server/ports";
 import { auditLog, bookings, containers, users } from "@/server/db/schema";
 
 /** A malformed id is "not found", never a database error (pages render beside their layout). */
@@ -13,7 +16,7 @@ const isUuid = (id: string) => z.uuid().safeParse(id).success;
 export const getBooking = cache(async (id: string) => {
   await requirePermission("app.bookings");
   if (!isUuid(id)) return undefined;
-  return db.query.bookings.findFirst({
+  const row = await db.query.bookings.findFirst({
     where: eq(bookings.id, id),
     with: {
       client: { columns: { id: true, name: true, country: true } },
@@ -30,9 +33,25 @@ export const getBooking = cache(async (id: string) => {
       quotation: { columns: { id: true, ref: true, version: true } },
       /** The register's dates, to see a date typed over them (domain/vessels scheduleConflict). */
       vessel: { columns: { id: true, etd: true, eta: true } },
+      cancelReason: { columns: { label: true } },
       containers: { where: isNull(containers.archivedAt), orderBy: asc(containers.position) },
+      docTypeRow: { columns: { label: true, onPaper: true } },
     },
   });
+  if (!row) return undefined;
+  // The document's words and each box's goods (HS lines, seals), as every screen and copy reads them.
+  const goods = await goodsOf(db, row.containers);
+  const [ported] = await withPorts([row]);
+  return {
+    ...ported,
+    docType: row.docTypeRow.label,
+    onPaper: row.docTypeRow.onPaper,
+    containers: (await withLabel(row.containers, "container-types", "typeId", "type")).map((c) => ({
+      ...c,
+      type: c.type ?? "",
+      ...goods.get(c.id)!,
+    })),
+  };
 });
 
 /** The booking's own audit trail, newest first (status, edits, boxes, cancel). */

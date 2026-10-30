@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import { activities } from "./activities";
 import { contactAddresses, contactBankAccounts, contacts } from "./contacts";
 import { users } from "./identity";
+import { cancelReasons, docTypes } from "./lists";
 import { priceListLines, priceLists, rateItems } from "./pricing";
 import {
   bookingLegs,
@@ -47,6 +48,10 @@ export const quotationsRelations = relations(quotations, ({ one, many }) => ({
   client: one(contacts, { fields: [quotations.clientId], references: [contacts.id] }),
   routes: many(quotationRoutes),
   bookings: many(bookings),
+  cancelReason: one(cancelReasons, {
+    fields: [quotations.cancelReasonId],
+    references: [cancelReasons.id],
+  }),
 }));
 
 export const quotationRoutesRelations = relations(quotationRoutes, ({ one, many }) => ({
@@ -68,6 +73,11 @@ export const quotationLinesRelations = relations(quotationLines, ({ one }) => ({
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   vessel: one(vessels, { fields: [bookings.vesselId], references: [vessels.id] }),
   legs: many(bookingLegs),
+  cancelReason: one(cancelReasons, {
+    fields: [bookings.cancelReasonId],
+    references: [cancelReasons.id],
+  }),
+  docTypeRow: one(docTypes, { fields: [bookings.docTypeId], references: [docTypes.id] }),
   client: one(contacts, {
     fields: [bookings.clientId],
     references: [contacts.id],

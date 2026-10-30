@@ -5,7 +5,7 @@ import { useRef } from "react";
 import { Field } from "@/components/shared/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MIN_PASSWORD_LENGTH } from "@/domain/people";
+import { MIN_PASSWORD_LENGTH } from "@/domain/users";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { changePassword } from "../actions";
 import { changePasswordSchema } from "../schemas";

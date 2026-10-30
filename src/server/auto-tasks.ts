@@ -4,6 +4,8 @@ import { type RuleVars, taskFor, type Trigger } from "@/domain/activity-rules";
 import { readActivityRules } from "./activity-config";
 import type { DbOrTx } from "./db/client";
 import { activities } from "./db/schema";
+import { lookupIdByLabel } from "./lookups";
+import { TASK_TYPE_CODES } from "@/domain/lookup-tables";
 
 /**
  * Opens the task an event calls for (legacy autoActivity): the active rule for the trigger
@@ -39,7 +41,7 @@ export async function openAutoTask(
     .insert(activities)
     .values({
       title: task.title,
-      type: task.type,
+      typeId: await lookupIdByLabel(tx, "task-types", task.type, TASK_TYPE_CODES.toDo),
       assigneeId: p.userId,
       role: task.role,
       due: task.due,

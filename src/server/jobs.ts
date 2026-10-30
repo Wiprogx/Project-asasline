@@ -6,6 +6,8 @@ import type { BookingStatus } from "@/domain/shipments";
 import { env } from "@/env";
 import { audit } from "./audit";
 import { db } from "./db/client";
+import { lookupIdByCode } from "./lookups";
+import { TASK_TYPE_CODES } from "@/domain/lookup-tables";
 import { activities, messages } from "./db/schema";
 import { readEscalateMinutes } from "./messaging";
 
@@ -66,7 +68,7 @@ export async function escalateWaiting(today: string): Promise<number> {
         .insert(activities)
         .values({
           title: escalationTitle(m.subject, m.body),
-          type: "To do",
+          typeId: await lookupIdByCode(tx, "task-types", TASK_TYPE_CODES.toDo),
           role: "team_lead",
           due: today,
           linkKind: linked ? m.linkKind : null,

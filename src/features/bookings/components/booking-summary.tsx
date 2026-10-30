@@ -74,7 +74,7 @@ export function BookingSummary({
                 )
               }
             />
-            {b.cancelReason && <Row k="Cancelled because" v={b.cancelReason} />}
+            {b.cancelReason && <Row k="Cancelled because" v={b.cancelReason.label} />}
           </dl>
         </CardContent>
       </Card>

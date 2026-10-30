@@ -1,5 +1,15 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag, uniqueVat } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  issue,
+  login,
+  open,
+  submit,
+  tag,
+  uniqueVat,
+} from "./helpers";
 
 test("an issued invoice gives its Peppol file; a customer without VAT number cannot", async ({
   page,
@@ -14,20 +24,22 @@ test("an issued invoice gives its Peppol file; a customer without VAT number can
   await page.getByLabel("Street").fill("Kaai 12");
   await page.getByLabel("Postcode").fill("2000");
   await page.getByLabel("City").fill("Antwerpen");
-  await page.getByLabel("Country (ISO-2)").fill("BE");
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/accounting");
-  await page.getByLabel("Customer", { exact: true }).selectOption({ label: client });
+  await choose(page.getByLabel("Customer", { exact: true }), { label: client });
   await page.getByRole("button", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
   await page.getByLabel("Line", { exact: true }).fill("Customs clearance");
   await page.getByLabel("Unit (EUR)").fill("200");
-  await page.getByLabel("VAT").selectOption("S21");
+  await choose(page.getByLabel("VAT"), "S21");
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expect(page.getByRole("cell", { name: "Customs clearance" })).toBeVisible();
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INV\//);
   const number = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
 

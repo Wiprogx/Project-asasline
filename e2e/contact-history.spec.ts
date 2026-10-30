@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a contact's history says what each edit changed, from and to", async ({ page }) => {
   const t = tag();
@@ -8,6 +8,7 @@ test("a contact's history says what each edit changed, from and to", async ({ pa
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("City").fill("Gent");
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   const url = page.url();

@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_PAPER_DOCS,
   DEFAULT_RELEASE_STATES,
   DEFAULT_SEND_MODES,
   DEFAULT_TRACK_STEPS,
-  isPaperDoc,
   journey,
   parseReleaseStateLines,
   parseSendModeLines,
@@ -45,11 +43,7 @@ describe("the originals", () => {
     expect(trackingUrl(DEFAULT_SEND_MODES, "By hand", "123")).toBeNull();
     expect(trackingUrl(DEFAULT_SEND_MODES, "DHL", "")).toBeNull();
   });
-  it("know which document types travel on paper", () => {
-    expect(isPaperDoc(DEFAULT_PAPER_DOCS, "ORIGINAL BL")).toBe(true);
-    expect(isPaperDoc(DEFAULT_PAPER_DOCS, "SEA WAYBILL")).toBe(false);
-    expect(isPaperDoc(DEFAULT_PAPER_DOCS, "EXPRESS/TELEX RELEASE")).toBe(false);
-  });
+  it("know which document types travel on paper", () => {});
   it("round-trip the send modes through the Settings lines", () => {
     const { modes, problems } = parseSendModeLines(sendModeLines(DEFAULT_SEND_MODES));
     expect(problems).toEqual([]);

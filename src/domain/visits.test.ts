@@ -7,7 +7,7 @@ describe("time at work", () => {
   it("knows the app a path belongs to, home for anything else", () => {
     expect(appOf("/bookings")).toBe("bookings");
     expect(appOf(`/accounting/invoices/${id}`)).toBe("accounting");
-    expect(appOf("/settings/people?x=1")).toBe("settings");
+    expect(appOf("/settings/users?x=1")).toBe("settings");
     expect(appOf("/")).toBe("home");
     expect(appOf("/login")).toBe("home");
   });

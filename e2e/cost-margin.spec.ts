@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, open, tag } from "./helpers";
+import { choose, fillMandatory, login, open, tag } from "./helpers";
 
 test("a booking's cost and margin read the quotation's buy side and the bills recorded", async ({
   page,
@@ -9,12 +9,13 @@ test("a booking's cost and margin read the quotation's buy side and the bills re
   const client = `E2E Margin ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // One destination sold at 2,500 that costs 1,800.
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("CMDLA");
   await page.getByLabel("Service").fill(`Ocean freight to Douala ${t}`);

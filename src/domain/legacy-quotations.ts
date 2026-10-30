@@ -82,6 +82,8 @@ export function mapLegacyQuotation(
     : [{ laneId: q.laneId, lines: q.lines, qty: 1 }];
   const cancel = (q.cancel ?? {}) as Record<string, unknown>;
   const status = statusOf(q.status);
+  if (status === "cancelled" && text(cancel.note))
+    warnings.push(`its cancel note is not carried: "${text(cancel.note)}"`);
   return {
     quotation: {
       ref,
@@ -94,12 +96,11 @@ export function mapLegacyQuotation(
       sentOn: day(q.sentAt),
       sentVia: text(q.sentVia),
       commodity: text(q.commodity),
-      docType: text(q.docType),
+      /** Resolved to a Settings › Lists › Document types row by the importer. */
+      docTypeLabel: text(q.docType),
       declinedReason: status === "declined" ? text(q.lostReason) : null,
-      cancelReason:
-        status === "cancelled"
-          ? [text(cancel.reason), text(cancel.note)].filter(Boolean).join(" — ") || "Cancelled"
-          : null,
+      /** Resolved to a Settings › Cancel reasons row by the importer (scripts/import/config). */
+      cancelReasonLabel: status === "cancelled" ? (text(cancel.reason) ?? "Other") : null,
       statusBeforeCancel:
         status === "cancelled" && q.statusBefore ? statusOf(q.statusBefore) : null,
     },

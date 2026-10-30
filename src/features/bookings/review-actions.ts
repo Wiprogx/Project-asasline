@@ -4,6 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { lookupIdByCode } from "@/server/lookups";
+import { TASK_TYPE_CODES } from "@/domain/lookup-tables";
 import { activities, bookings } from "@/server/db/schema";
 import { checkSchema, sendBackSchema } from "./file-schemas";
 import { giveWord } from "./review-store";
@@ -96,7 +98,7 @@ export async function checkWithList(_p: ActionResult, fd: FormData): Promise<Act
       if (dup) continue;
       await tx.insert(activities).values({
         title,
-        type: "To do",
+        typeId: await lookupIdByCode(tx, "task-types", TASK_TYPE_CODES.toDo),
         role,
         due: today,
         linkKind: "booking",

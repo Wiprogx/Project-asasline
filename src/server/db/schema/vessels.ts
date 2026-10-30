@@ -1,6 +1,7 @@
-import { index, pgTable, text } from "drizzle-orm/pg-core";
+import { index, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { day, recordColumns } from "./_columns";
 import { vesselStatusEnum } from "./enums";
+import { ports } from "./ports";
 
 /**
  * A sailing of the vessel register: one ship on one voyage between two ports. Bookings on it
@@ -15,8 +16,9 @@ export const vessels = pgTable(
     carrier: text(),
     service: text(),
     voyage: text().notNull(),
-    pol: text(),
-    pod: text(),
+    /** Where the sailing loads and discharges (Settings › Ports). */
+    polId: uuid().references(() => ports.id),
+    podId: uuid().references(() => ports.id),
     etd: day(),
     eta: day(),
     atd: day(),

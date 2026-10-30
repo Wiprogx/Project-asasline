@@ -9,10 +9,12 @@ export function PricingFields({
   terms,
   paymentTermId,
   usesLastPrice,
+  error,
 }: {
   terms: readonly { value: string; label: string }[];
   paymentTermId?: string | null;
   usesLastPrice?: boolean;
+  error?: string[];
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -20,6 +22,7 @@ export function PricingFields({
         id="paymentTermId"
         label="Payment terms"
         hint="A new quotation for this customer starts with these terms."
+        error={error}
       >
         <NativeSelect
           id="paymentTermId"
@@ -30,6 +33,8 @@ export function PricingFields({
         />
       </Field>
       <label className="flex items-start gap-2 self-end pb-2 text-sm">
+        {/* An unticked box posts nothing; this says "off", and a ticked box's "on" comes after it. */}
+        <input type="hidden" name="usesLastPrice" value="off" />
         <input
           type="checkbox"
           name="usesLastPrice"

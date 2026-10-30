@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
+import { PORT_CODE } from "@/domain/ports";
 import { QUOTATION_DISPLAYS } from "@/domain/quotation-doc";
 import { centsField } from "@/lib/zod-fields";
 
@@ -25,7 +26,8 @@ const port = (label: string) =>
     .trim()
     .min(2, label)
     .max(10)
-    .transform((v) => v.toUpperCase());
+    .transform((v) => v.toUpperCase())
+    .refine((v) => PORT_CODE.test(v), `${label}: a UN/LOCODE, e.g. BEANR`);
 
 const reason = z.string().trim().min(3, "Say why — it stays on the record").max(300);
 

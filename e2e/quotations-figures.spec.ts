@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, open, tag } from "./helpers";
+import { choose, fillMandatory, login, open, tag } from "./helpers";
 
 test("the quotations list carries its figures, a value per quotation and status chips", async ({
   page,
@@ -9,11 +9,12 @@ test("the quotations list carries its figures, a value per quotation and status 
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill("Ocean freight to Mersin");

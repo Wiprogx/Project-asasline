@@ -17,7 +17,11 @@ import {
   quotations,
   rateItems,
 } from "../../src/server/db/schema";
+import { lookupIdFor } from "./lookups";
+import { ensureLookup, lookupLabels } from "../../src/server/lookups";
 import { linksOf } from "./contacts";
+import { importPortId } from "./ports";
+import { withPorts } from "../../src/server/ports";
 import { emptyReport, type KindReport } from "./report";
 
 async function importedItems(tx: DbOrTx): Promise<Map<string, ImportedItem>> {
@@ -26,17 +30,22 @@ async function importedItems(tx: DbOrTx): Promise<Map<string, ImportedItem>> {
     .from(legacyLinks)
     .innerJoin(rateItems, eq(rateItems.id, legacyLinks.recordId))
     .where(eq(legacyLinks.kind, "RATE_ITEMS"));
+  const types = await lookupLabels("container-types");
+  const named = await withPorts(
+    rows.map((r) => r.item),
+    tx,
+  );
   return new Map(
-    rows.map(({ legacyId, item }) => [
-      legacyId,
+    named.map((item, i) => [
+      rows[i].legacyId,
       {
         id: item.id,
         category: item.category,
-        label: itemLabel(item),
+        label: itemLabel({ ...item, containerType: types.get(item.containerTypeId ?? "") ?? null }),
         vatCode: item.vatCode,
         pol: item.pol,
         pod: item.pod,
-        containerType: item.containerType,
+        containerType: types.get(item.containerTypeId ?? "") ?? null,
       },
     ]),
   );
@@ -92,14 +101,31 @@ export async function importQuotations(
     if (id) report.matched++;
     else {
       const archived = rec.archived ? { archivedAt: new Date(), archivedReason: ARCHIVED } : {};
+      const { cancelReasonLabel, docTypeLabel, ...quotation } = m.quotation;
       [{ id }] = await tx
         .insert(quotations)
-        .values({ ...m.quotation, clientId, ...archived })
+        .values({
+          ...quotation,
+          clientId,
+          cancelReasonId: await lookupIdFor(tx, "cancel-reasons", cancelReasonLabel),
+          docTypeId: await lookupIdFor(tx, "doc-types", docTypeLabel),
+          ...archived,
+        })
         .returning({ id: quotations.id });
       for (const r of m.routes) {
+        const { containerType, pol, pod, ...routeFields } = r.route;
+        const warn = (w: string) => report.warnings.push(`${m.quotation.ref}: ${w}`);
         const [route] = await tx
           .insert(quotationRoutes)
-          .values({ ...r.route, quotationId: id })
+          .values({
+            ...routeFields,
+            polId: pol === "?" ? null : await importPortId(tx, pol, warn),
+            podId: pod === "?" ? null : await importPortId(tx, pod, warn),
+            containerTypeId: containerType
+              ? await ensureLookup(tx, "container-types", containerType)
+              : null,
+            quotationId: id,
+          })
           .returning({ id: quotationRoutes.id });
         if (r.lines.length)
           await tx.insert(quotationLines).values(r.lines.map((l) => ({ ...l, routeId: route.id })));

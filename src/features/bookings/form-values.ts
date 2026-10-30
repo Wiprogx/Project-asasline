@@ -2,7 +2,7 @@ import { OFFICE_PARTIES } from "@/domain/booking-parties";
 
 const FIELDS = [
   "kind",
-  "docType",
+  "docTypeId",
   "payerId",
   "shipperId",
   "consigneeId",

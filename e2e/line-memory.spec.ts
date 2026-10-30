@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, open, submit, tag, uniqueVat } from "./helpers";
+import { choose, fillMandatory, login, open, submit, tag, uniqueVat } from "./helpers";
 
 const ublBill = (
   vat: string,
@@ -29,16 +29,18 @@ test("a supplier's line is booked where it went last time", async ({ page }) => 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(supplier);
   await page.getByLabel("VAT number").fill(vat);
-  await page.getByLabel("Country (ISO-2)").fill("BE");
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: supplier })).toBeVisible();
   await open(page, "/accounting/bills");
-  await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
+  await choose(page.getByLabel("Supplier", { exact: true }), { label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
   await page.getByLabel("Line", { exact: true }).fill(`Warehouse rent, September ${t}`);
   await page.getByLabel("Unit (EUR)").fill("100");
-  await page.getByLabel("Account").selectOption("610000");
+  await choose(page.getByLabel("Account"), "610000");
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expect(page.getByRole("cell", { name: /Warehouse rent, September/ })).toContainText(
     "610000",

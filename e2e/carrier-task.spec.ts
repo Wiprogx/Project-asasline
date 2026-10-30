@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("the carrier's confirmation closes the task the booking opened to get it", async ({
   page,
@@ -8,10 +8,11 @@ test("the carrier's confirmation closes the task the booking opened to get it", 
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -23,7 +24,7 @@ test("the carrier's confirmation closes the task the booking opened to get it", 
   const task = `Confirm booking ${sb} with the carrier`;
 
   const setStatus = async (value: string) => {
-    await page.getByLabel("Status").selectOption(value);
+    await choose(page.getByLabel("Status"), value);
     await submit(page, page.getByRole("button", { name: "Set", exact: true }));
     await expectToast(page, "Status updated");
   };

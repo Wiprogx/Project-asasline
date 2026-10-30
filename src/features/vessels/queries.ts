@@ -5,6 +5,8 @@ import { addDays } from "@/domain/dates";
 import { sailingLabel } from "@/domain/vessels";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { portMatches } from "@/server/port-sql";
+import { withPorts } from "@/server/ports";
 import { bookings, contacts, vessels } from "@/server/db/schema";
 import { readCutoffRulesForEdit } from "@/server/vessel-config";
 
@@ -17,7 +19,7 @@ const onBoard = sql<number>`(select count(*) from bookings b where b.vessel_id =
 export async function listVessels(opts: { q?: string; today: string }) {
   await requirePermission("app.bookings");
   const q = opts.q?.trim();
-  return db
+  const rows = await db
     .select({ vessel: vessels, bookings: onBoard })
     .from(vessels)
     .where(
@@ -28,13 +30,15 @@ export async function listVessels(opts: { q?: string; today: string }) {
               ilike(vessels.name, `%${q}%`),
               ilike(vessels.voyage, `%${q}%`),
               ilike(vessels.carrier, `%${q}%`),
-              ilike(vessels.pod, `%${q}%`),
+              portMatches(vessels.podId, `%${q}%`),
             )
           : or(isNull(vessels.etd), gte(vessels.etd, addDays(opts.today, -30))),
       ),
     )
     .orderBy(asc(vessels.etd), asc(vessels.name))
     .limit(300);
+  const named = await withPorts(rows.map((r) => r.vessel));
+  return rows.map((r, i) => ({ ...r, vessel: named[i] }));
 }
 
 export async function getVessel(id: string) {
@@ -47,7 +51,8 @@ export async function getVessel(id: string) {
     .leftJoin(contacts, eq(contacts.id, bookings.clientId))
     .where(and(eq(bookings.vesselId, id), isNull(bookings.archivedAt)))
     .orderBy(desc(bookings.ref));
-  return { vessel: v, bookings: on };
+  const [named] = await withPorts([v]);
+  return { vessel: named, bookings: on };
 }
 
 /** Sailings to pick for a booking: from a week back, the booking's own route first. */
@@ -56,17 +61,19 @@ export async function sailingOptions(
   route: { pol: string | null; pod: string | null },
 ) {
   await requirePermission("app.bookings");
-  const rows = await db
-    .select()
-    .from(vessels)
-    .where(
-      and(
-        isNull(vessels.archivedAt),
-        or(isNull(vessels.etd), gte(vessels.etd, addDays(today, -7))),
-      ),
-    )
-    .orderBy(asc(vessels.etd))
-    .limit(200);
+  const rows = await withPorts(
+    await db
+      .select()
+      .from(vessels)
+      .where(
+        and(
+          isNull(vessels.archivedAt),
+          or(isNull(vessels.etd), gte(vessels.etd, addDays(today, -7))),
+        ),
+      )
+      .orderBy(asc(vessels.etd))
+      .limit(200),
+  );
   const fits = (v: (typeof rows)[number]) =>
     (!route.pol || v.pol === route.pol) && (!route.pod || v.pod === route.pod) ? 0 : 1;
   return rows

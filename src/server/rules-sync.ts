@@ -5,13 +5,19 @@ import { planChain, type PlanStep, syncDiff } from "@/domain/rules/plan";
 import { type AuditEntry, auditMany } from "./audit";
 import type { DbOrTx } from "./db/client";
 import { activities, bookings, containers, quotationLines } from "./db/schema";
+import { goodsOf } from "./container-goods";
+import { lookupLabels, withdrawReasonIds } from "./lookups";
+import { withPorts } from "./ports";
 import { readHolidays, readRuleBook } from "./rule-book";
 import { cargoKgOf } from "@/domain/goods";
 
-type BookingRow = typeof bookings.$inferSelect;
+type RawBooking = typeof bookings.$inferSelect;
+/** A booking with its ports' codes, as the rule engine reads them. */
+type BookingRow = RawBooking & { pol: string | null; pod: string | null };
 
 export function factsOf(
   b: BookingRow,
+  docName: string,
   soldLines: readonly string[] | null = null,
   boxes: BookingFacts["boxes"] = [],
 ): BookingFacts {
@@ -22,7 +28,7 @@ export function factsOf(
     kind: b.kind,
     pol: b.pol,
     pod: b.pod,
-    docType: b.docType,
+    docType: docName,
     anchors: {
       loading: b.loadDate,
       customs: b.customsClosing,
@@ -45,6 +51,8 @@ type Task = {
 type Rules = {
   book: Awaited<ReturnType<typeof readRuleBook>>;
   holidays: Awaited<ReturnType<typeof readHolidays>>;
+  /** Each document type's words, for a step's {docName}. */
+  docNames: Map<string, string>;
 };
 
 const CHUNK = 1000;
@@ -102,12 +110,13 @@ async function boxesByBooking(tx: DbOrTx, bookingIds: readonly string[]) {
       .from(containers)
       .where(and(inArray(containers.bookingId, ids), isNull(containers.archivedAt)))
       .orderBy(containers.position);
+    const goods = await goodsOf(tx, rows);
     for (const c of rows) {
       const list = byBooking.get(c.bookingId) ?? [];
       list.push({
         id: c.id,
         label: c.number ?? `box ${list.length + 1}`,
-        weightsIn: cargoKgOf(c) !== null,
+        weightsIn: cargoKgOf({ ...c, ...goods.get(c.id)! }) !== null,
       });
       byBooking.set(c.bookingId, list);
     }
@@ -126,16 +135,22 @@ type ChainInput = { rules: Rules; tasks: readonly Task[]; sold: string[] | null;
 
 function chainOf(b: BookingRow, c: ChainInput) {
   const settled = new Set(c.tasks.filter((t) => t.state !== "open").map((t) => t.ruleCode!));
-  return planChain(c.rules.book, factsOf(b, c.sold, c.boxes), c.rules.holidays, settled);
+  const docName = c.rules.docNames.get(b.docTypeId) ?? "";
+  return planChain(c.rules.book, factsOf(b, docName, c.sold, c.boxes), c.rules.holidays, settled);
 }
 
 async function readRules(): Promise<Rules> {
-  const [book, holidays] = await Promise.all([readRuleBook(), readHolidays()]);
-  return { book, holidays };
+  const [book, holidays, docNames] = await Promise.all([
+    readRuleBook(),
+    readHolidays(),
+    lookupLabels("doc-types"),
+  ]);
+  return { book, holidays, docNames };
 }
 
 /** The chain of one booking as it stands (for the Documents tab). */
-export async function bookingChain(tx: DbOrTx, b: BookingRow): Promise<PlanStep[]> {
+export async function bookingChain(tx: DbOrTx, raw: RawBooking): Promise<PlanStep[]> {
+  const [b] = await withPorts([raw], tx);
   const [rules, tasks, sold, boxes] = await Promise.all([
     readRules(),
     ruleTasksOf(tx, [b.id]),
@@ -199,12 +214,14 @@ async function applyPlans(tx: DbOrTx, plans: readonly Plan[]) {
       .update(activities)
       .set({ due: r.due, version: sql`${activities.version} + 1`, updatedAt: new Date() })
       .where(and(eq(activities.id, r.id), eq(activities.state, "open")));
-  for (const w of plans.flatMap((p) => p.withdraw))
+  const withdrawn = plans.flatMap((p) => p.withdraw);
+  const reasonIds = withdrawn.length ? await withdrawReasonIds(tx) : null;
+  for (const w of withdrawn)
     await tx
       .update(activities)
       .set({
         state: "withdrawn",
-        withdrawReason: w.reason,
+        withdrawReasonId: reasonIds?.[w.code] ?? null,
         version: sql`${activities.version} + 1`,
         updatedAt: new Date(),
       })
@@ -222,7 +239,10 @@ async function applyPlans(tx: DbOrTx, plans: readonly Plan[]) {
  * edited). A cancelled booking is left alone: cancelling already withdrew its tasks.
  */
 export async function syncBookingRules(tx: DbOrTx, bookingId: string, userId: string | null) {
-  const [b] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
+  const [b] = await withPorts(
+    await tx.select().from(bookings).where(eq(bookings.id, bookingId)),
+    tx,
+  );
   if (!b || b.status === "cancelled") return;
   const [rules, tasks, sold, boxes] = await Promise.all([
     readRules(),
@@ -240,7 +260,10 @@ export async function syncBookingRules(tx: DbOrTx, bookingId: string, userId: st
  * written in batches — one booking at a time took ~30 s at a few hundred bookings.
  */
 export async function syncAllBookings(tx: DbOrTx, userId: string | null) {
-  const live = await tx.select().from(bookings).where(ne(bookings.status, "cancelled"));
+  const live = await withPorts(
+    await tx.select().from(bookings).where(ne(bookings.status, "cancelled")),
+    tx,
+  );
   if (live.length === 0) return 0;
   const ids = live.map((b) => b.id);
   const [rules, tasks, sold, boxes] = await Promise.all([

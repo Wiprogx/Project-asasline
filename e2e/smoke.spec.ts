@@ -23,7 +23,7 @@ test("the admin signs in and every migrated app opens", async ({ page }) => {
     ["/contacts", "Contacts"],
     ["/quotations", "Quotations"],
     ["/bookings", "Bookings"],
-    ["/settings/people", "Settings"],
+    ["/settings/users", "Settings"],
     ["/account", "My account"],
   ] as const) {
     await open(page, path);

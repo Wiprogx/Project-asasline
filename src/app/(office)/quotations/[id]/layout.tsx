@@ -14,7 +14,7 @@ import { QuotationStatusControls } from "@/features/quotations/components/quotat
 import { QUOTATION_TONE } from "@/features/quotations/status";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { requirePagePermission } from "@/server/auth/dal";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups, lookupOptions } from "@/server/lookups";
 import { RecordPager } from "@/components/shared/record-pager";
 
 /** The quotation's header, actions and tabs (legacy quotation tabs); each tab is its own URL. */
@@ -32,12 +32,16 @@ export default async function QuotationLayout({
   const credit = may(user, "app.accounting") ? await creditStanding(q.client.id) : null;
   const [clients, docTypes, terms, cancelReasons] = await Promise.all([
     contactOptions(),
-    readConfig("docTypes"),
+    lookupOptions("doc-types", q.docTypeId),
     readPaymentTerms(),
-    readConfig("cancelReasons"),
+    liveLookups("cancel-reasons"),
   ]);
   const reason =
-    q.status === "cancelled" ? q.cancelReason : q.status === "declined" ? q.declinedReason : null;
+    q.status === "cancelled"
+      ? q.cancelReason?.label
+      : q.status === "declined"
+        ? q.declinedReason
+        : null;
   const base = `/quotations/${q.id}`;
   const tabs = [
     { href: base, label: "Quotation", exact: true },

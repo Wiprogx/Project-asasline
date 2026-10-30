@@ -26,7 +26,8 @@ The office's invariants, full list in `docs/INVARIANTS.md`; each INV.n is held b
 6. **Updates are optimistic**: `updateVersioned()` with the version the user read; a stale
    write is a `ConflictError`, never a silent overwrite.
 7. **Roles, not names**, in rules and routing; `can()` fails closed.
-8. **Adding a country, port, document or rule is a `config_tables` row**, not code.
+8. **Adding a country, port, document or rule is a row**, not code: a word list is a table of
+   its own (`schema/lists`, `server/lookups`, Settings › Lists); a structured table a `config_tables` row.
 9. UI English; correspondence in the contact's language; dates ISO.
 
 ## 2. Commands
@@ -71,7 +72,9 @@ start with `import "server-only"` so a mistake fails the build.
   resets it when the action returns, wiping input after a validation error).
 - Redis is an accelerator, never the truth: `cached()` and the rate limiter fall back when it
   is down or unset. Every write path calls `invalidateTags()` **and** `revalidatePath()`.
-- Seed/reference constants in `src/domain` are defaults; the running app reads `config_tables`.
+- Seed/reference constants in `src/domain` are defaults; the running app reads `config_tables` and
+  the list tables. A record points at a list row by foreign key, never by its words; a row the
+  app relies on carries a `code` (`DEFAULT_DOC_TYPE`, `WITHDRAW_CODES`…).
 - `legacy/` is read-only reference. Port behaviour from it, never copy its globals.
 
 ## 5. Secrets and configuration

@@ -17,18 +17,12 @@ import {
   readTrackStepsForEdit,
 } from "@/server/release-config";
 import { readPermissionsForEdit } from "@/server/permission-config";
-import { readPortsForEdit } from "@/server/port-config";
 import { readIdFormatsForEdit } from "@/server/id-config";
 import { readAccessWatchForEdit } from "@/server/access-config";
 import { readBankAccountsForEdit } from "@/server/bank-config";
 import { readQuoteFieldsForEdit } from "@/server/quote-fields-config";
 import { readChecklistsForEdit } from "@/server/checklist-config";
 import { readBankRulesForEdit } from "@/server/bank-rules-config";
-
-export async function portsForEdit() {
-  await requirePermission("app.settings");
-  return readPortsForEdit();
-}
 
 export async function fileHintsForEdit() {
   await requirePermission("app.settings");

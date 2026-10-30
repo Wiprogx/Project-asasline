@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a task is added on a contact itself, and the contact's tab lists it with its link", async ({
   page,
@@ -9,6 +9,7 @@ test("a task is added on a contact itself, and the contact's tab lists it with i
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   const url = page.url();

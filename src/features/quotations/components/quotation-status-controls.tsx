@@ -20,7 +20,7 @@ type Props = {
   id: string;
   version: number;
   status: QuotationStatus;
-  cancelReasons: string[];
+  cancelReasons: readonly { value: string; label: string }[];
 };
 
 /** Status by hand, rejected as lost, cancelled with a reason, put back (legacy setQSt, markLost, cancelQuote). */
@@ -79,7 +79,7 @@ export function QuotationStatusControls({ id, version, status, cancelReasons }: 
         title="Cancel this quotation?"
         description="It keeps its number and history and leaves the active list and the figures. Open tasks are withdrawn. You can put it back."
         confirmLabel="Cancel it"
-        reasons={cancelReasons}
+        reasonOptions={cancelReasons}
       />
     </div>
   );

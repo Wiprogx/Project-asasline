@@ -110,7 +110,7 @@ describe("mapLegacyQuotation", () => {
       )?.quotation,
     ).toMatchObject({
       status: "cancelled",
-      cancelReason: "Goods not ready — June",
+      cancelReasonLabel: "Goods not ready",
       statusBeforeCancel: "sent",
     });
   });

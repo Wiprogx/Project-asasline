@@ -1,16 +1,9 @@
 /**
  * A seal and where it came from (legacy seals[{no, src}], SEAL_SOURCES): the trucker's, the
- * carrier's, customs', the shipper's… A box keeps its seals as "ABC1234 (Carrier)" strings, so
- * the number stays what it was typed and the source is a word from a Settings list.
+ * carrier's, customs', the shipper's… A box keeps its seals as rows (container_seals), each with
+ * its number as typed and its source from Settings › Lists › Seal sources; forms and papers read
+ * them as "ABC1234 (Carrier)".
  */
-export const DEFAULT_SEAL_SOURCES = [
-  "Trucker",
-  "Carrier",
-  "Customs",
-  "Shipper",
-  "Terminal",
-  "Other",
-];
 
 export type Seal = { no: string; source: string | null };
 
@@ -24,14 +17,3 @@ export const sealText = (s: Seal) => (s.source ? `${s.no} (${s.source})` : s.no)
 
 /** How a seal reads on paper: "ABC1234 · Carrier". */
 export const sealLabel = (s: Seal) => (s.source ? `${s.no} · ${s.source}` : s.no);
-
-/** The first seal whose source is not in the list, or null when every source is known. */
-export function sealSourceProblem(
-  seals: readonly string[],
-  sources: readonly string[],
-): string | null {
-  const bad = seals.map(sealOf).find((s) => s.source && !sources.includes(s.source));
-  return bad
-    ? `Seal source "${bad.source}" is not in Settings › Lists › Seal sources (${sources.join(", ")}).`
-    : null;
-}

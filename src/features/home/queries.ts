@@ -100,7 +100,7 @@ async function statsBetween(
   const live = await db
     .select({
       id: bookings.id,
-      pod: bookings.pod,
+      pod: bookings.podId,
       status: bookings.status,
       routeId: bookings.quotationRouteId,
     })

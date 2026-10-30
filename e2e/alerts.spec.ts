@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("an alert on a booking is seen by everyone who opens it, headlines the list, and is resolved, not removed", async ({
   page,
@@ -9,10 +9,11 @@ test("an alert on a booking is seen by everyone who opens it, headlines the list
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -22,11 +23,11 @@ test("an alert on a booking is seen by everyone who opens it, headlines the list
   const ref = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
 
   await expect(page.getByText("No alerts.")).toBeVisible();
-  await page.getByLabel("Level").selectOption("info");
+  await choose(page.getByLabel("Level"), "info");
   await page.getByLabel("Alert", { exact: true }).fill(`Consignee on holiday ${t}`);
   await submit(page, page.getByRole("button", { name: "Raise alert" }));
   await expectToast(page, "Alert raised");
-  await page.getByLabel("Level").selectOption("urgent");
+  await choose(page.getByLabel("Level"), "urgent");
   await page.getByLabel("Alert", { exact: true }).fill(`Box held for scan ${t}`);
   await submit(page, page.getByRole("button", { name: "Raise alert" }));
   await expectToast(page, "Alert raised");

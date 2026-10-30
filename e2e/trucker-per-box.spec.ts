@@ -1,5 +1,14 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectChosen,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 test("each box's trucker copy goes to its own trucker, naming only its container; a box not ready gets none", async ({
   page,
@@ -11,15 +20,17 @@ test("each box's trucker copy goes to its own trucker, naming only its container
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(trucker);
   await page.getByLabel("WhatsApp").fill("+32470111222");
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: trucker })).toBeVisible();
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("2");
@@ -33,15 +44,15 @@ test("each box's trucker copy goes to its own trucker, naming only its container
   await page.locator("#c0-load-address").fill(`Quay 730, Antwerp ${t}`);
   await page.locator("#c0-load-date").fill("2026-10-20");
   await page.locator("#c0-load-time").fill("07:30");
-  await page.locator("#c0-mode").selectOption("Drop off container on ground");
-  await page.locator("#c0-trucker").selectOption({ label: trucker });
+  await choose(page.locator("#c0-mode"), "Drop off container on ground");
+  await choose(page.locator("#c0-trucker"), { label: trucker });
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
   await expectToast(page, "Container saved");
 
   await open(page, `/bookings/${id}`);
   await expect(page.getByRole("link", { name: "Send to the trucker — box 2" })).toHaveCount(0);
   await page.getByRole("link", { name: "Send to the trucker — box 1" }).click();
-  await expect(page.getByLabel("Template")).toHaveValue("DRIVER_COPY");
+  await expectChosen(page.getByLabel("Template"), "DRIVER_COPY");
   await expect(page.getByLabel("WhatsApp number")).toHaveValue("+32470111222");
   const body = page.getByLabel("Message", { exact: true });
   await expect(body).toHaveValue(/MSCU1234566 \(box 1\)/);

@@ -2,16 +2,18 @@
 
 import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { cancelProblem, statusAfterRestore } from "@/domain/quotation-status";
-import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
+import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db, type DbOrTx } from "@/server/db/client";
+import { liveLookupLabel, withdrawReasonIds } from "@/server/lookups";
 import { activities, bookings, quotations } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { editorResult, Refused, touchQuotation } from "./editor-store";
 import { quotationRef } from "./schemas";
 import {
   editQuotationSchema,
+  quotationCancelSchema,
   quotationReasonSchema,
   quotationStatusSchema,
 } from "./status-schemas";
@@ -115,9 +117,11 @@ export async function rejectQuotation(_p: ActionResult, fd: FormData): Promise<A
 /** Cancel keeps the number and the history; its open tasks are withdrawn with the reason. */
 export async function cancelQuotation(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.quotations");
-  const parsed = quotationReasonSchema.safeParse(formToObject(fd));
+  const parsed = quotationCancelSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { id, version, reason } = parsed.data;
+  const { id, version, reasonId } = parsed.data;
+  const reason = await liveLookupLabel(db, "cancel-reasons", reasonId);
+  if (!reason) return fail("That reason is no longer offered — choose one from the list");
   return editorResult(id, "Quotation cancelled", () =>
     db.transaction(async (tx) => {
       const [q] = await tx.select().from(quotations).where(eq(quotations.id, id));
@@ -132,7 +136,7 @@ export async function cancelQuotation(_p: ActionResult, fd: FormData): Promise<A
         {
           status: "cancelled",
           statusBeforeCancel: q.status,
-          cancelReason: reason,
+          cancelReasonId: reasonId,
           updatedBy: user.id,
         },
         LABEL,
@@ -141,7 +145,7 @@ export async function cancelQuotation(_p: ActionResult, fd: FormData): Promise<A
         .update(activities)
         .set({
           state: "withdrawn",
-          withdrawReason: `Quotation cancelled: ${reason}`,
+          withdrawReasonId: (await withdrawReasonIds(tx)).quotation_cancelled,
           updatedBy: user.id,
           updatedAt: new Date(),
         })
@@ -157,7 +161,7 @@ export async function cancelQuotation(_p: ActionResult, fd: FormData): Promise<A
         userId: user.id,
         entity: "quotation",
         entityId: id,
-        detail: { reason },
+        detail: { reason, reasonId },
       });
     }),
   );
@@ -181,7 +185,7 @@ export async function restoreQuotation(_p: ActionResult, fd: FormData): Promise<
         {
           status: statusAfterRestore(q.statusBeforeCancel, !!q.sentOn),
           statusBeforeCancel: null,
-          cancelReason: null,
+          cancelReasonId: null,
           updatedBy: user.id,
         },
         LABEL,

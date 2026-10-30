@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a charge raised from the booking lands on its quotation, priced from the catalogue, once or per container", async ({
   page,
@@ -11,7 +11,7 @@ test("a charge raised from the booking lands on its quotation, priced from the c
 
   // A charge item in the catalogue (Other services).
   await open(page, "/settings/catalogue");
-  await page.getByLabel("Category").selectOption({ label: "Other services" });
+  await choose(page.getByLabel("Category"), { label: "Other services" });
   await page.getByRole("textbox", { name: "Name" }).fill(item);
   await page.getByLabel("Sell (EUR)").fill("85");
   await page.getByLabel("Buy (EUR)").fill("60");
@@ -20,10 +20,11 @@ test("a charge raised from the booking lands on its quotation, priced from the c
 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("900");
@@ -35,7 +36,7 @@ test("a charge raised from the booking lands on its quotation, priced from the c
   const ref = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
 
   // Raised from the booking: the catalogue's price comes with the item, the reason with it.
-  await page.getByLabel("Charge", { exact: true }).selectOption({ label: item });
+  await choose(page.getByLabel("Charge", { exact: true }), { label: item });
   await expect(page.getByLabel("Sell (EUR, each)")).toHaveValue("85.00");
   await page.getByLabel("Reason — shown in the history").fill(`Customs pulled the box ${t}`);
   await submit(page, page.getByRole("button", { name: "Add to the quotation" }));

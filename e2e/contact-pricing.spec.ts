@@ -1,5 +1,14 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectChosen,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 test("a customer's payment terms and last-price choice are set on the contact and kept", async ({
   page,
@@ -8,12 +17,13 @@ test("a customer's payment terms and last-price choice are set on the contact an
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
-  await page.getByLabel("Payment terms").selectOption({ label: "30 days net" });
+  await choose(page.getByLabel("Payment terms"), { label: "30 days net" });
   await page.getByRole("checkbox", { name: /use the last price we quoted/ }).check();
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 
-  await expect(page.getByLabel("Payment terms")).toHaveValue("d30");
+  await expectChosen(page.getByLabel("Payment terms"), "d30");
   await expect(page.getByRole("checkbox", { name: /use the last price we quoted/ })).toBeChecked();
 
   // Unticked and saved, it stays off.

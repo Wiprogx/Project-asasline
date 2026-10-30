@@ -4,6 +4,8 @@ import { type LineItemKind, type LineOption, lineOptions } from "@/domain/line-i
 import { itemLabel } from "@/domain/pricing";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { portCodeOf } from "@/server/port-sql";
+import { withRouteWords } from "@/server/route-words";
 import { rateItems } from "@/server/db/schema";
 import { readLineItems } from "@/server/line-items-config";
 
@@ -15,12 +17,12 @@ export async function lineOptionsFor(kind: LineItemKind): Promise<LineOption[]> 
       .select()
       .from(rateItems)
       .where(isNull(rateItems.archivedAt))
-      .orderBy(asc(rateItems.category), asc(rateItems.pod), asc(rateItems.name)),
+      .orderBy(asc(rateItems.category), asc(portCodeOf(rateItems.podId)), asc(rateItems.name)),
     readLineItems(),
   ]);
   return lineOptions(
     kind,
-    rates.map((r) => ({
+    (await withRouteWords(rates)).map((r) => ({
       id: r.id,
       label: itemLabel(r),
       sellCents: r.sellCents,

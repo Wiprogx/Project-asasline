@@ -11,7 +11,7 @@ import { TaskList } from "@/features/activity/components/task-list";
 import { staffOptions, tasksBetween } from "@/features/activity/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -44,8 +44,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
     `/activity/calendar?${new URLSearchParams({ who, month, ...p })}`;
 
   const [types, withdrawReasons] = await Promise.all([
-    readConfig("activityTypes"),
-    readConfig("withdrawReasons"),
+    liveLookups("task-types"),
+    liveLookups("withdraw-reasons"),
   ]);
   return (
     <div className="grid gap-4">
@@ -80,6 +80,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/activit
           <NewTaskForm types={types} staff={staff} meId={me.id} defaultDue={q.day} />
           <TaskList
             withdrawReasons={withdrawReasons}
+            types={types}
             rows={tasks.filter((t) => t.due === q.day)}
             today={today}
             staff={staff}

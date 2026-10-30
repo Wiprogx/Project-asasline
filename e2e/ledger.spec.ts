@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, submit, tag } from "./helpers";
 
 test("an invoice and its payment land in the journal, the ledger and the margins", async ({
   page,
@@ -9,11 +9,13 @@ test("an invoice and its payment land in the journal, the ledger and the margins
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
-  await page.getByLabel("Country (ISO-2)").fill("BE");
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("1250");
@@ -24,7 +26,7 @@ test("an invoice and its payment land in the journal, the ledger and the margins
   await open(page, `${page.url()}/billing`);
   await page.getByRole("button", { name: "Create draft invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INV\//);
   const number = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
   const invoiceUrl = page.url();

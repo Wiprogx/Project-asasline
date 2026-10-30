@@ -1,78 +1,14 @@
 import "server-only";
 import { and, eq, sql } from "drizzle-orm";
-import { z } from "zod";
-import { DEFAULT_ACTIVITY_TYPES } from "@/domain/activity-rules";
-import { ADDRESS_TYPES } from "@/domain/contacts";
-import { DEFAULT_PACKAGE_TYPES } from "@/domain/goods";
-import {
-  DEFAULT_CONTACT_DOC_TYPES,
-  DEFAULT_CONTACT_TAGS,
-  DEFAULT_PROFESSIONS,
-  DEFAULT_WITHDRAW_REASONS,
-} from "@/domain/lookups";
-import { DEFAULT_PAPER_DOCS } from "@/domain/release";
-import { DEFAULT_CANCEL_REASONS, DOC_TYPES } from "@/domain/shipments";
-import { cached, invalidateTags } from "./cache/cache";
-import { db, type Tx } from "./db/client";
+import type { Tx } from "./db/client";
 import { configTables } from "./db/schema";
 import { ConflictError } from "./versioned";
-import { DEFAULT_SEAL_SOURCES } from "@/domain/seals";
 
 /**
- * Editable lists (legacy STORE_CONFIG). Each table has a schema and a built-in default; the
- * row in `config_tables` wins once Settings has saved one. Unknown shapes fall back to the
- * default rather than crash a screen — and are logged, because that is a bug.
+ * The structured Settings tables kept as one JSON row each (legacy STORE_CONFIG): the rule book,
+ * the routing, the templates… The office's word lists are tables of their own (schema/lists,
+ * server/lookups), no longer rows here.
  */
-const LIST = z.array(z.string().min(1).max(200)).min(1).max(500);
-
-const TABLES = {
-  cancelReasons: { schema: LIST, fallback: DEFAULT_CANCEL_REASONS },
-  containerTypes: { schema: LIST, fallback: ["20DV", "40DV", "40HC", "45HC", "20RF", "40RF"] },
-  addressTypes: { schema: LIST, fallback: ADDRESS_TYPES },
-  packageTypes: { schema: LIST, fallback: DEFAULT_PACKAGE_TYPES },
-  paperDocs: { schema: LIST, fallback: DEFAULT_PAPER_DOCS },
-  activityTypes: { schema: LIST, fallback: DEFAULT_ACTIVITY_TYPES },
-  withdrawReasons: { schema: LIST, fallback: DEFAULT_WITHDRAW_REASONS },
-  professions: { schema: LIST, fallback: DEFAULT_PROFESSIONS },
-  contactTags: { schema: LIST, fallback: DEFAULT_CONTACT_TAGS },
-  sealSources: { schema: LIST, fallback: DEFAULT_SEAL_SOURCES },
-  docTypes: { schema: LIST, fallback: [...DOC_TYPES] },
-  contactDocTypes: { schema: LIST, fallback: DEFAULT_CONTACT_DOC_TYPES },
-} as const;
-
-export type ConfigName = keyof typeof TABLES;
-export const CONFIG_NAMES = Object.keys(TABLES) as ConfigName[];
-
-const tag = (name: ConfigName) => `config:${name}`;
-
-function parse(name: ConfigName, value: unknown): string[] {
-  const parsed = TABLES[name].schema.safeParse(value);
-  if (parsed.success) return parsed.data;
-  console.error(`[config] ${name} has an invalid shape; using the default`, parsed.error.issues);
-  return [...TABLES[name].fallback];
-}
-
-/** Every table today is a list of labels; a richer table gets its own reader and schema. */
-export async function readConfig(name: ConfigName): Promise<string[]> {
-  return cached(`config:${name}`, { ttlSeconds: 600, tags: [tag(name)] }, async () => {
-    const [row] = await db.select().from(configTables).where(eq(configTables.name, name)).limit(1);
-    return row ? parse(name, row.value) : [...TABLES[name].fallback];
-  });
-}
-
-/** For an editor: the live value and the version it must send back. Version 0 = never saved. */
-export async function readConfigForEdit(name: ConfigName) {
-  const [row] = await db.select().from(configTables).where(eq(configTables.name, name)).limit(1);
-  return row
-    ? { values: parse(name, row.value), version: row.version }
-    : { values: [...TABLES[name].fallback], version: 0 };
-}
-
-/** Validates against the table's schema; returns the problem, or null. */
-export function configProblem(name: ConfigName, values: string[]): string | null {
-  const r = TABLES[name].schema.safeParse(values);
-  return r.success ? null : "A list needs at least one entry, each under 200 characters.";
-}
 
 /**
  * Optimistic write of any Settings table: the first save inserts (version 0), later saves
@@ -106,13 +42,3 @@ export async function writeTable(
     .returning({ name: configTables.name });
   if (rows.length === 0) throw new ConflictError("This table");
 }
-
-export const writeConfig = (
-  tx: Tx,
-  name: ConfigName,
-  values: string[],
-  version: number,
-  userId: string,
-) => writeTable(tx, name, values, version, userId);
-
-export const invalidateConfig = (name: ConfigName) => invalidateTags(tag(name));

@@ -16,6 +16,8 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { lookupIdByCode } from "@/server/lookups";
+import { TASK_TYPE_CODES } from "@/domain/lookup-tables";
 import { deliver, outcomeOf } from "@/server/delivery";
 import { activities, messages } from "@/server/db/schema";
 import { officeToday } from "@/server/clock";
@@ -103,7 +105,7 @@ export async function logIncoming(_p: ActionResult, fd: FormData): Promise<Actio
     const role = routeRole(routeCodeOf({ ...d, linkRef: link?.ref }, routes), routes);
     await db.insert(activities).values({
       title: callBackTitle(d.fromText, link?.ref),
-      type: "Call",
+      typeId: await lookupIdByCode(db, "task-types", TASK_TYPE_CODES.call),
       role,
       due: officeToday(),
       linkKind: link?.kind ?? (d.contactId ? "contact" : null),

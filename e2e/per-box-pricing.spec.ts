@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a destination quoted for two containers multiplies its per-container lines, counts a box-bound line once, and never totals a free-time term", async ({
   page,
@@ -9,12 +9,12 @@ test("a destination quoted for two containers multiplies its per-container lines
 
   // A free-time item in the catalogue: demurrage at destination, by kind not by name.
   await open(page, "/settings/catalogue");
-  await page.getByLabel("Category").selectOption({ label: "Free time & charges" });
+  await choose(page.getByLabel("Category"), { label: "Free time & charges" });
   await page.getByLabel("Name", { exact: true }).fill(`Container terms ${t}`);
   await page.getByLabel("Free days").fill("14");
-  await page.getByLabel("Free time of").selectOption("demurrage");
-  await page.getByLabel("At", { exact: true }).selectOption("destination");
-  await page.getByLabel("Applies to").selectOption("");
+  await choose(page.getByLabel("Free time of"), "demurrage");
+  await choose(page.getByLabel("At", { exact: true }), "destination");
+  await choose(page.getByLabel("Applies to"), "");
   await page.getByLabel("Sell (EUR)").fill("65");
   await page.getByLabel("Buy (EUR)").fill("45");
   await submit(page, page.getByRole("button", { name: "Add item" }));
@@ -23,12 +23,13 @@ test("a destination quoted for two containers multiplies its per-container lines
   const client = `E2E Boxes ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // One destination at 900 per container.
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill(`Ocean freight ${t}`);
@@ -54,9 +55,9 @@ test("a destination quoted for two containers multiplies its per-container lines
   await card.getByLabel("Per container").uncheck();
   await submit(page, card.getByRole("button", { name: "Add line" }));
   await expectToast(page, "Line added");
-  await card
-    .getByLabel("From the catalogue")
-    .selectOption({ label: `Container terms ${t} · 14 free days` });
+  await choose(card.getByLabel("From the catalogue"), {
+    label: `Container terms ${t} · 14 free days`,
+  });
   await submit(page, card.getByRole("button", { name: "Add line" }));
   await expectToast(page, "Line added");
   await expect(card.getByRole("row").filter({ hasText: "Extra stop in Mechelen" })).toContainText(

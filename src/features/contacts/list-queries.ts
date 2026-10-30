@@ -7,19 +7,27 @@ import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { readCountries } from "@/server/country-config";
+import { professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
-import { bookings, contactAddresses, contacts } from "@/server/db/schema";
+import { bookings, contacts } from "@/server/db/schema";
 
 // The list selects from contacts alone, and in a single-table select Drizzle drops the table
 // prefix: ${contacts.id} would read as a bare "id" and bind to the subquery's own table.
 const contactId = sql.raw(`"contacts"."id"`);
 
-/** One address's words, as the search reads them (legacy childHay). */
-const childHay = sql`concat_ws(' ', a.name, a.type, a.street, a.zip, a.city, a.country, a.email, a.phone, a.note)`;
+/**
+ * The contacts linked to this one, from either end, with the link's role (legacy children[]),
+ * and their words as the search reads them (legacy childHay).
+ */
+const linkedOf = (id: SQL) => sql`from contact_links l
+  join contacts o on o.id = case when l.contact_id = ${id} then l.linked_id else l.contact_id end
+  where (l.contact_id = ${id} or l.linked_id = ${id}) and l.archived_at is null and o.archived_at is null`;
+const linkRole = sql`coalesce((select label from person_roles r where r.id = l.person_role_id), (select label from location_roles r where r.id = l.location_role_id))`;
+const childHay = sql`concat_ws(' ', o.name, ${linkRole}, o.street, o.zip, o.city, o.country, o.email, o.phone, o.note)`;
 const children = sql<
   { name: string | null; type: string; hay: string }[]
->`coalesce((select json_agg(json_build_object('name', a.name, 'type', a.type, 'hay', ${childHay}))
-  from contact_addresses a where a.contact_id = ${contactId} and a.archived_at is null), '[]'::json)`;
+>`coalesce((select json_agg(json_build_object('name', o.name, 'type', ${linkRole}, 'hay', ${childHay}))
+  ${linkedOf(contactId)}), '[]'::json)`;
 /** The contact on a booking, in any role (domain/booking-parties). */
 const onBooking = sql`${contactId} in (${sql.join(
   PARTY_KEYS.map((k) => bookings[k]),
@@ -35,7 +43,7 @@ const tasksOf = (
 
 export type ContactScope = { q?: string; archived?: boolean; filters?: readonly ContactFilter[] };
 
-/** Everything the contact knows, its addresses too (legacy contactHay). */
+/** Everything the contact knows, and what is linked to it (legacy contactHay). */
 function searchWhere(q: string): SQL {
   const like = `%${q}%`;
   const c = contacts;
@@ -44,8 +52,8 @@ function searchWhere(q: string): SQL {
       ilike(x, like),
     ),
     ...[c.whatsapp, c.website, c.note].map((x) => ilike(x, like)),
-    ilike(sql`array_to_string(${c.tags} || ${c.professions}, ' ')`, like),
-    sql`exists (select 1 from ${contactAddresses} a where a.contact_id = ${c.id} and a.archived_at is null and ${childHay} ilike ${like})`,
+    ilike(sql`array_to_string(${tagsOf()} || ${professionsOf()}, ' ')`, like),
+    sql`exists (select 1 ${linkedOf(sql`${c.id}`)} and ${childHay} ilike ${like})`,
   )!;
 }
 
@@ -55,9 +63,9 @@ function filterWhere({ field, value }: ContactFilter): SQL {
   const like = `%${value}%`;
   if (field === "country") return eq(c.country, value.toUpperCase());
   if (field === "city") return ilike(c.city, value);
-  if (field === "kind") return eq(c.kind, value as "customer");
-  if (field === "tag") return sql`${value} = any(${c.tags})`;
-  if (field === "profession") return sql`${value} = any(${c.professions})`;
+  if (field === "type") return eq(c.type, value as "company");
+  if (field === "tag") return sql`${value} = any(${tagsOf()})`;
+  if (field === "profession") return sql`${value} = any(${professionsOf()})`;
   if (field === "vat") return ilike(c.vat, like);
   if (field === "email") return ilike(c.email, like);
   if (field === "mobile") return or(ilike(c.mobile, like), ilike(c.phone, like))!;
@@ -73,7 +81,7 @@ async function selectRows(s: ContactScope, today: string) {
       name: c.name,
       type: c.type,
       kind: c.kind,
-      professions: c.professions,
+      professions: professionsOf(),
       country: c.country,
       city: c.city,
       street: c.street,
@@ -103,7 +111,7 @@ async function selectRows(s: ContactScope, today: string) {
     return {
       ...r,
       archived: archivedAt !== null,
-      addresses: kids.length,
+      linked: kids.length,
       openTasks: open,
       lateTasks: late,
       matched: whyMatched([r.name, r.email, r.vat, r.city, r.street, r.note], kids, q),
@@ -154,10 +162,10 @@ export async function contactFilterValues() {
         >`coalesce(array_agg(distinct ${contacts.country} order by ${contacts.country}) filter (where ${contacts.country} is not null), '{}')`,
         tags: sql<
           string[]
-        >`coalesce((select array_agg(distinct t order by t) from contacts, unnest(contacts.tags) t where contacts.archived_at is null), '{}')`,
+        >`coalesce((select array_agg(distinct w.label order by w.label) from contact_tags j join tags w on w.id = j.tag_id join contacts x on x.id = j.contact_id where j.archived_at is null and x.archived_at is null), '{}')`,
         professions: sql<
           string[]
-        >`coalesce((select array_agg(distinct p order by p) from contacts, unnest(contacts.professions) p where contacts.archived_at is null), '{}')`,
+        >`coalesce((select array_agg(distinct w.label order by w.label) from contact_professions j join professions w on w.id = j.profession_id join contacts x on x.id = j.contact_id where j.archived_at is null and x.archived_at is null), '{}')`,
       })
       .from(contacts)
       .where(isNull(contacts.archivedAt));

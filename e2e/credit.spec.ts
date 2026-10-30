@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, tag } from "./helpers";
 
 test("issuing past a customer's credit limit warns, and the contact shows it", async ({ page }) => {
   const t = tag();
@@ -7,15 +7,17 @@ test("issuing past a customer's credit limit warns, and the contact shows it", a
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
-  await page.getByLabel("Country (ISO-2)").fill("BE");
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
   await page.getByLabel("Credit limit (EUR)").fill("1000");
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   const contactUrl = page.url();
   await expect(page.getByText("Owed or to invoice: €0.00")).toBeVisible();
 
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("1250");
@@ -31,7 +33,7 @@ test("issuing past a customer's credit limit warns, and the contact shows it", a
 
   await open(page, billing);
   await page.getByRole("button", { name: "Create draft invoice" }).click();
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   await expectToast(page, /Over the credit limit: €1,250\.00 owed or to invoice, limit €1,000\.00/);
 
   await open(page, "/accounting/reminders");

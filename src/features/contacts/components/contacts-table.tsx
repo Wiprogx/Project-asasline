@@ -9,14 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  CONTACT_COLUMNS,
-  CONTACT_KIND_LABEL,
-  CONTACT_KIND_TONE,
-  type ContactColumnKey,
-} from "@/domain/contact-list";
+import { CONTACT_COLUMNS, type ContactColumnKey } from "@/domain/contact-list";
 import { lettermark } from "@/domain/contacts";
 import type { ContactRow } from "../list-queries";
+import { ContactTypeIcon } from "./contact-type-icon";
 import { PagerSource } from "@/components/shared/pager-source";
 
 const none = <span className="text-muted-foreground">—</span>;
@@ -42,14 +38,13 @@ export function Tasks({ open, late }: { open: number; late: number }) {
 }
 
 const CELLS: Record<ContactColumnKey, (c: ContactRow) => React.ReactNode> = {
-  kind: (c) => <ToneBadge tone={CONTACT_KIND_TONE[c.kind]}>{CONTACT_KIND_LABEL[c.kind]}</ToneBadge>,
   professions: (c) => (c.professions.length ? c.professions.join(", ") : none),
   place: (c) => [c.city, c.countryName ?? c.country].filter(Boolean).join(", ") || none,
   vat: (c) => (c.vat ? <span className="font-mono text-xs">{c.vat}</span> : none),
   email: (c) => c.email ?? none,
   mobile: (c) => c.mobile ?? c.phone ?? none,
   lang: (c) => c.lang.toUpperCase(),
-  addresses: (c) => c.addresses || none,
+  linked: (c) => c.linked || none,
   bookings: (c) => c.bookings || none,
   tasks: (c) => <Tasks open={c.openTasks} late={c.lateTasks} />,
   note: (c) => (c.note ? <span className="line-clamp-2 max-w-56">{c.note}</span> : none),
@@ -92,6 +87,7 @@ export function ContactsTable({
                 <Avatar className="size-7">
                   <AvatarFallback className="text-[10px]">{lettermark(c.name)}</AvatarFallback>
                 </Avatar>
+                <ContactTypeIcon type={c.type} />
                 <span className="truncate">{c.name}</span>
               </Link>
               <Matched matched={c.matched} />

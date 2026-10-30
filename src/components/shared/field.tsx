@@ -12,6 +12,7 @@ export function Field({
   label,
   error,
   hint,
+  required,
   className,
   children,
 }: {
@@ -19,6 +20,8 @@ export function Field({
   label: string;
   error?: string[];
   hint?: string;
+  /** Marks the label; the control carries its own `required`. */
+  required?: boolean;
   className?: string;
   children: ReactNode;
 }) {
@@ -32,8 +35,16 @@ export function Field({
         })
       : children;
   return (
-    <div className={cn("grid gap-1.5", className)}>
-      <Label htmlFor={id}>{label}</Label>
+    <div className={cn("grid content-start gap-1.5", className)}>
+      {/* The mark sits beside the label, not in it: the field's name stays its label alone. */}
+      <span className="flex items-center gap-1">
+        <Label htmlFor={id}>{label}</Label>
+        {required && (
+          <span aria-hidden className="text-sm text-destructive">
+            *
+          </span>
+        )}
+      </span>
       {control}
       {message ? (
         <p id={`${id}-error`} className="text-xs text-destructive">

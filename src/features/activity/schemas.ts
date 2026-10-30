@@ -21,7 +21,8 @@ const ownerRequired = (v: { assigneeId?: string; role?: string }, ctx: z.Refinem
 export const newTaskSchema = z
   .object({
     title: z.string().min(2, "What needs doing?").max(200),
-    type: z.string().max(40).optional(),
+    /** A row of Settings › Lists › Task types. */
+    typeId: z.uuid().optional(),
     due: day.optional(),
     note: z.string().max(2000).optional(),
     linkKind: z.enum(LINK_KINDS).optional(),
@@ -36,13 +37,14 @@ export const taskRef = z.object({
 });
 
 export const withdrawTaskSchema = taskRef.extend({
-  reason: z.string().min(3, "Say why — it stays on the task").max(500),
+  /** A row of Settings › Withdraw reasons offered to a person (checked in the action). */
+  reasonId: z.uuid("Choose a reason"),
 });
 
 /** What the task says and when it is due (legacy editActivity); who has it is a hand-over. */
 export const editTaskSchema = taskRef.extend({
   title: z.string().trim().min(2, "What needs doing?").max(200),
-  type: z.string().trim().max(40).optional(),
+  typeId: z.uuid().optional(),
   due: day.optional(),
   note: z.string().max(2000).optional(),
 });

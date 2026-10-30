@@ -15,6 +15,11 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import type { ActionResult } from "@/lib/action-result";
 import { ActionForm } from "./action-form";
 
+const SIZE = {
+  md: "max-h-[95vh] overflow-y-auto sm:max-w-lg",
+  xl: "max-h-[95vh] overflow-y-auto sm:max-w-5xl",
+} as const;
+
 type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
 
 /**
@@ -28,6 +33,7 @@ export function FormDialog({
   title,
   description,
   submitLabel,
+  size,
   children,
 }: {
   action: Action;
@@ -36,6 +42,8 @@ export function FormDialog({
   title: string;
   description?: string;
   submitLabel: string;
+  /** `md`: a short form; `xl`: a whole record's form, wide enough to fit the screen's height. */
+  size?: keyof typeof SIZE;
   children: (fieldErrors: Record<string, string[] | undefined> | undefined) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -43,7 +51,7 @@ export function FormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" size="sm" />}>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className={size && SIZE[size]}>
         <ActionForm action={run} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>

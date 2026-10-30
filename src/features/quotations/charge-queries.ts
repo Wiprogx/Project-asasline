@@ -3,6 +3,7 @@ import { and, asc, inArray, isNull } from "drizzle-orm";
 import { itemLabel } from "@/domain/pricing";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { withRouteWords } from "@/server/route-words";
 import { rateItems } from "@/server/db/schema";
 
 /** The categories a charge raised from a booking comes from (legacy: other and free time). */
@@ -16,7 +17,8 @@ export async function chargeItems() {
     .from(rateItems)
     .where(and(isNull(rateItems.archivedAt), inArray(rateItems.category, CHARGE_CATEGORIES)))
     .orderBy(asc(rateItems.category), asc(rateItems.name));
-  return rows.map((r) => ({
+  const named = await withRouteWords(rows);
+  return named.map((r) => ({
     id: r.id,
     label: itemLabel(r),
     sellCents: r.sellCents,

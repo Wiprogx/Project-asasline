@@ -1,5 +1,14 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectChosen,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 test("a loading that ran over the agreed hours is measured from the CMR and charged on the quotation", async ({
   page,
@@ -11,7 +20,7 @@ test("a loading that ran over the agreed hours is measured from the CMR and char
 
   // Waiting time in the catalogue (Other services).
   await open(page, "/settings/catalogue");
-  await page.getByLabel("Category").selectOption({ label: "Other services" });
+  await choose(page.getByLabel("Category"), { label: "Other services" });
   await page.getByRole("textbox", { name: "Name" }).fill(waiting);
   await page.getByLabel("Sell (EUR)").fill("55");
   await page.getByLabel("Buy (EUR)").fill("40");
@@ -20,10 +29,11 @@ test("a loading that ran over the agreed hours is measured from the CMR and char
 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("900");
@@ -35,7 +45,7 @@ test("a loading that ran over the agreed hours is measured from the CMR and char
 
   // The box: loaded from 08:00 under a 2-hour mode, the CMR says it finished at 11:20.
   await open(page, `${url}/containers`);
-  await page.getByLabel("Loading mode").first().selectOption({ label: "Direct loading — 2 hours" });
+  await choose(page.getByLabel("Loading mode").first(), { label: "Direct loading — 2 hours" });
   await page.getByLabel("Loading date").first().fill("2026-10-14");
   await page.getByLabel("Time", { exact: true }).first().fill("08:00");
   await expect(page.getByLabel("Loading finished — date").first()).toBeVisible();
@@ -49,7 +59,7 @@ test("a loading that ran over the agreed hours is measured from the CMR and char
   const card = page
     .locator("[data-slot=card]")
     .filter({ hasText: "Charge the extra time — box 1" });
-  await expect(card.getByLabel("Charge", { exact: true })).toHaveValue(/.+/);
+  await expectChosen(card.getByLabel("Charge", { exact: true }), /.+/);
   await expect(card.getByLabel("Quantity, days or hours")).toHaveValue("2");
   await submit(page, card.getByRole("button", { name: "Add to the quotation" }));
   await expectToast(page, /Added to the quotation: .*waiting.* ×2/i);

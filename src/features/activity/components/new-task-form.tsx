@@ -12,8 +12,8 @@ import { createTask } from "../actions";
 import { newTaskSchema } from "../schemas";
 
 type Props = {
-  /** The task types list (Settings › Lists). */
-  types: readonly string[];
+  /** The task types (Settings › Lists › Task types); "To do" is the default. */
+  types: readonly { value: string; label: string; code?: string | null }[];
   staff: { id: string; name: string }[];
   meId: string;
   link?: { kind: "booking" | "quotation" | "contact"; id: string };
@@ -58,12 +58,12 @@ export function NewTaskForm({ staff, meId, link, defaultDue, types, autoFocus }:
           placeholder="e.g. Send the VGM to the line"
         />
       </Field>
-      <Field id="t-type" label="Type" error={fe?.type}>
+      <Field id="t-type" label="Type" error={fe?.typeId}>
         <NativeSelect
           id="t-type"
-          name="type"
-          defaultValue={types.includes("To do") ? "To do" : (types[0] ?? "")}
-          options={types.map((x) => ({ value: x, label: x }))}
+          name="typeId"
+          defaultValue={(types.find((x) => x.code === "to_do") ?? types[0])?.value ?? ""}
+          options={types}
         />
       </Field>
       <Field id="t-due" label="Due" error={fe?.due}>

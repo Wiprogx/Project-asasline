@@ -2,14 +2,22 @@
 
 import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
+import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { activities, bookings, contacts, containers } from "@/server/db/schema";
+import {
+  liveLookupIdByLabel,
+  liveLookupLabel,
+  lookupIdByCode,
+  withdrawReasonIds,
+} from "@/server/lookups";
+import { DEFAULT_DOC_TYPE } from "@/domain/lookup-tables";
 import { syncBookingRules } from "@/server/rules-sync";
 import { nextRef } from "@/server/sequences";
+import { portIds } from "@/server/ports";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
 import { guarded, settle } from "./settle";
@@ -21,19 +29,29 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
   const user = await requirePermission("bookings.edit");
   const parsed = newBookingSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { containerCount, containerType, ...fields } = parsed.data;
+  const { containerCount, containerType, pol, pod, ...fields } = parsed.data;
 
   const id = await db.transaction(async (tx) => {
     const ref = await nextRef(tx, "SB", officeToday());
     const [row] = await tx
       .insert(bookings)
-      .values({ ...fields, ref, payerId: fields.clientId, createdBy: user.id, updatedBy: user.id })
+      .values({
+        ...fields,
+        ...(await portIds(tx, { pol, pod }, user.id)),
+        ref,
+        payerId: fields.clientId,
+        docTypeId: await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE),
+        createdBy: user.id,
+        updatedBy: user.id,
+      })
       .returning({ id: bookings.id });
+    const typeId = await liveLookupIdByLabel(tx, "container-types", containerType);
+    if (!typeId) throw new Error(`Container type ${containerType} is not in Settings › Lists`);
     await tx.insert(containers).values(
       Array.from({ length: containerCount }, (_, i) => ({
         bookingId: row.id,
         position: i,
-        type: containerType,
+        typeId,
         createdBy: user.id,
       })),
     );
@@ -109,7 +127,9 @@ export async function cancelBooking(_p: ActionResult, fd: FormData): Promise<Act
   const user = await requirePermission("bookings.cancel");
   const parsed = cancelSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { id, version, reason } = parsed.data;
+  const { id, version, reasonId } = parsed.data;
+  const reason = await liveLookupLabel(db, "cancel-reasons", reasonId);
+  if (!reason) return fail("That reason is no longer offered — choose one from the list");
   return guarded(
     id,
     () =>
@@ -127,7 +147,7 @@ export async function cancelBooking(_p: ActionResult, fd: FormData): Promise<Act
           {
             status: "cancelled",
             statusBeforeCancel: cur.status,
-            cancelReason: reason,
+            cancelReasonId: reasonId,
             updatedBy: user.id,
           },
           "This booking",
@@ -136,7 +156,7 @@ export async function cancelBooking(_p: ActionResult, fd: FormData): Promise<Act
           .update(activities)
           .set({
             state: "withdrawn",
-            withdrawReason: `Booking cancelled: ${reason}`,
+            withdrawReasonId: (await withdrawReasonIds(tx)).booking_cancelled,
             updatedBy: user.id,
             updatedAt: new Date(),
           })
@@ -152,7 +172,7 @@ export async function cancelBooking(_p: ActionResult, fd: FormData): Promise<Act
           userId: user.id,
           entity: "booking",
           entityId: id,
-          detail: { reason },
+          detail: { reason, reasonId },
         });
       }),
     "Booking cancelled",
@@ -180,7 +200,7 @@ export async function restoreBooking(_p: ActionResult, fd: FormData): Promise<Ac
           {
             status: cur?.prev ?? "confirmed",
             statusBeforeCancel: null,
-            cancelReason: null,
+            cancelReasonId: null,
             updatedBy: user.id,
           },
           "This booking",

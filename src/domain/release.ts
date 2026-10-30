@@ -87,10 +87,6 @@ export function trackingUrl(
 }
 
 /** Document types whose originals travel on paper (legacy PACKAGE_DOCS): the originals block shows for them. */
-export const DEFAULT_PAPER_DOCS = ["ORIGINAL BL", "CMR"];
-
-export const isPaperDoc = (paperDocs: readonly string[], docType: string | null | undefined) =>
-  paperDocs.some((p) => (docType ?? "").toUpperCase().includes(p.toUpperCase()));
 
 /** A milestone; `template` is the letter that goes to the customer by itself when it is ticked (legacy autoSend). */
 export type TrackStepDef = { name: string; source: "auto" | "manual"; template?: string };

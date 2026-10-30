@@ -21,6 +21,7 @@ import {
   users,
 } from "../../src/server/db/schema";
 import { linksOf } from "./contacts";
+import { lookupIdFor } from "./lookups";
 import { emptyReport, type KindReport } from "./report";
 
 const key = (s: string) => s.trim().toLowerCase();
@@ -89,9 +90,16 @@ export async function importActivities(
     const archived = rec.archived
       ? { archivedAt: new Date(), archivedReason: "Archived in the legacy office" }
       : {};
+    const { withdrawReasonLabel, typeLabel, ...task } = m.task;
+    const withdrawReasonId = await lookupIdFor(tx, "withdraw-reasons", withdrawReasonLabel);
     const [row] = await tx
       .insert(activities)
-      .values({ ...m.task, ...archived })
+      .values({
+        ...task,
+        withdrawReasonId,
+        typeId: await lookupIdFor(tx, "task-types", typeLabel),
+        ...archived,
+      })
       .returning({ id: activities.id });
     report.added++;
     await tx.insert(legacyLinks).values({ kind: "activities", legacyId: rec.id, recordId: row.id });

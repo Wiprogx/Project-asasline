@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 /**
  * The booking journey end to end: a contact, a booking with a server-issued SB number, the
@@ -15,12 +15,13 @@ test("a booking from creation to history", async ({ page }) => {
   for (const name of [client, consignee]) {
     await open(page, "/contacts/new");
     await page.getByLabel("Name").fill(name);
+    await fillMandatory(page);
     await page.getByRole("button", { name: "Create contact" }).click();
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   }
 
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("2");
@@ -31,7 +32,7 @@ test("a booking from creation to history", async ({ page }) => {
 
   // Details: an arrival before the departure is refused, then a valid save lands.
   await page.getByRole("link", { name: "Edit" }).click();
-  await page.getByLabel("Consignee").selectOption({ label: consignee });
+  await choose(page.getByLabel("Consignee"), { label: consignee });
   await page.getByLabel("Vessel").fill("MSC E2E");
   await page.getByLabel("ETD").fill("2026-11-10");
   await page.getByLabel("ETA").fill("2026-11-01");
@@ -72,7 +73,7 @@ test("a booking from creation to history", async ({ page }) => {
 
   // Cancel with a reason from the Settings list, then put back.
   await page.getByRole("button", { name: "Cancel booking" }).click();
-  await page.getByRole("dialog").getByRole("combobox").selectOption({ index: 1 });
+  await choose(page.getByRole("dialog").getByRole("combobox"), { index: 1 });
   await page.getByRole("dialog").getByRole("button", { name: "Cancel booking" }).click();
   await expectToast(page, "Booking cancelled");
   await expect(page.getByRole("link", { name: "Edit" })).toHaveCount(0);

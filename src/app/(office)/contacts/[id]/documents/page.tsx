@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
-import { ContactFileForm } from "@/features/contacts/components/contact-file-form";
+import { ContactUploader } from "@/features/contacts/components/contact-uploader";
 import { ContactFiles } from "@/features/contacts/components/contact-files";
 import { filesOfContact } from "@/features/contacts/file-queries";
+import { getContact } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Contact documents" };
 
@@ -14,17 +15,21 @@ export default async function ContactDocumentsPage({
 }: PageProps<"/contacts/[id]/documents">) {
   await requirePagePermission("app.contacts");
   const { id } = await params;
-  const [rows, kinds] = await Promise.all([filesOfContact(id), readConfig("contactDocTypes")]);
+  const [rows, kinds, contact] = await Promise.all([
+    filesOfContact(id),
+    liveLookups("contact-doc-kinds").then((o) => o.map((x) => x.label)),
+    getContact(id),
+  ]);
   return (
     <div className="grid gap-4">
       <Card>
         <CardContent className="pt-4">
-          <ContactFileForm contactId={id} kinds={kinds} />
+          <ContactUploader contactId={id} kinds={kinds} />
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-2">
-          <ContactFiles rows={rows} canRemove />
+          <ContactFiles rows={rows} contactId={id} email={contact?.email ?? null} canRemove />
         </CardContent>
       </Card>
     </div>

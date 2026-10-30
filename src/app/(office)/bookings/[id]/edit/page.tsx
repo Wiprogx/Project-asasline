@@ -12,7 +12,7 @@ import { bookingLegs, sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readLoadingModes } from "@/server/loading-config";
-import { readConfig } from "@/server/config-tables";
+import { lookupOptions } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Edit booking" };
 
@@ -23,7 +23,7 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
     getBooking(id),
     contactOptions(),
     readLoadingModes(),
-    readConfig("docTypes"),
+    lookupOptions("doc-types", null),
   ]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);

@@ -81,4 +81,5 @@ export const tags = {
   booking: (id: string) => `booking:${id}`,
   quotations: "quotations",
   dashboard: "dashboard",
+  lookups: (kind: string) => `lookups:${kind}`,
 } as const;

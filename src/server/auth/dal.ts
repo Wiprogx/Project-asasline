@@ -15,6 +15,8 @@ export type CurrentUser = {
   email: string;
   name: string;
   role: Role;
+  /** A temporary password is in use: nothing opens until they choose their own. */
+  mustChangePassword: boolean;
   matrix: PermissionMatrix;
 };
 
@@ -36,16 +38,27 @@ export class ForbiddenError extends Error {
   }
 }
 
+/** The page that sets a person's own password after a temporary one. */
+export const CHANGE_PASSWORD_PATH = "/change-password";
+
 /** For server actions and queries: throws, so the caller cannot forget to stop. */
 export async function requirePermission(permission: Permission): Promise<CurrentUser> {
   const user = await requireUser();
+  if (user.mustChangePassword) throw new ForbiddenError(permission);
   if (!may(user, permission)) throw new ForbiddenError(permission);
+  return user;
+}
+
+/** For the office's pages: a temporary password goes to choose one; a refusal goes home. */
+export async function requireOfficeUser(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (user.mustChangePassword) redirect(CHANGE_PASSWORD_PATH);
   return user;
 }
 
 /** For pages: sends the person home instead of rendering a screen they may not see. */
 export async function requirePagePermission(permission: Permission): Promise<CurrentUser> {
-  const user = await requireUser();
+  const user = await requireOfficeUser();
   if (!may(user, permission)) redirect("/?denied=" + encodeURIComponent(permission));
   return user;
 }

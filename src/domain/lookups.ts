@@ -98,18 +98,6 @@ export const DEFAULT_PROFESSIONS = [
   "Wheat & flour",
 ];
 
-/** The tags of a contact (legacy tags[]): a Settings list, offered as the person types. */
-export const DEFAULT_CONTACT_TAGS = [
-  "B2B",
-  "Key account",
-  "Agent",
-  "Terminal",
-  "Depot",
-  "Pick up",
-  "Doc Check",
-  "Watch payments",
-];
-
 /** "Transporter, Used clothing" typed on the form → the list kept on the record, each once. */
 export const parseCommaList = (text: string | null | undefined): string[] => [
   ...new Set(
@@ -228,11 +216,3 @@ export function parseContainerSpecLines(text: string): {
 /** The specs as domain/container's vgm reads them: by type. */
 export const specsByType = (specs: readonly ContainerSpec[]) =>
   Object.fromEntries(specs.map((s) => [s.type, { tareKg: s.tareKg, maxGrossKg: s.maxGrossKg }]));
-
-/** What a paper kept on a contact is (legacy contact docs t): Settings › Lists. */
-export const DEFAULT_CONTACT_DOC_TYPES = [
-  "Contract",
-  "Power of attorney",
-  "Passport or ID",
-  "Other",
-];

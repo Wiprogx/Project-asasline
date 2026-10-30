@@ -1,5 +1,14 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectChosen,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 test("the booking confirmation goes out from the booking with its template, and its step closes", async ({
   page,
@@ -10,10 +19,11 @@ test("the booking confirmation goes out from the booking with its template, and 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
   await page.getByLabel("Email").fill(`copies.${t}@example.com`);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -31,11 +41,9 @@ test("the booking confirmation goes out from the booking with its template, and 
   // "Send the confirmation" opens the message form on the template, already written.
   await open(page, `/bookings/${id}`);
   await page.getByRole("link", { name: "Send the confirmation" }).click();
-  await expect(page.getByLabel("Template")).toHaveValue("BK_CONFIRM");
+  await expectChosen(page.getByLabel("Template"), "BK_CONFIRM");
   await expect(page.getByLabel("Subject")).toHaveValue(/^Booking confirmation SB/);
-  await page
-    .getByLabel("To a party on the file")
-    .selectOption({ label: `${client} (Customer, Payer)` });
+  await choose(page.getByLabel("To a party on the file"), { label: `${client} (Customer, Payer)` });
   await submit(page, page.getByRole("button", { name: "Record and open to send" }));
   await expectToast(page, /CONFIRM_OUT done/);
 

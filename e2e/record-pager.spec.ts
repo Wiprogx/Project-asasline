@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, open, tag } from "./helpers";
+import { fillMandatory, login, open, tag } from "./helpers";
 
 test("a record opened from a list steps to the next one in that list, by link or arrow key", async ({
   page,
@@ -10,6 +10,7 @@ test("a record opened from a list steps to the next one in that list, by link or
   for (const name of names) {
     await open(page, "/contacts/new");
     await page.getByLabel("Name", { exact: true }).fill(name);
+    await fillMandatory(page);
     await page.getByRole("button", { name: "Create contact" }).click();
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   }

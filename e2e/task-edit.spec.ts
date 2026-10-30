@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, login, open, submit, tag } from "./helpers";
 
 const row = (page: Page, title: string) => page.getByRole("listitem").filter({ hasText: title });
 
@@ -15,7 +15,7 @@ test("a task's words, type, due day and note are corrected in place", async ({ p
   await row(page, title).getByRole("button", { name: "Edit" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("What needs doing").fill(`${title} — corrected`);
-  await dialog.getByLabel("Type").fill("Call");
+  await choose(dialog.getByLabel("Type"), "Call");
   await dialog.getByLabel("Due").fill("2031-01-15");
   await dialog.getByLabel("Note").fill("Ask for the packing list too");
   await submit(page, dialog.getByRole("button", { name: "Save task" }));

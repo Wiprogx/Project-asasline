@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 /** The office's today, as the server computes it (Europe/Brussels). */
 const officeToday = () =>
@@ -31,7 +31,7 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
 
   await open(page, "/activity");
   await row(page, title).getByRole("button", { name: "Withdraw" }).click();
-  await page.getByRole("dialog").getByLabel("Reason").selectOption("Done outside the system");
+  await choose(page.getByRole("dialog").getByLabel("Reason"), "Done outside the system");
   await page.getByRole("dialog").getByRole("button", { name: "Withdraw" }).click();
   await expectToast(page, "Withdrawn");
   await open(page, "/activity?state=withdrawn");
@@ -42,7 +42,7 @@ test("a task from creation to done, withdrawn, put back and handed over", async 
   // Handed to a role: it leaves "mine" (Admin) unless the role is the Admin's own.
   await open(page, "/activity");
   await row(page, title).getByRole("button", { name: "Hand over" }).click();
-  await page.getByRole("dialog").getByLabel("Or to a role").selectOption({ label: "Accountant" });
+  await choose(page.getByRole("dialog").getByLabel("Or to a role"), { label: "Accountant" });
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Hand over" }));
   await expectToast(page, "Handed over");
   await expect(page.getByText(title)).toHaveCount(0);
@@ -70,10 +70,11 @@ test("cancelling a booking withdraws its open tasks with the reason", async ({ p
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
 
@@ -83,15 +84,11 @@ test("cancelling a booking withdraws its open tasks with the reason", async ({ p
   await expectToast(page, "Task added");
 
   await page.getByRole("button", { name: "Cancel booking" }).click();
-  await page.getByRole("dialog").getByRole("combobox").selectOption({ label: "Goods not ready" });
+  await choose(page.getByRole("dialog").getByRole("combobox"), { label: "Goods not ready" });
   await page.getByRole("dialog").getByRole("button", { name: "Cancel booking" }).click();
   await expectToast(page, "Booking cancelled");
   await page.reload();
   // Our own task, and the engine's open steps with it (every one says why).
-  await expect(row(page, `Send VGM ${t}`)).toContainText(
-    "withdrawn — Booking cancelled: Goods not ready",
-  );
-  await expect(
-    page.getByText("withdrawn — Booking cancelled: Goods not ready").nth(1),
-  ).toBeVisible();
+  await expect(row(page, `Send VGM ${t}`)).toContainText("withdrawn — Booking cancelled");
+  await expect(page.getByText("withdrawn — Booking cancelled").nth(1)).toBeVisible();
 });

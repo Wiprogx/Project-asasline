@@ -11,6 +11,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
+import { containerTypes } from "./lists";
+import { ports } from "./ports";
 
 /**
  * The rate catalogue (legacy RATE_ITEMS): every chargeable thing — an ocean leg, an inland
@@ -24,10 +26,12 @@ export const rateItems = pgTable(
     ...recordColumns,
     category: text().notNull(),
     name: text(),
-    pol: text(),
-    pod: text(),
+    /** An ocean leg's ports (Settings › Ports); none for the other categories. */
+    polId: uuid().references(() => ports.id),
+    podId: uuid().references(() => ports.id),
     country: char({ length: 2 }),
-    containerType: text(),
+    /** The box this price is for (Settings › Lists › Container types); none: any box. */
+    containerTypeId: uuid().references(() => containerTypes.id),
     carrier: text(),
     transitDays: integer(),
     fromPlace: text(),
@@ -47,7 +51,7 @@ export const rateItems = pgTable(
     validUntil: day(),
     note: text(),
   },
-  (t) => [index("rate_items_category_idx").on(t.category), index("rate_items_pod_idx").on(t.pod)],
+  (t) => [index("rate_items_category_idx").on(t.category), index("rate_items_pod_idx").on(t.podId)],
 );
 
 /** A customer's agreed prices for a period (legacy PRICE_LISTS). One live list per day. */

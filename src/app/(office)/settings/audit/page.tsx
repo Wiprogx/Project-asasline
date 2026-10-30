@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SearchInput } from "@/components/shared/search-input";
 import { AuditTable } from "@/features/audit/components/audit-table";
 import { listAudit } from "@/features/audit/queries";
 import { requirePagePermission } from "@/server/auth/dal";
@@ -38,9 +37,6 @@ export default async function AuditPage({ searchParams }: PageProps<"/settings/a
           </a>
         </CardContent>
       </Card>
-      <div>
-        <SearchInput placeholder="Filter by action: login, booking., user.…" />
-      </div>
       <AuditTable rows={rows} />
     </div>
   );

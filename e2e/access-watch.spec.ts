@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("the office says which acts of looking are recorded, and reads what a person did", async ({
   page,
@@ -9,10 +9,11 @@ test("the office says which acts of looking are recorded, and reads what a perso
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const base = page.url();
@@ -45,7 +46,7 @@ test("the office says which acts of looking are recorded, and reads what a perso
   ).toBeVisible();
 
   // What a person did: this week's figures and lines.
-  await open(page, "/settings/people");
+  await open(page, "/settings/users");
   await page.getByRole("link", { name: "What they did ›" }).first().click();
   await expect(page.getByRole("heading", { level: 2, name: /^What .* did$/ })).toBeVisible();
   await expect(

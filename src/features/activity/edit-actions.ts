@@ -18,7 +18,7 @@ export async function editTask(_p: ActionResult, fd: FormData): Promise<ActionRe
   const user = await requirePermission("app.activity");
   const parsed = editTaskSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { id, version, title, type, due, note } = parsed.data;
+  const { id, version, title, typeId, due, note } = parsed.data;
   return run(
     () =>
       db.transaction(async (tx) => {
@@ -32,7 +32,13 @@ export async function editTask(_p: ActionResult, fd: FormData): Promise<ActionRe
           activities,
           id,
           version,
-          { title, type: type || null, due: due ?? null, note: note || null, updatedBy: user.id },
+          {
+            title,
+            typeId: typeId ?? null,
+            due: due ?? null,
+            note: note || null,
+            updatedBy: user.id,
+          },
           "This task",
         );
         await audit(tx, {

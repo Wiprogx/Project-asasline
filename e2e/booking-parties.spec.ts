@@ -1,11 +1,12 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, optionsOf, submit, tag } from "./helpers";
 
 async function contact(page: Page, name: string, extra: Record<string, string> = {}) {
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
   for (const [label, value] of Object.entries(extra)) await page.getByLabel(label).fill(value);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 }
@@ -23,7 +24,7 @@ test("the office's counterparts are on the file: doc check gets the news, the li
   await contact(page, line, { Professions: "Carrier" });
 
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -33,11 +34,19 @@ test("the office's counterparts are on the file: doc check gets the news, the li
 
   // Each picker lists the contacts that fit the role first (legacy roleOptions).
   await open(page, `${url}/edit`);
-  const lineOptions = page.getByLabel("Shipping line").locator("option");
-  await expect(lineOptions.nth(1)).toHaveText(line);
-  await expect(page.getByLabel("Doc check").locator("option").nth(1)).toHaveText(checker);
-  await page.getByLabel("Doc check").selectOption({ label: checker });
-  await page.getByLabel("Shipping line").selectOption({ label: line });
+  // Fitting contacts first: this run's line before this run's client (earlier runs' lines may sit
+  // among the fitting ones too).
+  const before = async (label: string, fits: string, other: string) => {
+    const texts = await (await optionsOf(page.getByLabel(label))).allInnerTexts();
+    await page.keyboard.press("Escape");
+    const at = (name: string) => texts.findIndex((x) => x.trim() === name);
+    expect(at(fits)).toBeGreaterThan(0);
+    expect(at(fits)).toBeLessThan(at(other));
+  };
+  await before("Shipping line", line, client);
+  await before("Doc check", checker, client);
+  await choose(page.getByLabel("Doc check"), { label: checker });
+  await choose(page.getByLabel("Shipping line"), { label: line });
   await page.getByLabel("Pick-up depot").fill(`Depot ${t}`);
   await page.getByLabel("Terminal").fill(`Terminal ${t}`);
   await submit(page, page.getByRole("button", { name: "Save booking" }));
@@ -53,10 +62,11 @@ test("the office's counterparts are on the file: doc check gets the news, the li
   // Doc check can be written to from the booking.
   await open(page, `${url}/messages`);
   await expect(
-    page
-      .getByLabel("To a party on the file")
-      .locator("option", { hasText: `${checker} (Doc check)` }),
+    (await optionsOf(page.getByLabel("To a party on the file"))).filter({
+      hasText: `${checker} (Doc check)`,
+    }),
   ).toHaveCount(1);
+  await page.keyboard.press("Escape");
 
   // The vessel sails: the news goes to doc check, not to the customer (legacy b.docCheck || b.client).
   await open(page, `${url}/tracking`);

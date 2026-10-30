@@ -43,6 +43,8 @@ const TABLES = {
   priceLists: t.priceLists,
   priceListLines: t.priceListLines,
   configTables: t.configTables,
+  ports: t.ports,
+  portRegions: t.portRegions,
   timeLog: t.timeLog,
   visits: t.visits,
   sequences: t.sequences,

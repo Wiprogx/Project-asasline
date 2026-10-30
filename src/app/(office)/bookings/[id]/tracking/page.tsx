@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { may } from "@/domain/permissions";
-import { isPaperDoc, startTrack } from "@/domain/release";
+import { startTrack } from "@/domain/release";
 import { OriginalsCard } from "@/features/bookings/components/originals-card";
 import { ReleaseCard } from "@/features/bookings/components/release-card";
 import { TrackingSteps } from "@/features/bookings/components/tracking-steps";
 import { getBooking } from "@/features/bookings/queries";
 import { contactOptions } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
-import { readConfig } from "@/server/config-tables";
 import { readReleaseStates, readSendModes, readTrackSteps } from "@/server/release-config";
 
 export const metadata: Metadata = { title: "Tracking" };
@@ -17,12 +16,11 @@ export const metadata: Metadata = { title: "Tracking" };
 export default async function TrackingPage({ params }: PageProps<"/bookings/[id]/tracking">) {
   const user = await requirePagePermission("app.bookings");
   const { id } = await params;
-  const [b, states, modes, steps, paperDocs, contacts] = await Promise.all([
+  const [b, states, modes, steps, contacts] = await Promise.all([
     getBooking(id),
     readReleaseStates(),
     readSendModes(),
     readTrackSteps(),
-    readConfig("paperDocs"),
     contactOptions(),
   ]);
   if (!b) notFound();
@@ -44,7 +42,7 @@ export default async function TrackingPage({ params }: PageProps<"/bookings/[id]
         id={b.id}
         version={b.version}
         docType={b.docType}
-        paper={isPaperDoc(paperDocs, b.docType)}
+        paper={b.onPaper}
         pickup={b.originalsPickup}
         requestedOn={b.originalsRequestedOn}
         docReceiverId={b.docReceiverId}

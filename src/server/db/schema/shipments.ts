@@ -9,13 +9,14 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { HsLine } from "../../../domain/goods";
 import type { Stop } from "../../../domain/loading";
 import type { AlertLevel } from "../../../domain/alerts";
 import type { TrackStep } from "../../../domain/release";
 import { day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
+import { cancelReasons, containerTypes, docTypes, packageTypes, sealSources } from "./lists";
 import { bookingStatusEnum, shipmentKindEnum } from "./enums";
+import { ports } from "./ports";
 import { quotationRoutes, quotations } from "./quotations";
 import { vessels } from "./vessels";
 
@@ -53,8 +54,9 @@ export const bookings = pgTable(
     pickupDepot: text(),
     pickupDate: day(),
     terminal: text(),
-    pol: text(),
-    pod: text(),
+    /** The ports of loading and discharge (Settings › Ports). */
+    polId: uuid().references(() => ports.id),
+    podId: uuid().references(() => ports.id),
     loadAddress: text(),
     loadDate: day(),
     loadTime: text(),
@@ -67,7 +69,10 @@ export const bookings = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
-    docType: text().notNull().default("SEA WAYBILL"),
+    /** The transport document (Settings › Lists › Document types); a new booking: SEA WAYBILL. */
+    docTypeId: uuid()
+      .notNull()
+      .references(() => docTypes.id),
     vesselId: uuid().references(() => vessels.id),
     vesselName: text(),
     voyage: text(),
@@ -93,7 +98,8 @@ export const bookings = pgTable(
     sendTracking: text(),
     /** The journey's milestones as ticked by hand (domain/release TrackStep); empty = not started. */
     track: jsonb().$type<TrackStep[]>().notNull().default([]),
-    cancelReason: text(),
+    /** Why it was cancelled (Settings › Cancel reasons); cleared when it is put back. */
+    cancelReasonId: uuid().references(() => cancelReasons.id),
     statusBeforeCancel: bookingStatusEnum("status_before_cancel"),
   },
   (t) => [
@@ -121,11 +127,10 @@ export const containers = pgTable(
       .references(() => bookings.id),
     position: integer().notNull().default(0),
     number: text(),
-    type: text().notNull().default("40HC"),
-    seals: text()
-      .array()
+    /** Its size and type (Settings › Lists › Container types); a new box: 40HC. */
+    typeId: uuid()
       .notNull()
-      .default(sql`'{}'::text[]`),
+      .references(() => containerTypes.id),
     tareKg: integer(),
     cargoKg: integer(),
     // Loading — this box only (legacy per-box loading card): nothing is inherited between boxes.
@@ -142,14 +147,52 @@ export const containers = pgTable(
     pickBackTime: text(),
     /** Extra stops for this box, in order (domain/loading Stop). */
     stops: jsonb().$type<Stop[]>().notNull().default([]),
-    // Goods in this container (domain/goods): weight and packages per HS code; the box's own
-    // figures stand when there are no lines; the B/L description is printed word for word.
-    hsLines: jsonb().$type<HsLine[]>().notNull().default([]),
+    // Goods in this container: weight and packages per HS code (container_hs_lines); the box's
+    // own figures stand when there are no lines; the B/L description is printed word for word.
     packages: integer(),
-    packageType: text(),
+    /** How the box's goods are packed when it has no HS lines (Settings › Lists › Package types). */
+    packageTypeId: uuid().references(() => packageTypes.id),
     blDescription: text(),
   },
   (t) => [index("containers_booking_idx").on(t.bookingId)],
+);
+
+/**
+ * The goods in a container, one row per HS code (domain/goods HsLine): its weight, packages and
+ * how they are packed. Replaced as a whole when the box is saved: the old lines are archived.
+ */
+export const containerHsLines = pgTable(
+  "container_hs_lines",
+  {
+    ...recordColumns,
+    containerId: uuid()
+      .notNull()
+      .references(() => containers.id),
+    position: integer().notNull().default(0),
+    code: text().notNull(),
+    weightKg: integer(),
+    packages: integer(),
+    packageTypeId: uuid().references(() => packageTypes.id),
+  },
+  (t) => [index("container_hs_lines_container_idx").on(t.containerId)],
+);
+
+/**
+ * A container's seals in the order they were set (domain/seals): the number as typed and who
+ * sealed it. Replaced as a whole when the box is saved: the old seals are archived.
+ */
+export const containerSeals = pgTable(
+  "container_seals",
+  {
+    ...recordColumns,
+    containerId: uuid()
+      .notNull()
+      .references(() => containers.id),
+    position: integer().notNull().default(0),
+    number: text().notNull(),
+    sourceId: uuid().references(() => sealSources.id),
+  },
+  (t) => [index("container_seals_container_idx").on(t.containerId)],
 );
 
 /**

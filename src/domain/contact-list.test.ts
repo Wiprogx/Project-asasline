@@ -9,7 +9,7 @@ describe("the contacts filters", () => {
       { field: "city", value: "Antwerpen" },
       { field: "tag", value: "VIP" },
     ]);
-    expect(filterParam("kind")).toBe("f.kind");
+    expect(filterParam("tag")).toBe("f.tag");
     expect(filterLabel("profession")).toBe("Industry");
   });
 });

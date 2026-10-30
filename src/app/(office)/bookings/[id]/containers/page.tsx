@@ -7,7 +7,7 @@ import { VgmBadge } from "@/features/bookings/components/vgm-badge";
 import { getBooking } from "@/features/bookings/queries";
 import { contactOptions } from "@/features/contacts/queries";
 import { requirePagePermission } from "@/server/auth/dal";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 import { readHsCodes } from "@/server/goods-config";
 import { readLoadingGrace, readLoadingModes } from "@/server/loading-config";
 import { cargoKgOf } from "@/domain/goods";
@@ -37,14 +37,14 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
     items,
   ] = await Promise.all([
     getBooking(id),
-    readConfig("containerTypes"),
+    liveLookups("container-types").then((o) => o.map((x) => x.label)),
     readLoadingModes(),
     contactOptions(),
-    readConfig("packageTypes"),
+    liveLookups("package-types").then((o) => o.map((x) => x.label)),
     readHsCodes(),
     readContainerSpecs(),
     readBoxOwners(),
-    readConfig("sealSources"),
+    liveLookups("seal-sources").then((o) => o.map((x) => x.label)),
     readLoadingGrace(),
     chargeItems(),
   ]);

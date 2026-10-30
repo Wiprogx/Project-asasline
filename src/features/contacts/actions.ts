@@ -1,60 +1,24 @@
 "use server";
 
 import { changesOf } from "@/domain/changes";
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { type ActionResult, fail, formToObject, invalid, nullMissing } from "@/lib/action-result";
+import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
+import { labelsOf, setContactLabels } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
 import { isPartyOn } from "@/server/booking-parties";
 import { ConflictError, updateVersioned } from "@/server/versioned";
-import {
-  archiveSchema,
-  type ContactInput,
-  checkedContactSchema,
-  contactSchema,
-  versionRef,
-} from "./schemas";
+import { postedRow, toRow, wordsOf } from "./contact-row";
+import { refused } from "./save-checks";
+import { archiveSchema, checkedContactSchema, versionRef } from "./schemas";
 import { readIdFormats } from "@/server/id-config";
 import { langOf } from "@/domain/countries";
 import { readCountries } from "@/server/country-config";
-
-// Optional contact fields a person may empty; creditLimit is already mapped to null.
-const CLEARABLE = Object.keys(contactSchema.shape).filter(
-  (k) => k !== "creditLimit" && k !== "lang",
-);
-
-const toRow = ({ creditLimit, ...rest }: ContactInput) => ({
-  ...rest,
-  creditLimitCents: creditLimit,
-});
-
-/** The same VAT number twice is two files for one company: refused, naming the other one. */
-async function vatTaken(vat: string | undefined, exceptId: string | null) {
-  if (!vat) return null;
-  const [other] = await db
-    .select({ name: contacts.name })
-    .from(contacts)
-    .where(
-      and(
-        eq(contacts.vat, vat),
-        isNull(contacts.archivedAt),
-        exceptId ? ne(contacts.id, exceptId) : undefined,
-      ),
-    )
-    .limit(1);
-  if (!other) return null;
-  const message = `Already on ${other.name}`;
-  return {
-    ok: false as const,
-    error: `This VAT number is already on ${other.name} — one company, one contact.`,
-    fieldErrors: { vat: [message] },
-  };
-}
 
 async function settle(id: string) {
   // The bookings and quotations lists are cached with the contact's name on them.
@@ -67,7 +31,7 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
   const user = await requirePermission("app.contacts");
   const parsed = checkedContactSchema(await readIdFormats()).safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const taken = await vatTaken(parsed.data.vat, null);
+  const taken = await refused(parsed.data);
   if (taken) return taken;
 
   // No language chosen: the one the office writes to that country in (legacy langOf).
@@ -77,6 +41,7 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
       .insert(contacts)
       .values({ ...toRow(parsed.data), lang, createdBy: user.id, updatedBy: user.id })
       .returning({ id: contacts.id });
+    await setContactLabels(tx, row.id, wordsOf(parsed.data), user.id);
     await audit(tx, {
       action: "contact.create",
       userId: user.id,
@@ -89,6 +54,19 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
   redirect(`/contacts/${id}`);
 }
 
+/** What the contact points at now: a pick it already has is kept, even off its list since. */
+const picksOf = (id: string) =>
+  db
+    .select({
+      id: contacts.id,
+      salutationId: contacts.salutationId,
+      paymentTermId: contacts.paymentTermId,
+      country: contacts.country,
+    })
+    .from(contacts)
+    .where(eq(contacts.id, id))
+    .then(([row]) => row);
+
 export async function updateContact(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.contacts");
   const raw = formToObject(fd);
@@ -96,16 +74,19 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
   const parsed = checkedContactSchema(await readIdFormats()).safeParse(raw);
   if (!ref.success) return invalid(ref.error);
   if (!parsed.success) return invalid(parsed.error);
-  const taken = await vatTaken(parsed.data.vat, ref.data.id);
+  const taken = await refused(parsed.data, await picksOf(ref.data.id));
   if (taken) return taken;
   try {
     await db.transaction(async (tx) => {
       // A number that changed is a number not yet checked against the register.
       const [cur] = await tx.select().from(contacts).where(eq(contacts.id, ref.data.id));
-      const values = nullMissing(toRow(parsed.data), CLEARABLE);
+      const before = await labelsOf(tx, ref.data.id);
+      const values = postedRow(parsed.data, (k) => fd.has(k));
+      const changed = (k: "vat" | "eori") =>
+        k in values && (values[k] ?? null) !== (cur?.[k] ?? null);
       const unchecked = {
-        ...((values.vat ?? null) !== (cur?.vat ?? null) ? { vatCheckedOn: null } : {}),
-        ...((values.eori ?? null) !== (cur?.eori ?? null) ? { eoriCheckedOn: null } : {}),
+        ...(changed("vat") ? { vatCheckedOn: null } : {}),
+        ...(changed("eori") ? { eoriCheckedOn: null } : {}),
       };
       await updateVersioned(
         tx,
@@ -115,12 +96,15 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
         { ...values, ...unchecked, updatedBy: user.id },
         "This contact",
       );
+      await setContactLabels(tx, ref.data.id, wordsOf(parsed.data), user.id);
       await audit(tx, {
         action: "contact.update",
         userId: user.id,
         entity: "contact",
         entityId: ref.data.id,
-        detail: { changes: changesOf(cur ?? {}, values) },
+        detail: {
+          changes: changesOf({ ...cur, ...before }, { ...values, ...wordsOf(parsed.data) }),
+        },
       });
     });
   } catch (e) {

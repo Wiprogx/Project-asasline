@@ -95,7 +95,7 @@ describe("mapLegacyBooking", () => {
       party,
     );
     expect(c?.booking).toMatchObject({
-      cancelReason: "Goods not ready",
+      cancelReasonLabel: "Goods not ready",
       statusBeforeCancel: "confirmed",
     });
   });

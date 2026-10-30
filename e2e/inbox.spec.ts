@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("every letter ends with the office's signature from Settings", async ({ page }) => {
   const t = tag();
@@ -17,17 +17,16 @@ test("every letter ends with the office's signature from Settings", async ({ pag
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
   await page.getByLabel("Email").fill(`signed.${t}@example.com`);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
 
   await open(page, `${page.url()}/messages`);
-  await page
-    .getByLabel("To a party on the file")
-    .selectOption({ label: `${client} (Customer, Payer)` });
+  await choose(page.getByLabel("To a party on the file"), { label: `${client} (Customer, Payer)` });
   await page.getByLabel("Subject").fill("Your booking");
   await page.getByLabel("Message", { exact: true }).fill("Please find the confirmation.");
   await submit(page, page.getByRole("button", { name: "Record and open to send" }));

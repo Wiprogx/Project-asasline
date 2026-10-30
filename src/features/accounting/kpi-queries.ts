@@ -1,4 +1,5 @@
 import "server-only";
+import { portCodeOf } from "@/server/port-sql";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { addDays } from "@/domain/dates";
 import { kpiHead, marginBy } from "@/domain/kpis";
@@ -35,7 +36,7 @@ export async function kpis(period: Period, today: string) {
     db
       .select({
         customer: contacts.name,
-        pod: bookings.pod,
+        pod: portCodeOf(bookings.podId),
         carrier: vessels.carrier,
         revenueCents: signed,
         costCents: sql<number>`coalesce(sum(case when ${invoices.kind} = 'bill' then ${invoices.netCents} else 0 end), 0)::int`,
@@ -51,7 +52,7 @@ export async function kpis(period: Period, today: string) {
           sql`${invoices.issueDate} between ${period.from} and ${period.to}`,
         ),
       )
-      .groupBy(bookings.id, contacts.name, bookings.pod, vessels.carrier),
+      .groupBy(bookings.id, contacts.name, vessels.carrier),
   ]);
   const openArCents = open.filter((i) => i.kind !== "bill").reduce((s, i) => s + i.openCents, 0);
   return {

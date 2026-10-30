@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 const brusselsDay = (offset: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(
@@ -15,11 +15,12 @@ test("a sailed shipment's cost not yet invoiced is booked to receive, then cance
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("1500");

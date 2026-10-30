@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a price changed on a quotation line is kept in the customer's agreement and offered next time", async ({
   page,
@@ -19,19 +19,20 @@ test("a price changed on a quotation line is kept in the customer's agreement an
 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   const quote = async () => {
     await open(page, "/quotations/new");
-    await page.getByLabel("Customer").selectOption({ label: client });
+    await choose(page.getByLabel("Customer"), { label: client });
     await page.getByLabel("Port of loading").fill("BEANR");
     await page.getByLabel("Port of discharge").fill("TRMER");
     await page.getByLabel("Service").fill("Ocean freight to Mersin");
     await page.getByLabel("Sell (EUR)").fill("900");
     await page.getByRole("button", { name: "Create quotation" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
-    await page.getByLabel("Ocean leg").selectOption({ label: `BEANR › ${pod}` });
+    await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod}` });
     await submit(page, page.getByRole("button", { name: "Add destination" }));
     await expectToast(page, "Destination added");
     return page

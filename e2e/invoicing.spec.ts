@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, submit, tag } from "./helpers";
 
 const officeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(new Date());
@@ -13,12 +13,14 @@ const plusDays = (day: string, n: number) => {
 async function bookingFromQuote(page: Page, client: string) {
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
-  await page.getByLabel("Country (ISO-2)").fill("BE");
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill("Ocean freight Antwerp → Mersin");
@@ -45,7 +47,7 @@ test("a booking is invoiced, the invoice issued, credited and re-drafted", async
   // An extra line at 21%: VAT is shown per rate, the exempt line keeps its legal mention.
   await page.getByLabel("Line", { exact: true }).fill("Administration fee");
   await page.getByLabel("Unit (EUR)").fill("100");
-  await page.getByLabel("VAT", { exact: true }).selectOption("S21");
+  await choose(page.getByLabel("VAT", { exact: true }), "S21");
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expectToast(page, "Line added");
   await expect(page.getByText("VAT 21% on €100.00")).toBeVisible();
@@ -53,8 +55,8 @@ test("a booking is invoiced, the invoice issued, credited and re-drafted", async
   await expect(page.getByText("€1,371.00")).toBeVisible();
 
   // Issue: the next number of the year, 30 days to pay, a structured reference.
-  await page.getByLabel("Payment term").selectOption({ label: "30 days net" });
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await choose(page.getByLabel("Payment term"), { label: "30 days net" });
+  await issue(page);
   await expectToast(page, /Issued as INV\/\d{4}\/\d{5}/);
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toHaveText(/^INV\/\d{4}\/\d{5}$/);
@@ -104,7 +106,7 @@ test("an invoice number is never reused: numbers only go up", async ({ page }) =
   const numbers: string[] = [];
   for (const n of [1, 2]) {
     await open(page, "/accounting");
-    await page.getByLabel("Customer", { exact: true }).selectOption({ index: 1 });
+    await choose(page.getByLabel("Customer", { exact: true }), { index: 1 });
     await page.getByRole("button", { name: "New invoice" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
     await page.getByLabel("Line", { exact: true }).fill(`Storage ${t} #${n}`);
@@ -112,7 +114,7 @@ test("an invoice number is never reused: numbers only go up", async ({ page }) =
     await submit(page, page.getByRole("button", { name: "Add line" }));
     // Wait for the line: issuing with the version from before it would be (rightly) refused.
     await expect(page.getByRole("cell", { name: `Storage ${t} #${n}` })).toBeVisible();
-    await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+    await issue(page);
     await expectToast(page, /Issued as/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INV\//);
     numbers.push((await page.getByRole("heading", { level: 1 }).textContent())!.trim());

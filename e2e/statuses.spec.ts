@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, optionsOf, submit, tag } from "./helpers";
 
 test("the statuses are shown with their counts and next numbers; document types and rate sources are Settings tables", async ({
   page,
@@ -14,23 +14,24 @@ test("the statuses are shown with their counts and next numbers; document types 
   await expect(page.getByText(/Next numbers:/)).toContainText(/QT\d{7}/);
   await expect(page.getByText(/Next numbers:/)).toContainText(/SB\d{7}/);
 
-  // A document type added in Settings › Lists is offered on the booking.
+  // A document type added in Settings › Lists (its own table) is offered on the booking.
   const docType = `HOUSE BL ${t.slice(-4).toUpperCase()}`;
-  await open(page, "/settings/lists");
-  const box = page.getByLabel("Document types, one per line");
-  const before = await box.inputValue();
-  expect(before).toContain("SEA WAYBILL");
-  await box.fill(`${before}\n${docType}`);
-  await submit(page, box.locator("xpath=ancestor::form").getByRole("button", { name: "Save" }));
-  await expectToast(page, /Saved/);
+  await open(page, "/settings/lists/doc-types");
+  await expect(page.getByRole("row", { name: /SEA WAYBILL/ })).toContainText("Used by the app");
+  await page.getByLabel("Document type").fill(docType);
+  await page.getByLabel("Its originals travel on paper").check();
+  await submit(page, page.getByRole("button", { name: "Add document type" }));
+  await expectToast(page, `Added · ${docType}`);
+  await expect(page.getByRole("row", { name: new RegExp(docType) })).toContainText("On paper");
 
   const client = `E2E Statuses ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -38,7 +39,7 @@ test("the statuses are shown with their counts and next numbers; document types 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const bookingUrl = page.url();
   await open(page, `${bookingUrl}/edit`);
-  await page.getByLabel("Transport document").selectOption(docType);
+  await choose(page.getByLabel("Transport document"), docType);
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, "Saved");
   await open(page, bookingUrl);
@@ -56,6 +57,7 @@ test("the statuses are shown with their counts and next numbers; document types 
   }
   await open(page, "/settings/catalogue");
   await expect(
-    page.getByLabel("Rate", { exact: true }).locator("option", { hasText: "Tender" }),
+    (await optionsOf(page.getByLabel("Rate", { exact: true }))).filter({ hasText: "Tender" }),
   ).toHaveCount(1);
+  await page.keyboard.press("Escape");
 });

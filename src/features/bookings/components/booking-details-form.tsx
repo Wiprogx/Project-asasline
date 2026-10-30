@@ -6,7 +6,7 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { DOC_TYPES, SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipments";
+import { SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { updateBookingDetails } from "../details-actions";
 import { bookingDetailsSchema } from "../schemas";
@@ -48,14 +48,14 @@ export function BookingDetailsForm({
   values,
   contacts,
   modes,
-  docTypes = DOC_TYPES,
+  docTypes,
   places = { depots: [], terminals: [] },
 }: {
   values: Values;
   contacts: Option[];
   modes: readonly LoadingMode[];
   /** The transport documents (Settings › Lists › Document types). */
-  docTypes?: readonly string[];
+  docTypes: readonly { value: string; label: string }[];
   /** Depot and terminal suggestions from the contacts' addresses. */
   places?: { depots: readonly string[]; terminals: readonly string[] };
 }) {
@@ -103,12 +103,12 @@ export function BookingDetailsForm({
               options={SHIPMENT_KINDS.map((k) => ({ value: k, label: SHIPMENT_KIND_LABEL[k] }))}
             />
           </Field>
-          <Field id="docType" label="Transport document">
+          <Field id="docTypeId" label="Transport document">
             <NativeSelect
-              id="docType"
-              name="docType"
-              defaultValue={values.docType ?? "SEA WAYBILL"}
-              options={docTypes.map((d) => ({ value: d, label: d }))}
+              id="docTypeId"
+              name="docTypeId"
+              defaultValue={values.docTypeId ?? ""}
+              options={docTypes}
             />
           </Field>
           {TEXT.map((f) => (

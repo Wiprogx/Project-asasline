@@ -15,7 +15,7 @@ type Props = {
   status: BookingStatus;
   canEdit: boolean;
   canCancel: boolean;
-  cancelReasons: string[];
+  cancelReasons: readonly { value: string; label: string }[];
 };
 
 export function BookingControls({ id, version, status, canEdit, canCancel, cancelReasons }: Props) {
@@ -69,7 +69,7 @@ export function BookingControls({ id, version, status, canEdit, canCancel, cance
           title="Cancel this booking?"
           description="It keeps its number, files and messages and leaves the active lists. Open tasks are withdrawn. You can put it back."
           confirmLabel="Cancel booking"
-          reasons={cancelReasons}
+          reasonOptions={cancelReasons}
         />
       )}
     </div>

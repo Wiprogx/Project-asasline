@@ -14,7 +14,7 @@ export type QuotationHeader = {
   clientId: string;
   kind: ShipmentKind;
   commodity: string | null;
-  docType: string | null;
+  docTypeId: string | null;
   validUntil: string | null;
   paymentTermId: string | null;
   note: string | null;
@@ -30,7 +30,7 @@ export function EditQuotationDialog({
 }: {
   q: QuotationHeader;
   clients: Option[];
-  docTypes: string[];
+  docTypes: readonly { value: string; label: string }[];
   terms: Option[];
 }) {
   const id = (name: string) => `qe-${name}`;
@@ -65,13 +65,13 @@ export function EditQuotationDialog({
           <Field id={id("commodity")} label="Commodity (HS)" error={fe?.commodity}>
             <Input id={id("commodity")} name="commodity" defaultValue={q.commodity ?? ""} />
           </Field>
-          <Field id={id("docType")} label="Document type" error={fe?.docType}>
+          <Field id={id("docTypeId")} label="Document type" error={fe?.docTypeId}>
             <NativeSelect
-              id={id("docType")}
-              name="docType"
-              defaultValue={q.docType ?? ""}
+              id={id("docTypeId")}
+              name="docTypeId"
+              defaultValue={q.docTypeId ?? ""}
               placeholder="—"
-              options={docTypes.map((d) => ({ value: d, label: d }))}
+              options={docTypes}
             />
           </Field>
           <Field id={id("validUntil")} label="Valid until" error={fe?.validUntil}>

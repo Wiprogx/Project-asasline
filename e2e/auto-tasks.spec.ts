@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a quotation, a destination and a booking each open the task their rule asks for", async ({
   page,
@@ -13,12 +13,13 @@ test("a quotation, a destination and a booking each open the task their rule ask
   const client = `E2E Rules ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // A quotation: "Send quotation QT… to the client", due today, an e-mail.
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill(`Ocean freight ${t}`);
@@ -41,7 +42,7 @@ test("a quotation, a destination and a booking each open the task their rule ask
 
   // A booking: "Confirm booking SB… with the carrier", due tomorrow.
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -53,7 +54,7 @@ test("a quotation, a destination and a booking each open the task their rule ask
 
   // A task typed by hand carries its type too.
   await page.getByLabel("New task").fill(`Call the terminal ${t}`);
-  await page.getByLabel("Type").selectOption("Call");
+  await choose(page.getByLabel("Type"), "Call");
   await submit(page, page.getByRole("button", { name: "Add task" }));
   await expectToast(page, "Task added");
   await open(page, `/activity?q=${encodeURIComponent(`Call the terminal ${t}`)}`);

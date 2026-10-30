@@ -54,6 +54,15 @@ async function sendMail(m: Outgoing): Promise<Delivery> {
   }
 }
 
+/**
+ * A message from the system itself (a password-reset link), not a letter on a record: sent
+ * when the server can, else reported as not sent so the caller can hand the link over.
+ */
+export async function sendSystemMail(to: string, subject: string, body: string) {
+  if (!configured("email")) return { sent: false, why: "not configured" } as const;
+  return sendMail({ channel: "email", to, subject, body });
+}
+
 /** WhatsApp Business Cloud API: a text message to a number, free-form within the 24 h window. */
 async function sendWhatsApp(m: Outgoing): Promise<Delivery> {
   // From the office's active number (Settings › Routing), else the server's own.

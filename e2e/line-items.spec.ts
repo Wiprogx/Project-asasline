@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { login, open, submit, tag } from "./helpers";
+import { choose, expectChosen, fillMandatory, issue, login, open, submit, tag } from "./helpers";
 
 test("a line picked from the general items takes its account, and the books follow", async ({
   page,
@@ -18,22 +18,23 @@ test("a line picked from the general items takes its account, and the books foll
   const client = `E2E Items ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/accounting");
-  await page.getByLabel("Customer", { exact: true }).selectOption({ label: client });
+  await choose(page.getByLabel("Customer", { exact: true }), { label: client });
   await page.getByRole("button", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Draft for ${client}`);
-  await page.getByLabel("Item").selectOption({ label: "Other income (not a shipment) · general" });
+  await choose(page.getByLabel("Item"), { label: "Other income (not a shipment) · general" });
   await expect(page.getByLabel("Line", { exact: true })).toHaveValue(
     "Other income (not a shipment)",
   );
-  await expect(page.getByLabel("VAT", { exact: true })).toHaveValue("S21");
+  await expectChosen(page.getByLabel("VAT", { exact: true }), "S21");
   await page.getByLabel("Line", { exact: true }).fill(`Sold the old printer ${t}`);
   await page.getByLabel("Unit (EUR)").fill("100");
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expect(page.getByRole("cell", { name: `Sold the old printer ${t}` })).toBeVisible();
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INV\//);
 
   // The journal books the line where the item said, not on sales of shipping services.

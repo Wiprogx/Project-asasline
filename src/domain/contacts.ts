@@ -1,19 +1,5 @@
-/** Contact vocabulary (legacy CHILD_TYPES, contact types). Seed values for Settings tables. */
-export const CONTACT_TYPES = ["company", "person"] as const;
-
-export const ADDRESS_TYPES = [
-  "Doc Check",
-  "Contact",
-  "Invoicing address",
-  "Delivery address",
-  "Shipper",
-  "Consignee",
-  "Notify Party",
-  "Weight address",
-  "Terminal",
-  "Depot",
-  "Other address",
-] as const;
+/** Contact vocabulary (contact types, languages); the location roles are a Settings table. */
+export const CONTACT_TYPES = ["company", "person", "location"] as const;
 
 /** Correspondence language is per contact; the UI stays English (invariant 10). */
 export const LANGUAGES = ["en", "fr", "nl", "tr", "ar"] as const;

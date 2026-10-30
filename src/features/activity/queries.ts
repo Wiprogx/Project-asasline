@@ -7,7 +7,16 @@ import { type CurrentUser, requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { PARTY_KEYS } from "@/domain/booking-parties";
-import { activities, bookings, contacts, covers, quotations, users } from "@/server/db/schema";
+import {
+  activities,
+  bookings,
+  contacts,
+  covers,
+  quotations,
+  users,
+  taskTypes,
+  withdrawReasons,
+} from "@/server/db/schema";
 
 const doneBy = alias(users, "done_by_user");
 const linkedContact = alias(contacts, "linked_contact");
@@ -19,13 +28,14 @@ function baseQuery() {
       id: activities.id,
       version: activities.version,
       title: activities.title,
-      type: activities.type,
+      typeId: activities.typeId,
+      type: taskTypes.label,
       due: activities.due,
       state: activities.state,
       role: activities.role,
       note: activities.note,
       ruleCode: activities.ruleCode,
-      withdrawReason: activities.withdrawReason,
+      withdrawReason: withdrawReasons.label,
       blocking: activities.blocking,
       assigneeId: activities.assigneeId,
       assigneeName: users.name,
@@ -40,6 +50,8 @@ function baseQuery() {
     .from(activities)
     .leftJoin(users, eq(users.id, activities.assigneeId))
     .leftJoin(doneBy, eq(doneBy.id, activities.doneBy))
+    .leftJoin(withdrawReasons, eq(withdrawReasons.id, activities.withdrawReasonId))
+    .leftJoin(taskTypes, eq(taskTypes.id, activities.typeId))
     .leftJoin(bookings, and(eq(activities.linkKind, "booking"), eq(bookings.id, activities.linkId)))
     .leftJoin(
       quotations,

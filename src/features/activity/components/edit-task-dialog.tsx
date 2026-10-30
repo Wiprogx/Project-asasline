@@ -2,13 +2,14 @@
 
 import { Field } from "@/components/shared/field";
 import { FormDialog } from "@/components/shared/form-dialog";
+import { NativeSelect } from "@/components/shared/native-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { editTask } from "../edit-actions";
 
 export type TaskWords = {
   title: string;
-  type: string | null;
+  typeId: string | null;
   due: string | null;
   note: string | null;
 };
@@ -18,10 +19,12 @@ export function EditTaskDialog({
   id,
   version,
   task,
+  types,
 }: {
   id: string;
   version: number;
   task: TaskWords;
+  types: readonly { value: string; label: string; code?: string | null }[];
 }) {
   const f = (name: string) => `te-${id}-${name}`;
   return (
@@ -38,8 +41,14 @@ export function EditTaskDialog({
           <Field id={f("title")} label="What needs doing" error={fe?.title}>
             <Input id={f("title")} name="title" required defaultValue={task.title} />
           </Field>
-          <Field id={f("type")} label="Type" error={fe?.type}>
-            <Input id={f("type")} name="type" defaultValue={task.type ?? ""} />
+          <Field id={f("typeId")} label="Type" error={fe?.typeId}>
+            <NativeSelect
+              id={f("typeId")}
+              name="typeId"
+              defaultValue={task.typeId ?? ""}
+              placeholder="—"
+              options={types}
+            />
           </Field>
           <Field id={f("due")} label="Due" error={fe?.due}>
             <Input id={f("due")} name="due" type="date" defaultValue={task.due ?? ""} />

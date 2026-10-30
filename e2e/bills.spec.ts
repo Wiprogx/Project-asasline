@@ -1,6 +1,17 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import {
+  addUser,
+  choose,
+  expectChosen,
+  expectToast,
+  fillMandatory,
+  firstSignIn,
+  login,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 const officeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(new Date());
@@ -8,6 +19,7 @@ const officeToday = () =>
 async function contact(page: Page, name: string) {
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(name);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 }
@@ -15,7 +27,7 @@ async function contact(page: Page, name: string) {
 async function addLine(page: Page, text: string, eur: string, account?: string) {
   await page.getByLabel("Line", { exact: true }).fill(text);
   await page.getByLabel("Unit (EUR)").fill(eur);
-  if (account) await page.getByLabel("Account").selectOption(account);
+  if (account) await choose(page.getByLabel("Account"), account);
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expect(page.getByRole("cell", { name: text })).toBeVisible();
 }
@@ -36,7 +48,7 @@ test("a large bill needs a second person before it is paid, then the bank pays i
   await contact(page, supplier);
 
   await open(page, "/accounting/bills");
-  await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
+  await choose(page.getByLabel("Supplier", { exact: true }), { label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
   await addLine(page, "Warehouse rent, October", "6000", "610000");
@@ -54,14 +66,9 @@ test("a large bill needs a second person before it is paid, then the bank pays i
   // A second person — an Accountant — approves.
   const email = `acct.${t}@e2e.test`;
   const password = `pw-${t}-${t}`;
-  await open(page, "/settings/people");
-  await page.getByLabel("Name").fill(`Accountant ${t}`);
-  await page.getByLabel("Email").fill(email);
-  await page.locator("#p-role").selectOption("accountant"); // the add-person form, not a staff row
-  await page.getByLabel("First password").fill(password);
-  await submit(page, page.getByRole("button", { name: "Add person" }));
+  await addUser(page, { name: `Accountant ${t}`, email, password, role: "Accountant" });
   const other = await (await browser.newContext()).newPage();
-  await login(other, { email, password });
+  await firstSignIn(other, email, password);
   await open(other, billUrl);
   await submit(other, other.getByRole("button", { name: "Approve for payment" }));
   await expectToast(other, "Approved — it can be paid");
@@ -89,7 +96,7 @@ test("a large bill needs a second person before it is paid, then the bank pays i
 
   // The same supplier number cannot be recorded twice.
   await open(page, "/accounting/bills");
-  await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
+  await choose(page.getByLabel("Supplier", { exact: true }), { label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
   await addLine(page, "Same rent again", "6000", "610000");
@@ -105,16 +112,16 @@ test("a supplier bill on a booking is its cost, and the margin follows", async (
   await contact(page, client);
   await contact(page, haulier);
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const billing = `${page.url()}/billing`;
 
   await open(page, billing);
-  await page.getByLabel("Supplier", { exact: true }).selectOption({ label: haulier });
+  await choose(page.getByLabel("Supplier", { exact: true }), { label: haulier });
   await page.getByRole("button", { name: "Record a supplier bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${haulier}`);
-  await expect(page.getByLabel("Account")).toHaveValue("604000"); // a shipment cost by default
+  await expectChosen(page.getByLabel("Account"), "604000"); // a shipment cost by default
   await addLine(page, "Trucking Antwerp", "400");
   await recordBill(page, `T-${t}`);
   await expectToast(page, /Recorded as BILL\//);

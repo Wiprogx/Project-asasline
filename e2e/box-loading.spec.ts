@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("each box has its own loading, and the trucker copy says what a box still lacks", async ({
   page,
@@ -15,10 +15,11 @@ test("each box has its own loading, and the trucker copy says what a box still l
   const client = `E2E Loading ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("2");
@@ -37,7 +38,7 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await page.locator("#c0-load-address").fill(`Quay 730, Antwerp ${t}`);
   await page.locator("#c0-load-date").fill("2026-10-20");
   await page.locator("#c0-load-time").fill("07:30");
-  await page.locator("#c0-mode").selectOption("Drop off container on ground");
+  await choose(page.locator("#c0-mode"), "Drop off container on ground");
   await expect(page.getByText(/Box left on site/).first()).toBeVisible();
   await page.locator("#c0-pick-date").fill("2026-10-22");
   await page.locator("#c0-stops").fill("Depot Zeebrugge | 2026-10-21 | 09:00");

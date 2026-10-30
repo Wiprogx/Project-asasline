@@ -8,6 +8,8 @@ import type { QuotationStatus } from "@/domain/shipments";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
+import { portCodeOf } from "@/server/port-sql";
+import { withRouteWords } from "@/server/route-words";
 import { readTemplates, signatureOf } from "@/server/messaging";
 import {
   contacts,
@@ -69,13 +71,14 @@ export async function listQuotations(opts: ListScope & { clientId?: string } = {
 /** One quotation with its client, routes and lines; cached per request (layout + page share it). */
 export const getQuotation = cache(async (id: string) => {
   await requirePermission("app.quotations");
-  return db.query.quotations.findFirst({
+  const q = await db.query.quotations.findFirst({
     where: eq(quotations.id, id),
     with: {
       client: {
         columns: { id: true, name: true, email: true, whatsapp: true, mobile: true, lang: true },
       },
       bookings: { columns: { id: true, ref: true, status: true, quotationRouteId: true } },
+      cancelReason: { columns: { label: true } },
       routes: {
         orderBy: asc(quotationRoutes.position),
         with: {
@@ -87,6 +90,16 @@ export const getQuotation = cache(async (id: string) => {
       },
     },
   });
+  if (!q) return undefined;
+  // Each destination's box and ports in words (Settings › Lists, Settings › Ports).
+  return {
+    ...q,
+    routes: (await withRouteWords(q.routes)).map((r) => ({
+      ...r,
+      pol: r.pol ?? "",
+      pod: r.pod ?? "",
+    })),
+  };
 });
 
 /** The catalogue as the quotation editor offers it: ocean legs for a destination, all for a line. */
@@ -96,8 +109,9 @@ export async function catalogueChoices() {
     .select()
     .from(rateItems)
     .where(isNull(rateItems.archivedAt))
-    .orderBy(asc(rateItems.category), asc(rateItems.pod), asc(rateItems.name));
-  const all = rows.map((it) => ({ value: it.id, label: itemLabel(it), category: it.category }));
+    .orderBy(asc(rateItems.category), asc(portCodeOf(rateItems.podId)), asc(rateItems.name));
+  const named = await withRouteWords(rows);
+  const all = named.map((it) => ({ value: it.id, label: itemLabel(it), category: it.category }));
   return { lanes: all.filter((x) => x.category === "ocean"), items: all };
 }
 

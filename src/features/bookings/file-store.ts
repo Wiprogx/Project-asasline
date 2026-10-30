@@ -4,6 +4,7 @@ import { itemLabel } from "@/domain/pricing";
 import { countryOfPort } from "@/domain/rules/engine";
 import type { DbOrTx } from "@/server/db/client";
 import { bookingFiles, rateItems } from "@/server/db/schema";
+import { withRouteWords } from "@/server/route-words";
 import { settleSteps } from "@/server/steps";
 
 // Internal to the booking's files: the actions and queries call these after their permission check.
@@ -40,7 +41,7 @@ export async function destinationDocs(tx: DbOrTx, pod: string | null) {
         isNull(rateItems.archivedAt),
       ),
     );
-  return rows
+  return (await withRouteWords(rows))
     .filter((r) => r.docCode)
     .map((r) => ({ code: r.docCode!.toUpperCase(), label: itemLabel(r) }));
 }

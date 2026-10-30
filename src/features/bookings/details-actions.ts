@@ -6,6 +6,7 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
+import { portIds } from "@/server/ports";
 import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { bookingDetailsSchema, CLEARABLE_DETAILS } from "./schemas";
@@ -24,7 +25,7 @@ export async function updateBookingDetails(_p: ActionResult, fd: FormData): Prom
   const parsed = bookingDetailsSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { id, version, ...fields } = parsed.data;
-  const values = nullMissing(fields, CLEARABLE_DETAILS);
+  const { pol, pod, ...details } = nullMissing(fields, CLEARABLE_DETAILS);
 
   return guarded(
     id,
@@ -34,6 +35,11 @@ export async function updateBookingDetails(_p: ActionResult, fd: FormData): Prom
         if (!cur) throw new ConflictError("This booking");
         if (cur.status === "cancelled")
           throw new Refused("Put the booking back before editing it.");
+        // The ports typed, as their rows of Settings › Ports.
+        const values: Record<string, unknown> = {
+          ...details,
+          ...(await portIds(tx, { pol: pol as string | null, pod: pod as string | null }, user.id)),
+        };
 
         const picked = values as Record<string, unknown>;
         const ids = PARTIES.map((k) => picked[k]).filter((v): v is string => typeof v === "string");

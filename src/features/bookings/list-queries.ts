@@ -7,6 +7,7 @@ import { isPartyOn } from "@/server/booking-parties";
 import { cached, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
+import { portCodeOf, portMatches } from "@/server/port-sql";
 import { readRuleBook } from "@/server/rule-book";
 import { bookings, contacts } from "@/server/db/schema";
 
@@ -76,14 +77,16 @@ function searchWhere(q: string): SQL {
   const like = `%${q}%`;
   const b = bookings;
   return or(
-    ...[b.ref, b.carrierBookingNo, b.blNo, b.pol, b.pod, b.vesselName, b.voyage].map((c) =>
-      ilike(c, like),
-    ),
+    ...[b.ref, b.carrierBookingNo, b.blNo, b.vesselName, b.voyage].map((c) => ilike(c, like)),
+    portMatches(b.polId, like),
+    portMatches(b.podId, like),
     ...[b.commodity, b.terminal, b.pickupDepot, b.loadAddress].map((c) => ilike(c, like)),
     ilike(contacts.name, like),
     sql`exists (select 1 from contacts p where p.name ilike ${like} and p.id in (${b.payerId}, ${b.shipperId}, ${b.consigneeId}, ${b.notifyId}, ${b.docCheckId}, ${b.shippingCoId}, ${b.transporterId}, ${b.destForwarderId}, ${b.forwarderId}, ${b.customsAgentId}))`,
     sql`exists (select 1 ${liveBoxes} and (c.number ilike ${like} or c.load_address ilike ${like}
-      or c.seals::text ilike ${like} or c.hs_lines::text ilike ${like} or c.bl_description ilike ${like}))`,
+      or c.bl_description ilike ${like}
+      or exists (select 1 from container_seals s where s.container_id = c.id and s.archived_at is null and s.number ilike ${like})
+      or exists (select 1 from container_hs_lines h where h.container_id = c.id and h.archived_at is null and h.code ilike ${like})))`,
   )!;
 }
 
@@ -122,8 +125,8 @@ async function selectRows(s: ListScope, today: string, fileCodes: readonly strin
       status: b.status,
       kind: b.kind,
       clientName: contacts.name,
-      pol: b.pol,
-      pod: b.pod,
+      pol: portCodeOf(b.polId),
+      pod: portCodeOf(b.podId),
       loadAddress: b.loadAddress,
       loadDate: b.loadDate,
       loadTime: b.loadTime,

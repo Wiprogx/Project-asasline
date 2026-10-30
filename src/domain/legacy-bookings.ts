@@ -90,6 +90,7 @@ function boxOf(
     stops: stopsOf(c.stops),
     hsLines: hsOf(c.hs),
     packages: kg(c.pkgQty),
+    /** Resolved with the HS lines and seals by the importer (server/container-goods). */
     packageType: text(c.pkgType),
     blDescription: text(c.blDesc),
   };
@@ -121,6 +122,8 @@ export function mapLegacyBooking(b: Record<string, unknown>, party: PartyLookup)
     ? objects(b.containers)
     : [{ no: b.containerNo, seals: [], hs: [] }];
   const files = objects(b.docs).length;
+  if (status === "cancelled" && text(cancel.note))
+    warnings.push(`its cancel note is not carried: "${text(cancel.note)}"`);
   if (files) warnings.push(`${files} file(s) on the booking are not carried by this step`);
   return {
     booking: {
@@ -137,7 +140,8 @@ export function mapLegacyBooking(b: Record<string, unknown>, party: PartyLookup)
       loadingMode: text(b.loadingMode),
       carrierBookingNo: text(b.bookingNo),
       blNo: text(b.blNo),
-      docType: text(b.docType) ?? "SEA WAYBILL",
+      /** Resolved to a Settings › Lists › Document types row by the importer. */
+      docTypeLabel: text(b.docType) ?? "SEA WAYBILL",
       vesselName: text(b.vessel),
       voyage: text(b.voyage),
       etd: day(b.etd),
@@ -153,10 +157,8 @@ export function mapLegacyBooking(b: Record<string, unknown>, party: PartyLookup)
       originalsRequestedOn: day(b.sendRequestedAt),
       sendMode: text(b.sendMode),
       sendTracking: text(b.sendTracking),
-      cancelReason:
-        status === "cancelled"
-          ? [text(cancel.reason), text(cancel.note)].filter(Boolean).join(" — ") || "Cancelled"
-          : null,
+      /** Resolved to a Settings › Cancel reasons row by the importer (scripts/import/config). */
+      cancelReasonLabel: status === "cancelled" ? (text(cancel.reason) ?? "Other") : null,
       statusBeforeCancel:
         status === "cancelled" &&
         (BOOKING_STATUSES as readonly string[]).includes(String(b.statusBefore))

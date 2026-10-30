@@ -6,6 +6,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { officeZone } from "@/server/clock";
 import { db } from "@/server/db/client";
+import { portCodeOf } from "@/server/port-sql";
 import { contacts, quotationRoutes, quotations } from "@/server/db/schema";
 
 export type ListScope = {
@@ -43,8 +44,8 @@ export async function topLanes(s: ListScope, n = 5): Promise<Ranked[]> {
     async () => {
       const rows = await db
         .select({
-          pol: quotationRoutes.pol,
-          pod: quotationRoutes.pod,
+          pol: portCodeOf(quotationRoutes.polId),
+          pod: portCodeOf(quotationRoutes.podId),
           n: sql<number>`count(*)::int`,
         })
         .from(quotationRoutes)
@@ -57,7 +58,7 @@ export async function topLanes(s: ListScope, n = 5): Promise<Ranked[]> {
             scopeWhere(s),
           ),
         )
-        .groupBy(quotationRoutes.pol, quotationRoutes.pod)
+        .groupBy(quotationRoutes.polId, quotationRoutes.podId)
         .orderBy(desc(sql`count(*)`))
         .limit(n);
       return rows.map((r) => ({ label: `${r.pol} → ${r.pod}`, n: r.n, valueCents: 0 }));

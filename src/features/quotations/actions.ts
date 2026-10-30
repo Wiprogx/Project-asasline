@@ -17,7 +17,10 @@ import {
   quotationRoutes,
   quotations,
 } from "@/server/db/schema";
+import { liveLookupIdByLabel, lookupIdByCode } from "@/server/lookups";
+import { portId, withPorts } from "@/server/ports";
 import { syncBookingRules } from "@/server/rules-sync";
+import { DEFAULT_CONTAINER_TYPE, DEFAULT_DOC_TYPE } from "@/domain/lookup-tables";
 import { nextRef } from "@/server/sequences";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { acceptRouteSchema, newQuotationSchema } from "./schemas";
@@ -47,10 +50,12 @@ export async function createQuotation(_p: ActionResult, fd: FormData): Promise<A
       .insert(quotationRoutes)
       .values({
         quotationId: q.id,
-        pol: d.pol.toUpperCase(),
-        pod: d.pod.toUpperCase(),
+        polId: await portId(tx, d.pol, user.id),
+        podId: await portId(tx, d.pod, user.id),
         finalPlace: d.finalPlace,
-        containerType: d.containerType,
+        containerTypeId: d.containerType
+          ? await liveLookupIdByLabel(tx, "container-types", d.containerType)
+          : null,
         createdBy: user.id,
       })
       .returning({ id: quotationRoutes.id });
@@ -139,20 +144,22 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           kind: q.kind,
           clientId: q.clientId,
           payerId: q.clientId,
-          pol: route.pol,
-          pod: route.pod,
+          polId: route.polId,
+          podId: route.podId,
           loadingMode: route.loadingMode,
           commodity: q.commodity,
-          ...(q.docType ? { docType: q.docType } : {}),
+          docTypeId: q.docTypeId ?? (await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE)),
           createdBy: user.id,
           updatedBy: user.id,
         })
         .returning({ id: bookings.id });
-      // As many boxes as the destination was quoted for (legacy expectedBoxes).
+      const [named] = await withPorts([route]);
+      // As many boxes as the destination was quoted for (legacy expectedBoxes); else 40HC.
+      const defaultBox = await lookupIdByCode(tx, "container-types", DEFAULT_CONTAINER_TYPE);
       await tx.insert(containers).values(
         Array.from({ length: Math.max(1, route.boxes) }, (_, position) => ({
           bookingId: b.id,
-          type: route.containerType ?? "40HC",
+          typeId: route.containerTypeId ?? defaultBox,
           position,
           createdBy: user.id,
         })),
@@ -162,7 +169,7 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
         userId: user.id,
         entity: "quotation",
         entityId: id,
-        detail: { booking: ref, route: `${route.pol} → ${route.pod}` },
+        detail: { booking: ref, route: `${named.pol} → ${named.pod}` },
       });
       await syncBookingRules(tx, b.id, user.id);
       const [client] = await tx

@@ -1,19 +1,20 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, submit, tag } from "./helpers";
 
 async function issued(page: Page, client: string, text: string, unit: string) {
   await open(page, "/accounting");
-  await page.getByLabel("Customer", { exact: true }).selectOption({ label: client });
+  await choose(page.getByLabel("Customer", { exact: true }), { label: client });
   await page.getByRole("button", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Draft for ${client}`);
   await page.getByLabel("Line", { exact: true }).fill(text);
   await page.getByLabel("Unit (EUR)").fill(unit);
   // No VAT, so the open amounts are the round figures typed.
-  await page.getByLabel("VAT", { exact: true }).selectOption("S0");
+  await choose(page.getByLabel("VAT", { exact: true }), "S0");
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expectToast(page, "Line added");
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await expect(page.getByRole("row").filter({ hasText: text })).toBeVisible();
+  await issue(page);
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toHaveText(/^INV\//);
   return (await heading.textContent())!.trim();
@@ -27,6 +28,7 @@ test("one transfer settles two invoices of a customer, one payment with a part o
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   const first = await issued(page, client, `Storage ${t}`, "100");
@@ -34,7 +36,7 @@ test("one transfer settles two invoices of a customer, one payment with a part o
 
   await open(page, "/accounting/payments");
   await page.getByRole("link", { name: "Payment over several invoices" }).click();
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Show open invoices" }).click();
   await page.getByLabel(new RegExp(first.replace(/\//g, "\\/"))).fill("100");
   await page.getByLabel(new RegExp(second.replace(/\//g, "\\/"))).fill("20");
@@ -51,7 +53,7 @@ test("one transfer settles two invoices of a customer, one payment with a part o
 
   // What is left on the second is still open.
   await open(page, `/accounting/payments/new`);
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Show open invoices" }).click();
   await expect(page.getByText(first)).toHaveCount(0);
   await expect(page.getByText(second)).toBeVisible();

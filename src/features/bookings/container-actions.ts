@@ -15,8 +15,8 @@ import {
   removeContainerSchema,
 } from "./schemas";
 import { guarded, Refused } from "./settle";
-import { sealSourceProblem } from "@/domain/seals";
-import { readConfig } from "@/server/config-tables";
+import { replaceGoods, resolveGoods } from "@/server/container-goods";
+import { liveLookupIdByLabel } from "@/server/lookups";
 
 /** Box changes are logged on the booking, so its history tells the whole story. */
 async function editableBooking(tx: Tx, bookingId: string) {
@@ -33,9 +33,7 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
   const user = await requirePermission("bookings.edit");
   const parsed = containerSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const sealProblem = sealSourceProblem(parsed.data.seals, await readConfig("sealSources"));
-  if (sealProblem) return { ok: false, error: sealProblem, fieldErrors: { seals: [sealProblem] } };
-  const { id, bookingId, version, ...fields } = parsed.data;
+  const { id, bookingId, version, seals, hsLines, packageType, type, ...fields } = parsed.data;
   const values = nullMissing(fields, CLEARABLE_CONTAINER);
 
   return guarded(
@@ -48,20 +46,26 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
           .from(containers)
           .where(eq(containers.id, id));
         if (box?.bookingId !== bookingId) throw new ConflictError("This container");
+        // Every package type and seal source must be in its Settings list (Package types, Seal sources).
+        const goods = await resolveGoods(tx, { hsLines, seals, packageType });
+        if (goods.problem !== null) throw new Refused(goods.problem);
+        const typeId = await liveLookupIdByLabel(tx, "container-types", type);
+        if (!typeId) throw new Refused(`Container type "${type}" is not in Settings › Lists.`);
         await updateVersioned(
           tx,
           containers,
           id,
           version,
-          { ...values, updatedBy: user.id },
+          { ...values, typeId, packageTypeId: goods.packageTypeId, updatedBy: user.id },
           "This container",
         );
+        await replaceGoods(tx, id, goods, user.id);
         await audit(tx, {
           action: "container.edit",
           userId: user.id,
           entity: "booking",
           entityId: bookingId,
-          detail: { container: id, number: values.number, seals: values.seals },
+          detail: { container: id, number: values.number, seals },
         });
         // The per-box steps and the VGM wait on the boxes and their weights (rules-sync).
         await syncBookingRules(tx, bookingId, user.id);
@@ -85,11 +89,13 @@ export async function addContainer(_p: ActionResult, fd: FormData): Promise<Acti
           .select({ last: max(containers.position) })
           .from(containers)
           .where(eq(containers.bookingId, bookingId));
+        const typeId = await liveLookupIdByLabel(tx, "container-types", type);
+        if (!typeId) throw new Refused(`Container type "${type}" is not in Settings › Lists.`);
         const [row] = await tx
           .insert(containers)
           .values({
             bookingId,
-            type,
+            typeId,
             position: (last ?? -1) + 1,
             createdBy: user.id,
             updatedBy: user.id,

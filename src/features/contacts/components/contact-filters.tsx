@@ -7,8 +7,6 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  CONTACT_KIND_LABEL,
-  CONTACT_KINDS,
   type ContactFilter,
   FILTER_FIELDS,
   type FilterField,
@@ -19,13 +17,17 @@ import {
 type Values = { cities: string[]; countries: string[]; tags: string[]; professions: string[] };
 
 const optionsOf = (field: FilterField, v: Values, countryName: Record<string, string>) => {
+  if (field === "type")
+    return [
+      { value: "company", label: "Company" },
+      { value: "person", label: "Person" },
+      { value: "location", label: "Location" },
+    ];
   if (field === "city") return v.cities.map((x) => ({ value: x, label: x }));
   if (field === "country")
     return v.countries.map((x) => ({ value: x, label: countryName[x] ?? x }));
   if (field === "tag") return v.tags.map((x) => ({ value: x, label: x }));
   if (field === "profession") return v.professions.map((x) => ({ value: x, label: x }));
-  if (field === "kind")
-    return CONTACT_KINDS.map((k) => ({ value: k, label: CONTACT_KIND_LABEL[k] }));
   return null;
 };
 
@@ -62,8 +64,8 @@ export function ContactFilters({
   const shown = (f: ContactFilter) =>
     f.field === "country"
       ? (countryName[f.value] ?? f.value)
-      : f.field === "kind"
-        ? (CONTACT_KIND_LABEL[f.value as keyof typeof CONTACT_KIND_LABEL] ?? f.value)
+      : f.field === "type"
+        ? f.value.charAt(0).toUpperCase() + f.value.slice(1)
         : f.value;
   return (
     <div className="grid gap-2">

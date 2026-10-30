@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MIN_PASSWORD_LENGTH } from "@/domain/people";
+import { MIN_PASSWORD_LENGTH } from "@/domain/users";
 
 export const changePasswordSchema = z
   .object({

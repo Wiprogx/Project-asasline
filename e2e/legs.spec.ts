@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 const day = (offset: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(
@@ -39,10 +39,11 @@ test("a transhipment leg carries the arrival: the last vessel decides the ETA, t
   const client = `E2E Legs ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -53,16 +54,16 @@ test("a transhipment leg carries the arrival: the last vessel decides the ETA, t
 
   // The main sailing: dates and cut-offs; then the onward leg: the arrival moves to its ETA.
   await open(page, edit);
-  await page
-    .getByLabel("Sailing", { exact: true })
-    .selectOption({ label: `${feeder} · F1 — BEANR › ESVLC · ETD ${day(20)}` });
+  await choose(page.getByLabel("Sailing", { exact: true }), {
+    label: `${feeder} · F1 — BEANR › ESVLC · ETD ${day(20)}`,
+  });
   await submit(page, page.getByRole("button", { name: "Set sailing" }));
   await expectToast(page, "On the sailing — dates and closings set");
   await open(page, edit);
   await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(day(25));
-  await page
-    .getByLabel("Connecting sailing")
-    .selectOption({ label: `${mother} · M1 — ESVLC › TRMER · ETD ${day(27)}` });
+  await choose(page.getByLabel("Connecting sailing"), {
+    label: `${mother} · M1 — ESVLC › TRMER · ETD ${day(27)}`,
+  });
   await submit(page, page.getByRole("button", { name: "Add transhipment leg" }));
   await expectToast(page, "Leg added — the arrival follows the last one");
   await open(page, edit);

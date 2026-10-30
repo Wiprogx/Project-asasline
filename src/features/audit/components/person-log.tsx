@@ -33,7 +33,7 @@ export function PersonLog({
         {LOG_RANGES.map((r) => (
           <Link
             key={r}
-            href={`/settings/people/${userId}/log?range=${r}`}
+            href={`/settings/users/${userId}/log?range=${r}`}
             aria-current={r === range ? "page" : undefined}
             className={cn(
               "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs",

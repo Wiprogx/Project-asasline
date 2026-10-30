@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("the catalogue prices an item, and a customer agreement overrides it", async ({ page }) => {
   const t = tag();
@@ -22,26 +22,27 @@ test("the catalogue prices an item, and a customer agreement overrides it", asyn
   await expect(page.getByRole("link", { name: label })).toBeVisible();
 
   // Its category shows the fields that identify it.
-  await page.getByLabel("Category").selectOption({ label: "Country document" });
+  await choose(page.getByLabel("Category"), { label: "Country document" });
   await expect(page.getByLabel("Document code")).toBeVisible();
   await expect(page.getByLabel("Port of discharge")).toHaveCount(0);
 
   const client = `E2E Agreement Client ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await expect(page.getByText("None — quotations use the catalogue.")).toBeVisible();
 
   await open(page, "/settings/price-lists");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Agreement").fill("2026 agreement");
   await page.getByLabel("Valid from").fill("2026-01-01");
   await page.getByRole("button", { name: "Add agreement" }).click();
   await expect(page.getByRole("heading", { name: "2026 agreement" })).toBeVisible();
   const listUrl = page.url();
 
-  await page.getByLabel("Catalogue item").selectOption({ label: `${label} · ocean` });
+  await choose(page.getByLabel("Catalogue item"), { label: `${label} · ocean` });
   await page.getByLabel("Agreed sell (EUR)").fill("2950");
   await submit(page, page.getByRole("button", { name: "Set price" }));
   await expectToast(page, "Agreed price saved");
@@ -52,7 +53,7 @@ test("the catalogue prices an item, and a customer agreement overrides it", asyn
 
   // A second agreement on the same days is refused.
   await open(page, "/settings/price-lists");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Agreement").fill("Spot deal");
   await page.getByLabel("Valid from").fill("2026-06-01");
   await submit(page, page.getByRole("button", { name: "Add agreement" }));

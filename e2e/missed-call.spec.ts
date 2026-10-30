@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a missed call about a booking becomes a call-back task for today, linked to it", async ({
   page,
@@ -9,10 +9,11 @@ test("a missed call about a booking becomes a call-back task for today, linked t
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toHaveText(/^SB/);
@@ -22,10 +23,10 @@ test("a missed call about a booking becomes a call-back task for today, linked t
   await open(page, "/discuss/queue");
   await page.getByRole("button", { name: "Log a message received" }).click();
   const d = page.getByRole("dialog");
-  await d.getByLabel("By").selectOption("call");
+  await choose(d.getByLabel("By"), "call");
   await d.getByLabel("From (name, e-mail or phone)").fill(caller);
   await d.getByLabel("Booking or quotation no.").fill(sb);
-  await d.getByLabel("Call outcome").selectOption("missed");
+  await choose(d.getByLabel("Call outcome"), "missed");
   await d.getByLabel("Call minutes").fill("0");
   await submit(page, d.getByRole("button", { name: "Log it" }));
   await expectToast(page, "Logged");

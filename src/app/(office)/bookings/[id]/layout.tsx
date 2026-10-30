@@ -7,7 +7,7 @@ import { BookingControls } from "@/features/bookings/components/booking-controls
 import { BookingStatusBadge } from "@/features/bookings/components/booking-status-badge";
 import { getBooking } from "@/features/bookings/queries";
 import { requirePagePermission } from "@/server/auth/dal";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 import { releaseState, releaseTone } from "@/domain/release";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { readReleaseStates } from "@/server/release-config";
@@ -22,7 +22,7 @@ export default async function BookingLayout({ params, children }: LayoutProps<"/
   if (!id.success) notFound();
   const [b, cancelReasons, states] = await Promise.all([
     getBooking(id.data),
-    readConfig("cancelReasons"),
+    liveLookups("cancel-reasons"),
     readReleaseStates(),
   ]);
   if (!b) notFound();

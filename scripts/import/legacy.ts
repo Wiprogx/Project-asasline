@@ -46,7 +46,8 @@ async function main() {
   const { audit } = await import("../../src/server/audit");
   const { importContacts } = await import("./contacts");
   const { importUsers } = await import("./users");
-  const { importLists, importRates } = await import("./config");
+  const { importRates } = await import("./config");
+  const { importLookups, LEGACY_LOOKUP_LISTS } = await import("./lookups");
   const { importQuotations } = await import("./quotations");
   const { importBookings } = await import("./bookings");
   const { importActivities } = await import("./activities");
@@ -57,8 +58,7 @@ async function main() {
   const { importMessages } = await import("./messages");
   const { importEntries } = await import("./entries");
   const { importFiles } = await import("./files");
-  const { LEGACY_LISTS } = await import("../../src/domain/legacy-config");
-  for (const k of Object.keys(LEGACY_LISTS)) CONFIG_DONE.add(k);
+  for (const k of [...Object.keys(LEGACY_LOOKUP_LISTS), "PAPER_DOCS"]) CONFIG_DONE.add(k);
   const { printReport } = await import("./report");
 
   const read = readLegacyExport(readFileSync(file, "utf8"));
@@ -72,7 +72,7 @@ async function main() {
     await db.transaction(async (tx) => {
       const reports = {
         users: await importUsers(tx, read.users),
-        "settings lists": await importLists(tx, read.records),
+        "reason lists": await importLookups(tx, read.records),
         "rate catalogue": await importRates(tx, read.records),
         vessels: await importVessels(tx, read.records),
         contacts: await importContacts(tx, read.records),
@@ -106,6 +106,9 @@ async function main() {
       if (!apply) throw new Preview();
     });
     console.log("\n✓ applied");
+    // The legacy children land as child addresses; each becomes a contact of its own, linked.
+    const { convertChildAddresses } = await import("../../src/server/convert-child-addresses");
+    console.log(`${await convertChildAddresses()} child address(es) moved to contacts`);
   } catch (e) {
     if (!(e instanceof Preview)) throw e;
     console.log("\nPreview only — nothing kept. Run again with --apply to import.");

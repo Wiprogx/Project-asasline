@@ -1,28 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PORTS, parsePortLines, portLines } from "./ports";
+import { parseAliases, portCode, portHint } from "./ports";
 
 describe("ports", () => {
-  it("ships the legacy table, each code once", () => {
-    expect(DEFAULT_PORTS.length).toBeGreaterThan(250);
-    expect(new Set(DEFAULT_PORTS.map((p) => p.code)).size).toBe(DEFAULT_PORTS.length);
-    expect(DEFAULT_PORTS.find((p) => p.code === "CMDLA")).toEqual({
-      code: "CMDLA",
-      name: "Douala",
-      country: "CM",
-    });
+  it("reads a typed code, upper-cased, and refuses what is not a UN/LOCODE", () => {
+    expect(portCode(" beanr ")).toBe("BEANR");
+    expect(portCode("CNSHA")).toBe("CNSHA");
+    expect(portCode("Antwerp")).toBeNull();
+    expect(portCode("BE1NR")).toBeNull();
+    expect(portCode(null)).toBeNull();
   });
-  it("reads one port per line and names a bad line", () => {
-    const r = parsePortLines(
-      "beanr Antwerp be\n\nNGLOS Lagos (Apapa) NG\nnonsense\nBEANR Twice BE",
+  it("keeps each other name once, in the order typed", () => {
+    expect(parseAliases("Apapa; apapa\nLagos ;  ; Tin Can")).toEqual(["Apapa", "Lagos", "Tin Can"]);
+  });
+  it("says the name, the country and a pre-clearance beside the code", () => {
+    expect(portHint({ code: "CMDLA", name: "Douala", country: "CM" })).toBe("Douala (CM)");
+    expect(portHint({ code: "TRMER", name: "Mersin", country: "TR", preClearance: true })).toBe(
+      "Mersin (TR) · pre-clearance",
     );
-    expect(r.ports).toEqual([
-      { code: "BEANR", name: "Antwerp", country: "BE" },
-      { code: "NGLOS", name: "Lagos (Apapa)", country: "NG" },
-    ]);
-    expect(r.problems).toEqual(['Line 4: expected "CODE Name CC", e.g. BEANR Antwerp BE']);
-  });
-  it("writes the lines the editor reads back", () => {
-    const two = DEFAULT_PORTS.slice(0, 2);
-    expect(parsePortLines(portLines(two)).ports).toEqual(two);
   });
 });

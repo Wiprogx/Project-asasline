@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PORT_CODE } from "@/domain/ports";
 import { VESSEL_STATUSES } from "@/domain/vessels";
 import { optionalDayField } from "@/lib/zod-fields";
 
@@ -11,6 +12,11 @@ const text = (max: number) =>
     .max(max)
     .optional()
     .transform((v) => v || null);
+
+/** A port of Settings › Ports by its UN/LOCODE; one the table lacks is added to it. */
+const port = text(10)
+  .transform((v) => v?.toUpperCase() ?? null)
+  .refine((v) => v === null || PORT_CODE.test(v), "A UN/LOCODE, e.g. BEANR");
 
 export const vesselSchema = z.object({
   name: z
@@ -28,8 +34,8 @@ export const vesselSchema = z.object({
     .refine((v) => v === null || /^\d{7}$/.test(v), "Seven digits"),
   carrier: text(60),
   service: text(80),
-  pol: text(40),
-  pod: text(40),
+  pol: port,
+  pod: port,
   etd: day.transform((v) => v ?? null),
   eta: day.transform((v) => v ?? null),
   atd: day.transform((v) => v ?? null),

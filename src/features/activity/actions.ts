@@ -7,6 +7,7 @@ import { audit } from "@/server/audit";
 import { type CurrentUser, requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { activities, bookings, contacts } from "@/server/db/schema";
+import { liveLookupLabel } from "@/server/lookups";
 import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { handOverSchema, newTaskSchema, taskRef, withdrawTaskSchema } from "./schemas";
@@ -115,9 +116,11 @@ export async function withdrawTask(_p: ActionResult, fd: FormData): Promise<Acti
   const user = await requirePermission("app.activity");
   const parsed = withdrawTaskSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { id, version, reason } = parsed.data;
+  const { id, version, reasonId } = parsed.data;
+  const reason = await liveLookupLabel(db, "withdraw-reasons", reasonId);
+  if (!reason) return fail("That reason is no longer offered — choose one from the list");
   return run(
-    () => move(user, id, version, "withdraw", { withdrawReason: reason }, { reason }),
+    () => move(user, id, version, "withdraw", { withdrawReasonId: reasonId }, { reason, reasonId }),
     "Withdrawn",
   );
 }
@@ -127,7 +130,7 @@ export async function putBackTask(_p: ActionResult, fd: FormData): Promise<Actio
   const parsed = taskRef.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   return run(
-    () => move(user, parsed.data.id, parsed.data.version, "putBack", { withdrawReason: null }),
+    () => move(user, parsed.data.id, parsed.data.version, "putBack", { withdrawReasonId: null }),
     "Put back",
   );
 }

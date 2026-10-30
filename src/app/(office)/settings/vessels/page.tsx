@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SearchInput } from "@/components/shared/search-input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { may } from "@/domain/permissions";
 import { CutoffForm } from "@/features/vessels/components/cutoff-form";
@@ -30,7 +29,6 @@ export default async function VesselsPage({ searchParams }: PageProps<"/settings
           <VesselForm />
         </CardContent>
       </Card>
-      <SearchInput placeholder="Search a vessel, voyage, carrier or port…" />
       <Card>
         <CardContent className="pt-2">
           <VesselsTable rows={rows} />

@@ -3,6 +3,7 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { arrivalOf, type Leg } from "@/domain/legs";
 import type { DbOrTx } from "@/server/db/client";
 import { bookingLegs, bookings, vessels } from "@/server/db/schema";
+import { portCodeOf } from "@/server/port-sql";
 
 /** The booking's onward legs in order, each with its sailing. */
 export async function legsOf(tx: DbOrTx, bookingId: string) {
@@ -13,8 +14,8 @@ export async function legsOf(tx: DbOrTx, bookingId: string) {
       vesselId: bookingLegs.vesselId,
       name: vessels.name,
       voyage: vessels.voyage,
-      pol: vessels.pol,
-      pod: vessels.pod,
+      pol: portCodeOf(vessels.polId),
+      pod: portCodeOf(vessels.podId),
       etd: vessels.etd,
       eta: vessels.eta,
     })

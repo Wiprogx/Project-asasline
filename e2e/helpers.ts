@@ -86,3 +86,144 @@ export function uniqueVat(country: "BE" | "DE"): string {
   const base = `0${seven}`;
   return `BE${base}${String(97 - (Number(base) % 97)).padStart(2, "0")}`;
 }
+
+type Choice = string | { label: string } | { value: string } | { index: number };
+
+/**
+ * Picks an option in the app's select (Base UI, not a native <select>): opens it and clicks the
+ * option by its text, its value or its position — the arguments `selectOption` took.
+ */
+export async function choose(select: Locator, choice: Choice) {
+  await select.click();
+  const list = select.page().getByRole("listbox");
+  await list.waitFor();
+  const options = list.getByRole("option");
+  const target =
+    typeof choice === "string"
+      ? list
+          .locator(`[role="option"][data-value="${choice.replace(/"/g, '\\"')}"]`)
+          .or(list.getByRole("option", { name: choice, exact: true }))
+      : "label" in choice
+        ? list.getByRole("option", { name: choice.label, exact: true })
+        : "value" in choice
+          ? list.locator(`[role="option"][data-value="${choice.value}"]`)
+          : options.nth(choice.index);
+  await target.first().click();
+  await list.waitFor({ state: "hidden" });
+}
+
+/** The value an app select holds (a native one's `toHaveValue`). */
+export async function expectChosen(select: Locator, value: string | RegExp) {
+  await expect(select).toHaveAttribute("data-value", value);
+}
+
+let vatSeq = 0;
+/** A Belgian VAT number that passes the check digits and no other test run has used. */
+export function freshVat() {
+  const seven = String((Date.now() + vatSeq++) % 1e7).padStart(7, "0");
+  // Belgian check digits: 97 minus the first eight digits ("0" + seven) modulo 97.
+  const check = 97 - (Number(`0${seven}`) % 97);
+  return `BE0${seven}${String(check).padStart(2, "0")}`;
+}
+
+/**
+ * Before "Create contact": what the form requires and the test left empty — a company's VAT,
+ * EORI and address, a person's way to reach them — so a test types only what it is about.
+ */
+export async function fillMandatory(page: Page) {
+  const empty = async (label: string | RegExp) => {
+    const f = page.getByLabel(label).first();
+    return (await f.isVisible()) && (await f.inputValue()) === "";
+  };
+  const person = (await page.locator("#type").getAttribute("data-value")) === "person";
+  if (!person) {
+    // In the format of the country the test picked (Settings › Number formats); else Belgium's.
+    const cc = (await page.locator('input[name="country"]').first().inputValue()) || "BE";
+    const digits = (n: number) =>
+      String(Date.now() + vatSeq++)
+        .slice(-n)
+        .padStart(n, "0");
+    const vat = cc === "BE" ? freshVat() : `${cc}${digits(9)}`;
+    const eori = cc === "BE" ? vat : `${cc}${digits(cc === "DE" ? 15 : 12)}`;
+    if (await empty(/^VAT number/)) await page.getByLabel(/^VAT number/).fill(vat);
+    if (await empty(/^EORI/)) await page.getByLabel(/^EORI/).fill(eori);
+    // A company names its trade (a location has none to give).
+    const company = (await page.locator("#type").getAttribute("data-value")) !== "location";
+    if (company && (await empty(/^Professions/)))
+      await page.getByLabel(/^Professions/).fill("Transporter");
+  } else if ((await empty(/^Email/)) && (await empty(/^Phone/))) {
+    await page
+      .getByLabel(/^Email/)
+      .first()
+      .fill("someone@e2e.test");
+  }
+  if (await empty(/^Street/))
+    await page
+      .getByLabel(/^Street/)
+      .first()
+      .fill("Kaai 1");
+  if (await empty(/^City/)) await page.getByLabel(/^City/).first().fill("Antwerpen");
+  const country = page.getByRole("combobox", { name: "Country" }).first();
+  if ((await country.inputValue()) === "") {
+    // The country is only filled in: its language (French for Belgium) is not the test's subject.
+    const lang = page.locator("#lang");
+    const byCountry = (await lang.count()) > 0 && (await lang.getAttribute("data-value")) === "";
+    await country.fill("BE");
+    await page.getByRole("option").first().click();
+    if (byCountry) await choose(lang, "en");
+  }
+}
+
+/**
+ * The options of an app select, its list opened (a native select's `locator("option")`); close
+ * it with Escape before the next step. Each option carries its value in `data-value`.
+ */
+export async function optionsOf(select: Locator) {
+  await select.click();
+  const list = select.page().getByRole("listbox");
+  await list.waitFor();
+  return list.getByRole("option");
+}
+
+/**
+ * Adds a user from Settings › Users with the temporary password given (they choose their own
+ * at the first sign-in: see `firstSignIn`).
+ */
+export async function addUser(
+  page: Page,
+  u: { name: string; email: string; password: string; role?: string },
+) {
+  await open(page, "/settings/users");
+  await page.getByRole("button", { name: "+ Add user" }).click();
+  const dlg = page.getByRole("dialog");
+  await dlg.getByLabel("Full name").fill(u.name);
+  await dlg.getByLabel("Email", { exact: true }).fill(u.email);
+  await choose(dlg.getByRole("combobox", { name: "Role" }), { label: u.role ?? "Docs clerk" });
+  await dlg.getByLabel("Temporary password").fill(u.password);
+  await submit(page, dlg.getByRole("button", { name: "Add user" }));
+  await expectToast(page, `${u.name} can now sign in`);
+}
+
+/** A new user's first sign-in: the temporary password, then their own; returns their own. */
+export async function firstSignIn(page: Page, email: string, temporary: string) {
+  await open(page, "/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(temporary);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/change-password$/, { timeout: 20_000 });
+  const own = `${temporary}-own`;
+  await page.getByLabel("New password").fill(own);
+  await page.getByLabel("The same again").fill(own);
+  await page.getByRole("button", { name: "Save and continue" }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+  return own;
+}
+
+/**
+ * "Issue invoice" once the draft's last change has landed: the toast of an added line comes
+ * before the page holds the draft's new version, and issuing the old one is a conflict.
+ */
+export async function issue(page: Page) {
+  await page.waitForLoadState("networkidle");
+  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+}

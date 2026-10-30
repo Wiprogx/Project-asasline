@@ -3,7 +3,6 @@ import { centsToInput } from "@/domain/money";
 export const CONTACT_TEXT_FIELDS = [
   "name",
   "type",
-  "kind",
   "lang",
   "email",
   "phone",
@@ -19,6 +18,14 @@ export const CONTACT_TEXT_FIELDS = [
   "creditLimit",
   "note",
   "paymentTermId",
+  "salutationId",
+  "firstName",
+  "lastName",
+  "jobTitle",
+  "passportNumber",
+  "siteRef",
+  "openingHours",
+  "instructions",
 ] as const;
 
 export type ContactFormValues = Partial<
@@ -47,5 +54,11 @@ export function toContactFormValues(c: ContactRecord): ContactFormValues {
   out.professions = c.professions?.join(", ") ?? null;
   out.tags = c.tags?.join(", ") ?? null;
   out.usesLastPrice = c.usesLastPrice ?? false;
+  // A person saved before the name had parts: the last word is the last name.
+  if (c.type === "person" && !c.firstName && !c.lastName && c.name) {
+    const words = c.name.trim().split(/\s+/);
+    out.lastName = words.pop() ?? null;
+    out.firstName = words.join(" ") || null;
+  }
   return out;
 }

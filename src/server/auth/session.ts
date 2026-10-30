@@ -40,6 +40,7 @@ export async function readSessionUser() {
       email: users.email,
       name: users.name,
       role: users.role,
+      mustChangePassword: users.mustChangePassword,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))

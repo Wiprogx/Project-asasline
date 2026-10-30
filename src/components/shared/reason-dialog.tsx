@@ -21,7 +21,8 @@ type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
 
 /**
  * Archive / cancel / withdraw with a mandatory reason — the app's replacement for delete.
- * With `reasons`, the person picks from the editable Settings list.
+ * With `reasons`, the person picks a text from the editable Settings list; with
+ * `reasonOptions`, a row of a reasons table, posted as `reasonId`.
  */
 export function ReasonDialog({
   action,
@@ -31,6 +32,7 @@ export function ReasonDialog({
   description,
   confirmLabel,
   reasons,
+  reasonOptions,
 }: {
   action: Action;
   hidden: Record<string, string | number>;
@@ -39,6 +41,7 @@ export function ReasonDialog({
   description: string;
   confirmLabel: string;
   reasons?: readonly string[];
+  reasonOptions?: readonly { value: string; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [, formAction, pending] = useToastedAction(action, () => setOpen(false));
@@ -55,7 +58,15 @@ export function ReasonDialog({
           {Object.entries(hidden).map(([k, v]) => (
             <input key={k} type="hidden" name={k} value={v} />
           ))}
-          {reasons ? (
+          {reasonOptions ? (
+            <NativeSelect
+              name="reasonId"
+              aria-label="Reason"
+              required
+              options={reasonOptions}
+              placeholder="Choose a reason…"
+            />
+          ) : reasons ? (
             <NativeSelect
               name="reason"
               aria-label="Reason"

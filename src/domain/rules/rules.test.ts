@@ -233,7 +233,7 @@ describe("per-container rules", () => {
       { id: "t1", ruleCode: "CERTIWEIGHT#b1", state: "open", due: null },
       { id: "t2", ruleCode: "CERTIWEIGHT#b2", state: "open", due: null },
     ]);
-    expect(diff.withdraw).toEqual([{ id: "t2", reason: "The container left the booking" }]);
+    expect(diff.withdraw).toEqual([{ id: "t2", code: "box_left" }]);
   });
   it("holds the VGM until every box's weight is in", () => {
     const vgm = DEFAULT_RULES.find((r) => r.code === "VGM")!;

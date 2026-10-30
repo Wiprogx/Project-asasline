@@ -17,11 +17,13 @@ function TaskItem({
   today,
   staff,
   withdrawReasons,
+  types,
 }: {
   t: TaskRow;
   today: string;
   staff: Staff;
-  withdrawReasons: readonly string[];
+  withdrawReasons: readonly { value: string; label: string }[];
+  types: readonly { value: string; label: string; code?: string | null }[];
 }) {
   const bucket = bucketOf(t.due, today);
   return (
@@ -62,6 +64,7 @@ function TaskItem({
         state={t.state}
         staff={staff}
         withdrawReasons={withdrawReasons}
+        types={types}
         words={t.ruleCode ? undefined : t}
       />
     </li>
@@ -78,12 +81,14 @@ export function TaskList({
   staff,
   grouped = true,
   withdrawReasons,
+  types,
 }: {
   rows: TaskRow[];
   today: string;
   staff: Staff;
   grouped?: boolean;
-  withdrawReasons: readonly string[];
+  withdrawReasons: readonly { value: string; label: string }[];
+  types: readonly { value: string; label: string; code?: string | null }[];
 }) {
   if (rows.length === 0)
     return <p className="py-8 text-center text-sm text-muted-foreground">No tasks here.</p>;
@@ -93,6 +98,7 @@ export function TaskList({
         {rows.map((t) => (
           <TaskItem
             withdrawReasons={withdrawReasons}
+            types={types}
             key={t.id}
             t={t}
             today={today}
@@ -119,6 +125,7 @@ export function TaskList({
               .map((t) => (
                 <TaskItem
                   withdrawReasons={withdrawReasons}
+                  types={types}
                   key={t.id}
                   t={t}
                   today={today}

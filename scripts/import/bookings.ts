@@ -19,6 +19,9 @@ import {
   quotations,
   rateItems,
 } from "../../src/server/db/schema";
+import { lookupIdFor } from "./lookups";
+import { replaceGoods, resolveGoods } from "../../src/server/container-goods";
+import { ensureLookup } from "../../src/server/lookups";
 import { linksOf } from "./contacts";
 import { emptyReport, type KindReport } from "./report";
 
@@ -67,7 +70,7 @@ async function originOf(tx: DbOrTx, records: readonly LegacyRecord[], b: Record<
 async function portsOf(tx: DbOrTx, laneId: unknown) {
   if (laneId === null || laneId === undefined) return null;
   const [row] = await tx
-    .select({ pol: rateItems.pol, pod: rateItems.pod })
+    .select({ polId: rateItems.polId, podId: rateItems.podId })
     .from(legacyLinks)
     .innerJoin(rateItems, eq(rateItems.id, legacyLinks.recordId))
     .where(and(eq(legacyLinks.kind, "RATE_ITEMS"), eq(legacyLinks.legacyId, String(laneId))));
@@ -92,7 +95,7 @@ export async function importBookings(
       report.skipped.push(`booking ${rec.id}: no reference`);
       continue;
     }
-    const { clientId, ...rest } = m.booking;
+    const { clientId, cancelReasonLabel, docTypeLabel, ...rest } = m.booking;
     if (!clientId) {
       report.skipped.push(
         `${m.booking.ref}: customer "${String(rec.body.client ?? "?")}" not found`,
@@ -115,15 +118,33 @@ export async function importBookings(
         .values({
           ...rest,
           clientId,
+          cancelReasonId: await lookupIdFor(tx, "cancel-reasons", cancelReasonLabel),
+          docTypeId: (await lookupIdFor(tx, "doc-types", docTypeLabel))!,
           quotationId: origin.quotationId,
           quotationRouteId: origin.routeId,
           vesselId: vesselLinks.get(String(rec.body.vesselId ?? "")) ?? null,
-          pol: ports?.pol ?? null,
-          pod: ports?.pod ?? null,
+          polId: ports?.polId ?? null,
+          podId: ports?.podId ?? null,
           ...archived,
         })
         .returning({ id: bookings.id });
-      await tx.insert(containers).values(m.containers.map((c) => ({ ...c, bookingId: id! })));
+      for (const { seals, hsLines, packageType, type, ...box } of m.containers) {
+        // A word no Settings list holds (package type, seal source): the box without its goods.
+        const goods = await resolveGoods(tx, { seals, hsLines, packageType });
+        if (goods.problem !== null)
+          report.warnings.push(`${m.booking.ref}: ${goods.problem} — goods left off the box`);
+        const ok = goods.problem === null ? goods : null;
+        const [made] = await tx
+          .insert(containers)
+          .values({
+            ...box,
+            bookingId: id!,
+            typeId: await ensureLookup(tx, "container-types", type),
+            packageTypeId: ok?.packageTypeId ?? null,
+          })
+          .returning({ id: containers.id });
+        if (ok) await replaceGoods(tx, made.id, ok, null);
+      }
       if (m.alerts.length)
         await tx.insert(bookingAlerts).values(
           m.alerts.map((a) => ({

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a supplier's bill in dollars keeps its own rate, and the books carry the euro", async ({
   page,
@@ -16,16 +16,17 @@ test("a supplier's bill in dollars keeps its own rate, and the books carry the e
 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(supplier);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: supplier })).toBeVisible();
 
   await open(page, "/accounting/bills");
-  await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
+  await choose(page.getByLabel("Supplier", { exact: true }), { label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
 
   // In dollars: the office's rate is proposed, and kept on the document.
-  await page.getByLabel("Currency").selectOption("USD");
+  await choose(page.getByLabel("Currency"), "USD");
   await expect(page.getByLabel("Euro for 1 USD")).toHaveValue("0.9000");
   await submit(page, page.getByRole("button", { name: "Set currency" }));
   await expectToast(page, "In USD at 1 USD = €0.9000");

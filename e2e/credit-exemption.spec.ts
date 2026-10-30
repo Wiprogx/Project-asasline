@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, tag } from "./helpers";
 
 test("a customer over their credit limit is flagged on the booking, and an exempt invoice without its export proof says so", async ({
   page,
@@ -12,12 +12,13 @@ test("a customer over their credit limit is flagged on the booking, and an exemp
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
   await page.getByLabel("Credit limit (EUR)").fill("100");
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // A 900 EUR destination accepted: the booking will invoice 900, nine times the limit.
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill(`Ocean freight ${t}`);
@@ -33,6 +34,6 @@ test("a customer over their credit limit is flagged on the booking, and an exemp
   await open(page, `${booking}/billing`);
   await page.getByRole("button", { name: "Create draft invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   await expectToast(page, /Issued as INV.*export proof/);
 });

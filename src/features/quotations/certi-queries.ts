@@ -4,6 +4,7 @@ import { certiState, isCertiweight } from "@/domain/certiweight";
 import { itemLabel } from "@/domain/pricing";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { withRouteWords } from "@/server/route-words";
 import { quotationLines, rateItems } from "@/server/db/schema";
 import { certificateFiled } from "./editor-store";
 
@@ -27,7 +28,12 @@ export async function certiweightOf(routeId: string) {
     state: certiState(!!line, filed),
     lineId: line?.id ?? null,
     item: item
-      ? { label: itemLabel(item), sellCents: item.sellCents, buyCents: item.buyCents, id: item.id }
+      ? {
+          label: itemLabel((await withRouteWords([item]))[0]),
+          sellCents: item.sellCents,
+          buyCents: item.buyCents,
+          id: item.id,
+        }
       : null,
   };
 }

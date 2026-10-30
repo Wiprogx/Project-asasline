@@ -17,6 +17,9 @@ type Props = Omit<ComponentProps<"form">, "action" | "onSubmit"> & {
  * `data-hydrated` is set once React has committed the form: a field typed into before that
  * moment can have its server text re-applied over what was typed. The browser suite waits
  * for it before typing (e2e/helpers open()).
+ *
+ * It posts by default: submitted before its script has run (a slow network, a dev server that
+ * refused the page's scripts), a form would otherwise send its fields — a password — in the URL.
  */
 export function ActionForm({ action, ref, ...props }: Props) {
   // A callback ref runs at the commit, so the mark is set exactly when React owns the form;
@@ -32,6 +35,7 @@ export function ActionForm({ action, ref, ...props }: Props) {
   return (
     <form
       ref={mark}
+      method="post"
       data-action-form=""
       {...props}
       onSubmit={(e) => {

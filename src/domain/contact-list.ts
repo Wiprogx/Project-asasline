@@ -5,24 +5,14 @@
  */
 export const CONTACT_KINDS = ["customer", "supplier", "both"] as const;
 export type ContactKind = (typeof CONTACT_KINDS)[number];
-export const CONTACT_KIND_LABEL: Record<ContactKind, string> = {
-  customer: "Customer",
-  supplier: "Supplier",
-  both: "Customer & Supplier",
-};
-export const CONTACT_KIND_TONE: Record<ContactKind, "info" | "warning" | "neutral"> = {
-  customer: "info",
-  supplier: "warning",
-  both: "neutral",
-};
 
 /* ---- the filters (legacy FILTER_FIELDS): a value picked, or part of the text ------------ */
 
 export const FILTER_FIELDS = [
+  { key: "type", label: "Type", pick: true },
   { key: "city", label: "City", pick: true },
   { key: "country", label: "Country", pick: true },
   { key: "profession", label: "Industry", pick: true },
-  { key: "kind", label: "Customer/Supplier", pick: true },
   { key: "tag", label: "Tag", pick: true },
   { key: "vat", label: "VAT no.", pick: false },
   { key: "email", label: "Email", pick: false },
@@ -52,28 +42,26 @@ export const filterLabel = (field: FilterField) =>
 /* ---- the columns (legacy C_COLS; city and country read together) ------------------------ */
 
 export const CONTACT_COLUMNS = [
-  { key: "kind", label: "Customer/Supplier" },
   { key: "professions", label: "Industry" },
   { key: "place", label: "Place" },
   { key: "vat", label: "VAT no." },
   { key: "email", label: "Email" },
   { key: "mobile", label: "Mobile" },
   { key: "lang", label: "Language" },
-  { key: "addresses", label: "Addresses" },
+  { key: "linked", label: "Linked" },
   { key: "bookings", label: "Bookings" },
   { key: "tasks", label: "Open activities" },
   { key: "note", label: "Note" },
 ] as const;
 export type ContactColumnKey = (typeof CONTACT_COLUMNS)[number]["key"];
 export const DEFAULT_CONTACT_COLUMNS: readonly ContactColumnKey[] = [
-  "kind",
   "professions",
   "place",
   "vat",
   "email",
 ];
 
-/** The addresses inside a contact that answered the search, when its own fields did not (legacy whyMatched). */
+/** The linked contacts that answered the search, when its own fields did not (legacy whyMatched). */
 export function whyMatched(
   own: readonly (string | null)[],
   children: readonly { name: string | null; type: string; hay: string }[],

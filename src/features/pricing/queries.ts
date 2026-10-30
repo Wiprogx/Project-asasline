@@ -4,6 +4,8 @@ import { itemLabel } from "@/domain/pricing";
 import { requirePermission } from "@/server/auth/dal";
 import { readRateCategories, readRateCategoriesForEdit } from "@/server/catalogue-config";
 import { db } from "@/server/db/client";
+import { portCodeOf, portMatches } from "@/server/port-sql";
+import { withRouteWords } from "@/server/route-words";
 import { contacts, priceListLines, priceLists, rateItems } from "@/server/db/schema";
 import { auditAccess } from "@/server/access";
 
@@ -32,8 +34,8 @@ export async function listRateItems(opts: { q?: string; category?: string; archi
         q
           ? or(
               ilike(rateItems.name, like),
-              ilike(rateItems.pol, like),
-              ilike(rateItems.pod, like),
+              portMatches(rateItems.polId, like),
+              portMatches(rateItems.podId, like),
               ilike(rateItems.carrier, like),
               ilike(rateItems.docCode, like),
               ilike(rateItems.country, like),
@@ -42,15 +44,18 @@ export async function listRateItems(opts: { q?: string; category?: string; archi
           : undefined,
       ),
     )
-    .orderBy(asc(rateItems.category), asc(rateItems.pod), asc(rateItems.name))
+    .orderBy(asc(rateItems.category), asc(portCodeOf(rateItems.podId)), asc(rateItems.name))
     .limit(500);
-  return rows.map((it) => ({ ...it, label: itemLabel(it) }));
+  const named = await withRouteWords(rows);
+  return named.map((it) => ({ ...it, label: itemLabel(it) }));
 }
 
 export async function getRateItem(id: string) {
   await requirePermission("catalogue.edit");
-  const [it] = await db.select().from(rateItems).where(eq(rateItems.id, id));
-  return it ? { ...it, label: itemLabel(it) } : null;
+  const [row] = await db.select().from(rateItems).where(eq(rateItems.id, id));
+  if (!row) return null;
+  const [it] = await withRouteWords([row]);
+  return { ...it, label: itemLabel(it) };
 }
 
 /** Items still in use, for a picker. */
@@ -60,8 +65,9 @@ export async function rateItemOptions() {
     .select()
     .from(rateItems)
     .where(isNull(rateItems.archivedAt))
-    .orderBy(asc(rateItems.category), asc(rateItems.pod), asc(rateItems.name));
-  return rows.map((it) => ({ value: it.id, label: `${itemLabel(it)} · ${it.category}` }));
+    .orderBy(asc(rateItems.category), asc(portCodeOf(rateItems.podId)), asc(rateItems.name));
+  const named = await withRouteWords(rows);
+  return named.map((it) => ({ value: it.id, label: `${itemLabel(it)} · ${it.category}` }));
 }
 
 /** Agreements, newest first; for one customer when `contactId` is given. */
@@ -104,6 +110,11 @@ export async function getPriceList(id: string) {
   if (!list) return null;
   return {
     ...list,
-    lines: list.lines.map((l) => ({ ...l, label: itemLabel(l.item) })),
+    lines: await Promise.all(
+      list.lines.map(async (l) => {
+        const [item] = await withRouteWords([l.item]);
+        return { ...l, label: itemLabel(item) };
+      }),
+    ),
   };
 }

@@ -5,6 +5,8 @@ import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
+import { liveLookupIdByLabel } from "@/server/lookups";
+import { portId, portIds, withPorts } from "@/server/ports";
 import { contacts, quotationRoutes } from "@/server/db/schema";
 import {
   addRouteSchema,
@@ -37,9 +39,10 @@ export async function addRoute(_p: ActionResult, fd: FormData): Promise<ActionRe
     db.transaction(async (tx) => {
       const q = await touchQuotation(tx, d.quotationId, d.version, user.id);
       const lane = d.laneId ? await oceanLeg(tx, d.laneId) : null;
-      const pol = lane?.pol ?? d.pol;
-      const pod = lane?.pod ?? d.pod;
-      if (!pol || !pod) throw new Refused("Pick an ocean leg, or type both ports.");
+      if (!lane && (!d.pol || !d.pod)) throw new Refused("Pick an ocean leg, or type both ports.");
+      const ids = lane ? { polId: lane.polId, podId: lane.podId } : await portIds(tx, d, user.id);
+      const [{ pol, pod }] = await withPorts([ids]);
+      if (!ids.polId || !ids.podId) throw new Refused("This ocean leg names no ports.");
       const [{ last }] = await tx
         .select({ last: max(quotationRoutes.position) })
         .from(quotationRoutes)
@@ -49,10 +52,14 @@ export async function addRoute(_p: ActionResult, fd: FormData): Promise<ActionRe
         .values({
           quotationId: q.id,
           position: (last ?? -1) + 1,
-          pol,
-          pod,
+          polId: ids.polId,
+          podId: ids.podId,
           finalPlace: d.finalPlace,
-          containerType: lane?.containerType ?? d.containerType,
+          containerTypeId:
+            lane?.containerTypeId ??
+            (d.containerType
+              ? await liveLookupIdByLabel(tx, "container-types", d.containerType)
+              : null),
           loadingMode: d.loadingMode,
           boxes: d.boxes,
           createdBy: user.id,
@@ -85,21 +92,34 @@ export async function updateRoute(_p: ActionResult, fd: FormData): Promise<Actio
   const user = await requirePermission("app.quotations");
   const parsed = updateRouteSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { quotationId, version, routeId, ...fields } = parsed.data;
+  const { quotationId, version, routeId, containerType, pol, pod, ...fields } = parsed.data;
   return editorResult(quotationId, "Destination saved", () =>
     db.transaction(async (tx) => {
       await touchQuotation(tx, quotationId, version, user.id);
       await routeIn(tx, quotationId, routeId);
+      // The box typed, as its row of Settings › Lists › Container types (none: not said).
+      const containerTypeId = containerType
+        ? await liveLookupIdByLabel(tx, "container-types", containerType)
+        : null;
+      if (containerType && !containerTypeId)
+        throw new Refused(`Container type "${containerType}" is not in Settings › Lists.`);
       await tx
         .update(quotationRoutes)
-        .set({ ...fields, updatedBy: user.id, updatedAt: new Date() })
+        .set({
+          ...fields,
+          polId: await portId(tx, pol, user.id),
+          podId: await portId(tx, pod, user.id),
+          containerTypeId,
+          updatedBy: user.id,
+          updatedAt: new Date(),
+        })
         .where(eq(quotationRoutes.id, routeId));
       await audit(tx, {
         action: "quotation.route.update",
         userId: user.id,
         entity: "quotation",
         entityId: quotationId,
-        detail: { routeId, route: `${fields.pol} → ${fields.pod}` },
+        detail: { routeId, route: `${pol} → ${pod}` },
       });
     }),
   );

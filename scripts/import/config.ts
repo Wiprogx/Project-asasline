@@ -1,52 +1,30 @@
 /**
- * The legacy settings (records of kind "config"): the word lists into their Settings row, the
- * rate catalogue into rate_items. A list the app already holds is kept — Settings may have been
- * edited since — and reported; an item already in the catalogue is linked, not added twice.
+ * The legacy settings (records of kind "config"): the rate catalogue into rate_items (the word
+ * lists go to their tables, scripts/import/lookups); an item already in the catalogue is linked,
+ * not added twice.
  */
 import { and, eq, isNull } from "drizzle-orm";
-import {
-  configValueOf,
-  LEGACY_LISTS,
-  type LegacyListName,
-  listOf,
-} from "../../src/domain/legacy-config";
+import { configValueOf } from "../../src/domain/legacy-config";
 import type { LegacyRecord } from "../../src/domain/legacy-export";
 import { mapRateItem, type RateItemRow } from "../../src/domain/legacy-rates";
 import type { DbOrTx } from "../../src/server/db/client";
-import { configTables, legacyLinks, rateItems } from "../../src/server/db/schema";
+import { legacyLinks, rateItems } from "../../src/server/db/schema";
+import { ensureLookup } from "../../src/server/lookups";
 import { linksOf } from "./contacts";
+import { importPortId } from "./ports";
 import { emptyReport, type KindReport } from "./report";
 
 const configOf = (records: readonly LegacyRecord[], id: string) =>
   records.find((r) => r.kind === "config" && r.id === id);
 
-export async function importLists(tx: DbOrTx, records: readonly LegacyRecord[]) {
-  const report = emptyReport();
-  for (const [legacy, name] of Object.entries(LEGACY_LISTS)) {
-    const rec = configOf(records, legacy);
-    if (!rec) continue;
-    const words = listOf(configValueOf(rec.body), legacy as LegacyListName);
-    if (!words) {
-      report.skipped.push(`${legacy}: not a list of words`);
-      continue;
-    }
-    const [has] = await tx
-      .select({ name: configTables.name })
-      .from(configTables)
-      .where(eq(configTables.name, name));
-    if (has) {
-      report.already++;
-      report.warnings.push(`${legacy}: Settings › ${name} already saved in the app — kept`);
-      continue;
-    }
-    await tx.insert(configTables).values({ name, value: words });
-    report.added++;
-  }
-  return report;
-}
-
 /** The same item already in the catalogue: same category and the fields that name it. */
-async function sameItem(tx: DbOrTx, r: RateItemRow) {
+type ResolvedItem = Omit<RateItemRow, "pol" | "pod" | "containerType"> & {
+  containerTypeId: string | null;
+  polId: string | null;
+  podId: string | null;
+};
+
+async function sameItem(tx: DbOrTx, r: ResolvedItem) {
   const eqOrNull = <T>(col: Parameters<typeof eq>[0], v: T | null) =>
     v === null ? isNull(col) : eq(col, v);
   const [row] = await tx
@@ -57,10 +35,10 @@ async function sameItem(tx: DbOrTx, r: RateItemRow) {
         isNull(rateItems.archivedAt),
         eq(rateItems.category, r.category),
         eqOrNull(rateItems.name, r.name),
-        eqOrNull(rateItems.pol, r.pol),
-        eqOrNull(rateItems.pod, r.pod),
+        eqOrNull(rateItems.polId, r.polId),
+        eqOrNull(rateItems.podId, r.podId),
         eqOrNull(rateItems.carrier, r.carrier),
-        eqOrNull(rateItems.containerType, r.containerType),
+        eqOrNull(rateItems.containerTypeId, r.containerTypeId),
         eqOrNull(rateItems.docCode, r.docCode),
         eqOrNull(rateItems.country, r.country),
         eqOrNull(rateItems.fromPlace, r.fromPlace),
@@ -97,10 +75,22 @@ export async function importRates(
       continue;
     }
     for (const w of mapped.warnings) report.warnings.push(`item ${legacyId}: ${w}`);
-    let id = await sameItem(tx, mapped.row);
+    // The box code is a row of Settings › Lists › Container types (a code in use is offered),
+    // and the ports rows of Settings › Ports.
+    const { containerType, pol, pod, ...fields } = mapped.row;
+    const warn = (w: string) => report.warnings.push(`item ${legacyId}: ${w}`);
+    const row = {
+      ...fields,
+      containerTypeId: containerType
+        ? await ensureLookup(tx, "container-types", containerType)
+        : null,
+      polId: await importPortId(tx, pol, warn),
+      podId: await importPortId(tx, pod, warn),
+    };
+    let id = await sameItem(tx, row);
     if (id) report.matched++;
     else {
-      [{ id }] = await tx.insert(rateItems).values(mapped.row).returning({ id: rateItems.id });
+      [{ id }] = await tx.insert(rateItems).values(row).returning({ id: rateItems.id });
       report.added++;
     }
     await tx.insert(legacyLinks).values({ kind: "RATE_ITEMS", legacyId, recordId: id! });

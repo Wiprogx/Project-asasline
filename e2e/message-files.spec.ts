@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a booking's copy list goes on its e-mails, and what comes with a message is filed on the shipment", async ({
   page,
@@ -17,10 +17,11 @@ test("a booking's copy list goes on its e-mails, and what comes with a message i
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
   await page.getByLabel("Email").fill(`client.${t}@example.com`);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const ref = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
@@ -35,9 +36,7 @@ test("a booking's copy list goes on its e-mails, and what comes with a message i
   // Every e-mail from the file starts with it, and the mail app gets it too.
   await open(page, `${base}/messages`);
   await expect(page.getByLabel("Copy to")).toHaveValue(`boss.${t}@example.com, agent@example.com`);
-  await page
-    .getByLabel("To a party on the file")
-    .selectOption({ label: `${client} (Customer, Payer)` });
+  await choose(page.getByLabel("To a party on the file"), { label: `${client} (Customer, Payer)` });
   await page.getByLabel("Subject").fill("Your booking");
   await page.getByLabel("Message", { exact: true }).fill("Please find the booking confirmation.");
   await submit(page, page.getByRole("button", { name: "Record and open to send" }));

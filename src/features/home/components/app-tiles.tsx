@@ -70,7 +70,7 @@ export function AppTiles({ t, settings }: { t: Tiles; settings: boolean }) {
       ? {
           href: "/settings",
           label: "Settings",
-          line: "People, lists, rules, catalogue",
+          line: "Users, lists, rules, catalogue",
           count: null,
           icon: <SettingsIcon aria-hidden />,
         }

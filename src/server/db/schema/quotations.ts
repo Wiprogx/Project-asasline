@@ -2,6 +2,8 @@ import { boolean, index, integer, pgTable, text, uniqueIndex, uuid } from "drizz
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import { quotationDisplayEnum, quotationStatusEnum, shipmentKindEnum } from "./enums";
+import { cancelReasons, containerTypes, docTypes } from "./lists";
+import { ports } from "./ports";
 import { rateItems } from "./pricing";
 
 export const quotations = pgTable(
@@ -25,11 +27,11 @@ export const quotations = pgTable(
     sentVia: text(),
     /** What is shipped (legacy q.commodity), and the transport document asked for (Settings › Lists). */
     commodity: text(),
-    docType: text(),
+    docTypeId: uuid().references(() => docTypes.id),
     /** Why the customer rejected the whole quotation (legacy lostReason); status is then "declined". */
     declinedReason: text(),
     /** Cancelled with a reason; put back, it returns to the status it had (legacy statusBefore). */
-    cancelReason: text(),
+    cancelReasonId: uuid().references(() => cancelReasons.id),
     statusBeforeCancel: quotationStatusEnum("status_before_cancel"),
   },
   (t) => [
@@ -47,10 +49,12 @@ export const quotationRoutes = pgTable(
       .notNull()
       .references(() => quotations.id),
     position: integer().notNull().default(0),
-    pol: text().notNull(),
-    pod: text().notNull(),
+    /** The ports of loading and discharge (Settings › Ports); none: not known (a legacy "?"). */
+    polId: uuid().references(() => ports.id),
+    podId: uuid().references(() => ports.id),
     finalPlace: text(),
-    containerType: text(),
+    /** The box quoted (Settings › Lists › Container types). */
+    containerTypeId: uuid().references(() => containerTypes.id),
     declined: boolean().notNull().default(false),
     /** Why the customer declined this destination; it stays on the quotation for the record. */
     declinedReason: text(),

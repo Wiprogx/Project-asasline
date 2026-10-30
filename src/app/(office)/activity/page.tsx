@@ -10,7 +10,7 @@ import { coversNow, listTasks, staffOptions } from "@/features/activity/queries"
 import { listFilterSchema } from "@/features/activity/schemas";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Activity" };
 
@@ -26,8 +26,8 @@ export default async function ActivityPage({ searchParams }: PageProps<"/activit
   ]);
 
   const [types, withdrawReasons] = await Promise.all([
-    readConfig("activityTypes"),
-    readConfig("withdrawReasons"),
+    liveLookups("task-types"),
+    liveLookups("withdraw-reasons"),
   ]);
   return (
     <div className="grid gap-4">
@@ -48,6 +48,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/activit
       </div>
       <TaskList
         withdrawReasons={withdrawReasons}
+        types={types}
         rows={rows}
         today={today}
         staff={staff}

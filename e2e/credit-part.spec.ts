@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, submit, tag } from "./helpers";
 
 async function line(page: Page, text: string, qty: string, unit: string) {
   await page.getByLabel("Line", { exact: true }).fill(text);
@@ -8,6 +8,8 @@ async function line(page: Page, text: string, qty: string, unit: string) {
   await page.getByLabel("Unit (EUR)").fill(unit);
   await submit(page, page.getByRole("button", { name: "Add line" }));
   await expectToast(page, "Line added");
+  // The draft's new version comes with the row: issuing before it would be a stale version.
+  await expect(page.getByRole("row").filter({ hasText: text })).toBeVisible();
 }
 
 test("part of an issued invoice is credited, never more than is left, and the rest after", async ({
@@ -18,15 +20,16 @@ test("part of an issued invoice is credited, never more than is left, and the re
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/accounting");
-  await page.getByLabel("Customer", { exact: true }).selectOption({ label: client });
+  await choose(page.getByLabel("Customer", { exact: true }), { label: client });
   await page.getByRole("button", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Draft for ${client}`);
   await line(page, `Weighing ${t}`, "3", "100");
   await line(page, `Storage ${t}`, "1", "50");
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toHaveText(/^INV\//);
   const invoiceUrl = page.url();

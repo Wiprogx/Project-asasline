@@ -64,13 +64,3 @@ export function sailingProblem(etd: string | null, eta: string | null): string |
   if (!etd || !eta) return null;
   return eta < etd ? "ETA is before ETD" : null;
 }
-
-/** Transport document kinds a booking can carry (legacy docType). */
-export const DOC_TYPES = [
-  "SEA WAYBILL",
-  "ORIGINAL BL",
-  "EXPRESS RELEASE",
-  "TELEX RELEASE",
-  "AIR WAYBILL",
-  "CMR",
-] as const;

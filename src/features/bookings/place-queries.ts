@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
+import { professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { contactAddresses, contacts } from "@/server/db/schema";
 
@@ -18,7 +19,11 @@ export async function bookingPlaces(): Promise<{ depots: string[]; terminals: st
   return cached("bookings:places", { ttlSeconds: 300, tags: [tags.contacts] }, async () => {
     const [people, addresses] = await Promise.all([
       db
-        .select({ name: contacts.name, tags: contacts.tags, professions: contacts.professions })
+        .select({
+          name: contacts.name,
+          tags: tagsOf(),
+          professions: professionsOf(),
+        })
         .from(contacts)
         .where(isNull(contacts.archivedAt)),
       db

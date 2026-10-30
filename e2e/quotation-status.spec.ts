@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a quotation edited, rejected, reopened, cancelled and put back; lost once every destination is declined", async ({
   page,
@@ -9,11 +9,12 @@ test("a quotation edited, rejected, reopened, cancelled and put back; lost once 
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill("Ocean freight to Mersin");
@@ -46,7 +47,7 @@ test("a quotation edited, rejected, reopened, cancelled and put back; lost once 
   await expectToast(page, "Marked as rejected");
   await expect(header).toContainText("Declined");
   await expect(header).toContainText("Price higher than a competitor");
-  await page.getByLabel("Status").selectOption("sent");
+  await choose(page.getByLabel("Status"), "sent");
   await submit(page, page.getByRole("button", { name: "Set", exact: true }));
   await expectToast(page, "Status updated");
   await expect(header).toContainText("Sent");
@@ -54,7 +55,7 @@ test("a quotation edited, rejected, reopened, cancelled and put back; lost once 
 
   // Cancelled with a reason from the list, then put back where it was.
   await page.getByRole("button", { name: "Cancel quotation" }).click();
-  await page.getByRole("dialog").getByLabel("Reason").selectOption({ index: 1 });
+  await choose(page.getByRole("dialog").getByLabel("Reason"), { index: 1 });
   await submit(page, page.getByRole("dialog").getByRole("button", { name: "Cancel it" }));
   await expectToast(page, "Quotation cancelled");
   await expect(header).toContainText("Cancelled");

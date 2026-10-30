@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a message received on a booking is answered in place: same channel, the sender, Re: on the subject", async ({
   page,
@@ -10,10 +10,11 @@ test("a message received on a booking is answered in place: same channel, the se
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
   await page.getByLabel("Email").fill(`reply.${t}@example.com`);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toHaveText(/^SB/);
@@ -25,7 +26,7 @@ test("a message received on a booking is answered in place: same channel, the se
   await page.getByRole("button", { name: "Log a message received" }).click();
   const d = page.getByRole("dialog");
   await d.getByLabel("From (name, e-mail or phone)").fill(`reply.${t}@example.com`);
-  await d.getByLabel("Contact").selectOption({ label: client });
+  await choose(d.getByLabel("Contact"), { label: client });
   await d.getByLabel("Booking or quotation no.").fill(ref);
   await d.getByLabel("Subject").fill(`Loading date ${t}`);
   await d.getByLabel("Message").fill("Can you load on Tuesday?");

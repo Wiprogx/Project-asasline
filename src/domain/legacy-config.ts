@@ -1,22 +1,8 @@
 /**
  * The legacy office's settings as they come out of its `records` table (kind "config", id the
- * table's name, body `{ value }`; legacy STORE_CONFIG), read into the new Settings: plain word
- * lists into their `config_tables` row, the rate catalogue into `rate_items`.
+ * table's name, body `{ value }`; legacy STORE_CONFIG), read into the new Settings: each word
+ * list into its own table (scripts/import/lookups), the rate catalogue into `rate_items`.
  */
-
-/** Legacy list tables and the Settings list each becomes (server/config-tables). */
-export const LEGACY_LISTS = {
-  CANCEL_REASONS: "cancelReasons",
-  CONTAINER_TYPES: "containerTypes",
-  CHILD_TYPES: "addressTypes",
-  PACKAGE_TYPES: "packageTypes",
-  PAPER_DOCS: "paperDocs",
-  ACTIVITY_TYPES: "activityTypes",
-  PROFESSIONS: "professions",
-  SEAL_SOURCES: "sealSources",
-  DOC_TYPES: "docTypes",
-} as const;
-export type LegacyListName = keyof typeof LEGACY_LISTS;
 
 /** A config record's value: `{ value: … }` as the store saved it, or the value itself. */
 export function configValueOf(body: Record<string, unknown> | unknown[]): unknown {
@@ -30,7 +16,7 @@ export function boxType(v: string): string {
 }
 
 /** A word list, cleaned: strings only, trimmed, once each; null when it is not a list of words. */
-export function listOf(value: unknown, name?: LegacyListName): string[] | null {
+export function listOf(value: unknown, name?: string): string[] | null {
   if (!Array.isArray(value) || !value.every((v) => typeof v === "string")) return null;
   const words = (value as string[])
     .map((v) => (name === "CONTAINER_TYPES" ? boxType(v) : v.trim()))

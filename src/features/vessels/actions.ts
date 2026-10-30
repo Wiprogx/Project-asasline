@@ -10,6 +10,7 @@ import { invalidateTags, tags } from "@/server/cache/cache";
 import { writeTable } from "@/server/config-tables";
 import { db } from "@/server/db/client";
 import { bookings, vessels } from "@/server/db/schema";
+import { portIds } from "@/server/ports";
 import { CUTOFF_TAG, cutoffRulesSchema, readCutoffRules } from "@/server/vessel-config";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { bookingVesselSchema, vesselSchema, vesselUpdateSchema } from "./schemas";
@@ -26,10 +27,18 @@ export async function createVessel(_p: ActionResult, fd: FormData): Promise<Acti
   if (!parsed.success) return invalid(parsed.error);
   const bad = etaProblem(parsed.data);
   if (bad) return bad;
-  const [row] = await db
-    .insert(vessels)
-    .values({ ...parsed.data, createdBy: user.id, updatedBy: user.id })
-    .returning({ id: vessels.id });
+  const { pol, pod, ...sailing } = parsed.data;
+  const [row] = await db.transaction(async (tx) =>
+    tx
+      .insert(vessels)
+      .values({
+        ...sailing,
+        ...(await portIds(tx, { pol, pod }, user.id)),
+        createdBy: user.id,
+        updatedBy: user.id,
+      })
+      .returning({ id: vessels.id }),
+  );
   await audit(db, { action: "vessel.create", userId: user.id, entity: "vessel", entityId: row.id });
   revalidatePath("/settings/vessels");
   return {
@@ -44,7 +53,7 @@ export async function updateVessel(_p: ActionResult, fd: FormData): Promise<Acti
   const user = await requirePermission("bookings.edit");
   const parsed = vesselUpdateSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { id, version, ...fields } = parsed.data;
+  const { id, version, pol, pod, ...fields } = parsed.data;
   const bad = etaProblem(fields);
   if (bad) return bad;
   try {
@@ -54,7 +63,7 @@ export async function updateVessel(_p: ActionResult, fd: FormData): Promise<Acti
         vessels,
         id,
         version,
-        { ...fields, updatedBy: user.id },
+        { ...fields, ...(await portIds(tx, { pol, pod }, user.id)), updatedBy: user.id },
         "This sailing",
       );
       const [v] = await tx.select().from(vessels).where(eq(vessels.id, id));

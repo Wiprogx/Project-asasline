@@ -17,7 +17,7 @@ export const editQuotationSchema = quotationRef.extend({
   clientId: z.uuid("Choose the customer"),
   kind: z.enum(SHIPMENT_KINDS),
   commodity: text(200),
-  docType: text(60),
+  docTypeId: z.uuid().optional(),
   validUntil: dayField()
     .optional()
     .transform((v) => v ?? null),
@@ -30,4 +30,9 @@ export const quotationStatusSchema = quotationRef.extend({ status: z.enum(HAND_S
 /** Rejected or cancelled: the reason stays on the record. */
 export const quotationReasonSchema = quotationRef.extend({
   reason: z.string().trim().min(3, "Give a reason").max(500),
+});
+
+/** Cancelled: a row of Settings › Cancel reasons still offered (checked in the action). */
+export const quotationCancelSchema = quotationRef.extend({
+  reasonId: z.uuid("Choose a reason"),
 });

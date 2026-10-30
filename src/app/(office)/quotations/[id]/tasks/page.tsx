@@ -5,7 +5,7 @@ import { TaskList } from "@/features/activity/components/task-list";
 import { staffOptions, tasksForRecord } from "@/features/activity/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Quotation tasks" };
 
@@ -16,8 +16,8 @@ export default async function QuotationTasksPage({ params }: PageProps<"/quotati
   const [rows, staff, types, withdrawReasons] = await Promise.all([
     tasksForRecord("quotation", id),
     staffOptions(),
-    readConfig("activityTypes"),
-    readConfig("withdrawReasons"),
+    liveLookups("task-types"),
+    liveLookups("withdraw-reasons"),
   ]);
   return (
     <div className="grid gap-4">
@@ -28,6 +28,7 @@ export default async function QuotationTasksPage({ params }: PageProps<"/quotati
       </Card>
       <TaskList
         withdrawReasons={withdrawReasons}
+        types={types}
         rows={rows}
         today={officeToday()}
         staff={staff}

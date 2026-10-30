@@ -95,6 +95,7 @@ export function TaskActions({
   state,
   staff,
   withdrawReasons,
+  types,
   words,
 }: {
   id: string;
@@ -103,8 +104,10 @@ export function TaskActions({
   /** What the task says, when it may be edited by hand (not a step a rule opened). */
   words?: TaskWords;
   staff: Staff;
-  /** The reasons offered when withdrawing (Settings › Lists). */
-  withdrawReasons: readonly string[];
+  /** The reasons offered when withdrawing (Settings › Withdraw reasons). */
+  withdrawReasons: readonly { value: string; label: string }[];
+  /** The task types, for the edit dialog. */
+  types: readonly { value: string; label: string; code?: string | null }[];
 }) {
   if (state === "done")
     return <Move action={reopenTask} id={id} version={version} label="Reopen" />;
@@ -112,7 +115,7 @@ export function TaskActions({
     return <Move action={putBackTask} id={id} version={version} label="Put back" />;
   return (
     <div className="flex flex-wrap items-center justify-end gap-1">
-      {words && <EditTaskDialog id={id} version={version} task={words} />}
+      {words && <EditTaskDialog id={id} version={version} task={words} types={types} />}
       <HandOver id={id} version={version} staff={staff} />
       <ReasonDialog
         action={withdrawTask}
@@ -121,7 +124,7 @@ export function TaskActions({
         title="Withdraw this task?"
         description="It leaves the lists but keeps its history; you can put it back."
         confirmLabel="Withdraw"
-        reasons={withdrawReasons}
+        reasonOptions={withdrawReasons}
       />
       <Move action={completeTask} id={id} version={version} label="Done" variant="default" />
     </div>

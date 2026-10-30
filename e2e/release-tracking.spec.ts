@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a hold opens a task and shows on the booking; the journey is ticked step by step; the originals carry their courier link", async ({
   page,
@@ -14,10 +14,11 @@ test("a hold opens a task and shows on the booking; the journey is ticked step b
   const client = `E2E Release ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -28,8 +29,8 @@ test("a hold opens a task and shows on the booking; the journey is ticked step b
 
   // A hold: who asked, what must happen; a task for tomorrow; the badge in the header.
   await open(page, `/bookings/${id}/tracking`);
-  await page.getByLabel("Where it stands today").selectOption("hold_pay");
-  await page.getByLabel("Who asked for the hold").selectOption({ label: client });
+  await choose(page.getByLabel("Where it stands today"), "hold_pay");
+  await choose(page.getByLabel("Who asked for the hold"), { label: client });
   await page.getByLabel("What must happen to lift it").fill("Freight paid");
   await submit(page, page.getByRole("button", { name: "Set release status" }));
   await expectToast(page, "Hold recorded");
@@ -41,7 +42,7 @@ test("a hold opens a task and shows on the booking; the journey is ticked step b
 
   // Lifting it closes that task.
   await open(page, `/bookings/${id}/tracking`);
-  await page.getByLabel("Where it stands today").selectOption("released");
+  await choose(page.getByLabel("Where it stands today"), "released");
   await submit(page, page.getByRole("button", { name: "Set release status" }));
   await expectToast(page, "Release status updated");
   await open(page, `/activity?q=${encodeURIComponent(ref)}`);
@@ -66,7 +67,7 @@ test("a hold opens a task and shows on the booking; the journey is ticked step b
   );
 
   // The originals: a courier that tracks gives a link to its own page.
-  await page.getByLabel("Sent by").selectOption("DHL");
+  await choose(page.getByLabel("Sent by"), "DHL");
   await page.getByLabel("Waybill / tracking number").fill("1234567890");
   await page.getByLabel("Sent on").fill("2026-10-09");
   await submit(page, page.getByRole("button", { name: "Note the originals" }));

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { ADMIN, login, open, tag } from "./helpers";
+import { ADMIN, choose, fillMandatory, login, open, tag } from "./helpers";
 
 test("time at work is counted per app and kept as visits on the records", async ({ page }) => {
   const t = tag();
@@ -9,10 +9,11 @@ test("time at work is counted per app and kept as visits on the records", async 
   const client = `E2E Time ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -41,13 +42,13 @@ test("time at work is counted per app and kept as visits on the records", async 
   expect(cells[3]).toMatch(/^\d+m$|^\d+h/);
 
   // The person's own log carries the visit on the record.
-  await open(page, "/settings/people");
+  await open(page, "/settings/users");
   await page
     .getByRole("row")
     .filter({ hasText: ADMIN.email })
     .getByRole("link", { name: /What they did/ })
     .click();
-  await expect(page).toHaveURL(/\/settings\/people\/[0-9a-f-]+\/log/);
+  await expect(page).toHaveURL(/\/settings\/users\/[0-9a-f-]+\/log/);
   await expect(page.getByRole("heading", { level: 2, name: /What .* did/ })).toBeVisible();
   const visit = page.getByRole("listitem").filter({ hasText: ref });
   await expect(visit).toBeVisible();

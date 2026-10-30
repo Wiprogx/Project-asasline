@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 const day = (offset: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(
@@ -26,10 +26,11 @@ test("a booking on a sailing takes its dates and closings, and moves when the sa
   const client = `E2E Sailing Client ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("900");
@@ -40,9 +41,9 @@ test("a booking on a sailing takes its dates and closings, and moves when the sa
   const edit = `${page.url()}/edit`;
 
   await open(page, edit);
-  await page
-    .getByLabel("Sailing", { exact: true })
-    .selectOption({ label: `${ship} · V100 — BEANR › TRMER · ETD ${day(20)}` });
+  await choose(page.getByLabel("Sailing", { exact: true }), {
+    label: `${ship} · V100 — BEANR › TRMER · ETD ${day(20)}`,
+  });
   await submit(page, page.getByRole("button", { name: "Set sailing" }));
   await expectToast(page, "On the sailing — dates and closings set");
   await open(page, edit);

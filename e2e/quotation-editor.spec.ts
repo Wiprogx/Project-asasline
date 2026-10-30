@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 const card = (page: Page, title: RegExp) =>
   page.locator("[data-slot=card]").filter({ has: page.getByText(title) });
@@ -25,7 +25,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await page.getByLabel("Buy (EUR)").fill("2000");
   await submit(page, page.getByRole("button", { name: "Add item" }));
   await expectToast(page, "Added to the catalogue");
-  await page.getByLabel("Category").selectOption({ label: "Country document" });
+  await choose(page.getByLabel("Category"), { label: "Country document" });
   await page.getByLabel("Document code").fill(doc);
   await page.getByLabel("Country").fill(country);
   await page.getByLabel("Sell (EUR)").fill("200");
@@ -37,21 +37,22 @@ test("a quotation with two destinations, priced from the agreement and the catal
   const client = `E2E Editor Client ${t}`;
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/settings/price-lists");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Agreement").fill("Editor deal");
   await page.getByRole("button", { name: "Add agreement" }).click();
   await expect(page.getByRole("heading", { name: "Editor deal" })).toBeVisible();
-  await page.getByLabel("Catalogue item").selectOption({ label: `BEANR › ${pod} · ocean` });
+  await choose(page.getByLabel("Catalogue item"), { label: `BEANR › ${pod} · ocean` });
   await page.getByLabel("Agreed sell (EUR)").fill("2800");
   await submit(page, page.getByRole("button", { name: "Set price" }));
   await expectToast(page, "Agreed price saved");
 
   // A quotation with a first destination typed in.
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill("Ocean freight to Mersin");
@@ -60,7 +61,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
 
   // A second destination from the leg: its lines come priced, agreement first.
-  await page.getByLabel("Ocean leg").selectOption({ label: `BEANR › ${pod}` });
+  await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod}` });
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");
   const leg = card(page, new RegExp(`BEANR → ${pod}`));

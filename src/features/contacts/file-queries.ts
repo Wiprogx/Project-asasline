@@ -3,7 +3,14 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookingFiles, bookings, contactFiles, invoiceFiles, invoices } from "@/server/db/schema";
+import {
+  bookingFiles,
+  bookings,
+  contactDocKinds,
+  contactFiles,
+  invoiceFiles,
+  invoices,
+} from "@/server/db/schema";
 import { openStoredFile } from "@/server/files";
 import { auditAccess } from "@/server/access";
 import { isPartyOn } from "@/server/booking-parties";
@@ -27,8 +34,15 @@ export async function filesOfContact(contactId: string): Promise<ContactFile[]> 
   await requirePermission("app.contacts");
   const [own, onBookings, onInvoices] = await Promise.all([
     db
-      .select()
+      .select({
+        id: contactFiles.id,
+        name: contactFiles.name,
+        kind: contactDocKinds.label,
+        sizeBytes: contactFiles.sizeBytes,
+        createdAt: contactFiles.createdAt,
+      })
       .from(contactFiles)
+      .innerJoin(contactDocKinds, eq(contactDocKinds.id, contactFiles.kindId))
       .where(and(eq(contactFiles.contactId, contactId), isNull(contactFiles.archivedAt)))
       .orderBy(desc(contactFiles.createdAt))
       .limit(300),

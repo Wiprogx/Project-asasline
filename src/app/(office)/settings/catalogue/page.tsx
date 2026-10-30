@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SearchInput } from "@/components/shared/search-input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RateItemForm } from "@/features/pricing/components/rate-item-form";
@@ -51,7 +50,6 @@ export default async function CataloguePage({ searchParams }: PageProps<"/settin
           <RateItemForm categories={categories} sources={sources} />
         </CardContent>
       </Card>
-      <SearchInput placeholder="Search a port, carrier, document or name…" />
       <nav className="flex flex-wrap gap-2" aria-label="Categories">
         {chip("/settings/catalogue", "All", !category && !archived)}
         {categories.map((c) =>

@@ -10,12 +10,11 @@ config({ path: ".env.local" });
 async function main() {
   const { sql } = await import("drizzle-orm");
   const { db } = await import("../src/server/db/client");
-  const { configTables, contacts, rateItems, users } = await import("../src/server/db/schema");
+  const { configTables, contacts, containerTypes, ports, rateItems, users } =
+    await import("../src/server/db/schema");
   const { hashPassword } = await import("../src/server/auth/password");
-  const { MIN_PASSWORD_LENGTH } = await import("../src/domain/people");
-  const { DEFAULT_CANCEL_REASONS } = await import("../src/domain/shipments");
+  const { MIN_PASSWORD_LENGTH } = await import("../src/domain/users");
   const { DEFAULT_PAYMENT_TERMS } = await import("../src/domain/accounting");
-  const { ADDRESS_TYPES } = await import("../src/domain/contacts");
   const { DEFAULT_RATE_CATEGORIES } = await import("../src/domain/pricing");
   const { DEMO_RATE_ITEMS } = await import("./demo-catalogue");
 
@@ -41,14 +40,14 @@ async function main() {
   await db
     .insert(configTables)
     .values([
-      { name: "cancelReasons", value: DEFAULT_CANCEL_REASONS },
-      { name: "containerTypes", value: ["20DV", "40DV", "40HC", "45HC", "20RF", "40RF"] },
       { name: "paymentTerms", value: DEFAULT_PAYMENT_TERMS },
-      { name: "addressTypes", value: ADDRESS_TYPES },
       { name: "rateCategories", value: DEFAULT_RATE_CATEGORIES },
     ])
     .onConflictDoNothing();
   console.log("✓ config tables present");
+
+  // The list tables (cancel reasons, salutations…) are filled with their defaults by the
+  // migration that creates each one: nothing to seed here.
 
   if (process.argv.includes("--demo")) {
     await db
@@ -62,13 +61,32 @@ async function main() {
           vat: "BE0123456749",
         },
         { name: "Mersin Trading Ltd", country: "TR", city: "Mersin", lang: "tr" },
-        { name: "Maersk Belgium", country: "BE", city: "Antwerpen", professions: ["Carrier"] },
+        { name: "Maersk Belgium", country: "BE", city: "Antwerpen" },
       ])
       .onConflictDoNothing();
     console.log("✓ demo contacts added");
     const [{ items }] = await db.select({ items: sql<number>`count(*)::int` }).from(rateItems);
     if (items === 0) {
-      await db.insert(rateItems).values(DEMO_RATE_ITEMS);
+      // Each item's box code as its row of Settings › Lists › Container types.
+      const types = await db
+        .select({ id: containerTypes.id, label: containerTypes.label })
+        .from(containerTypes);
+      const typeId = new Map(types.map((t) => [t.label.toUpperCase(), t.id]));
+      // And its ports as their rows of Settings › Ports (the legacy ports, migration 0072).
+      const portRows = await db.select({ id: ports.id, code: ports.code }).from(ports);
+      const portId = new Map(portRows.map((p) => [p.code, p.id]));
+      const idOf = (code?: string) => (code ? (portId.get(code) ?? null) : null);
+      await db.insert(rateItems).values(
+        DEMO_RATE_ITEMS.map(({ containerType, ...item }) => {
+          const { pol, pod, ...rest } = item as typeof item & { pol?: string; pod?: string };
+          return {
+            ...rest,
+            polId: idOf(pol),
+            podId: idOf(pod),
+            containerTypeId: containerType ? (typeId.get(containerType) ?? null) : null,
+          };
+        }),
+      );
       console.log(`✓ ${DEMO_RATE_ITEMS.length} demo catalogue items added`);
     }
   }

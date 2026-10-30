@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a message step closes on the message sent with its template, a tracking step on the milestone ticked", async ({
   page,
@@ -10,10 +10,11 @@ test("a message step closes on the message sent with its template, a tracking st
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
   await page.getByLabel("Email").fill(`auto.${t}@example.com`);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("1");
@@ -28,10 +29,8 @@ test("a message step closes on the message sent with its template, a tracking st
     .filter({ has: page.getByText("ASK_INV", { exact: true }) });
   await expect(ask.getByRole("button", { name: "Sent" })).toBeVisible();
   await open(page, `/bookings/${id}/messages`);
-  await page.getByLabel("Template").selectOption({ label: "Ask for the export invoice" });
-  await page
-    .getByLabel("To a party on the file")
-    .selectOption({ label: `${client} (Customer, Payer)` });
+  await choose(page.getByLabel("Template"), { label: "Ask for the export invoice" });
+  await choose(page.getByLabel("To a party on the file"), { label: `${client} (Customer, Payer)` });
   await expect(page.getByLabel("E-mail address")).toHaveValue(`auto.${t}@example.com`);
   await submit(page, page.getByRole("button", { name: "Record and open to send" }));
   await expectToast(page, /ASK_INV done/);

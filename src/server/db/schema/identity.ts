@@ -25,9 +25,39 @@ export const users = pgTable(
     role: roleEnum().notNull(),
     passwordHash: text().notNull(),
     active: boolean().notNull().default(true),
+    /** Why they were switched off; cleared when switched back on. */
+    offReason: text(),
+    jobTitle: text(),
+    /** Appended to the e-mails they send from Discuss and the quotations. */
+    signature: text(),
+    lang: text().notNull().default("en"),
+    /** Set by a temporary password: nothing opens until they choose their own. */
+    mustChangePassword: boolean().notNull().default(false),
+    version: integer().notNull().default(1),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("users_email_lower_uq").on(sql`lower(${t.email})`)],
+);
+
+/**
+ * One-time password-reset links. The link carries a random token; only its SHA-256 is kept.
+ * Used once, short-lived, never deleted (the audit shows who asked, when and from where).
+ */
+export const passwordResets = pgTable(
+  "password_resets",
+  {
+    id: text().primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+    /** The Admin who sent it; null when the person asked from the sign-in page. */
+    createdBy: uuid(),
+    ip: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("password_resets_user_idx").on(t.userId)],
 );
 
 /** Sessions are stored by the SHA-256 of their token; revoked, not deleted, for the audit. */
@@ -118,3 +148,7 @@ export const visits = pgTable(
 
 /** The go-live import's legacy id → new id map (scripts/import). */
 export { legacyLinks } from "./legacy";
+
+// The office's word lists, once rows of config_tables above, are tables of their own.
+export * from "./lists";
+export * from "./ports";

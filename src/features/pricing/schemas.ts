@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { VAT_CODES } from "@/domain/accounting";
 import { FREE_KINDS, FREE_SIDES } from "@/domain/pricing";
+import { PORT_CODE } from "@/domain/ports";
 import { centsField, optionalDayField } from "@/lib/zod-fields";
 
 const text = (max: number) =>
@@ -12,6 +13,9 @@ const text = (max: number) =>
     .transform((v) => v || null);
 
 const upper = (max: number) => text(max).transform((v) => v?.toUpperCase() ?? null);
+
+/** A port of Settings › Ports by its UN/LOCODE; one the table lacks is added to it. */
+const port = upper(10).refine((v) => v === null || PORT_CODE.test(v), "A UN/LOCODE, e.g. BEANR");
 
 const day = optionalDayField();
 
@@ -29,8 +33,8 @@ const reason = z.string().trim().min(3, "Say why — it stays on the record").ma
 export const rateItemSchema = z.object({
   category: z.string().regex(/^[a-z]{2,20}$/, "Choose a category"),
   name: text(120),
-  pol: upper(10),
-  pod: upper(10),
+  pol: port,
+  pod: port,
   country: upper(2).refine((v) => v === null || /^[A-Z]{2}$/.test(v), "Two letters, e.g. CM"),
   containerType: upper(10),
   carrier: text(60),

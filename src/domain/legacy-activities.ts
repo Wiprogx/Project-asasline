@@ -57,14 +57,16 @@ export function mapLegacyActivity(t: Record<string, unknown>, find: ActivityLook
   return {
     task: {
       title,
-      type: text(t.type) ?? "To do",
+      /** Resolved to a Settings › Lists › Task types row by the importer. */
+      typeLabel: text(t.type) ?? "To do",
       assigneeId,
       due: day(t.due),
       ruleCode,
       // The legacy closed it by its words (closeAutoActivities "Confirm booking"); here by its trigger.
       trigger: t.auto === true && /^Confirm booking/.test(title) ? "booking_created" : null,
       state,
-      withdrawReason: reason,
+      /** Resolved to a Settings › Withdraw reasons row by the importer (scripts/import/reasons). */
+      withdrawReasonLabel: reason,
       note: text(t.note),
       linkKind: record?.kind ?? (contactId ? "contact" : null),
       linkId: record?.id ?? contactId,

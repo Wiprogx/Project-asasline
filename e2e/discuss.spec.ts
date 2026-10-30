@@ -1,18 +1,19 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 async function contact(page: Page, name: string, email?: string) {
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(name);
   if (email) await page.getByLabel("Email").fill(email);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 }
 
 async function booking(page: Page, client: string) {
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByRole("button", { name: "Create booking" }).click();
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toHaveText(/^SB/);
@@ -33,9 +34,9 @@ async function logIncoming(
   await page.getByRole("button", { name: "Log a message received" }).click();
   const d = page.getByRole("dialog");
   await d.getByLabel("From (name, e-mail or phone)").fill(f.from);
-  if (f.contact) await d.getByLabel("Contact").selectOption({ label: f.contact });
+  if (f.contact) await choose(d.getByLabel("Contact"), { label: f.contact });
   if (f.ref) await d.getByLabel("Booking or quotation no.").fill(f.ref);
-  if (f.topic) await d.getByLabel("About").selectOption({ label: f.topic });
+  if (f.topic) await choose(d.getByLabel("About"), { label: f.topic });
   await d.getByLabel("Subject").fill(f.subject);
   if (f.body) await d.getByLabel("Message").fill(f.body);
   await submit(page, d.getByRole("button", { name: "Log it" }));
@@ -100,9 +101,7 @@ test("writing from a booking stamps the subject key, and a reply finds its way b
   const b = await booking(page, client);
 
   await open(page, `${b.url}/messages`);
-  await page
-    .getByLabel("To a party on the file")
-    .selectOption({ label: `${client} (Customer, Payer)` });
+  await choose(page.getByLabel("To a party on the file"), { label: `${client} (Customer, Payer)` });
   await expect(page.getByLabel("E-mail address")).toHaveValue(`client.${t}@example.com`);
   await page.getByLabel("Subject").fill("Your booking");
   await page.getByLabel("Message", { exact: true }).fill("Please send the invoice.");

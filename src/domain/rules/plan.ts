@@ -1,4 +1,5 @@
 import type { Role } from "../permissions";
+import type { WithdrawCode } from "../lookup-tables";
 import type { Holiday } from "./calendar";
 import {
   applicableRules,
@@ -89,7 +90,8 @@ export type RuleTask = {
 export type SyncDiff = {
   create: { ruleCode: string; title: string; due: string | null; role: Role; blocking: boolean }[];
   redate: { id: string; due: string | null }[];
-  withdraw: { id: string; reason: string }[];
+  /** Withdrawn with a coded reason (Settings › Withdraw reasons). */
+  withdraw: { id: string; code: WithdrawCode }[];
 };
 
 /**
@@ -123,9 +125,7 @@ export function syncDiff(plan: readonly PlanStep[], tasks: readonly RuleTask[]):
     if (t.state === "open" && !planned.has(t.ruleCode))
       diff.withdraw.push({
         id: t.id,
-        reason: t.ruleCode.includes("#")
-          ? "The container left the booking"
-          : "The document rule no longer applies to this booking",
+        code: t.ruleCode.includes("#") ? "box_left" : "rule_dropped",
       });
   return diff;
 }

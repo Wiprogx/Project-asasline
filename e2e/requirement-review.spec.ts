@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 const stepRow = (page: import("@playwright/test").Page, code: string) =>
   page.getByRole("row").filter({ has: page.getByText(code, { exact: true }) });
@@ -12,11 +12,12 @@ test("a paper is sent back with a reason and its step reopens; a corrected one i
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/bookings/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("GALBV");
   await page.getByRole("button", { name: "Create booking" }).click();
@@ -31,7 +32,7 @@ test("a paper is sent back with a reason and its step reopens; a corrected one i
     buffer: Buffer.from("%PDF-1.4\n%e2e\n"),
   };
   await page.getByLabel("File", { exact: true }).setInputFiles(pdf);
-  await page.getByLabel("Proves the step").selectOption({ value: "ASK_INV" });
+  await choose(page.getByLabel("Proves the step"), { value: "ASK_INV" });
   await submit(page, page.getByRole("button", { name: "File it" }));
   await expectToast(page, "Filed as ASK_INV — the step is done");
   const paper = page
@@ -56,7 +57,7 @@ test("a paper is sent back with a reason and its step reopens; a corrected one i
   await page
     .getByLabel("File", { exact: true })
     .setInputFiles({ ...pdf, name: `request-v2-${t}.pdf` });
-  await page.getByLabel("Proves the step").selectOption({ value: "ASK_INV" });
+  await choose(page.getByLabel("Proves the step"), { value: "ASK_INV" });
   await submit(page, page.getByRole("button", { name: "File it" }));
   await expectToast(page, "Filed as ASK_INV — the step is done");
   await expect(paper.getByText("Filed", { exact: true })).toBeVisible();

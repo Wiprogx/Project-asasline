@@ -6,7 +6,6 @@ import { parseActivityRuleLines } from "@/domain/activity-rules";
 import { parseHsCodeLines } from "@/domain/goods";
 import { parseLoadingModeLines } from "@/domain/loading";
 import { parseReleaseStateLines, parseSendModeLines, parseTrackStepLines } from "@/domain/release";
-import { parsePortLines } from "@/domain/ports";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { requirePermission } from "@/server/auth/dal";
 import { FILE_HINTS_TAG, fileHintsSchema } from "@/server/file-config";
@@ -22,28 +21,7 @@ import {
   trackStepsSchema,
 } from "@/server/release-config";
 import { PERMISSIONS_TAG } from "@/server/permission-config";
-import { PORTS_TAG } from "@/server/port-config";
 import { saveTable, versioned } from "./table-store";
-
-/** The ports table, one per line as "CODE Name CC". */
-export async function savePorts(_p: ActionResult, fd: FormData): Promise<ActionResult> {
-  const user = await requirePermission("app.settings");
-  const parsed = versioned.extend({ lines: z.string().max(200_000) }).safeParse(formToObject(fd));
-  if (!parsed.success) return invalid(parsed.error);
-  const { ports, problems } = parsePortLines(parsed.data.lines);
-  if (problems.length) return fail(problems.slice(0, 3).join(" · "));
-  if (ports.length === 0) return fail("At least one port.");
-  const bad = await saveTable({
-    userId: user.id,
-    name: "ports",
-    value: ports,
-    version: parsed.data.version,
-    tag: PORTS_TAG,
-    path: "/settings/ports",
-    detail: { count: ports.length },
-  });
-  return bad ?? { ok: true, data: undefined, message: `Saved · ${ports.length} ports` };
-}
 
 /** Automatic activities, one per line as "trigger | Label | Title | type | role | days | on or off". */
 export async function saveActivityRules(_p: ActionResult, fd: FormData): Promise<ActionResult> {

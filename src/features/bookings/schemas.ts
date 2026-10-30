@@ -5,15 +5,25 @@ import { dayField } from "@/lib/zod-fields";
 import { parseStopLines } from "@/domain/loading";
 import { parseHsLines } from "@/domain/goods";
 import { parseEmails } from "@/domain/messages";
+import { PORT_CODE } from "@/domain/ports";
 
 const day = dayField();
 const optional = z.string().max(200).optional();
 
+/** A port of Settings › Ports by its UN/LOCODE; one the table lacks is added to it. */
+const port = z
+  .string()
+  .trim()
+  .max(10)
+  .optional()
+  .transform((v) => v?.toUpperCase() || undefined)
+  .refine((v) => v === undefined || PORT_CODE.test(v), "A UN/LOCODE, e.g. BEANR");
+
 export const newBookingSchema = z.object({
   clientId: z.uuid("Choose the customer"),
   kind: z.enum(SHIPMENT_KINDS).default("export"),
-  pol: optional,
-  pod: optional,
+  pol: port,
+  pod: port,
   loadAddress: z.string().max(500).optional(),
   loadDate: day.optional(),
   commodity: optional,
@@ -30,10 +40,11 @@ export const statusSchema = z.object({
 export const cancelSchema = z.object({
   id: z.uuid(),
   version: z.coerce.number().int().positive(),
-  reason: z.string().min(3, "Choose a reason").max(500),
+  /** A row of Settings › Cancel reasons still offered (checked in the action). */
+  reasonId: z.uuid("Choose a reason"),
 });
 
-export const restoreSchema = cancelSchema.omit({ reason: true });
+export const restoreSchema = cancelSchema.omit({ reasonId: true });
 
 const party = z.uuid("Choose a contact").optional();
 const time = z
@@ -61,8 +72,8 @@ export const bookingDetailsSchema = z
     pickupDepot: optional,
     pickupDate: day.optional(),
     terminal: optional,
-    pol: optional,
-    pod: optional,
+    pol: port,
+    pod: port,
     loadAddress: z.string().max(500).optional(),
     loadDate: day.optional(),
     loadTime: time,
@@ -74,7 +85,8 @@ export const bookingDetailsSchema = z
     /** Copied on every message of the booking (legacy cc), typed comma-separated. */
     cc: z.string().max(1000).optional().transform(parseEmails),
     // From Settings › Lists › Document types; the form offers the list, the row keeps what was chosen.
-    docType: z.string().trim().min(1).max(60).default("SEA WAYBILL"),
+    /** A row of Settings › Lists › Document types. */
+    docTypeId: z.uuid("Choose a document"),
     vesselName: optional,
     voyage: optional,
     etd: day.optional(),
@@ -232,7 +244,6 @@ export const CLEARABLE_CONTAINER = [
   "pickBackDate",
   "pickBackTime",
   "packages",
-  "packageType",
   "blDescription",
 ] as const;
 

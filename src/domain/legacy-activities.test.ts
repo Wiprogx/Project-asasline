@@ -30,13 +30,13 @@ describe("mapLegacyActivity", () => {
     );
     expect(r?.task).toEqual({
       title: "Send the Certiweight certificate — MSKU1234565",
-      type: "Upload a document",
+      typeLabel: "Upload a document",
       assigneeId: "u-nadia",
       due: "2026-09-28",
       ruleCode: "CERTIWEIGHT#box-1",
       trigger: null,
       state: "open",
-      withdrawReason: null,
+      withdrawReasonLabel: null,
       note: null,
       linkKind: "booking",
       linkId: "b-1",
@@ -59,7 +59,7 @@ describe("mapLegacyActivity", () => {
       )?.task,
     ).toMatchObject({
       state: "withdrawn",
-      withdrawReason: "Duplicate",
+      withdrawReasonLabel: "Duplicate",
       linkKind: "contact",
       linkId: "c-ana",
     });

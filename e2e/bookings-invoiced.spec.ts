@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, issue, login, open, tag } from "./helpers";
 
 test("the bookings list says what a shipment is worth and whether it is invoiced", async ({
   page,
@@ -9,12 +9,14 @@ test("the bookings list says what a shipment is worth and whether it is invoiced
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
-  await page.getByLabel("Country (ISO-2)").fill("BE");
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Service").fill("Ocean freight Antwerp → Mersin");
@@ -40,7 +42,7 @@ test("the bookings list says what a shipment is worth and whether it is invoiced
   await open(page, `${booking}/billing`);
   await page.getByRole("button", { name: "Create draft invoice" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Draft for /);
-  await submit(page, page.getByRole("button", { name: "Issue invoice" }));
+  await issue(page);
   await expectToast(page, /Issued as INV/);
   await open(page, `/bookings?q=${ref}&billing=done`);
   await expect(row().getByText("Invoiced", { exact: true })).toBeVisible();

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelled", async ({
   page,
@@ -10,6 +10,7 @@ test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelle
   await login(page);
   await open(page, "/contacts/new");
   await page.getByLabel("Name").fill(supplier);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: supplier })).toBeVisible();
 
@@ -23,7 +24,7 @@ test("a supplier's IBAN, a bill paid by a SEPA file, and a refused file cancelle
   await expect(page.getByText("BE68 5390 0754 7034")).toBeVisible();
 
   await open(page, "/accounting/bills");
-  await page.getByLabel("Supplier", { exact: true }).selectOption({ label: supplier });
+  await choose(page.getByLabel("Supplier", { exact: true }), { label: supplier });
   await page.getByRole("button", { name: "New bill" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bill from ${supplier}`);
   await page.getByLabel("Line", { exact: true }).fill("Trucking to Zeebrugge");

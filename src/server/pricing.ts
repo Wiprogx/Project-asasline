@@ -3,6 +3,7 @@ import { and, eq, isNull, ne } from "drizzle-orm";
 import { addDays } from "@/domain/dates";
 import { itemLabel, latestQuoted, listIsLive, type Price, priceFor } from "@/domain/pricing";
 import type { DbOrTx } from "./db/client";
+import { withRouteWords } from "./route-words";
 import {
   contacts,
   priceListLines,
@@ -67,8 +68,9 @@ export async function priceOf(
   tx: DbOrTx,
   q: { clientId: string; itemId: string; day: string; exceptQuotationId?: string },
 ): Promise<{ item: Item; label: string; price: Price } | null> {
-  const [item] = await tx.select().from(rateItems).where(eq(rateItems.id, q.itemId));
-  if (!item || item.archivedAt) return null;
+  const [row] = await tx.select().from(rateItems).where(eq(rateItems.id, q.itemId));
+  if (!row || row.archivedAt) return null;
+  const [item] = await withRouteWords([row]);
   const [client] = await tx
     .select({ usesLastPrice: contacts.usesLastPrice })
     .from(contacts)

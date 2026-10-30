@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CONTACT_KIND_LABEL, CONTACT_KIND_TONE } from "@/domain/contact-list";
 import { z } from "zod";
 import { SubNav } from "@/components/layout/sub-nav";
 import { buttonVariants } from "@/components/ui/button";
@@ -38,7 +37,6 @@ export default async function ContactLayout({ params, children }: LayoutProps<"/
         description={
           <span className="flex flex-wrap items-center gap-2">
             {c.archivedAt && <ToneBadge tone="neutral">Archived — {c.archivedReason}</ToneBadge>}
-            <ToneBadge tone={CONTACT_KIND_TONE[c.kind]}>{CONTACT_KIND_LABEL[c.kind]}</ToneBadge>
             {c.tags.map((t) => (
               <ToneBadge key={t} tone="info">
                 {t}

@@ -5,7 +5,7 @@ import { TaskList } from "@/features/activity/components/task-list";
 import { staffOptions, tasksForContact } from "@/features/activity/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
-import { readConfig } from "@/server/config-tables";
+import { liveLookups } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Contact tasks" };
 
@@ -23,15 +23,15 @@ export default async function ContactTasksPage({
   const [rows, staff, types, withdrawReasons] = await Promise.all([
     tasksForContact(id),
     staffOptions(),
-    readConfig("activityTypes"),
-    readConfig("withdrawReasons"),
+    liveLookups("task-types"),
+    liveLookups("withdraw-reasons"),
   ]);
   const own = (t: (typeof rows)[number]) => t.linkKind === "contact" && t.linkId === id;
   const sections = [
     { key: "own", title: "On the contact itself", rows: rows.filter(own) },
     { key: "files", title: "On its quotations and bookings", rows: rows.filter((t) => !own(t)) },
   ];
-  const list = { withdrawReasons, today: officeToday(), staff, grouped: false };
+  const list = { withdrawReasons, types, today: officeToday(), staff, grouped: false };
   return (
     <div className="grid gap-4">
       <Card>

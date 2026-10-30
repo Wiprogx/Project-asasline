@@ -10,15 +10,15 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { NAV } from "@/config/navigation";
 import { may, ROLE_LABEL } from "@/domain/permissions";
 import { logout } from "@/features/auth/actions";
-import { requireUser } from "@/server/auth/dal";
-import { readPorts } from "@/server/port-config";
+import { requireOfficeUser } from "@/server/auth/dal";
+import { livePorts } from "@/server/ports";
 import { Bell } from "@/components/layout/bell";
 import { myTaskCounts } from "@/features/activity/queries";
 import { waitingCount } from "@/features/discuss/queries";
 import { officeToday } from "@/server/clock";
 
 export default async function OfficeLayout({ children }: LayoutProps<"/">) {
-  const user = await requireUser();
+  const user = await requireOfficeUser();
   const sidebarOpen = (await cookies()).get("sidebar_state")?.value !== "false";
   const allowed = NAV.filter((i) => i.permission === null || may(user, i.permission)).map(
     (i) => i.href,
@@ -51,7 +51,7 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
         </header>
         <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
         <TimeBeacon />
-        <PortDatalist ports={await readPorts()} />
+        <PortDatalist ports={await livePorts()} />
       </SidebarInset>
     </SidebarProvider>
   );

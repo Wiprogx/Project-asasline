@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
 
 test("Certiweight is switched on from the booking onto its quotation, and cancelled with a reason", async ({
   page,
@@ -10,7 +10,7 @@ test("Certiweight is switched on from the booking onto its quotation, and cancel
 
   // A Certiweight item in the catalogue, in case the office has none.
   await open(page, "/settings/catalogue");
-  await page.getByLabel("Category").selectOption({ label: "Other services" });
+  await choose(page.getByLabel("Category"), { label: "Other services" });
   await page.getByRole("textbox", { name: "Name" }).fill(`Certiweight weighing ${t}`);
   await page.getByLabel("Sell (EUR)").fill("120");
   await page.getByLabel("Buy (EUR)").fill("60");
@@ -19,10 +19,11 @@ test("Certiweight is switched on from the booking onto its quotation, and cancel
 
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(client);
+  await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/quotations/new");
-  await page.getByLabel("Customer").selectOption({ label: client });
+  await choose(page.getByLabel("Customer"), { label: client });
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Sell (EUR)").fill("900");
