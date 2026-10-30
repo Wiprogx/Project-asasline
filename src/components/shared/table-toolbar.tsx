@@ -35,7 +35,11 @@ function FilterSelect<T>({
       value={value || ALL}
       onValueChange={(v) => onChange(v === ALL || typeof v !== "string" ? "" : v)}
     >
-      <SelectTrigger size="sm" aria-label={f.label} className="min-w-32">
+      <SelectTrigger
+        size="sm"
+        aria-label={`Filter by ${f.label.toLowerCase()}`}
+        className="min-w-32"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false} align="start">
@@ -50,8 +54,10 @@ function FilterSelect<T>({
 }
 
 /**
- * Above a table: the search box (left out when the page searches on the server), one picker per
- * filter, how many rows are shown and a way back to everything.
+ * Above a table: the search box (?q=, read by the rows here or by the server's query), one picker
+ * per filter, how many rows are shown and a way back to everything. The controls are named
+ * "Search this table" and "Filter by …", the hint in the placeholder: a name that repeats a
+ * column would also answer to the form field of that name beside the table.
  */
 export function TableToolbar<T>({
   view,
@@ -95,7 +101,7 @@ export function TableToolbar<T>({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={searchLabel}
-            aria-label={searchLabel}
+            aria-label="Search this table"
             className="h-8 pl-8"
           />
         </div>
