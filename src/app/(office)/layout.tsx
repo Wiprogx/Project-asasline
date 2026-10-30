@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { FocusHeading } from "@/components/layout/focus-heading";
 import { SkipLink } from "@/components/layout/skip-link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -43,7 +44,9 @@ export default async function OfficeLayout({ children }: LayoutProps<"/">) {
         <header className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-4" />
-          <span className="text-sm text-muted-foreground">ASASLINE S.A. · Brussels</span>
+          <Breadcrumbs
+            sections={Object.fromEntries(NAV.map((i) => [i.href.slice(1) || "", i.label]))}
+          />
           <span className="ml-auto flex items-center gap-1">
             {counts && <Bell counts={counts} />}
             <ThemeToggle />

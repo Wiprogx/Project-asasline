@@ -39,6 +39,9 @@ export default defineConfig({
   // One at a time: Settings tests change office-wide tables (rules, holidays, lists).
   workers: 1,
   retries: 0,
+  // A journey quotes through the catalogue as the office does — a carrier contact, a leg, the
+  // customer, the quotation — and the dev server compiles each screen on first use.
+  timeout: 60_000,
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? `http://localhost:${port}`,
