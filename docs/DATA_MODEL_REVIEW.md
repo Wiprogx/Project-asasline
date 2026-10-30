@@ -1,3 +1,12 @@
+---
+title: "Data model review"
+description: "Every list a table, every link a key: what is still text, the duplicates to merge, the office's decisions and the order of work."
+category: plan
+status: living
+audience: ["developer", "agent"]
+tags: ["tms", "data"]
+---
+
 # Data model review: every list a table, every link a key (2026-10-30)
 
 Invariant 8 says adding a country, port, document or rule is a row, not code, and a record

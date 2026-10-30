@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  billableQty,
   billStatus,
   dueDateOf,
   formatInvoiceNumber,
@@ -103,5 +104,13 @@ describe("supplier bills", () => {
     expect(payProblem({ grossCents: 600_000, approvedAt: null })).toMatch(/approve/);
     expect(payProblem({ grossCents: 600_000, approvedAt: new Date() })).toBeNull();
     expect(payProblem({ grossCents: 10_000, approvedAt: null })).toBeNull();
+  });
+});
+
+describe("billableQty", () => {
+  it("bills a per-container line once per container, any other line once", () => {
+    expect(billableQty({ qty: 1, perBox: true }, 3)).toBe(3);
+    expect(billableQty({ qty: 2, perBox: true }, 0)).toBe(2);
+    expect(billableQty({ qty: 2, perBox: false }, 3)).toBe(2);
   });
 });

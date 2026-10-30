@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { type CutoffRules, sailingProblem } from "@/domain/vessels";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
@@ -143,8 +143,11 @@ export async function saveCutoffRules(_p: ActionResult, fd: FormData): Promise<A
       await writeTable(tx, "cutoffRules", parsed.data, version, user.id);
       // The new offsets, not the cached ones: the write is not committed yet.
       const rules = parsed.data as CutoffRules;
-      // Only the sailings still in the register; a withdrawn one has nothing live on it.
-      const all = await tx.select().from(vessels).where(isNull(vessels.archivedAt));
+      // Only the sailings still to leave: a sailed, arrived or omitted one keeps its closings.
+      const all = await tx
+        .select()
+        .from(vessels)
+        .where(and(isNull(vessels.archivedAt), inArray(vessels.status, ["scheduled", "delayed"])));
       let n = 0;
       for (const v of all) n += await moveBookingsOf(tx, v, rules, user.id);
       await audit(tx, {

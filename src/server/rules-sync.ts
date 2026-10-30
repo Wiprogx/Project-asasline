@@ -1,7 +1,7 @@
 import "server-only";
-import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
 import type { BookingFacts } from "@/domain/rules/engine";
-import { planChain, type PlanStep, syncDiff } from "@/domain/rules/plan";
+import { isSettled, planChain, type PlanStep, syncDiff } from "@/domain/rules/plan";
 import { type AuditEntry, auditMany } from "./audit";
 import type { DbOrTx } from "./db/client";
 import { activities, bookings, containers, quotationLines } from "./db/schema";
@@ -10,6 +10,7 @@ import { lookupLabels, withdrawReasonIds } from "./lookups";
 import { withPorts } from "./ports";
 import { readHolidays, readRuleBook } from "./rule-book";
 import { cargoKgOf } from "@/domain/goods";
+import { FINISHED_STATUSES } from "@/domain/shipments";
 
 type RawBooking = typeof bookings.$inferSelect;
 /** A booking with its ports' codes, as the rule engine reads them. */
@@ -47,6 +48,8 @@ type Task = {
   ruleCode: string | null;
   state: "open" | "done" | "withdrawn";
   due: string | null;
+  /** Withdrawn with one of the app's own reasons (Settings › Withdraw reasons, coded). */
+  byApp: boolean;
 };
 type Rules = {
   book: Awaited<ReturnType<typeof readRuleBook>>;
@@ -72,6 +75,8 @@ async function ruleTasksOf(tx: DbOrTx, bookingIds: readonly string[]): Promise<T
           ruleCode: activities.ruleCode,
           state: activities.state,
           due: activities.due,
+          byApp: sql<boolean>`exists (select 1 from withdraw_reasons r
+            where r.id = ${activities.withdrawReasonId} and r.code is not null)`.mapWith(Boolean),
         })
         .from(activities)
         .where(
@@ -134,7 +139,7 @@ const routesOf = (bs: readonly BookingRow[]) =>
 type ChainInput = { rules: Rules; tasks: readonly Task[]; sold: string[] | null; boxes: Box[] };
 
 function chainOf(b: BookingRow, c: ChainInput) {
-  const settled = new Set(c.tasks.filter((t) => t.state !== "open").map((t) => t.ruleCode!));
+  const settled = new Set(c.tasks.filter(isSettled).map((t) => t.ruleCode!));
   const docName = c.rules.docNames.get(b.docTypeId) ?? "";
   return planChain(c.rules.book, factsOf(b, docName, c.sold, c.boxes), c.rules.holidays, settled);
 }
@@ -256,12 +261,16 @@ export async function syncBookingRules(tx: DbOrTx, bookingId: string, userId: st
 }
 
 /**
- * After the rule book or the holidays change: every live booking follows. Read in bulk and
- * written in batches — one booking at a time took ~30 s at a few hundred bookings.
+ * After the rule book or the holidays change: every live booking still under way follows — an
+ * arrived, cancelled or archived one keeps its steps as they were. Read in bulk and written in
+ * batches — one booking at a time took ~30 s at a few hundred bookings.
  */
 export async function syncAllBookings(tx: DbOrTx, userId: string | null) {
   const live = await withPorts(
-    await tx.select().from(bookings).where(ne(bookings.status, "cancelled")),
+    await tx
+      .select()
+      .from(bookings)
+      .where(and(notInArray(bookings.status, [...FINISHED_STATUSES]), isNull(bookings.archivedAt))),
     tx,
   );
   if (live.length === 0) return 0;

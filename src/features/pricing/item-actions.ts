@@ -7,6 +7,7 @@ import { type ActionResult, fail, formToObject, invalid, nullMissing } from "@/l
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { readRateCategories } from "@/server/catalogue-config";
+import { readCountries } from "@/server/countries";
 import { db } from "@/server/db/client";
 import { liveLookupIdByLabel } from "@/server/lookups";
 import { portIds } from "@/server/ports";
@@ -38,6 +39,8 @@ const OPTIONAL = [
 async function problemOf(d: Fields): Promise<ActionResult | null> {
   const cats = await readRateCategories();
   if (!cats.some((c) => c.code === d.category)) return fail("Choose a category from the list.");
+  if (d.country && !(await readCountries()).some((c) => c.code === d.country && !c.archived))
+    return fail(`${d.country} is not a country of Settings › Countries.`);
   const p = itemProblem(d);
   return p ? fail(p) : null;
 }

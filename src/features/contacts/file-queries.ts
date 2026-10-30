@@ -1,5 +1,6 @@
 import "server-only";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { may } from "@/domain/permissions";
 import { requirePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
@@ -28,10 +29,11 @@ export type ContactFile = {
 
 /**
  * Every paper on the contact's file (legacy contact documents tab): what is filed on the
- * shipments it is a party on, and what is kept with its invoices and bills. Newest first.
+ * shipments it is a party on, and what is kept with its invoices and bills. Newest first. A
+ * shipment's papers only for who may open bookings, an invoice's only for who may open accounting.
  */
 export async function filesOfContact(contactId: string): Promise<ContactFile[]> {
-  await requirePermission("app.contacts");
+  const user = await requirePermission("app.contacts");
   const [own, onBookings, onInvoices] = await Promise.all([
     db
       .select({
@@ -60,7 +62,8 @@ export async function filesOfContact(contactId: string): Promise<ContactFile[]> 
       .innerJoin(bookings, eq(bookings.id, bookingFiles.bookingId))
       .where(and(isNull(bookingFiles.archivedAt), isPartyOn(contactId)))
       .orderBy(desc(bookingFiles.createdAt))
-      .limit(300),
+      .limit(300)
+      .then((r) => (may(user, "app.bookings") ? r : [])),
     db
       .select({
         id: invoiceFiles.id,
@@ -74,7 +77,8 @@ export async function filesOfContact(contactId: string): Promise<ContactFile[]> 
       .innerJoin(invoices, eq(invoices.id, invoiceFiles.invoiceId))
       .where(and(isNull(invoiceFiles.archivedAt), eq(invoices.customerId, contactId)))
       .orderBy(desc(invoiceFiles.createdAt))
-      .limit(300),
+      .limit(300)
+      .then((r) => (may(user, "app.accounting") ? r : [])),
   ]);
   const rows: { at: Date; file: ContactFile }[] = [
     ...own.map((f) => ({

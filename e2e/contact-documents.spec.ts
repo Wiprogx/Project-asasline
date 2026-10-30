@@ -35,7 +35,7 @@ test("a contact's Documents tab lists what is filed on its shipments", async ({ 
   await expect(row).toContainText("INVOICE");
   await expect(row.getByRole("link", { name: ref })).toBeVisible();
   const res = await page.request.get(
-    (await row.getByRole("link", { name: /Facture/ }).getAttribute("href"))!,
+    (await row.getByRole("button", { name: /^Download Facture/ }).getAttribute("href"))!,
   );
   expect(res.status()).toBe(200);
 });

@@ -2,12 +2,19 @@
 
 import { and, eq, isNull, max } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { payerProblem, remainingQty } from "@/domain/invoicing";
+import { billableQty, payerProblem, remainingQty } from "@/domain/invoicing";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { bookings, contacts, invoiceLines, invoices, quotationLines } from "@/server/db/schema";
+import {
+  bookings,
+  contacts,
+  invoiceLines,
+  invoices,
+  quotationLines,
+  quotationRoutes,
+} from "@/server/db/schema";
 import { updateVersioned } from "@/server/versioned";
 import { draftOf, guarded, refreshInvoice, Refused, storeTotals } from "./invoice-store";
 import {
@@ -49,8 +56,9 @@ export async function draftFromBooking(_p: ActionResult, fd: FormData): Promise<
 
       // Only the booking's own destination, and never a line taken off the quotation.
       const source = await tx
-        .select({ line: quotationLines })
+        .select({ line: quotationLines, boxes: quotationRoutes.boxes })
         .from(quotationLines)
+        .innerJoin(quotationRoutes, eq(quotationRoutes.id, quotationLines.routeId))
         .where(
           and(eq(quotationLines.routeId, b.quotationRouteId), isNull(quotationLines.archivedAt)),
         );
@@ -82,10 +90,13 @@ export async function draftFromBooking(_p: ActionResult, fd: FormData): Promise<
         .returning({ id: invoices.id });
 
       for (const [i, p] of picked.entries()) {
-        const q = source.find(({ line }) => `q:${line.id}` === p.key)?.line;
-        if (!q) throw new Refused("A picked line is no longer on the quotation. Reload the page.");
+        const src = source.find(({ line }) => `q:${line.id}` === p.key);
+        if (!src)
+          throw new Refused("A picked line is no longer on the quotation. Reload the page.");
+        const q = src.line;
+        // A per-container line bills once per container of the destination (billableQty).
         const left = remainingQty(
-          q.qty,
+          billableQty(q, src.boxes),
           billed.filter((x) => x.key === p.key),
         );
         if (p.qty > left) throw new Refused(`Only ${left} left to invoice on "${q.description}".`);

@@ -11,7 +11,7 @@ import {
   missingPrerequisites,
   soldOnQuote,
 } from "./engine";
-import { planChain, syncDiff } from "./plan";
+import { isSettled, planChain, syncDiff } from "./plan";
 
 const booking = (o: Partial<BookingFacts> = {}): BookingFacts => ({
   ref: "SB2609001",
@@ -133,6 +133,21 @@ describe("plan and sync", () => {
     expect(by("INVOICE")).toMatchObject({ status: "waiting", waitingOn: ["ASK_INV"] });
     expect(by("SI").due).toBeNull(); // no SI closing yet
     expect(by("ASK_INV").title).toBe("Request the export invoice from the customer — SB2609001");
+  });
+  it("opens anew a step the app withdrew, never one a person settled", () => {
+    const plan = planChain(DEFAULT_RULES, b, DEFAULT_HOLIDAYS, new Set());
+    const gone = { id: "t1", ruleCode: "ASK_INV", state: "withdrawn" as const, due: null };
+    // Withdrawn because the booking was cancelled: once put back, the step is open again.
+    expect(syncDiff(plan, [{ ...gone, byApp: true }]).create.map((c) => c.ruleCode)).toContain(
+      "ASK_INV",
+    );
+    // Withdrawn by a person ("done outside the system"): it stays settled.
+    expect(syncDiff(plan, [{ ...gone, byApp: false }]).create.map((c) => c.ruleCode)).not.toContain(
+      "ASK_INV",
+    );
+    expect(isSettled({ state: "withdrawn", byApp: true })).toBe(false);
+    expect(isSettled({ state: "withdrawn", byApp: false })).toBe(true);
+    expect(isSettled({ state: "done" })).toBe(true);
   });
   it("creates open steps once, redates open ones, withdraws what no longer applies", () => {
     const plan = planChain(DEFAULT_RULES, b, DEFAULT_HOLIDAYS, new Set());

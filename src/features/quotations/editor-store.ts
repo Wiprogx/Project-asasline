@@ -1,7 +1,6 @@
 import "server-only";
 import { and, eq, isNull, like, max, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { remainingQty } from "@/domain/invoicing";
 import { statusAfterRoutes } from "@/domain/quotation-status";
 import { type ActionResult, fail } from "@/lib/action-result";
 import { invalidateTags, tags } from "@/server/cache/cache";
@@ -89,8 +88,11 @@ export async function settleQuotationStatus(tx: DbOrTx, quotationId: string) {
       .where(eq(quotations.id, quotationId));
 }
 
-/** How much of a line issued invoices took, credit notes given back. */
-export async function invoicedQty(tx: DbOrTx, line: { id: string; qty: number }) {
+/**
+ * How much of a line issued invoices took, credit notes given back — in invoice units, so a
+ * per-container line counts each container (billableQty).
+ */
+export async function invoicedQty(tx: DbOrTx, line: { id: string }) {
   const billed = await tx
     .select({ qty: invoiceLines.qty, kind: invoices.kind })
     .from(invoiceLines)
@@ -102,7 +104,10 @@ export async function invoicedQty(tx: DbOrTx, line: { id: string; qty: number })
         isNull(invoiceLines.archivedAt),
       ),
     );
-  return line.qty - remainingQty(line.qty, billed);
+  return Math.max(
+    0,
+    billed.reduce((s, b) => s + (b.kind === "credit" ? -b.qty : b.qty), 0),
+  );
 }
 
 /**

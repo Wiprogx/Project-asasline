@@ -35,7 +35,7 @@ test("a contract is kept on the contact itself, opened, and taken off with a rea
   await expect(row).toContainText("Contract");
   await expect(row).toContainText("The contact");
   const href = await row
-    .getByRole("link", { name: `Download contract-${t}.pdf` })
+    .getByRole("button", { name: `Download contract-${t}.pdf` })
     .getAttribute("href");
 
   // The full-screen viewer draws the PDF, and closes on Escape.

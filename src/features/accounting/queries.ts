@@ -3,7 +3,7 @@ import { and, asc, desc, eq, ilike, inArray, isNull, ne, or, type SQL, sql } fro
 import { alias } from "drizzle-orm/pg-core";
 import { cache } from "react";
 import { z } from "zod";
-import { billStatus, type InvoiceKind, remainingQty } from "@/domain/invoicing";
+import { billableQty, billStatus, remainingQty, type InvoiceKind } from "@/domain/invoicing";
 import { requirePermission } from "@/server/auth/dal";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { db } from "@/server/db/client";
@@ -154,7 +154,7 @@ export async function bookingBilling(bookingId: string) {
     .filter(({ line }) => (line.sellCents ?? 0) > 0 && !line.condition)
     .map(({ line, boxes }) => {
       const key = `q:${line.id}`;
-      const qty = line.qty * (line.perBox ? Math.max(1, boxes) : 1);
+      const qty = billableQty(line, boxes);
       return {
         key,
         description: line.description + (line.perBox && boxes > 1 ? ` · ${boxes} containers` : ""),

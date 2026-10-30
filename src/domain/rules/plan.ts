@@ -85,7 +85,16 @@ export type RuleTask = {
   ruleCode: string;
   state: "open" | "done" | "withdrawn";
   due: string | null;
+  /**
+   * Withdrawn by the app itself (its booking cancelled, its rule dropped, its box gone): not
+   * settled — when the step applies again, it is opened anew.
+   */
+  byApp?: boolean;
 };
+
+/** A step is settled when it is done, or a person withdrew it on purpose ("done elsewhere"). */
+export const isSettled = (t: Pick<RuleTask, "state" | "byApp">) =>
+  t.state === "done" || (t.state === "withdrawn" && !t.byApp);
 
 export type SyncDiff = {
   create: { ruleCode: string; title: string; due: string | null; role: Role; blocking: boolean }[];
@@ -102,7 +111,10 @@ export type SyncDiff = {
  */
 export function syncDiff(plan: readonly PlanStep[], tasks: readonly RuleTask[]): SyncDiff {
   const diff: SyncDiff = { create: [], redate: [], withdraw: [] };
-  const byKey = new Map(tasks.map((t) => [t.ruleCode, t]));
+  // A step's task: the one that still counts — an app-withdrawn one is as good as none.
+  const byKey = new Map(
+    tasks.filter((t) => !(t.state === "withdrawn" && t.byApp)).map((t) => [t.ruleCode, t]),
+  );
   const planned = new Set(plan.map((p) => p.key));
 
   for (const step of plan) {

@@ -16,6 +16,9 @@ export const BOOKING_STATUSES = [
 ] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
+/** A booking whose papers are behind it: arrived or cancelled. A rule changed later leaves it be. */
+export const FINISHED_STATUSES: readonly BookingStatus[] = ["arrived", "cancelled"];
+
 export const BOOKING_STATUS_META: Record<BookingStatus, { label: string; tone: Tone }> = {
   quote: { label: "Quotation", tone: "neutral" },
   sent: { label: "Sent", tone: "warning" },

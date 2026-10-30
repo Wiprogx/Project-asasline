@@ -10,11 +10,25 @@ test("a quotation with two destinations, priced from the agreement and the catal
 }) => {
   const t = tag();
   const pod = portTag();
-  // Other runs may have left documents for the same code, so totals are compared, not fixed.
-  const letter = (n: number) => String.fromCharCode(65 + (n % 26));
-  const country = letter(Date.now()) + letter(Math.floor(Math.random() * 26));
+  // A country no real one uses (ISO keeps XA–XZ and QM–QZ for private use), added to Settings ›
+  // Countries; other runs may have left documents for it, so totals are compared, not fixed.
+  const codes = [..."ABCDEFGHIJLMNOPQRSTUVWXYZ"]
+    .map((c) => `X${c}`)
+    .concat([..."MNOPQRSTUVWXYZ"].map((c) => `Q${c}`));
+  const country = codes[Math.floor(Math.random() * codes.length)];
   const doc = `E2EDOC${t.slice(-4).toUpperCase()}`;
   await login(page);
+  await open(page, "/settings/countries");
+  await page.getByRole("button", { name: "Add a country" }).click();
+  await page.getByRole("dialog").getByLabel("ISO code").fill(country);
+  await page.getByRole("dialog").getByLabel("Name", { exact: true }).fill(`Testland ${country}`);
+  await submit(page, page.getByRole("dialog").getByRole("button", { name: "Add" }));
+  await expect(
+    page
+      .locator("[data-sonner-toast]")
+      .filter({ hasText: /Added|already in the table/ })
+      .first(),
+  ).toBeVisible();
 
   // The catalogue: an ocean leg and the document its country requires.
   await open(page, "/settings/catalogue");

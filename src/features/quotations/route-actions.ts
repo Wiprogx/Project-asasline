@@ -97,6 +97,12 @@ export async function updateRoute(_p: ActionResult, fd: FormData): Promise<Actio
     db.transaction(async (tx) => {
       await touchQuotation(tx, quotationId, version, user.id);
       await routeIn(tx, quotationId, routeId);
+      // A booked destination is the booking's now: its ports, boxes and mode change there.
+      const booked = await bookingOn(tx, routeId);
+      if (booked)
+        throw new Refused(
+          `This destination is booked as ${booked.ref}: change the booking instead.`,
+        );
       // The box typed, as its row of Settings › Lists › Container types (none: not said).
       const containerTypeId = containerType
         ? await liveLookupIdByLabel(tx, "container-types", containerType)

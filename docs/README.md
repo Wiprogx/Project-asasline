@@ -15,6 +15,7 @@ Every document under docs/ is listed here (DOC.3): what it is for, its category 
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------- |
 | `STANDARDS_PROGRESS.md`          | The standards scoreboard: numbers only, dated; one log entry per deliberate change of a floor                                                | governance | living    |
 | `ADOPTION_DECISIONS.md`          | The decisions an unattended adoption night takes alone: date, phase, default taken, the alternative                                          | governance | living    |
+| `DATA_MODEL_REVIEW.md`           | Every list a table, every link a key: what is still text, the duplicates to merge, the order of work                                         | plan       | living    |
 | `INVARIANTS.md`                  | The legacy business invariants and what holds each one (probe, graph rule, review)                                                           | reference  | living    |
 | `MIGRATION.md`                   | Legacy single file → Next.js: architecture mapping, module status, data migration                                                            | plan       | living    |
 | `LESSONS.md`                     | What went wrong, why, and the rule it left; every line added to CLAUDE.md traces here                                                        | governance | living    |

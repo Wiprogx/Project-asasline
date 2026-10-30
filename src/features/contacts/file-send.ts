@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { signed } from "@/domain/templates";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
+import { may } from "@/domain/permissions";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { messages } from "@/server/db/schema";
@@ -25,6 +26,11 @@ export async function sendContactFile(
   const parsed = sendContactFileSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const d = parsed.data;
+  // The tab hides what the person may not open; the send refuses it too.
+  if (d.where === "invoice" && !may(user, "app.accounting"))
+    return fail("Invoice papers are sent from Accounting.");
+  if (d.where === "booking" && !may(user, "app.bookings"))
+    return fail("A shipment's papers are sent from the booking.");
   const paper = await readContactPaper(d.contactId, d.where, d.fileId);
   if (!paper) return fail("This file is no longer on the contact's file.");
   const body = signed(d.body, await signatureOf(user.name));

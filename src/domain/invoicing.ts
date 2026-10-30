@@ -119,6 +119,13 @@ export function billStatus(totalCents: number, billedCents: number): BillStatus 
 }
 
 /** What is left to invoice on one billable line, given what issued invoices and credits took. */
+/**
+ * What a quotation line bills: its quantity, times the destination's containers for a
+ * per-container line. One rule for the billing view, the draft invoice and the editor's guard.
+ */
+export const billableQty = (line: { qty: number; perBox: boolean }, boxes: number) =>
+  line.qty * (line.perBox ? Math.max(1, boxes) : 1);
+
 export function remainingQty(
   lineQty: number,
   billed: readonly { kind: InvoiceKind; qty: number }[],

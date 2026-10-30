@@ -1,5 +1,6 @@
 "use server";
 
+import { billableQty } from "@/domain/invoicing";
 import { and, eq, isNull } from "drizzle-orm";
 import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
@@ -102,7 +103,7 @@ export async function updateLine(_p: ActionResult, fd: FormData): Promise<Action
           userId: user.id,
         });
       const taken = await invoicedQty(tx, line);
-      if (f.qty < taken)
+      if (billableQty(f, route.boxes) < taken)
         throw new Refused(`${taken} already invoiced on this line; the quantity cannot go below.`);
       await tx
         .update(quotationLines)

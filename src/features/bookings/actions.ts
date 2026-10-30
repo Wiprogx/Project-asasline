@@ -20,7 +20,7 @@ import { nextRef } from "@/server/sequences";
 import { portIds } from "@/server/ports";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
-import { guarded, settle } from "./settle";
+import { guarded, Refused, settle } from "./settle";
 import { openAutoTask } from "@/server/auto-tasks";
 import { closesCarrierTask } from "@/domain/activity-rules";
 
@@ -92,6 +92,13 @@ export async function setBookingStatus(_p: ActionResult, fd: FormData): Promise<
     id,
     () =>
       db.transaction(async (tx) => {
+        // A cancelled booking comes back only through "Put back", which reopens its steps.
+        const [cur] = await tx
+          .select({ status: bookings.status })
+          .from(bookings)
+          .where(eq(bookings.id, id));
+        if (cur?.status === "cancelled")
+          throw new Refused("Put the booking back before changing its status.");
         await updateVersioned(
           tx,
           bookings,
