@@ -102,7 +102,9 @@ export async function updateRoute(_p: ActionResult, fd: FormData): Promise<Actio
         ? await liveLookupIdByLabel(tx, "container-types", containerType)
         : null;
       if (containerType && !containerTypeId)
-        throw new Refused(`Container type "${containerType}" is not in Settings › Lists.`);
+        throw new Refused(
+          `Container type "${containerType}" is not in Settings › Bookings › Container types.`,
+        );
       await tx
         .update(quotationRoutes)
         .set({

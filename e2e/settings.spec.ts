@@ -7,8 +7,7 @@ test("a row added to a Settings list is offered on the booking screen, and leave
   const t = tag();
   const code = `E2E${t.slice(-4).toUpperCase()}`;
   await login(page);
-  await open(page, "/settings/lists");
-  await page.getByRole("link", { name: /Container types/ }).click();
+  await open(page, "/settings/lists/container-types");
   await expect(page.getByRole("row", { name: /40HC/ })).toContainText("Used by the app");
   await page.getByLabel("Container type").fill(code);
   await submit(page, page.getByRole("button", { name: "Add container type" }));

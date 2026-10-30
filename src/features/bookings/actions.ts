@@ -46,7 +46,10 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
       })
       .returning({ id: bookings.id });
     const typeId = await liveLookupIdByLabel(tx, "container-types", containerType);
-    if (!typeId) throw new Error(`Container type ${containerType} is not in Settings › Lists`);
+    if (!typeId)
+      throw new Error(
+        `Container type ${containerType} is not in Settings › Bookings › Container types`,
+      );
     await tx.insert(containers).values(
       Array.from({ length: containerCount }, (_, i) => ({
         bookingId: row.id,

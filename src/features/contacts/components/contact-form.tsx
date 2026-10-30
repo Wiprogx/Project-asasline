@@ -64,7 +64,7 @@ function ListField({
       <Field
         id={name}
         label={label}
-        hint="Comma-separated; the list in Settings › Lists is offered as you type."
+        hint={`Comma-separated; the list in Settings › Contacts › ${name === "tags" ? "Contact tags" : "Professions"} is offered as you type.`}
         error={fe?.[name]}
         required={required}
       >

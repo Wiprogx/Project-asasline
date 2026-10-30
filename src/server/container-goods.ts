@@ -91,10 +91,10 @@ export async function resolveGoods(tx: DbOrTx, w: Words) {
   ]);
   const badType = typeWords.find((t) => !types.has(t.toLowerCase()));
   if (badType)
-    return { problem: `Package type "${badType}" is not in Settings › Lists › Package types.` };
+    return { problem: `Package type "${badType}" is not in Settings › Bookings › Package types.` };
   const badSource = sourceWords.find((s) => !sources.has(s.toLowerCase()));
   if (badSource)
-    return { problem: `Seal source "${badSource}" is not in Settings › Lists › Seal sources.` };
+    return { problem: `Seal source "${badSource}" is not in Settings › Bookings › Seal sources.` };
   const typeId = (t: string | null | undefined) => (t ? types.get(t.toLowerCase())! : null);
   return {
     problem: null,

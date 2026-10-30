@@ -16,7 +16,7 @@ export default async function ContainerSettingsPage() {
       <LinesEditor
         action={saveContainerSpecs}
         title="Container types — tare and maximum gross"
-        description='One ISO type per line: "40HC | 3900 | 32500" — the empty weight the VGM takes when the box has none of its own, and the gross it may not exceed. The types offered on a booking are the list in Settings › Lists.'
+        description='One ISO type per line: "40HC | 3900 | 32500" — the empty weight the VGM takes when the box has none of its own, and the gross it may not exceed. The types offered on a booking are the list in Settings › Bookings › Container types.'
         label="Container specs, one per line"
         submitLabel="Save container specs"
         lines={containerSpecLines(specs.rows)}

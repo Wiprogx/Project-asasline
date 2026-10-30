@@ -10,7 +10,7 @@ test("the goods of a box are weight and packages per HS code, and the VGM follow
   // Settings offers the legacy HS table and the package types list.
   await open(page, "/settings/hs-codes");
   await expect(page.getByText(/45 entries/)).toBeVisible();
-  await open(page, "/settings/lists");
+  await open(page, "/settings/lists/package-types");
   await expect(page.getByRole("heading", { name: "Package types" })).toBeVisible();
 
   // A one-box booking.

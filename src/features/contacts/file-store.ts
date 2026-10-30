@@ -43,7 +43,7 @@ export async function keepContactFile(
   if (!c) return fail("This contact no longer exists.");
   const kindId = await liveLookupIdByLabel(db, "contact-doc-kinds", parsed.data.kind);
   if (!kindId)
-    return fail(`"${parsed.data.kind}" is not in Settings › Lists › Contact document kinds.`);
+    return fail(`"${parsed.data.kind}" is not in Settings › Contacts › Contact document kinds.`);
   const ext = extensionOf(file.name);
   const storedName = `${randomUUID()}${ext}`;
   try {

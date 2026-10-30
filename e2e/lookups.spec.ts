@@ -15,8 +15,9 @@ test("the container tables, a contact's professions and a box's owner come from 
   await specs.fill(lines.replace("45HC | 4800 | 32500", "45HC | 5000 | 32500"));
   await submit(page, page.getByRole("button", { name: "Save container specs" }));
   await expectToast(page, "Saved · 9 container types");
-  await open(page, "/settings/lists");
+  await open(page, "/settings/lists/professions");
   await expect(page.getByRole("heading", { name: "Professions" })).toBeVisible();
+  await open(page, "/settings/lists/withdraw-reasons");
   await expect(page.getByRole("heading", { name: "Withdraw reasons" })).toBeVisible();
 
   // A trucker: its professions are kept and shown back.

@@ -5,9 +5,11 @@ import {
   Building2Icon,
   CalculatorIcon,
   ChevronRightIcon,
+  ChevronsDownUpIcon,
+  ChevronsUpDownIcon,
   FileCheckIcon,
   FileTextIcon,
-  ListIcon,
+  ListTodoIcon,
   type LucideIcon,
   MailIcon,
   SearchIcon,
@@ -42,7 +44,7 @@ const ICON: Record<string, LucideIcon> = {
   Documents: FileCheckIcon,
   Messages: MailIcon,
   Accounting: CalculatorIcon,
-  Lists: ListIcon,
+  Activity: ListTodoIcon,
 };
 
 const isOn = (pathname: string, href: string) =>
@@ -166,6 +168,7 @@ function SettingsMenu({ groups, pathname }: { groups: SettingsGroup[]; pathname:
     }))
     .filter((g) => g.items.length > 0);
   const allOpen = groups.every((g) => opened.includes(g.label));
+  const allClosed = opened.length === 0;
   return (
     <div className="hidden gap-3 lg:grid">
       <div className="relative">
@@ -179,6 +182,30 @@ function SettingsMenu({ groups, pathname }: { groups: SettingsGroup[]; pathname:
           className="pl-8"
         />
       </div>
+      {!s && (
+        <div className="-my-1 flex justify-end gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="text-muted-foreground"
+            disabled={allOpen}
+            onClick={() => setOpened(groups.map((g) => g.label))}
+          >
+            <ChevronsUpDownIcon aria-hidden /> Open all
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="text-muted-foreground"
+            disabled={allClosed}
+            onClick={() => setOpened([])}
+          >
+            <ChevronsDownUpIcon aria-hidden /> Close all
+          </Button>
+        </div>
+      )}
       <nav aria-label="Settings" className="grid gap-1">
         {shown.map((g) => (
           <ModuleSection
@@ -195,19 +222,6 @@ function SettingsMenu({ groups, pathname }: { groups: SettingsGroup[]; pathname:
           <p className="px-2.5 text-sm text-muted-foreground">No setting matches.</p>
         )}
       </nav>
-      {!s && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="justify-start text-xs text-muted-foreground"
-          onClick={() =>
-            setOpened(allOpen ? (current ? [current] : []) : groups.map((g) => g.label))
-          }
-        >
-          {allOpen ? "Fold the other modules" : "Open every module"}
-        </Button>
-      )}
     </div>
   );
 }

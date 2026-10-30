@@ -5,7 +5,7 @@ test("a seal says who put it on, from the Settings list", async ({ page }) => {
   const t = tag();
   const client = `E2E Seals Client ${t}`;
   await login(page);
-  await open(page, "/settings/lists");
+  await open(page, "/settings/lists/seal-sources");
   await expect(page.getByRole("heading", { name: "Seal sources" })).toBeVisible();
 
   await open(page, "/contacts/new");

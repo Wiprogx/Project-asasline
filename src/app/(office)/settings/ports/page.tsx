@@ -24,7 +24,7 @@ export default async function PortsPage({ searchParams }: PageProps<"/settings/p
             Offered on every port field as you type; quotations, bookings, the catalogue and the
             sailings point at a port of this table. A code typed that is not here is added, to be
             completed. The destination country of a booking is read from its port code. Regions are
-            a list of Settings › Lists.
+            a list of its own, Settings › Bookings › Port regions.
           </CardDescription>
         </div>
         <AddPort regions={regions} />

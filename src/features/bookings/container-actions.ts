@@ -50,7 +50,10 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
         const goods = await resolveGoods(tx, { hsLines, seals, packageType });
         if (goods.problem !== null) throw new Refused(goods.problem);
         const typeId = await liveLookupIdByLabel(tx, "container-types", type);
-        if (!typeId) throw new Refused(`Container type "${type}" is not in Settings › Lists.`);
+        if (!typeId)
+          throw new Refused(
+            `Container type "${type}" is not in Settings › Bookings › Container types.`,
+          );
         await updateVersioned(
           tx,
           containers,
@@ -90,7 +93,10 @@ export async function addContainer(_p: ActionResult, fd: FormData): Promise<Acti
           .from(containers)
           .where(eq(containers.bookingId, bookingId));
         const typeId = await liveLookupIdByLabel(tx, "container-types", type);
-        if (!typeId) throw new Refused(`Container type "${type}" is not in Settings › Lists.`);
+        if (!typeId)
+          throw new Refused(
+            `Container type "${type}" is not in Settings › Bookings › Container types.`,
+          );
         const [row] = await tx
           .insert(containers)
           .values({

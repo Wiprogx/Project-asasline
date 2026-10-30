@@ -19,7 +19,7 @@ export default async function ReleaseSettingsPage() {
       <LinesEditor
         action={saveReleaseStates}
         title="Release states"
-        description='Where a shipment stands for the consignee, one per line: "code | Label | hold or free | hint". A hold blocks collection and opens a task to clear it. Paper document types (the originals block) are in Settings › Lists.'
+        description='Where a shipment stands for the consignee, one per line: "code | Label | hold or free | hint". A hold blocks collection and opens a task to clear it. Paper document types (the originals block) are in Settings › Documents › Document types.'
         label="Release states, one per line"
         submitLabel="Save release states"
         lines={releaseStateLines(release.rows)}
