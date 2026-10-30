@@ -4,6 +4,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { liveLookups } from "@/server/lookups";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
+import { cityNameOf } from "@/server/city-sql";
 import {
   contactLinks,
   contacts,
@@ -32,7 +33,8 @@ const otherColumns = (c: typeof contacts) => ({
   website: c.website,
   street: c.street,
   zip: c.zip,
-  city: c.city,
+  cityId: c.cityId,
+  city: cityNameOf(c.cityId),
   country: c.country,
   lang: c.lang,
   siteRef: c.siteRef,
@@ -83,7 +85,12 @@ export async function linkCandidates() {
   await requirePermission("app.contacts");
   return cached("contacts:link-candidates", { ttlSeconds: 300, tags: [tags.contacts] }, () =>
     db
-      .select({ id: contacts.id, name: contacts.name, type: contacts.type, city: contacts.city })
+      .select({
+        id: contacts.id,
+        name: contacts.name,
+        type: contacts.type,
+        city: cityNameOf(contacts.cityId),
+      })
       .from(contacts)
       .where(isNull(contacts.archivedAt))
       .orderBy(asc(contacts.name)),

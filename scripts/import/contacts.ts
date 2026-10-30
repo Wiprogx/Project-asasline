@@ -5,6 +5,7 @@
  */
 import { and, eq, isNull } from "drizzle-orm";
 import { mapLegacyContact } from "../../src/domain/legacy-contacts";
+import { cityNote, importCityId, importCountry } from "./cities";
 import type { LegacyRecord } from "../../src/domain/legacy-export";
 import type { DbOrTx } from "../../src/server/db/client";
 import {
@@ -69,16 +70,30 @@ export async function importContacts(
       report.matched++;
     } else {
       const archived = rec.archived ? { archivedAt: new Date(), archivedReason: ARCHIVED } : {};
-      const { professions, tags: words, ...contact } = rows.contact;
+      const { professions, tags: words, city, ...given } = rows.contact;
+      const warn = (w: string) => report.warnings.push(`${rows.contact.name}: ${w}`);
+      const contact = { ...given, country: await importCountry(tx, given.country, warn) };
+      const note = [contact.note, cityNote(contact.country, city)].filter(Boolean).join("\n");
       [{ id }] = await tx
         .insert(contacts)
-        .values({ ...contact, ...archived })
+        .values({
+          ...contact,
+          note: note || null,
+          cityId: await importCityId(tx, contact.country, city, warn),
+          ...archived,
+        })
         .returning({ id: contacts.id });
       await setContactLabels(tx, id, { professions, tags: words }, null);
-      if (rows.addresses.length)
-        await tx
-          .insert(contactAddresses)
-          .values(rows.addresses.map((a) => ({ ...a, contactId: id })));
+      for (const { city: where, ...raw } of rows.addresses) {
+        const a = { ...raw, country: await importCountry(tx, raw.country, warn) };
+        const aNote = [a.note, cityNote(a.country, where)].filter(Boolean).join("\n");
+        await tx.insert(contactAddresses).values({
+          ...a,
+          note: aNote || null,
+          cityId: await importCityId(tx, a.country, where, warn),
+          contactId: id,
+        });
+      }
       if (rows.banks.length)
         await tx
           .insert(contactBankAccounts)

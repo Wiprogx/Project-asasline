@@ -12,7 +12,8 @@ export type ChildAddress = {
   name: string | null;
   street: string | null;
   zip: string | null;
-  city: string | null;
+  /** Its city, a row of its country's list (Settings › Countries). */
+  cityId: string | null;
   country: string | null;
   phone: string | null;
   email: string | null;
@@ -26,7 +27,8 @@ export type LinkedContactDraft = {
   lastName: string | null;
   street: string | null;
   zip: string | null;
-  city: string | null;
+  /** Its city, a row of its country's list (Settings › Countries). */
+  cityId: string | null;
   country: string | null;
   phone: string | null;
   email: string | null;
@@ -65,7 +67,7 @@ export function childToContact(
     lastName: person ? (parts.lastName ?? name) : null,
     street: a.street,
     zip: a.zip,
-    city: a.city,
+    cityId: a.cityId,
     country: a.country ?? parent.country,
     phone: a.phone,
     email: a.email,

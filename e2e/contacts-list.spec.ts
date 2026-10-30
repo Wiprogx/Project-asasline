@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, pickCity, submit, tag } from "./helpers";
 
 test("contacts are filtered by type and field by field, found through what is linked to them, in the columns or cards chosen", async ({
   page,
@@ -9,9 +9,18 @@ test("contacts are filtered by type and field by field, found through what is li
   const city = `Oostkamp${t}`;
   await login(page);
 
+  // A town of its own, so the city filter finds this contact alone (Settings › Countries).
+  await open(page, "/settings/countries/BE");
+  await page.getByRole("button", { name: "Add a city" }).click();
+  await page.getByRole("dialog").getByLabel("Name", { exact: true }).fill(city);
+  await submit(page, page.getByRole("dialog").getByRole("button", { name: "Add" }));
+  await expectToast(page, `Added · ${city}`);
+
   await open(page, "/contacts/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
-  await page.getByLabel("City").fill(city);
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await pickCity(page, city);
   await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
@@ -23,9 +32,9 @@ test("contacts are filtered by type and field by field, found through what is li
   await choose(dlg.getByRole("combobox", { name: "Role" }), { label: "Delivery address" });
   await dlg.getByLabel("Name", { exact: true }).fill(`Loading dock ${t}`);
   await dlg.getByLabel("Street").fill("Kaai 3");
-  await dlg.getByLabel("City").fill("Zeebrugge");
   await dlg.getByRole("combobox", { name: "Country" }).fill("BE");
   await page.getByRole("option").first().click();
+  await pickCity(page, "Zeebrugge", dlg);
   await submit(page, dlg.getByRole("button", { name: "Add", exact: true }));
   await expectToast(page, `Loading dock ${t} added as Delivery address`);
   await open(page, `/contacts?q=${encodeURIComponent(`Loading dock ${t}`)}`);

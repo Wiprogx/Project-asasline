@@ -4,28 +4,35 @@ import { Combobox } from "@base-ui/react/combobox";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-/** One choice: `value` posts, `label` shows, `code` (an ISO code, a country) shows beside it and is searched too. */
-export type PickerOption = { value: string; label: string; code?: string };
+/**
+ * One choice: `value` posts, `label` shows, `code` (an ISO code, a country) shows beside it and
+ * is searched too; `keywords` (a city's other names) are searched, never shown.
+ */
+export type PickerOption = { value: string; label: string; code?: string; keywords?: string };
 
 const text = (o: PickerOption) => (o.code ? `${o.label} (${o.code})` : o.label);
 
-/** The option typed out in full: its code, its label or its whole text, in any case. */
+/** Lower case without accents: "Liège" is found by "liege". */
+const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** The option typed out in full: its code, its label, its whole text or one of its keywords. */
 function resolve(options: readonly PickerOption[], typed: string): PickerOption | null {
-  const t = typed.trim().toLowerCase();
+  const t = fold(typed.trim());
   if (!t) return null;
   const hit = (o: PickerOption) =>
-    o.code?.toLowerCase() === t || o.label.toLowerCase() === t || text(o).toLowerCase() === t;
-  return options.find(hit) ?? null;
+    (o.code && fold(o.code) === t) || fold(o.label) === t || fold(text(o)) === t;
+  const named = (o: PickerOption) => !!o.keywords && fold(o.keywords).split(" ").includes(t);
+  return options.find(hit) ?? options.find(named) ?? null;
 }
 
 /** The options the query finds, best first: the exact code, then a label that starts with it. */
 function search(options: readonly PickerOption[], query: string): PickerOption[] {
-  const q = query.trim().toLowerCase();
+  const q = fold(query.trim());
   if (!q) return [...options];
   const rank = (o: PickerOption) =>
-    o.code?.toLowerCase() === q ? 0 : o.label.toLowerCase().startsWith(q) ? 1 : 2;
+    o.code && fold(o.code) === q ? 0 : fold(o.label).startsWith(q) ? 1 : 2;
   return options
-    .filter((o) => rank(o) < 2 || text(o).toLowerCase().includes(q))
+    .filter((o) => rank(o) < 2 || fold(`${text(o)} ${o.keywords ?? ""}`).includes(q))
     .sort((a, b) => rank(a) - rank(b));
 }
 
@@ -42,6 +49,8 @@ export function SearchPicker({
   empty = "Nothing matches.",
   className,
   onChange,
+  limit,
+  free = false,
   ...aria
 }: {
   id: string;
@@ -57,6 +66,10 @@ export function SearchPicker({
   "aria-invalid"?: boolean;
   /** Told the value picked (or matched on blur), null when cleared. */
   onChange?: (value: string | null) => void;
+  /** At most this many matches shown (a country's thousands of cities); all when unset. */
+  limit?: number;
+  /** Text matching no option is kept and posted as typed (a port code not yet in the list). */
+  free?: boolean;
 }) {
   const initial = defaultValue
     ? (options.find((o) => o.value === defaultValue) ?? {
@@ -76,7 +89,10 @@ export function SearchPicker({
   return (
     <Combobox.Root
       items={options}
-      filteredItems={value && typed === text(value) ? options : search(options, typed)}
+      filteredItems={(value && typed === text(value) ? options : search(options, typed)).slice(
+        0,
+        limit,
+      )}
       filter={null}
       value={value}
       onValueChange={pick}
@@ -96,7 +112,9 @@ export function SearchPicker({
         placeholder={placeholder}
         autoComplete="off"
         onBlur={() => {
-          if (!value || typed !== text(value)) pick(resolve(options, typed));
+          if (value && typed === text(value)) return;
+          const t = typed.trim();
+          pick(resolve(options, typed) ?? (free && t ? { value: t, label: t } : null));
         }}
         className={cn(
           "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-control/30",
@@ -105,7 +123,10 @@ export function SearchPicker({
         {...aria}
       />
       <Combobox.Portal>
-        <Combobox.Positioner sideOffset={4} className="z-50 w-(--anchor-width) outline-none">
+        <Combobox.Positioner
+          sideOffset={4}
+          className="z-50 w-max max-w-[min(24rem,var(--available-width))] min-w-(--anchor-width) outline-none"
+        >
           <Combobox.Popup className="max-h-72 w-full overflow-y-auto rounded-lg border bg-popover p-1 text-sm text-popover-foreground shadow-md">
             <Combobox.Empty className="px-2 py-1.5 text-muted-foreground empty:hidden">
               {empty}

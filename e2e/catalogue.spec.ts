@@ -1,9 +1,9 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, portTag, submit, tag } from "./helpers";
 
 test("the catalogue prices an item, and a customer agreement overrides it", async ({ page }) => {
   const t = tag();
-  const pod = `Z${t.slice(-4).toUpperCase()}`;
+  const pod = portTag();
   await login(page);
 
   // An ocean leg without its port of discharge is refused, then added.

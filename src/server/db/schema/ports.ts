@@ -12,6 +12,7 @@ import {
 import { recordColumns } from "./_columns";
 import { portKindEnum } from "./enums";
 import { portRegions } from "./lists";
+import { countries } from "./geo";
 
 /**
  * The ports the office ships from and to (legacy PORTS, Settings › Ports): a quotation's
@@ -25,7 +26,9 @@ export const ports = pgTable(
     ...recordColumns,
     code: char({ length: 5 }).notNull(),
     name: text().notNull(),
-    country: char({ length: 2 }).notNull(),
+    country: char({ length: 2 })
+      .notNull()
+      .references(() => countries.code),
     /** The region it is filed under (Settings › Lists › Port regions). */
     regionId: uuid().references(() => portRegions.id),
     kind: portKindEnum().notNull().default("sea"),

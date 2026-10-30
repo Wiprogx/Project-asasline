@@ -45,7 +45,8 @@ export const contactSchema = z.object({
   website: optional,
   street: optional,
   zip: optional,
-  city: optional,
+  /** A city of the contact's country (Settings › Countries), picked from its list. */
+  cityId: z.uuid("Pick the city from the list").optional(),
   note: z.string().max(5000).optional(),
   /** The trades, typed comma-separated against the professions list. */
   professions: z.string().max(1000).optional().transform(parseCommaList),
@@ -84,7 +85,7 @@ const need = (ctx: Ctx, path: string, message: string) =>
 function requiredByType(c: Raw, ctx: Ctx) {
   // Every contact is written to or delivered to: an address is never optional (some countries have no postcode).
   if (!c.street) need(ctx, "street", "The street is needed");
-  if (!c.city) need(ctx, "city", "The city is needed");
+  if (!c.cityId) need(ctx, "cityId", "The city is needed");
   if (!c.country) need(ctx, "country", "The country is needed");
   if (c.type === "company") {
     if (!c.name) need(ctx, "name", "A contact needs a name");

@@ -61,8 +61,8 @@ function Choice<T extends string>({
 /** A new person starts at the page contact's address, in its language; a new location blank. */
 function startOf(kind: "person" | "location", parent: ContactFormValues): ContactFormValues {
   if (kind === "location") return {};
-  const { street, zip, city, country, lang } = parent;
-  return { street, zip, city, country, lang };
+  const { street, zip, cityId, city, country, lang } = parent;
+  return { street, zip, cityId, city, country, lang };
 }
 
 /**

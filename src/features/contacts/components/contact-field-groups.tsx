@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
+import { CityPicker } from "@/components/shared/city-picker";
 import { CountryPicker } from "@/components/shared/country-picker";
+import { PostcodeField, postcodesOfCity } from "@/components/shared/postcode-field";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LANGUAGES } from "@/domain/contacts";
 import type { Country } from "@/domain/countries";
+import type { PostcodeOption } from "@/domain/postcodes";
 import type { ContactFormValues } from "../form-values";
 import { TextFields, type TextFieldSpec } from "./form-section";
 
@@ -111,10 +115,14 @@ export function ReachFields({ values, fe, prefix, isPerson }: Group & { isPerson
 }
 
 const STREET = [["street", "Street", "text"]] as const satisfies readonly TextFieldSpec[];
-const ZIP = [["zip", "Postcode", "text"]] as const satisfies readonly TextFieldSpec[];
-const CITY = [["city", "City", "text"]] as const satisfies readonly TextFieldSpec[];
 
-/** Street, postcode, city and the searchable country; all but the postcode required. */
+/**
+ * Street, the searchable country, its postcode and its city, picked from the country's lists;
+ * all but the postcode required. Each change the person makes carries to the next field: a
+ * postcode changed replaces the city with its own; a city changed replaces the postcode with its
+ * only code, else clears it and offers its codes; a new country clears both. Loading a saved
+ * address changes nothing.
+ */
 export function AddressFields({
   values,
   fe,
@@ -129,24 +137,72 @@ export function AddressFields({
   compact?: boolean;
 }) {
   const common = { values, errors: fe, prefix, className: "contents" };
+  const [country, setCountry] = useState(values.country ?? null);
+  // The city shown: the record's, or the one a postcode filled in (a new `n` remounts the picker).
+  const [city, setCity] = useState({ id: values.cityId ?? null, name: values.city ?? null, n: 0 });
+  // The postcode likewise: the record's, or the one a city filled in, with the codes it offers.
+  const [zip, setZip] = useState({
+    value: values.zip ?? "",
+    offered: [] as PostcodeOption[],
+    n: 0,
+  });
+  // A city picked by the person replaces the postcode: its only code, else none and its codes offered.
+  // The field also answers on blur: only a city that changed moves the postcode.
+  const cityPicked = async (id: string | null) => {
+    if (id === city.id) return;
+    setCity((c) => ({ ...c, id }));
+    if (!country) return;
+    const codes = id ? await postcodesOfCity(country, id) : [];
+    setZip((z) => ({ value: codes.length === 1 ? codes[0].code : "", offered: codes, n: z.n + 1 }));
+  };
   return (
     <div
       className={
         compact
           ? "grid gap-4 sm:grid-cols-2"
-          : "grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_8rem_1fr_16rem]"
+          : "grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_16rem_8rem_1fr]"
       }
     >
       <TextFields fields={STREET} {...common} required />
-      <TextFields fields={ZIP} {...common} />
-      <TextFields fields={CITY} {...common} required />
       <Field id={`${prefix}country`} label="Country" error={fe?.country} required>
         <CountryPicker
           id={`${prefix}country`}
           name="country"
           countries={countries}
           defaultValue={values.country}
-          onChange={onCountry}
+          onChange={(code) => {
+            setCountry(code);
+            if (code !== country) {
+              setCity((c) => ({ id: null, name: null, n: c.n + 1 }));
+              setZip((z) => ({ value: "", offered: [], n: z.n + 1 }));
+            }
+            onCountry?.(code);
+          }}
+          required
+        />
+      </Field>
+      <Field id={`${prefix}zip`} label="Postcode" error={fe?.zip}>
+        <PostcodeField
+          key={zip.n}
+          id={`${prefix}zip`}
+          name="zip"
+          country={country}
+          cityId={city.id}
+          defaultValue={zip.value}
+          offered={zip.offered}
+          onValue={(value) => setZip((z) => ({ ...z, value }))}
+          onCity={(c) => c.id !== city.id && setCity((was) => ({ ...c, n: was.n + 1 }))}
+        />
+      </Field>
+      <Field id={`${prefix}cityId`} label="City" error={fe?.cityId} required>
+        <CityPicker
+          key={city.n}
+          id={`${prefix}cityId`}
+          name="cityId"
+          country={country}
+          defaultValue={city.id}
+          defaultLabel={city.name}
+          onChange={(id) => void cityPicked(id)}
           required
         />
       </Field>

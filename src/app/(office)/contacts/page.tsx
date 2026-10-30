@@ -18,7 +18,7 @@ import { ContactsTable } from "@/features/contacts/components/contacts-table";
 import { ViewSwitch } from "@/features/contacts/components/view-switch";
 import { contactFilterValues, listContacts } from "@/features/contacts/list-queries";
 import { requirePagePermission } from "@/server/auth/dal";
-import { readCountries } from "@/server/country-config";
+import { readCountries } from "@/server/countries";
 
 export const metadata: Metadata = { title: "Contacts" };
 

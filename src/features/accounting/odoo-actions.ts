@@ -11,6 +11,8 @@ import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
+import { cityIdFor } from "@/server/cities";
+import { readCountries } from "@/server/countries";
 import {
   contactBankAccounts,
   contacts,
@@ -49,6 +51,7 @@ export async function importOdooContacts(_p: ActionResult, fd: FormData): Promis
   const counts = await db.transaction(async (tx) => {
     let added = 0;
     let completed = 0;
+    const codes = new Set((await readCountries()).map((x) => x.code));
     for (const c of read.items) {
       const digits = (c.vat ?? "").replace(/^[A-Z]{2}/, "");
       const [known] = await tx
@@ -64,11 +67,25 @@ export async function importOdooContacts(_p: ActionResult, fd: FormData): Promis
         )
         .limit(1);
       let id = known?.id;
+      // The city in words, as its country's row (Settings › Countries); none when the list lacks it.
+      const { name, vat, street, zip, email, phone } = c;
+      // A country code the table does not hold is left off rather than refused by its key.
+      const country =
+        c.country && codes.has(c.country.toUpperCase()) ? c.country.toUpperCase() : null;
+      const given = {
+        vat,
+        street,
+        zip,
+        country,
+        email,
+        phone,
+        cityId: await cityIdFor(country, c.city),
+      };
       if (known) {
         const fill = Object.fromEntries(
-          (["vat", "street", "zip", "city", "country", "email", "phone"] as const)
-            .filter((k) => !known[k] && c[k])
-            .map((k) => [k, c[k]]),
+          (["vat", "street", "zip", "cityId", "country", "email", "phone"] as const)
+            .filter((k) => !known[k] && given[k])
+            .map((k) => [k, given[k]]),
         );
         if (Object.keys(fill).length) {
           await tx
@@ -78,11 +95,11 @@ export async function importOdooContacts(_p: ActionResult, fd: FormData): Promis
           completed++;
         }
       } else {
-        const { name, vat, street, zip, city, country, email, phone } = c;
         [{ id }] = await tx
           .insert(contacts)
           .values({
-            ...{ name, vat, street, zip, city, country, email, phone },
+            name,
+            ...given,
             note: "Imported from Odoo",
             createdBy: user.id,
             updatedBy: user.id,

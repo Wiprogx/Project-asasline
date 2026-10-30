@@ -7,7 +7,9 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
-import { readCountries } from "@/server/country-config";
+import { cityProblem } from "@/server/cities";
+import { postcodeProblem } from "@/server/postcodes";
+import { readCountries } from "@/server/countries";
 import { setContactLabels } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { contactLinks, contacts } from "@/server/db/schema";
@@ -95,6 +97,10 @@ async function linkNew(raw: Record<string, string | undefined>, userId: string) 
   if (!picked) return fail("Pick a role from the list");
   const role = picked.label;
   const { creditLimit, professions, tags: words, ...fields } = parsed.data;
+  const city =
+    (await cityProblem(db, fields.cityId, fields.country)) ??
+    (await postcodeProblem(db, fields.zip, fields.country));
+  if (city) return fail(city);
   const lang = fields.lang ?? langOf(await readCountries(), fields.country);
   const id = await db.transaction(async (tx) => {
     const [made] = await tx
@@ -155,6 +161,16 @@ export async function updateLinked(_p: ActionResult, fd: FormData): Promise<Acti
   const picked = await linkRole(db, ends, roleId, link.personRoleId ?? link.locationRoleId);
   if (!picked) return fail("Pick a role from the list");
   const role = picked.label;
+  const [before] = await db
+    .select({ cityId: contacts.cityId, zip: contacts.zip, country: contacts.country })
+    .from(contacts)
+    .where(eq(contacts.id, linkedId));
+  const d = parsed.data;
+  const zipFresh = d.zip !== before?.zip || d.country !== before?.country;
+  const city =
+    (await cityProblem(db, d.cityId, d.country, before?.cityId)) ??
+    (zipFresh ? await postcodeProblem(db, d.zip, d.country) : null);
+  if (city) return fail(city);
   const shown = CONTACT_KEYS.filter((k) => fd.has(k) && k !== "creditLimit");
   const values = Object.fromEntries(shown.map((k) => [k, parsed.data[k] ?? null]));
   try {

@@ -9,6 +9,7 @@ import { getBooking } from "./queries";
 import { readHsCodes } from "@/server/goods-config";
 import { hsDescription } from "@/domain/goods";
 import { readContainerSpecs } from "@/server/container-config";
+import { cityNameOf } from "@/server/city-sql";
 import { specsByType } from "@/domain/lookups";
 import { scheduleConflict } from "@/domain/vessels";
 
@@ -46,7 +47,7 @@ export async function bookingCopy(id: string) {
       name: contacts.name,
       street: contacts.street,
       zip: contacts.zip,
-      city: contacts.city,
+      city: cityNameOf(contacts.cityId),
       vat: contacts.vat,
       eori: contacts.eori,
       phone: contacts.phone,

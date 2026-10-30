@@ -6,10 +6,11 @@ import { countryName } from "@/domain/countries";
 import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
-import { readCountries } from "@/server/country-config";
+import { readCountries } from "@/server/countries";
 import { professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
+import { cityNameOf } from "@/server/city-sql";
 
 // The list selects from contacts alone, and in a single-table select Drizzle drops the table
 // prefix: ${contacts.id} would read as a bare "id" and bind to the subquery's own table.
@@ -23,7 +24,7 @@ const linkedOf = (id: SQL) => sql`from contact_links l
   join contacts o on o.id = case when l.contact_id = ${id} then l.linked_id else l.contact_id end
   where (l.contact_id = ${id} or l.linked_id = ${id}) and l.archived_at is null and o.archived_at is null`;
 const linkRole = sql`coalesce((select label from person_roles r where r.id = l.person_role_id), (select label from location_roles r where r.id = l.location_role_id))`;
-const childHay = sql`concat_ws(' ', o.name, ${linkRole}, o.street, o.zip, o.city, o.country, o.email, o.phone, o.note)`;
+const childHay = sql`concat_ws(' ', o.name, ${linkRole}, o.street, o.zip, (select ci.name from cities ci where ci.id = o.city_id), o.country, o.email, o.phone, o.note)`;
 const children = sql<
   { name: string | null; type: string; hay: string }[]
 >`coalesce((select json_agg(json_build_object('name', o.name, 'type', ${linkRole}, 'hay', ${childHay}))
@@ -48,9 +49,10 @@ function searchWhere(q: string): SQL {
   const like = `%${q}%`;
   const c = contacts;
   return or(
-    ...[c.name, c.email, c.vat, c.eori, c.city, c.street, c.zip, c.phone, c.mobile].map((x) =>
+    ...[c.name, c.email, c.vat, c.eori, c.street, c.zip, c.phone, c.mobile].map((x) =>
       ilike(x, like),
     ),
+    ilike(cityNameOf(c.cityId), like),
     ...[c.whatsapp, c.website, c.note].map((x) => ilike(x, like)),
     ilike(sql`array_to_string(${tagsOf()} || ${professionsOf()}, ' ')`, like),
     sql`exists (select 1 ${linkedOf(sql`${c.id}`)} and ${childHay} ilike ${like})`,
@@ -62,7 +64,7 @@ function filterWhere({ field, value }: ContactFilter): SQL {
   const c = contacts;
   const like = `%${value}%`;
   if (field === "country") return eq(c.country, value.toUpperCase());
-  if (field === "city") return ilike(c.city, value);
+  if (field === "city") return ilike(cityNameOf(c.cityId), value);
   if (field === "type") return eq(c.type, value as "company");
   if (field === "tag") return sql`${value} = any(${tagsOf()})`;
   if (field === "profession") return sql`${value} = any(${professionsOf()})`;
@@ -83,7 +85,7 @@ async function selectRows(s: ContactScope, today: string) {
       kind: c.kind,
       professions: professionsOf(),
       country: c.country,
-      city: c.city,
+      city: cityNameOf(c.cityId),
       street: c.street,
       email: c.email,
       phone: c.phone,
@@ -156,7 +158,7 @@ export async function contactFilterValues() {
       .select({
         cities: sql<
           string[]
-        >`coalesce(array_agg(distinct ${contacts.city} order by ${contacts.city}) filter (where ${contacts.city} is not null), '{}')`,
+        >`coalesce((select array_agg(distinct ci.name order by ci.name) from contacts x join cities ci on ci.id = x.city_id where x.archived_at is null), '{}')`,
         countries: sql<
           string[]
         >`coalesce(array_agg(distinct ${contacts.country} order by ${contacts.country}) filter (where ${contacts.country} is not null), '{}')`,

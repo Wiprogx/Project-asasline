@@ -1,20 +1,29 @@
 import { expect, test } from "./fixtures";
-import { expectToast, login, open, submit, tag } from "./helpers";
+import { expectToast, login, open, portTag, submit, tag } from "./helpers";
 
 test("a port is added, edited, offered on the port fields and archived", async ({ page }) => {
-  const code = `ZZ${tag().slice(-3).toUpperCase().replace(/[01]/g, "X")}`;
+  const code = portTag();
   await login(page);
   await open(page, "/settings/ports");
   await expect(page.getByRole("cell", { name: "CMDLA", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add a port" }).click();
   const add = page.getByRole("dialog");
   await add.getByLabel("UN/LOCODE").fill(code);
-  await add.getByLabel("Name").fill("Test port");
-  await add.getByLabel("Country").fill("ZZ");
+  await add.getByLabel("Name", { exact: true }).fill("Test port");
+  await add.getByLabel("Country").fill(code.slice(0, 2));
   await add.getByLabel("Time zone").fill("Africa/Douala");
   await add.getByLabel("Other names").fill("Testhaven; Porto Test");
   await submit(page, add.getByRole("button", { name: "Add" }));
   await expectToast(page, `Added · ${code} Test port`);
+  // A code already in the table is refused, said in words.
+  await page.getByRole("button", { name: "Add a port" }).click();
+  const again = page.getByRole("dialog");
+  await again.getByLabel("UN/LOCODE").fill("BEANR");
+  await again.getByLabel("Name", { exact: true }).fill("Antwerp again");
+  await again.getByLabel("Country").fill("BE");
+  await submit(page, again.getByRole("button", { name: "Add" }));
+  await expectToast(page, "This UN/LOCODE is already in the table.");
+  await page.keyboard.press("Escape");
   // Offered on every port field, with what the office should know about it.
   await open(page, "/bookings/new");
   await expect(page.locator(`datalist#ports option[value="${code}"]`)).toHaveCount(1);
@@ -34,7 +43,7 @@ test("a port is added, edited, offered on the port fields and archived", async (
   await expectToast(page, "Saved");
   await expect(row.getByText("Pre-clearance")).toBeVisible();
   await expect(page.locator(`datalist#ports option[value="${code}"]`)).toHaveText(
-    "Test port (ZZ) · pre-clearance",
+    `Test port (${code.slice(0, 2)}) · pre-clearance`,
   );
   // Archived with a reason: no longer offered, back with Put back.
   await row.getByRole("button", { name: "Archive" }).click();

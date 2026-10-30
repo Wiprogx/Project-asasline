@@ -1,5 +1,15 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag, uniqueVat } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  pickCity,
+  submit,
+  tag,
+  uniqueVat,
+} from "./helpers";
 
 test("a VAT number is checked for its country and never given to two contacts", async ({
   page,
@@ -54,16 +64,16 @@ test("a location is added as a contact of its own, found through the company, an
   await choose(dlg.getByRole("combobox", { name: "Role" }), { label: "Delivery address" });
   await dlg.getByLabel("Name", { exact: true }).fill(`Warehouse ${t}`);
   await dlg.getByLabel("Street").fill("Kaai 12");
-  await dlg.getByLabel("City").fill("Zeebrugge");
   await dlg.getByRole("combobox", { name: "Country" }).fill("be");
   await page.getByRole("option").first().click();
+  await pickCity(page, "Zeebrugge", dlg);
   await submit(page, dlg.getByRole("button", { name: "Add", exact: true }));
   await expectToast(page, `Warehouse ${t} added as Delivery address`);
   // The related contact's row (not the toast that names it).
   const item = page
     .getByRole("listitem")
     .filter({ hasText: `Warehouse ${t}`, has: page.getByRole("button", { name: "Unlink" }) });
-  await expect(item).toContainText("Kaai 12, Zeebrugge, BE");
+  await expect(item).toContainText("Kaai 12, 8380 Zeebrugge, BE");
   await expect(item).toContainText("Delivery address");
 
   // In the contacts list itself, and the company is found through it.

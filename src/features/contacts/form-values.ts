@@ -12,6 +12,8 @@ export const CONTACT_TEXT_FIELDS = [
   "eori",
   "street",
   "zip",
+  // The city: its row (picked) and its name (shown while the list loads).
+  "cityId",
   "city",
   "country",
   "website",

@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
-import { db } from "@/server/db/client";
-import { ports } from "@/server/db/schema";
+import { db, type DbOrTx } from "@/server/db/client";
+import { countries, ports } from "@/server/db/schema";
 import { invalidatePorts } from "@/server/ports";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import {
@@ -17,9 +17,17 @@ import {
 } from "./schemas";
 
 const LABEL = "This port";
+const COUNTRY_UNKNOWN = "This country is not in Settings › Countries.";
 
-const isUniqueViolation = (e: unknown) =>
-  typeof e === "object" && e !== null && "code" in e && e.code === "23505";
+const countryKnown = async (tx: DbOrTx, code: string) =>
+  (await tx.select({ code: countries.code }).from(countries).where(eq(countries.code, code)))
+    .length > 0;
+
+/** Postgres' unique violation, whether thrown as is or wrapped by Drizzle (its `cause`). */
+const isUniqueViolation = (e: unknown): boolean =>
+  typeof e === "object" &&
+  e !== null &&
+  (("code" in e && e.code === "23505") || ("cause" in e && isUniqueViolation(e.cause)));
 
 /** Runs the write; a refusal, a code already in the table or a colleague's newer save is the answer. */
 async function settle(message: string, write: () => Promise<string | void>): Promise<ActionResult> {
@@ -43,6 +51,7 @@ export async function createPort(_p: ActionResult, fd: FormData): Promise<Action
   const port = parsed.data;
   return settle(`Added · ${port.code} ${port.name}`, () =>
     db.transaction(async (tx) => {
+      if (!(await countryKnown(tx, port.country))) return COUNTRY_UNKNOWN;
       const [row] = await tx
         .insert(ports)
         .values({ ...port, createdBy: user.id, updatedBy: user.id })
@@ -68,6 +77,7 @@ export async function updatePort(_p: ActionResult, fd: FormData): Promise<Action
     db.transaction(async (tx) => {
       const [before] = await tx.select().from(ports).where(eq(ports.id, id));
       if (!before) throw new ConflictError(LABEL);
+      if (!(await countryKnown(tx, fields.country))) return COUNTRY_UNKNOWN;
       if (!before.code.startsWith(fields.country))
         return `${before.code} is a port of ${before.code.slice(0, 2)}: its country stays.`;
       await updateVersioned(tx, ports, id, version, { ...fields, updatedBy: user.id }, LABEL);

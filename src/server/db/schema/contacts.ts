@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { cents, day, recordColumns } from "./_columns";
 import { contactTypeEnum } from "./enums";
+import { cities, countries } from "./geo";
 import {
   contactDocKinds,
   locationRoles,
@@ -42,7 +43,8 @@ export const contacts = pgTable(
     instructions: text(),
     /** Customer, supplier or both (legacy kind; domain/contact-list CONTACT_KINDS). */
     kind: text().$type<ContactKind>().notNull().default("customer"),
-    country: char({ length: 2 }),
+    /** Its country (Settings › Countries), by ISO code. */
+    country: char({ length: 2 }).references(() => countries.code),
     lang: text().notNull().default("en"),
     vat: text(),
     eori: text(),
@@ -57,7 +59,8 @@ export const contacts = pgTable(
     website: text(),
     street: text(),
     zip: text(),
-    city: text(),
+    /** Its city, one of its country's (Settings › Countries), picked from the list. */
+    cityId: uuid().references(() => cities.id),
     creditLimitCents: cents(),
     usesLastPrice: boolean().notNull().default(false),
     paymentTermId: text(),
@@ -81,8 +84,8 @@ export const contactAddresses = pgTable(
     name: text(),
     street: text(),
     zip: text(),
-    city: text(),
-    country: char({ length: 2 }),
+    cityId: uuid().references(() => cities.id),
+    country: char({ length: 2 }).references(() => countries.code),
     phone: text(),
     email: text(),
     note: text(),

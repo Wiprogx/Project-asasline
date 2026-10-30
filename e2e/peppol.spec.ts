@@ -6,6 +6,7 @@ import {
   issue,
   login,
   open,
+  pickCity,
   submit,
   tag,
   uniqueVat,
@@ -23,9 +24,9 @@ test("an issued invoice gives its Peppol file; a customer without VAT number can
   await page.getByLabel("VAT number").fill(vat);
   await page.getByLabel("Street").fill("Kaai 12");
   await page.getByLabel("Postcode").fill("2000");
-  await page.getByLabel("City").fill("Antwerpen");
   await page.getByLabel("Country", { exact: true }).fill("BE");
   await page.getByRole("option").first().click();
+  await pickCity(page, "Antwerpen");
   await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();

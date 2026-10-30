@@ -152,3 +152,4 @@ export { legacyLinks } from "./legacy";
 // The office's word lists, once rows of config_tables above, are tables of their own.
 export * from "./lists";
 export * from "./ports";
+export * from "./geo";

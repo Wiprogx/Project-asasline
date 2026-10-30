@@ -6,7 +6,7 @@ import { requirePagePermission } from "@/server/auth/dal";
 import { liveLookups } from "@/server/lookups";
 import { readIdFormats } from "@/server/id-config";
 import { readPaymentTerms } from "@/server/accounting-config";
-import { readCountries } from "@/server/country-config";
+import { readCountries } from "@/server/countries";
 
 export const metadata: Metadata = { title: "New contact" };
 

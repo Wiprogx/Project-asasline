@@ -1,4 +1,5 @@
 import "server-only";
+import { sql } from "drizzle-orm";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import * as t from "@/server/db/schema";
@@ -45,6 +46,7 @@ const TABLES = {
   configTables: t.configTables,
   ports: t.ports,
   portRegions: t.portRegions,
+  countries: t.countries,
   timeLog: t.timeLog,
   visits: t.visits,
   sequences: t.sequences,
@@ -63,5 +65,12 @@ export async function officeCopy() {
       active: t.users.active,
     })
     .from(t.users);
+  // The cities a record names or the office added — not the 45 000 of the list (GeoNames).
+  tables.cities = await db
+    .select()
+    .from(t.cities)
+    .where(
+      sql`${t.cities.geonameId} is null or ${t.cities.id} in (select city_id from contacts union select city_id from contact_addresses)`,
+    );
   return { exportedAt: new Date().toISOString(), tables };
 }

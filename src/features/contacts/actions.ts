@@ -18,7 +18,8 @@ import { refused } from "./save-checks";
 import { archiveSchema, checkedContactSchema, versionRef } from "./schemas";
 import { readIdFormats } from "@/server/id-config";
 import { langOf } from "@/domain/countries";
-import { readCountries } from "@/server/country-config";
+import { readCountries } from "@/server/countries";
+import { withCities } from "@/server/cities";
 
 async function settle(id: string) {
   // The bookings and quotations lists are cached with the contact's name on them.
@@ -62,6 +63,8 @@ const picksOf = (id: string) =>
       salutationId: contacts.salutationId,
       paymentTermId: contacts.paymentTermId,
       country: contacts.country,
+      cityId: contacts.cityId,
+      zip: contacts.zip,
     })
     .from(contacts)
     .where(eq(contacts.id, id))
@@ -97,13 +100,24 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
         "This contact",
       );
       await setContactLabels(tx, ref.data.id, wordsOf(parsed.data), user.id);
+      // The history says the city by its name ("Gent → Brussels"), never by its row's id.
+      const cityName = async (id: unknown) =>
+        typeof id === "string" ? ((await withCities([{ cityId: id }], tx))[0]?.city ?? null) : null;
+      const after = { ...values, ...wordsOf(parsed.data), city: await cityName(values.cityId) };
+      const fields = Object.keys(after).filter(
+        (k) => k !== "cityId" && (k !== "city" || "cityId" in values),
+      );
       await audit(tx, {
         action: "contact.update",
         userId: user.id,
         entity: "contact",
         entityId: ref.data.id,
         detail: {
-          changes: changesOf({ ...cur, ...before }, { ...values, ...wordsOf(parsed.data) }),
+          changes: changesOf(
+            { ...cur, ...before, city: await cityName(cur?.cityId) },
+            after,
+            fields,
+          ),
         },
       });
     });

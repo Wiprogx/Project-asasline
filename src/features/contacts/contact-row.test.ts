@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { postedRow } from "./contact-row";
 import { checkedContactSchema } from "./schemas";
 
-const address = { street: "Kaai 1", city: "Antwerpen", country: "BE" };
+const address = {
+  street: "Kaai 1",
+  cityId: "4b1d6c6e-2f0a-4c3e-9a51-3f5b6a7c8d9e",
+  country: "BE",
+};
 const parse = (raw: Record<string, string>) => checkedContactSchema([]).parse(raw);
 const posting = (raw: Record<string, string>) => (k: string) => k in raw;
 

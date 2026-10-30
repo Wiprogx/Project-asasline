@@ -1,11 +1,21 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, optionsOf, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  optionsOf,
+  portTag,
+  submit,
+  tag,
+} from "./helpers";
 
 test("a destination starts with the direction's customs, VGM and free time, and the letter speaks the customer's language", async ({
   page,
 }) => {
   const t = tag();
-  const pod = `X${t.slice(-4).toUpperCase()}`;
+  const pod = portTag();
   await login(page);
 
   // The catalogue: an ocean leg, an export customs, a VGM, and a demurrage term.

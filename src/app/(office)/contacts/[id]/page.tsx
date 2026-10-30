@@ -19,7 +19,7 @@ import { liveLookups, lookupOptions } from "@/server/lookups";
 import { IdChecks } from "@/features/contacts/components/id-checks";
 import { readIdFormats } from "@/server/id-config";
 import { readPaymentTerms } from "@/server/accounting-config";
-import { readCountries } from "@/server/country-config";
+import { readCountries } from "@/server/countries";
 
 export async function generateMetadata({ params }: PageProps<"/contacts/[id]">): Promise<Metadata> {
   const id = z.uuid().safeParse((await params).id);

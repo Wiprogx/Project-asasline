@@ -7,7 +7,7 @@ const child = {
   name: "Warehouse Zeebrugge",
   street: "Kaai 12",
   zip: "8380",
-  city: "Zeebrugge",
+  cityId: "c-zeebrugge",
   country: null,
   phone: null,
   email: null,

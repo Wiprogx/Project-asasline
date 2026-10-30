@@ -6,6 +6,7 @@ import { cached, tags } from "@/server/cache/cache";
 import { labelsOf, professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { contactAddresses, contactBankAccounts, contacts } from "@/server/db/schema";
+import { withCities } from "@/server/cities";
 
 /** One contact with its addresses and accounts; cached per request (layout + page share it). */
 export const getContact = cache(async (id: string) => {
@@ -17,8 +18,10 @@ export const getContact = cache(async (id: string) => {
       bankAccounts: { where: isNull(contactBankAccounts.archivedAt) },
     },
   });
-  // Its professions and tags, in words (Settings › Lists).
-  return row && { ...row, ...(await labelsOf(db, row.id)) };
+  if (!row) return row;
+  // Its professions and tags, in words (Settings › Lists); its city's and its addresses' names.
+  const [named] = await withCities([row]);
+  return { ...named, addresses: await withCities(row.addresses), ...(await labelsOf(db, row.id)) };
 });
 
 /** Live contacts for pickers (client, shipper, consignee…). */

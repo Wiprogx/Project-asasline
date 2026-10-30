@@ -53,7 +53,9 @@ async function rowOf({ containerType, pol, pod, ...rest }: Fields, userId: strin
   if (containerType && !containerTypeId)
     return {
       row: null,
-      problem: fail(`Container type "${containerType}" is not in Settings › Lists.`),
+      problem: fail(
+        `Container type "${containerType}" is not in Settings › Bookings › Container types.`,
+      ),
     };
   const ports = await portIds(db, { pol, pod }, userId);
   return { row: { ...rest, ...ports, containerTypeId }, problem: null };

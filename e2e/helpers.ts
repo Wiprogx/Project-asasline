@@ -9,6 +9,16 @@ export const ADMIN = {
 export const tag = () => `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
 
 /**
+ * A UN/LOCODE no real port has, in Antarctica (AQ: a country of Settings › Countries that no
+ * document rule names): a port field adds it to Settings › Ports. About 39 000 of them.
+ */
+export const portTag = () => {
+  const pick = (from: string) => from[Math.floor(Math.random() * from.length)];
+  const rest = "ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789";
+  return `AQ${pick(rest)}${pick(rest)}${pick(rest)}`;
+};
+
+/**
  * Opens a page and waits until React has hydrated it (`<HydrationMark>`): a field typed into
  * before that is rewritten by hydration, and the test reads a value nobody typed.
  */
@@ -162,7 +172,6 @@ export async function fillMandatory(page: Page) {
       .getByLabel(/^Street/)
       .first()
       .fill("Kaai 1");
-  if (await empty(/^City/)) await page.getByLabel(/^City/).first().fill("Antwerpen");
   const country = page.getByRole("combobox", { name: "Country" }).first();
   if ((await country.inputValue()) === "") {
     // The country is only filled in: its language (French for Belgium) is not the test's subject.
@@ -172,6 +181,23 @@ export async function fillMandatory(page: Page) {
     await page.getByRole("option").first().click();
     if (byCountry) await choose(lang, "en");
   }
+  // The city after the country: one of the country's — Antwerpen in Belgium, else its biggest.
+  if (await empty(/^City/)) {
+    const cc = await page.locator('input[name="country"]').first().inputValue();
+    await pickCity(page, cc === "BE" ? "Antwerpen" : "");
+  }
+}
+
+/**
+ * A city picked from its country's list (the country chosen first): typed — any of its names,
+ * "Bruxelles" finds Brussels — then its first match clicked. `scope` is a dialog when in one.
+ */
+export async function pickCity(page: Page, words: string, scope: Page | Locator = page) {
+  const box = scope.getByRole("combobox", { name: "City" }).first();
+  await box.click();
+  await box.fill(words);
+  if (!words) await box.press("ArrowDown");
+  await page.getByRole("listbox").getByRole("option").first().click();
 }
 
 /**

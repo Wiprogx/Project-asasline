@@ -10,7 +10,7 @@ config({ path: ".env.local" });
 async function main() {
   const { sql } = await import("drizzle-orm");
   const { db } = await import("../src/server/db/client");
-  const { configTables, contacts, containerTypes, ports, rateItems, users } =
+  const { cities, configTables, contacts, containerTypes, ports, rateItems, users } =
     await import("../src/server/db/schema");
   const { hashPassword } = await import("../src/server/auth/password");
   const { MIN_PASSWORD_LENGTH } = await import("../src/domain/users");
@@ -50,18 +50,33 @@ async function main() {
   // migration that creates each one: nothing to seed here.
 
   if (process.argv.includes("--demo")) {
+    // Each demo contact's city as its country's row (Settings › Countries, migration 0074).
+    const cityOf = async (country: string, name: string) => {
+      const [row] = await db
+        .select({ id: cities.id })
+        .from(cities)
+        .where(sql`${cities.country} = ${country} and lower(${cities.name}) = lower(${name})`)
+        .orderBy(sql`${cities.population} desc nulls last`)
+        .limit(1);
+      return row?.id ?? null;
+    };
     await db
       .insert(contacts)
       .values([
         {
           name: "Os Textile SPRL",
           country: "BE",
-          city: "Bruxelles",
+          cityId: await cityOf("BE", "Brussels"),
           lang: "fr",
           vat: "BE0123456749",
         },
-        { name: "Mersin Trading Ltd", country: "TR", city: "Mersin", lang: "tr" },
-        { name: "Maersk Belgium", country: "BE", city: "Antwerpen" },
+        {
+          name: "Mersin Trading Ltd",
+          country: "TR",
+          cityId: await cityOf("TR", "Mersin"),
+          lang: "tr",
+        },
+        { name: "Maersk Belgium", country: "BE", cityId: await cityOf("BE", "Antwerp") },
       ])
       .onConflictDoNothing();
     console.log("✓ demo contacts added");

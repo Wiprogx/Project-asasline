@@ -6,6 +6,7 @@ import { peppolProblems, ublXml } from "@/domain/peppol";
 import { requirePermission } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { bookings, contacts, invoiceLines, invoices } from "@/server/db/schema";
+import { withCities } from "@/server/cities";
 
 /**
  * The Peppol UBL file of an issued sales invoice or credit note, or what stops it (a customer
@@ -23,7 +24,8 @@ export async function peppolFile(
     .where(eq(invoices.id, id));
   if (!row || row.inv.status !== "issued" || row.inv.kind === "bill")
     return { problems: ["Only an issued invoice or credit note has a Peppol file."] };
-  const { inv, customer: c } = row;
+  const { inv } = row;
+  const [c] = await withCities([row.customer]);
   const problems = peppolProblems(c);
   if (problems.length) return { problems };
   const [lines, origin] = await Promise.all([

@@ -1,6 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, portTag, submit, tag } from "./helpers";
 
 const card = (page: Page, title: RegExp) =>
   page.locator("[data-slot=card]").filter({ has: page.getByText(title) });
@@ -9,7 +9,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   page,
 }) => {
   const t = tag();
-  const pod = `Q${t.slice(-4).toUpperCase()}`;
+  const pod = portTag();
   // Other runs may have left documents for the same code, so totals are compared, not fixed.
   const letter = (n: number) => String.fromCharCode(65 + (n % 26));
   const country = letter(Date.now()) + letter(Math.floor(Math.random() * 26));

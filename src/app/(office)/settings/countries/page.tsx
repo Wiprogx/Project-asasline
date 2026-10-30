@@ -1,28 +1,38 @@
 import type { Metadata } from "next";
-import { LinesEditor } from "@/components/shared/lines-editor";
-import { countryLines } from "@/domain/countries";
-import { countriesForEdit } from "@/features/settings-tables/country-queries";
-import { saveCountries } from "@/features/settings-tables/lookup-actions";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AddCountry, CountryTable } from "@/features/geo/components/country-table";
+import { GeoFilters } from "@/features/geo/components/geo-filters";
+import { countriesForEdit } from "@/features/geo/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 
 export const metadata: Metadata = { title: "Countries" };
 
-/** The countries the office ships to, with their dial code and language (legacy Settings › Countries). */
-export default async function CountriesPage() {
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
+
+/** The countries (legacy Settings › Countries): every ISO country, each with its cities. */
+export default async function CountriesPage({ searchParams }: PageProps<"/settings/countries">) {
   await requirePagePermission("app.settings");
-  const { countries, version } = await countriesForEdit();
+  const sp = await searchParams;
+  const scope = { q: one(sp.q), archived: one(sp.archived) === "1" };
+  const rows = await countriesForEdit(scope);
   return (
-    <LinesEditor
-      action={saveCountries}
-      title="Countries"
-      description={
-        'One country per line: "code | name | dial code | language". The code is what a contact\'s country field takes, the name is what lists show, and a new contact of that country is written to in that language unless one is chosen.'
-      }
-      label="Countries, one per line"
-      submitLabel="Save countries"
-      lines={countryLines(countries)}
-      version={version}
-      count={countries.length}
-    />
+    <Card>
+      <CardHeader className="flex flex-wrap items-start justify-between gap-2">
+        <div className="grid gap-1.5">
+          <CardTitle>Countries</CardTitle>
+          <CardDescription>
+            Every ISO country, offered on the country fields: the name the lists show, the dial code
+            of its phones and the language a new contact there is written to. A country&rsquo;s
+            cities are what its contacts&rsquo; city field offers — open a country to add, correct
+            or merge them.
+          </CardDescription>
+        </div>
+        <AddCountry />
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <GeoFilters q={scope.q} archived={scope.archived} placeholder="Name or ISO code" />
+        <CountryTable rows={rows} />
+      </CardContent>
+    </Card>
   );
 }

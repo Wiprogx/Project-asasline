@@ -5,6 +5,7 @@ import { cached, tags } from "@/server/cache/cache";
 import { professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { contactAddresses, contacts } from "@/server/db/schema";
+import { cityNameOf } from "@/server/city-sql";
 
 const DEPOT = /pick.?up|depot|dépôt/i;
 const TERMINAL = /terminal/i;
@@ -30,7 +31,7 @@ export async function bookingPlaces(): Promise<{ depots: string[]; terminals: st
         .select({
           type: contactAddresses.type,
           name: contactAddresses.name,
-          city: contactAddresses.city,
+          city: cityNameOf(contactAddresses.cityId),
           owner: contacts.name,
         })
         .from(contactAddresses)

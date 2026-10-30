@@ -1,11 +1,11 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import { choose, expectToast, fillMandatory, login, open, portTag, submit, tag } from "./helpers";
 
 test("a price changed on a quotation line is kept in the customer's agreement and offered next time", async ({
   page,
 }) => {
   const t = tag();
-  const pod = `S${t.slice(-4).toUpperCase()}`;
+  const pod = portTag();
   const client = `E2E Agreed ${t}`;
   await login(page);
 

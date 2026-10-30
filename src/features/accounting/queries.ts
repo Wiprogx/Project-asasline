@@ -23,6 +23,7 @@ import { proposals } from "@/domain/matching";
 import { creditedSql, invoiceMoney, openInvoices, settledSql } from "./money";
 import { ruleFor } from "@/domain/bank-rules";
 import { readBankRules } from "@/server/bank-rules-config";
+import { withCities } from "@/server/cities";
 
 const isUuid = (id: string) => z.uuid().safeParse(id).success;
 const original = alias(invoices, "original");
@@ -103,7 +104,9 @@ export const getInvoice = cache(async (id: string) => {
       .from(invoices)
       .where(eq(invoices.creditOfId, id)),
   ]);
-  return { ...head, lines, credits };
+  // The customer's city in words, as the screen, the print and the Peppol file write it.
+  const [customer] = await withCities([head.customer]);
+  return { ...head, customer, lines, credits };
 });
 
 /**

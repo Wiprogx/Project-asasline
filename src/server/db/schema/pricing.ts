@@ -13,6 +13,7 @@ import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import { containerTypes } from "./lists";
 import { ports } from "./ports";
+import { countries } from "./geo";
 
 /**
  * The rate catalogue (legacy RATE_ITEMS): every chargeable thing — an ocean leg, an inland
@@ -29,7 +30,7 @@ export const rateItems = pgTable(
     /** An ocean leg's ports (Settings › Ports); none for the other categories. */
     polId: uuid().references(() => ports.id),
     podId: uuid().references(() => ports.id),
-    country: char({ length: 2 }),
+    country: char({ length: 2 }).references(() => countries.code),
     /** The box this price is for (Settings › Lists › Container types); none: any box. */
     containerTypeId: uuid().references(() => containerTypes.id),
     carrier: text(),

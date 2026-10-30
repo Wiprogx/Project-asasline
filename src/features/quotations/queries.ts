@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { formatCents } from "@/domain/money";
+import { portHint } from "@/domain/ports";
 import { itemLabel } from "@/domain/pricing";
 import { destinationsPhrase, letterLines, quotationDoc } from "@/domain/quotation-doc";
 import { DEFAULT_TEMPLATES, fillTemplate } from "@/domain/templates";
@@ -9,6 +10,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { cached, tags } from "@/server/cache/cache";
 import { db } from "@/server/db/client";
 import { portCodeOf } from "@/server/port-sql";
+import { livePorts } from "@/server/ports";
 import { withRouteWords } from "@/server/route-words";
 import { readTemplates, signatureOf } from "@/server/messaging";
 import {
@@ -102,7 +104,10 @@ export const getQuotation = cache(async (id: string) => {
   };
 });
 
-/** The catalogue as the quotation editor offers it: ocean legs for a destination, all for a line. */
+/**
+ * The catalogue as the quotation editor offers it: ocean legs for a destination, all for a line,
+ * and the live ports for a destination typed port to port.
+ */
 export async function catalogueChoices() {
   await requirePermission("app.quotations");
   const rows = await db
@@ -112,7 +117,17 @@ export async function catalogueChoices() {
     .orderBy(asc(rateItems.category), asc(portCodeOf(rateItems.podId)), asc(rateItems.name));
   const named = await withRouteWords(rows);
   const all = named.map((it) => ({ value: it.id, label: itemLabel(it), category: it.category }));
-  return { lanes: all.filter((x) => x.category === "ocean"), items: all };
+  return {
+    lanes: all.filter((x) => x.category === "ocean"),
+    items: all,
+    ports: await portChoices(),
+  };
+}
+
+/** The live ports a quotation's port fields offer, by name and country, found by code too. */
+export async function portChoices() {
+  await requirePermission("app.quotations");
+  return (await livePorts()).map((p) => ({ value: p.code, label: portHint(p), code: p.code }));
 }
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
