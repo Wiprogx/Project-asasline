@@ -540,6 +540,13 @@
       "when": 1793371676349,
       "tag": "0076_postal_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1793376891519,
+      "tag": "0077_quotation_destinations",
+      "breakpoints": true
     }
   ]
 }

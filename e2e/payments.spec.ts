@@ -1,6 +1,16 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, issue, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  issue,
+  login,
+  newQuotation,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 const officeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(new Date());
@@ -14,12 +24,7 @@ async function issuedInvoice(page: Page, client: string) {
   await fillMandatory(page);
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Sell (EUR)").fill("1250");
-  await page.getByRole("button", { name: "Create quotation" }).click();
+  await newQuotation(page, { client: client, pol: "BEANR", pod: "TRMER", sell: "1250" });
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   await open(page, `${page.url()}/billing`);

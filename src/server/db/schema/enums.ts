@@ -2,6 +2,7 @@ import { VESSEL_STATUSES } from "../../../domain/vessels";
 import { QUOTATION_DISPLAYS } from "../../../domain/quotation-doc";
 import { pgEnum } from "drizzle-orm/pg-core";
 import { PORT_KINDS } from "../../../domain/ports";
+import { ROUTE_SERVICES } from "../../../domain/route-service";
 import { CONTACT_TYPES } from "../../../domain/contacts";
 import { ROLES } from "../../../domain/permissions";
 import { BOOKING_STATUSES, QUOTATION_STATUSES, SHIPMENT_KINDS } from "../../../domain/shipments";
@@ -16,3 +17,4 @@ export const activityStateEnum = pgEnum("activity_state", ["open", "done", "with
 export const vesselStatusEnum = pgEnum("vessel_status", VESSEL_STATUSES);
 export const quotationDisplayEnum = pgEnum("quotation_display", QUOTATION_DISPLAYS);
 export const portKindEnum = pgEnum("port_kind", PORT_KINDS);
+export const routeServiceEnum = pgEnum("route_service", ROUTE_SERVICES);

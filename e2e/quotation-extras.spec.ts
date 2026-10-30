@@ -4,17 +4,27 @@ import {
   expectToast,
   fillMandatory,
   login,
+  newQuotation,
   open,
   optionsOf,
   portTag,
   submit,
   tag,
+  takeOutOfCatalogue,
 } from "./helpers";
+
+// Its customs, VGM and free-time items would start every later quotation: taken out after each test.
+let used = "";
+test.afterEach(async ({ page }) => {
+  if (used) await takeOutOfCatalogue(page, used);
+  used = "";
+});
 
 test("a destination starts with the direction's customs, VGM and free time, and the letter speaks the customer's language", async ({
   page,
 }) => {
   const t = tag();
+  used = t;
   const pod = portTag();
   await login(page);
 
@@ -60,15 +70,14 @@ test("a destination starts with the direction's customs, VGM and free time, and 
 
   // An export quotation; the destination from the leg brings a customs line, a VGM and a demurrage term
   // (the first of each the catalogue holds, so by kind, not by name), never an import-only one.
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await choose(page.getByLabel("Direction"), "export");
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill("Ocean freight to Mersin");
-  await page.getByLabel("Sell (EUR)").fill("900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "900",
+    service: "Ocean freight to Mersin",
+    kind: "export",
+  });
   await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod}` });
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");

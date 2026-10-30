@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { choose, fillMandatory, login, open, tag } from "./helpers";
+import { fillMandatory, login, newQuotation, open, tag } from "./helpers";
 
 /** WCAG 2.2 AA through axe: nothing serious or critical on the office's screens, in both themes. */
 async function audit(page: Page, name: string) {
@@ -65,14 +65,11 @@ test("a record's screens and an open dialog pass axe", async ({ page }) => {
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: `E2E Axe Client ${t}` })).toBeVisible();
   await audit(page, "contact");
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: `E2E Axe Client ${t}` });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill("Ocean freight");
-  await page.getByLabel("Sell (EUR)").fill("900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: `E2E Axe Client ${t}`,
+    service: "Ocean freight",
+    sell: "900",
+  });
   await audit(page, "quotation");
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);

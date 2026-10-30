@@ -9,16 +9,11 @@ import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import {
-  bookings,
-  contacts,
-  containers,
-  quotationLines,
-  quotationRoutes,
-  quotations,
-} from "@/server/db/schema";
-import { liveLookupIdByLabel, lookupIdByCode } from "@/server/lookups";
-import { portId, withPorts } from "@/server/ports";
+import { bookings, contacts, containers, quotationRoutes, quotations } from "@/server/db/schema";
+import { liveLookupLabel, lookupIdByCode } from "@/server/lookups";
+import { readPaymentTerms } from "@/server/accounting-config";
+import { clientTerm, createDestinations, saveCommodities } from "./create-store";
+import { withPorts } from "@/server/ports";
 import { syncBookingRules } from "@/server/rules-sync";
 import { DEFAULT_CONTAINER_TYPE, DEFAULT_DOC_TYPE } from "@/domain/lookup-tables";
 import { nextRef } from "@/server/sequences";
@@ -33,61 +28,64 @@ export async function createQuotation(_p: ActionResult, fd: FormData): Promise<A
   if (!parsed.success) return invalid(parsed.error);
   const d = parsed.data;
 
-  const id = await db.transaction(async (tx) => {
-    const ref = await nextRef(tx, "QT", officeToday());
-    const [q] = await tx
-      .insert(quotations)
-      .values({
-        ref,
-        clientId: d.clientId,
-        kind: d.kind,
-        validUntil: d.validUntil,
-        createdBy: user.id,
-        updatedBy: user.id,
-      })
-      .returning({ id: quotations.id });
-    const [route] = await tx
-      .insert(quotationRoutes)
-      .values({
-        quotationId: q.id,
-        polId: await portId(tx, d.pol, user.id),
-        podId: await portId(tx, d.pod, user.id),
-        finalPlace: d.finalPlace,
-        containerTypeId: d.containerType
-          ? await liveLookupIdByLabel(tx, "container-types", d.containerType)
-          : null,
-        createdBy: user.id,
-      })
-      .returning({ id: quotationRoutes.id });
-    await tx.insert(quotationLines).values({
-      routeId: route.id,
-      description: d.description,
-      sellCents: d.sell,
-      costCents: d.cost ?? null,
-      vatCode: d.vatCode,
-      priceSource: "manual",
-      createdBy: user.id,
+  const terms = await readPaymentTerms();
+  if (d.paymentTermId && !terms.some((t) => t.id === d.paymentTermId))
+    return fail("Pick payment terms from the list.");
+  let id: string;
+  try {
+    id = await db.transaction(async (tx) => {
+      const ref = await nextRef(tx, "QT", officeToday());
+      // The document asked for (SEA WAYBILL unless said), the customer's own terms unless chosen.
+      const docTypeId =
+        (d.docTypeId && (await liveLookupLabel(tx, "doc-types", d.docTypeId))
+          ? d.docTypeId
+          : null) ?? (await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE));
+      const own = await clientTerm(tx, d.clientId);
+      const [q] = await tx
+        .insert(quotations)
+        .values({
+          ref,
+          clientId: d.clientId,
+          kind: d.kind,
+          docTypeId,
+          validUntil: d.validUntil,
+          paymentTermId: d.paymentTermId ?? (terms.some((t) => t.id === own) ? own : null),
+          createdBy: user.id,
+          updatedBy: user.id,
+        })
+        .returning({ id: quotations.id });
+      await createDestinations(
+        tx,
+        { ...q, clientId: d.clientId, kind: d.kind },
+        d.destinations,
+        user.id,
+      );
+      const commodity = await saveCommodities(tx, q.id, d.commodities, user.id);
+      if (commodity) await tx.update(quotations).set({ commodity }).where(eq(quotations.id, q.id));
+      await audit(tx, {
+        action: "quotation.create",
+        userId: user.id,
+        entity: "quotation",
+        entityId: q.id,
+        detail: { ref },
+      });
+      const [client] = await tx
+        .select({ name: contacts.name })
+        .from(contacts)
+        .where(eq(contacts.id, d.clientId));
+      await openAutoTask(tx, {
+        trigger: "quote_created",
+        vars: { ref, client: client?.name ?? "the customer" },
+        link: { kind: "quotation", id: q.id },
+        userId: user.id,
+        today: officeToday(),
+      });
+      return q.id;
     });
-    await audit(tx, {
-      action: "quotation.create",
-      userId: user.id,
-      entity: "quotation",
-      entityId: q.id,
-      detail: { ref },
-    });
-    const [client] = await tx
-      .select({ name: contacts.name })
-      .from(contacts)
-      .where(eq(contacts.id, d.clientId));
-    await openAutoTask(tx, {
-      trigger: "quote_created",
-      vars: { ref, client: client?.name ?? "the customer" },
-      link: { kind: "quotation", id: q.id },
-      userId: user.id,
-      today: officeToday(),
-    });
-    return q.id;
-  });
+  } catch (e) {
+    if (e instanceof Refused) return fail(e.message);
+    throw e;
+  }
   await invalidateTags(tags.quotations);
   revalidatePath("/quotations");
   redirect(`/quotations/${id}`);

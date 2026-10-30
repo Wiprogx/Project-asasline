@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { choose, fillMandatory, login, open, tag } from "./helpers";
+import { fillMandatory, login, newQuotation, open, tag } from "./helpers";
 
 test("the customer copy carries the price and the trucker copy does not", async ({ page }) => {
   const t = tag();
@@ -14,13 +14,13 @@ test("the customer copy carries the price and the trucker copy does not", async 
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill("Ocean freight to Mersin");
-  await page.getByLabel("Sell (EUR)").fill("1900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "1900",
+    service: "Ocean freight to Mersin",
+  });
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const ref = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();

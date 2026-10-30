@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import { expectToast, fillMandatory, login, newQuotation, open, submit, tag } from "./helpers";
 
 test("an all-inclusive quotation is printed and sent, with a follow-up for tomorrow", async ({
   page,
@@ -24,14 +24,13 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill("Ocean freight to Mersin");
-  await page.getByLabel("Sell (EUR)").fill("1900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "1900",
+    service: "Ocean freight to Mersin",
+  });
   const ref = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();
   const url = page.url();
   await page.getByLabel("Or a service typed").fill("Terminal handling");
@@ -42,9 +41,11 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
   const handling = page.getByRole("row").filter({ hasText: "Terminal handling" });
   await expect(handling).toBeVisible();
 
-  // All-inclusive, naming the freight but not the handling.
-  await submit(page, page.getByRole("button", { name: "All-inclusive" }));
-  await expectToast(page, "Presentation changed");
+  // All-inclusive (a new quotation starts so, as in legacy), naming the freight but not the handling.
+  await expect(page.getByRole("button", { name: "All-inclusive" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByRole("columnheader", { name: "On the document" })).toBeVisible();
   await submit(page, handling.getByRole("button", { name: "Named" }));
   await expectToast(page, "Saved");
@@ -52,7 +53,7 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
 
   await open(page, url.replace("/quotations/", "/print/quotations/"));
   await expect(page.getByRole("heading", { name: "Quotation" })).toBeVisible();
-  await expect(page.getByText("BEANR › TRMER")).toBeVisible();
+  await expect(page.getByText("BEANR › TRMER").first()).toBeVisible();
   await expect(page.getByText("€2,110.00")).toBeVisible();
   await expect(page.getByText("Ocean freight to Mersin")).toBeVisible();
   await expect(page.getByText("Terminal handling")).toHaveCount(0);

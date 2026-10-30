@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import { expectToast, fillMandatory, login, newQuotation, open, submit, tag } from "./helpers";
 
 const brusselsDay = (offset: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(
@@ -19,13 +19,13 @@ test("a sailed shipment's cost not yet invoiced is booked to receive, then cance
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Sell (EUR)").fill("1500");
-  await page.getByLabel("Cost (EUR)").fill("900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "1500",
+    cost: "900",
+  });
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const sb = (await page.getByRole("heading", { level: 1 }).textContent())!.trim();

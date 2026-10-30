@@ -23,7 +23,7 @@ import { vessels } from "./vessels";
 // The rate catalogue lives in its own file (size); it stays part of the shipments schema here.
 export { priceListLines, priceLists, rateItems } from "./pricing";
 export { vessels } from "./vessels";
-export { quotationLines, quotationRoutes, quotations } from "./quotations";
+export { quotationCommodities, quotationLines, quotationRoutes, quotations } from "./quotations";
 
 export const bookings = pgTable(
   "bookings",

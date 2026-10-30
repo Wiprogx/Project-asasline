@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, issue, login, open, tag } from "./helpers";
+import { expectToast, fillMandatory, issue, login, newQuotation, open, tag } from "./helpers";
 
 test("the KPIs count what was invoiced and the margin per customer and destination", async ({
   page,
@@ -15,14 +15,13 @@ test("the KPIs count what was invoiced and the margin per customer and destinati
   await page.getByRole("button", { name: "Create contact" }).click();
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill("Ocean freight Antwerp → Mersin");
-  await page.getByLabel("Sell (EUR)").fill("1250");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "1250",
+    service: "Ocean freight Antwerp → Mersin",
+  });
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const booking = page.url();

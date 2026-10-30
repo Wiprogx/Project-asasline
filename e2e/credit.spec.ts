@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, issue, login, open, tag } from "./helpers";
+import { expectToast, fillMandatory, issue, login, newQuotation, open, tag } from "./helpers";
 
 test("issuing past a customer's credit limit warns, and the contact shows it", async ({ page }) => {
   const t = tag();
@@ -16,12 +16,7 @@ test("issuing past a customer's credit limit warns, and the contact shows it", a
   const contactUrl = page.url();
   await expect(page.getByText("Owed or to invoice: €0.00")).toBeVisible();
 
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Sell (EUR)").fill("1250");
-  await page.getByRole("button", { name: "Create quotation" }).click();
+  await newQuotation(page, { client: client, pol: "BEANR", pod: "TRMER", sell: "1250" });
   await page.getByRole("button", { name: "Accept → create booking" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const billing = `${page.url()}/billing`;

@@ -1,6 +1,16 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, portTag, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  newQuotation,
+  open,
+  portTag,
+  submit,
+  tag,
+} from "./helpers";
 
 const card = (page: Page, title: RegExp) =>
   page.locator("[data-slot=card]").filter({ has: page.getByText(title) });
@@ -65,14 +75,13 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await expectToast(page, "Agreed price saved");
 
   // A quotation with a first destination typed in.
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill("Ocean freight to Mersin");
-  await page.getByLabel("Sell (EUR)").fill("900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "900",
+    service: "Ocean freight to Mersin",
+  });
 
   // A second destination from the leg: its lines come priced, agreement first.
   await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod}` });

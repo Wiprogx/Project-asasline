@@ -1,7 +1,22 @@
-import { boolean, index, integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+import type { RouteStop } from "../../../domain/route-service";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
-import { quotationDisplayEnum, quotationStatusEnum, shipmentKindEnum } from "./enums";
+import {
+  quotationDisplayEnum,
+  quotationStatusEnum,
+  routeServiceEnum,
+  shipmentKindEnum,
+} from "./enums";
 import { cancelReasons, containerTypes, docTypes } from "./lists";
 import { ports } from "./ports";
 import { rateItems } from "./pricing";
@@ -22,7 +37,7 @@ export const quotations = pgTable(
     currency: text().notNull().default("EUR"),
     note: text(),
     /** Itemized, or one price per destination naming the listed services (domain/quotation-doc). */
-    display: quotationDisplayEnum().notNull().default("itemized"),
+    display: quotationDisplayEnum().notNull().default("inclusive"),
     sentOn: day(),
     sentVia: text(),
     /** What is shipped (legacy q.commodity), and the transport document asked for (Settings › Lists). */
@@ -53,6 +68,14 @@ export const quotationRoutes = pgTable(
     polId: uuid().references(() => ports.id),
     podId: uuid().references(() => ports.id),
     finalPlace: text(),
+    /** Port to port, or collected at the door with the inland leg (legacy routeDoor). */
+    service: routeServiceEnum().notNull().default("port_port"),
+    /** The ocean leg of the catalogue it was built from: its ports, box and price (legacy laneId). */
+    laneId: uuid().references(() => rateItems.id),
+    /** Where a door service collects the box: a location contact (legacy loadAddr). */
+    loadAddressId: uuid().references(() => contacts.id),
+    /** The other places the truck calls at, in order (legacy stops). */
+    stops: jsonb().$type<RouteStop[]>().notNull().default([]),
     /** The box quoted (Settings › Lists › Container types). */
     containerTypeId: uuid().references(() => containerTypes.id),
     declined: boolean().notNull().default(false),
@@ -94,4 +117,20 @@ export const quotationLines = pgTable(
     index("quotation_lines_route_idx").on(t.routeId, t.position),
     index("quotation_lines_item_idx").on(t.itemId),
   ],
+);
+
+/** What the quotation ships, one row per product (legacy q.commodities): an HS code and its words. */
+export const quotationCommodities = pgTable(
+  "quotation_commodities",
+  {
+    ...recordColumns,
+    quotationId: uuid()
+      .notNull()
+      .references(() => quotations.id),
+    position: integer().notNull().default(0),
+    /** The HS code (Settings › HS codes), 4 to 10 digits. */
+    code: text().notNull(),
+    description: text(),
+  },
+  (t) => [index("quotation_commodities_quotation_idx").on(t.quotationId, t.position)],
 );

@@ -1,5 +1,14 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  newQuotation,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 test("a quotation, a destination and a booking each open the task their rule asks for", async ({
   page,
@@ -18,14 +27,13 @@ test("a quotation, a destination and a booking each open the task their rule ask
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // A quotation: "Send quotation QT… to the client", due today, an e-mail.
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill(`Ocean freight ${t}`);
-  await page.getByLabel("Sell (EUR)").fill("900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "900",
+    service: `Ocean freight ${t}`,
+  });
   const qt = await page.getByRole("heading", { level: 1 }).innerText();
 
   // Another destination: "Quote BEANR › X to the client".

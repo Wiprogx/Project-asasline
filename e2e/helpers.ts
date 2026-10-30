@@ -253,3 +253,60 @@ export async function issue(page: Page) {
   await page.waitForLoadState("networkidle");
   await submit(page, page.getByRole("button", { name: "Issue invoice" }));
 }
+
+export type QuoteSpec = {
+  client: string;
+  pol?: string;
+  pod?: string;
+  sell: string;
+  cost?: string;
+  kind?: "export" | "import";
+  /** The words the leg's line carries (its carrier): "Ocean freight to Mersin". */
+  service?: string;
+};
+
+/**
+ * A quotation as the office makes one (legacy fQ): an ocean leg of its own in the catalogue,
+ * then a new quotation for the customer built from it, port to port. Its first line reads
+ * "BEANR › TRMER · <service> <tag>" at the sell price given.
+ */
+export async function newQuotation(page: Page, q: QuoteSpec) {
+  const carrier = `${q.service ?? "E2E line"} ${tag()}`.slice(0, 60);
+  await open(page, "/settings/catalogue");
+  await page.getByLabel("Port of loading").fill(q.pol ?? "BEANR");
+  await page.getByLabel("Port of discharge").fill(q.pod ?? "TRMER");
+  await page.getByLabel("Container type").fill("40HC");
+  await page.getByLabel("Carrier", { exact: true }).fill(carrier);
+  await page.getByLabel("Sell (EUR)").fill(q.sell);
+  await page.getByLabel("Buy (EUR)").fill(q.cost ?? "0");
+  await submit(page, page.getByRole("button", { name: "Add item" }));
+  await expectToast(page, "Added to the catalogue");
+
+  await open(page, "/quotations/new");
+  if (q.kind) await choose(page.getByLabel("Type", { exact: true }), q.kind);
+  const customer = page.getByRole("combobox", { name: "Customer", exact: true });
+  await customer.click();
+  await customer.fill(q.client);
+  await page.getByRole("listbox").getByRole("option", { name: q.client, exact: true }).click();
+  await choose(page.getByLabel("Service", { exact: true }), "port_port");
+  const leg = page.getByRole("combobox", { name: "Ocean leg", exact: true });
+  await leg.click();
+  await leg.fill(carrier);
+  await page.getByRole("listbox").getByRole("option").first().click();
+  await page.getByRole("button", { name: "Create quotation" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  return carrier;
+}
+
+/** Every live catalogue item whose words hold `query`, taken out of use: a journey's own leaves. */
+export async function takeOutOfCatalogue(page: Page, query: string) {
+  for (let i = 0; i < 20; i++) {
+    await open(page, `/settings/catalogue?q=${encodeURIComponent(query)}`);
+    const item = page.getByRole("table").getByRole("link").first();
+    if (!(await item.count())) return;
+    await item.click();
+    await page.getByRole("button", { name: "Take out of use" }).click();
+    await page.getByRole("dialog").getByLabel("Reason").fill("Test material, no longer needed");
+    await submit(page, page.getByRole("dialog").getByRole("button", { name: "Take out of use" }));
+  }
+}

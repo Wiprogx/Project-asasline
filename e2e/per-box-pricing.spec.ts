@@ -1,10 +1,28 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  newQuotation,
+  open,
+  submit,
+  tag,
+  takeOutOfCatalogue,
+} from "./helpers";
+
+// Its customs, VGM and free-time items would start every later quotation: taken out after each test.
+let used = "";
+test.afterEach(async ({ page }) => {
+  if (used) await takeOutOfCatalogue(page, used);
+  used = "";
+});
 
 test("a destination quoted for two containers multiplies its per-container lines, counts a box-bound line once, and never totals a free-time term", async ({
   page,
 }) => {
   const t = tag();
+  used = t;
   await login(page);
 
   // A free-time item in the catalogue: demurrage at destination, by kind not by name.
@@ -28,14 +46,13 @@ test("a destination quoted for two containers multiplies its per-container lines
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
 
   // One destination at 900 per container.
-  await open(page, "/quotations/new");
-  await choose(page.getByLabel("Customer"), { label: client });
-  await page.getByLabel("Port of loading").fill("BEANR");
-  await page.getByLabel("Port of discharge").fill("TRMER");
-  await page.getByLabel("Service").fill(`Ocean freight ${t}`);
-  await page.getByLabel("Sell (EUR)").fill("900");
-  await page.getByRole("button", { name: "Create quotation" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  await newQuotation(page, {
+    client: client,
+    pol: "BEANR",
+    pod: "TRMER",
+    sell: "900",
+    service: `Ocean freight ${t}`,
+  });
 
   // Two containers: the title says so and the line doubles.
   await page.getByRole("button", { name: "Edit", exact: true }).first().click();
@@ -49,17 +66,13 @@ test("a destination quoted for two containers multiplies its per-container lines
     "€1,800.00",
   );
 
-  // A box-bound extra counted once, and the free-time term that adds nothing.
+  // A box-bound extra counted once; the free-time term the destination started with adds nothing.
   await card.getByLabel("Or a service typed").fill("Extra stop in Mechelen");
   await card.getByLabel("Sell (EUR)").fill("100");
   await card.getByLabel("Per container").uncheck();
   await submit(page, card.getByRole("button", { name: "Add line" }));
   await expectToast(page, "Line added");
-  await choose(card.getByLabel("From the catalogue"), {
-    label: `Container terms ${t} · 14 free days`,
-  });
-  await submit(page, card.getByRole("button", { name: "Add line" }));
-  await expectToast(page, "Line added");
+  // The free-time term came with the destination, from the catalogue (legacy fillRouteLines).
   await expect(card.getByRole("row").filter({ hasText: "Extra stop in Mechelen" })).toContainText(
     "€100.00",
   );

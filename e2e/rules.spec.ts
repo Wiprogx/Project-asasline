@@ -1,6 +1,15 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  newQuotation,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 /**
  * The document rules engine end to end, on a Gabon export out of Antwerp:
@@ -196,13 +205,13 @@ test("a rule for a service applies only where the quotation sold it", async ({ p
     await fillMandatory(page);
     await page.getByRole("button", { name: "Create contact" }).click();
     await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
-    await open(page, "/quotations/new");
-    await choose(page.getByLabel("Customer"), { label: client });
-    await page.getByLabel("Port of loading").fill("BEANR");
-    await page.getByLabel("Port of discharge").fill("TRMER");
-    await page.getByLabel("Service").fill(what);
-    await page.getByLabel("Sell (EUR)").fill("900");
-    await page.getByRole("button", { name: "Create quotation" }).click();
+    await newQuotation(page, {
+      client: client,
+      pol: "BEANR",
+      pod: "TRMER",
+      sell: "900",
+      service: what,
+    });
     await page.getByRole("button", { name: "Accept → create booking" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
     await open(page, `${page.url()}/documents`);
