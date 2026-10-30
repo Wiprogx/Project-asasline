@@ -31,6 +31,7 @@ test("a quotation, a destination and a booking each open the task their rule ask
   // Another destination: "Quote BEANR › X to the client".
   await page.getByLabel("From", { exact: true }).fill("BEANR");
   await page.getByLabel("To", { exact: true }).fill("CMDLA");
+  await page.getByLabel("To", { exact: true }).press("Tab");
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");
 

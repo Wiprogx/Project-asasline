@@ -3,6 +3,7 @@
 import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
+import { type PickerOption, SearchPicker } from "@/components/shared/search-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VAT_CODES } from "@/domain/accounting";
@@ -15,9 +16,11 @@ type Option = { id: string; name: string };
 export function NewQuotationForm({
   clients,
   containerTypes,
+  ports,
 }: {
   clients: Option[];
   containerTypes: string[];
+  ports: readonly PickerOption[];
 }) {
   const [state, action, pending] = useToastedAction(createQuotation, undefined, newQuotationSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
@@ -45,14 +48,11 @@ export function NewQuotationForm({
             ]}
           />
         </Field>
-        <Field id="validUntil" label="Valid until" error={fe?.validUntil}>
-          <Input id="validUntil" name="validUntil" type="date" />
-        </Field>
         <Field id="pol" label="Port of loading" error={fe?.pol}>
-          <Input id="pol" name="pol" placeholder="BEANR" required list="ports" />
+          <SearchPicker id="pol" name="pol" placeholder="BEANR" required options={ports} free />
         </Field>
         <Field id="pod" label="Port of discharge" error={fe?.pod}>
-          <Input id="pod" name="pod" placeholder="TRMER" required list="ports" />
+          <SearchPicker id="pod" name="pod" placeholder="TRMER" required options={ports} free />
         </Field>
         <Field id="finalPlace" label="Final delivery place">
           <Input id="finalPlace" name="finalPlace" />
@@ -64,6 +64,9 @@ export function NewQuotationForm({
             defaultValue="40HC"
             options={containerTypes.map((t) => ({ value: t, label: t }))}
           />
+        </Field>
+        <Field id="validUntil" label="Valid until" error={fe?.validUntil}>
+          <Input id="validUntil" name="validUntil" type="date" />
         </Field>
       </div>
       <Field id="description" label="Service" error={fe?.description}>

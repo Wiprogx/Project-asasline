@@ -112,7 +112,7 @@ export function QuotationRoutes({
             <h2 className="font-heading text-base font-medium">Another destination</h2>
           </CardHeader>
           <CardContent>
-            <AddRouteForm {...edit} lanes={choices.lanes} modes={modes} />
+            <AddRouteForm {...edit} lanes={choices.lanes} ports={choices.ports} modes={modes} />
           </CardContent>
         </Card>
       )}
