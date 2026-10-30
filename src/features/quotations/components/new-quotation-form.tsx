@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { ROUTE_SERVICE_LABELS } from "@/domain/route-service";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createQuotation } from "../actions";
+import type { ReactNode } from "react";
 import type { NewQuotationChoices } from "../new-queries";
-import { CommodityRows, type CommodityDraft } from "./commodity-rows";
 import { DestinationFields, type DestinationDraft, emptyDestination } from "./destination-fields";
 
 type Client = { id: string; name: string; paymentTermId: string | null };
@@ -56,26 +56,49 @@ function AddedDestinations({
  */
 export function NewQuotationForm({
   clients,
-  places,
   choices,
+  newPlace,
 }: {
   clients: readonly Client[];
-  places: readonly PickerOption[];
   choices: NewQuotationChoices;
+  /** The "+ New location" dialog, rendered by the page; the form lends it the customer. */
+  newPlace: ReactNode;
 }) {
   const [state, action, pending] = useToastedAction(createQuotation);
   const fe = !state.ok ? state.fieldErrors : undefined;
   const [added, setAdded] = useState<DestinationDraft[]>([]);
   const [draft, setDraft] = useState(emptyDestination);
   const [draftKey, setDraftKey] = useState(0);
-  const [hs, setHs] = useState<CommodityDraft[]>([{ code: "", description: null }]);
   const [term, setTerm] = useState("");
+  // The customer's places (delivery addresses first, the most recent the default).
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [places, setPlaces] = useState<PickerOption[]>([]);
+  const pickClient = async (id: string | null) => {
+    setClientId(id);
+    setTerm(clients.find((c) => c.id === id)?.paymentTermId ?? "");
+    const found: (PickerOption & { delivery: boolean })[] = id
+      ? await fetch(`/api/contacts/${id}/places`).then((r) => (r.ok ? r.json() : []))
+      : [];
+    setPlaces(found);
+    const first = found.find((p) => p.delivery)?.value ?? null;
+    // Only the address pickers follow (they are keyed on their value); the rest stays as typed.
+    setDraft((d) => ({ ...d, loadAddressId: first }));
+  };
+  const kit = {
+    places,
+    clientId,
+    newPlace,
+    addPlace: (p: PickerOption) => setPlaces((ps) => [p, ...ps]),
+  };
   const seaWaybill = choices.docTypes.find((d) => d.code === "sea_waybill")?.value;
-  const all = draft.laneId ? [...added, draft] : added;
+  // An HS row left empty is not sent.
+  const all = (draft.laneId ? [...added, draft] : added).map((d) => ({
+    ...d,
+    boxDetails: d.boxDetails.map((b) => ({ ...b, hs: b.hs.filter((h) => h.code) })),
+  }));
   return (
     <ActionForm action={action} className="grid max-w-4xl gap-6">
       <input type="hidden" name="destinations" value={JSON.stringify(all)} />
-      <input type="hidden" name="commodities" value={JSON.stringify(hs.filter((r) => r.code))} />
       <div className="grid gap-4 sm:grid-cols-3">
         <Field id="kind" label="Type">
           <NativeSelect
@@ -102,7 +125,7 @@ export function NewQuotationForm({
             required
             placeholder="— Select customer —"
             options={clients.map((c) => ({ value: c.id, label: c.name }))}
-            onChange={(id) => setTerm(clients.find((c) => c.id === id)?.paymentTermId ?? "")}
+            onChange={(id) => void pickClient(id)}
           />
         </Field>
         <Field
@@ -132,7 +155,8 @@ export function NewQuotationForm({
           set={setDraft}
           lanes={choices.lanes}
           modes={choices.modes}
-          places={places}
+          kit={kit}
+          hs={choices.hs}
           fe={fe}
         />
         <div className="grid gap-1">
@@ -143,7 +167,11 @@ export function NewQuotationForm({
               disabled={!draft.laneId}
               onClick={() => {
                 setAdded([...added, draft]);
-                setDraft(emptyDestination());
+                setDraft(
+                  emptyDestination(
+                    places.find((p) => p.value === draft.loadAddressId)?.value ?? null,
+                  ),
+                );
                 setDraftKey((k) => k + 1);
               }}
             >
@@ -158,10 +186,17 @@ export function NewQuotationForm({
             </Link>
             .
           </p>
-          {fe?.destinations && <p className="text-xs text-destructive">{fe.destinations[0]}</p>}
+          {/* A destination's or a box's problem, said in words (its field may not be on screen). */}
+          {Object.entries(fe ?? {})
+            .filter(([k]) => k.startsWith("destinations"))
+            .slice(0, 3)
+            .map(([k, v]) => (
+              <p key={k} className="text-xs text-destructive">
+                {v?.[0]}
+              </p>
+            ))}
         </div>
       </fieldset>
-      <CommodityRows rows={hs} set={setHs} hs={choices.hs} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="validUntil" label="Valid until" error={fe?.validUntil}>
           <Input id="validUntil" name="validUntil" type="date" />

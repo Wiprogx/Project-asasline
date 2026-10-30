@@ -82,8 +82,14 @@ async function linkExisting(raw: Record<string, string | undefined>, userId: str
   return { ok: true as const, data: undefined, message: `Linked as ${role}` };
 }
 
-/** A new person or location, checked as any contact is, made and linked in one transaction. */
-async function linkNew(raw: Record<string, string | undefined>, userId: string) {
+/**
+ * A new person or location, checked as any contact is, made and linked in one transaction.
+ * Answers with the new contact's id and name, for a form that picks it at once.
+ */
+export async function linkNew(
+  raw: Record<string, string | undefined>,
+): Promise<ActionResult<{ id: string; name: string }>> {
+  const { id: userId } = await requirePermission("app.contacts");
   const ref = linkNewSchema.safeParse(raw);
   if (!ref.success) return invalid(ref.error);
   const parsed = checkedContactSchema(await readIdFormats()).safeParse({
@@ -132,14 +138,20 @@ async function linkNew(raw: Record<string, string | undefined>, userId: string) 
     return made.id;
   });
   await settle(contactId, id);
-  return { ok: true as const, data: undefined, message: `${fields.name} added as ${role}` };
+  return {
+    ok: true,
+    data: { id, name: fields.name ?? "" },
+    message: `${fields.name} added as ${role}`,
+  };
 }
 
 /** "+ Add person" / "+ Add location": an existing contact picked, or a new one typed. */
 export async function addLinked(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.contacts");
   const raw = formToObject(fd);
-  return fd.has("linkedId") ? linkExisting(raw, user.id) : linkNew(raw, user.id);
+  if (fd.has("linkedId")) return linkExisting(raw, user.id);
+  const made = await linkNew(raw);
+  return made.ok ? { ok: true, data: undefined, message: made.message } : made;
 }
 
 /**

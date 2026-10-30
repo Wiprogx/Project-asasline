@@ -13,10 +13,14 @@ export function CommodityRows({
   rows,
   set,
   hs,
+  idPrefix,
+  label = "Commodity (HS) — one row per product",
 }: {
   rows: CommodityDraft[];
   set: (rows: CommodityDraft[]) => void;
   hs: readonly PickerOption[];
+  idPrefix: string;
+  label?: string;
 }) {
   const put = (i: number, code: string | null) => {
     const known = hs.find((h) => h.value === code);
@@ -27,15 +31,15 @@ export function CommodityRows({
     );
   };
   return (
-    <fieldset className="grid gap-2">
-      <legend className="mb-1 text-sm font-medium">Commodity (HS) — one row per product</legend>
+    <fieldset className="grid gap-2 sm:col-span-full">
+      <legend className="mb-1 text-sm font-medium">{label}</legend>
       {rows.map((r, i) => (
         <div key={i} className="grid grid-cols-[2rem_1fr_auto] items-center gap-2">
           <span className="text-right text-sm text-muted-foreground tabular-nums">{i + 1}</span>
           <SearchPicker
-            id={`hs-${i}`}
-            name={`hs-${i}`}
-            aria-label={`Commodity ${i + 1}`}
+            id={`${idPrefix}-${i}`}
+            name={`${idPrefix}-${i}`}
+            aria-label={`${label.split(" — ")[0]} ${i + 1}`}
             options={hs}
             defaultValue={r.code || null}
             placeholder="Search code or product, e.g. 6309 or worn"

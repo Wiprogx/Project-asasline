@@ -39,6 +39,9 @@ export function ActionForm({ action, ref, ...props }: Props) {
       data-action-form=""
       {...props}
       onSubmit={(e) => {
+        // A dialog's own form (portaled out of this one) bubbles its submit through React:
+        // it is that form's to send, not this one's.
+        if (e.target !== e.currentTarget) return;
         e.preventDefault();
         const data = new FormData(e.currentTarget);
         startTransition(() => action(data));

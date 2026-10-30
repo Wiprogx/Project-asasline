@@ -34,6 +34,9 @@ export const DEFAULT_DOC_TYPE = "sea_waybill";
 /** The container type a new box starts as (40HC). */
 export const DEFAULT_CONTAINER_TYPE = "default_box";
 
+/** A customer's delivery address (a linked location): where a door service loads by default. */
+export const DELIVERY_ROLE = "delivery";
+
 /** The task types the app gives by itself: a task to do, a call to return. */
 export const TASK_TYPE_CODES = { toDo: "to_do", call: "call" } as const;
 

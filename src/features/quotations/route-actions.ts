@@ -54,6 +54,7 @@ export async function addRoute(_p: ActionResult, fd: FormData): Promise<ActionRe
           position: (last ?? -1) + 1,
           polId: ids.polId,
           podId: ids.podId,
+          laneId: lane?.id ?? null,
           finalPlace: d.finalPlace,
           containerTypeId:
             lane?.containerTypeId ??

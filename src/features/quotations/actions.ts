@@ -9,10 +9,18 @@ import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
-import { bookings, contacts, containers, quotationRoutes, quotations } from "@/server/db/schema";
+import {
+  bookings,
+  contacts,
+  containerHsLines,
+  containers,
+  quotationRoutes,
+  quotations,
+} from "@/server/db/schema";
 import { liveLookupLabel, lookupIdByCode } from "@/server/lookups";
 import { readPaymentTerms } from "@/server/accounting-config";
-import { clientTerm, createDestinations, saveCommodities } from "./create-store";
+import { loadingOf } from "./accept-store";
+import { clientTerm, createDestinations } from "./create-store";
 import { withPorts } from "@/server/ports";
 import { syncBookingRules } from "@/server/rules-sync";
 import { DEFAULT_CONTAINER_TYPE, DEFAULT_DOC_TYPE } from "@/domain/lookup-tables";
@@ -54,13 +62,12 @@ export async function createQuotation(_p: ActionResult, fd: FormData): Promise<A
           updatedBy: user.id,
         })
         .returning({ id: quotations.id });
-      await createDestinations(
+      const commodity = await createDestinations(
         tx,
         { ...q, clientId: d.clientId, kind: d.kind },
         d.destinations,
         user.id,
       );
-      const commodity = await saveCommodities(tx, q.id, d.commodities, user.id);
       if (commodity) await tx.update(quotations).set({ commodity }).where(eq(quotations.id, q.id));
       await audit(tx, {
         action: "quotation.create",
@@ -133,6 +140,8 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
         "This quotation",
       );
       const ref = await nextRef(tx, "SB", officeToday());
+      // The loading agreed on the quotation, for the booking and each of its boxes.
+      const loading = await loadingOf(tx, route);
       const [b] = await tx
         .insert(bookings)
         .values({
@@ -142,9 +151,13 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           kind: q.kind,
           clientId: q.clientId,
           payerId: q.clientId,
+          // The customer ships an export and receives an import (legacy doConvert).
+          shipperId: q.kind === "import" ? null : q.clientId,
+          consigneeId: q.kind === "import" ? q.clientId : null,
           polId: route.polId,
           podId: route.podId,
-          loadingMode: route.loadingMode,
+          loadingMode: loading.booking.loadingMode,
+          loadAddress: loading.booking.loadAddress,
           commodity: q.commodity,
           docTypeId: q.docTypeId ?? (await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE)),
           createdBy: user.id,
@@ -154,14 +167,30 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
       const [named] = await withPorts([route]);
       // As many boxes as the destination was quoted for (legacy expectedBoxes); else 40HC.
       const defaultBox = await lookupIdByCode(tx, "container-types", DEFAULT_CONTAINER_TYPE);
-      await tx.insert(containers).values(
-        Array.from({ length: Math.max(1, route.boxes) }, (_, position) => ({
-          bookingId: b.id,
-          typeId: route.containerTypeId ?? defaultBox,
+      const made = await tx
+        .insert(containers)
+        .values(
+          loading.boxes.map((box, position) => ({
+            bookingId: b.id,
+            typeId: route.containerTypeId ?? defaultBox,
+            position,
+            loadingMode: box.loadingMode,
+            loadAddress: box.loadAddress,
+            stops: box.stops,
+            createdBy: user.id,
+          })),
+        )
+        .returning({ id: containers.id, position: containers.position });
+      // Each box's goods, one line per HS code, its weight and packages to come on the booking.
+      const lines = made.flatMap((c) =>
+        loading.boxes[c.position].hs.map((h, position) => ({
+          containerId: c.id,
           position,
+          code: h.code,
           createdBy: user.id,
         })),
       );
+      if (lines.length) await tx.insert(containerHsLines).values(lines);
       await audit(tx, {
         action: "quotation.accept",
         userId: user.id,

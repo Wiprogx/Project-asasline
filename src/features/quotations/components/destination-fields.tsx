@@ -3,15 +3,19 @@
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { type PickerOption, SearchPicker } from "@/components/shared/search-picker";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { LoadingMode } from "@/domain/loading";
 import {
   ROUTE_SERVICE_LABELS,
   ROUTE_SERVICES,
+  type RouteBox,
   type RouteService,
   type RouteStop,
 } from "@/domain/route-service";
+import { BoxRows } from "./box-rows";
+import { type PlaceKit, PlacePicker } from "./place-picker";
+import { CommodityRows } from "./commodity-rows";
+import { StopRows } from "./stop-rows";
 
 /** A destination being typed: what the server's destination schema reads. */
 export type DestinationDraft = {
@@ -21,82 +25,28 @@ export type DestinationDraft = {
   loadingMode: string | null;
   loadAddressId: string | null;
   stops: RouteStop[];
+  boxDetails: RouteBox[];
 };
 
-export const emptyDestination = (): DestinationDraft => ({
+/** A container as it starts: the destination's loading, and an empty HS row to fill. */
+const newBox = (loadingMode: string | null, loadAddressId: string | null): RouteBox => ({
+  loadingMode,
+  loadAddressId,
+  stops: [],
+  hs: [{ code: "", description: null }],
+});
+
+export const emptyDestination = (loadAddressId: string | null = null): DestinationDraft => ({
   laneId: null,
   service: "door_port",
   boxes: 1,
   loadingMode: null,
-  loadAddressId: null,
+  loadAddressId,
   stops: [],
+  boxDetails: [newBox(null, loadAddressId)],
 });
 
 type Errors = Record<string, string[] | undefined> | undefined;
-
-/** "+ Add stop": a location, and when the truck calls there (legacy stops). */
-function StopRows({
-  d,
-  set,
-  places,
-}: {
-  d: DestinationDraft;
-  set: (d: DestinationDraft) => void;
-  places: readonly PickerOption[];
-}) {
-  const put = (i: number, s: Partial<RouteStop>) =>
-    set({ ...d, stops: d.stops.map((x, k) => (k === i ? { ...x, ...s } : x)) });
-  return (
-    <div className="grid gap-2 sm:col-span-full">
-      <span className="text-sm font-medium">Additional addresses (Stops)</span>
-      {d.stops.map((s, i) => (
-        <div key={i} className="grid gap-2 sm:grid-cols-[1fr_10rem_7rem_auto] sm:items-end">
-          <SearchPicker
-            id={`stop-${i}`}
-            name={`stop-${i}`}
-            aria-label={`Stop ${i + 1}`}
-            options={places}
-            defaultValue={s.contactId || null}
-            placeholder="Search addresses…"
-            onChange={(v) => put(i, { contactId: v ?? "" })}
-          />
-          <Input
-            type="date"
-            aria-label={`Stop ${i + 1} date`}
-            value={s.date ?? ""}
-            onChange={(e) => put(i, { date: e.target.value || null })}
-          />
-          <Input
-            type="time"
-            aria-label={`Stop ${i + 1} hour`}
-            value={s.time ?? ""}
-            onChange={(e) => put(i, { time: e.target.value || null })}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => set({ ...d, stops: d.stops.filter((_, k) => k !== i) })}
-          >
-            Remove
-          </Button>
-        </div>
-      ))}
-      <div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            set({ ...d, stops: [...d.stops, { contactId: "", date: null, time: null }] })
-          }
-        >
-          + Add stop
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 /** What the loading mode means, under the field (legacy lmNote). */
 const modeNote = (m: LoadingMode | undefined) =>
@@ -107,25 +57,114 @@ const modeNote = (m: LoadingMode | undefined) =>
       : `${m.hours} loading hour${m.hours === 1 ? "" : "s"} included.`;
 
 /**
+ * A new container count (quotation > destination > container > HS): one entry per box, a new
+ * one starting from the destination's mode and address (legacy qBoxRows); a single box is
+ * loaded as the destination is.
+ */
+export function withBoxes(d: DestinationDraft, boxes: number): DestinationDraft {
+  // Leaving one box for several: the first box takes the loading typed for the destination.
+  const first = d.boxDetails[0];
+  const was =
+    d.boxes === 1 && first
+      ? [
+          {
+            ...first,
+            loadingMode: d.loadingMode,
+            loadAddressId: d.loadAddressId,
+            stops: d.stops,
+          },
+        ]
+      : d.boxDetails;
+  const boxDetails = Array.from(
+    { length: boxes },
+    (_, i) => was[i] ?? newBox(d.loadingMode, d.loadAddressId),
+  );
+  return { ...d, boxes, boxDetails };
+}
+
+/** The loading of a one-container destination: its mode, its address, its stops. */
+function OneBox({
+  d,
+  set,
+  modes,
+  kit,
+  hs,
+  fe,
+}: {
+  d: DestinationDraft;
+  set: (d: DestinationDraft) => void;
+  modes: readonly LoadingMode[];
+  kit: PlaceKit;
+  hs: readonly PickerOption[];
+  fe: Errors;
+}) {
+  const box = d.boxDetails[0] ?? newBox(d.loadingMode, d.loadAddressId);
+  return (
+    <>
+      <Field
+        id="loadingMode"
+        label="Loading mode — agreed with the customer"
+        hint={modeNote(modes.find((m) => m.name === d.loadingMode))}
+      >
+        <NativeSelect
+          id="loadingMode"
+          value={d.loadingMode ?? ""}
+          placeholder="— not agreed yet —"
+          options={modes.map((m) => ({ value: m.name, label: m.name }))}
+          onChange={(e) => set({ ...d, loadingMode: e.target.value || null })}
+        />
+      </Field>
+      {d.service === "door_port" && (
+        <>
+          <PlacePicker
+            id="loadAddressId"
+            label="Loading address"
+            value={d.loadAddressId}
+            set={(v) => set({ ...d, loadAddressId: v })}
+            kit={kit}
+            error={fe?.loadAddressId}
+          />
+          <StopRows
+            label="Additional addresses (Stops)"
+            idPrefix="stop"
+            stops={d.stops}
+            set={(stops) => set({ ...d, stops })}
+            kit={kit}
+          />
+        </>
+      )}
+      <CommodityRows
+        idPrefix="hs"
+        rows={box.hs}
+        set={(rows) => set({ ...d, boxDetails: [{ ...box, hs: rows }] })}
+        hs={hs}
+      />
+    </>
+  );
+}
+
+/**
  * One destination of a new quotation (legacy fQ): its service, the ocean leg it is built from,
- * how many containers, the loading mode agreed and — for a door service — where the truck loads.
+ * how many containers, and how each is loaded — for a door service, where the truck loads.
  */
 export function DestinationFields({
   d,
   set,
   lanes,
   modes,
-  places,
+  kit,
+  hs,
   fe,
 }: {
   d: DestinationDraft;
   set: (d: DestinationDraft) => void;
   lanes: readonly PickerOption[];
   modes: readonly LoadingMode[];
-  places: readonly PickerOption[];
+  kit: PlaceKit;
+  hs: readonly PickerOption[];
   fe: Errors;
 }) {
-  const door = d.service === "door_port";
+  const many = d.service === "door_port" && d.boxes > 1;
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field id="service" label="Service">
@@ -161,36 +200,20 @@ export function DestinationFields({
           min={1}
           max={50}
           value={d.boxes}
-          onChange={(e) => set({ ...d, boxes: Math.max(1, Number(e.target.value) || 1) })}
+          onChange={(e) => set(withBoxes(d, Math.max(1, Number(e.target.value) || 1)))}
         />
       </Field>
-      <Field
-        id="loadingMode"
-        label="Loading mode — agreed with the customer"
-        hint={modeNote(modes.find((m) => m.name === d.loadingMode))}
-      >
-        <NativeSelect
-          id="loadingMode"
-          value={d.loadingMode ?? ""}
-          placeholder="— not agreed yet —"
-          options={modes.map((m) => ({ value: m.name, label: m.name }))}
-          onChange={(e) => set({ ...d, loadingMode: e.target.value || null })}
+      {many ? (
+        <BoxRows
+          boxes={d.boxDetails}
+          set={(boxDetails) => set({ ...d, boxDetails })}
+          modes={modes}
+          kit={kit}
+          hs={hs}
         />
-      </Field>
-      {door && (
-        <Field id="loadAddressId" label="Loading address" error={fe?.loadAddressId} required>
-          <SearchPicker
-            id="loadAddressId"
-            name="loadAddressId"
-            options={places}
-            defaultValue={d.loadAddressId}
-            placeholder="Search addresses…"
-            empty="No location matches — add it as a location contact."
-            onChange={(v) => set({ ...d, loadAddressId: v })}
-          />
-        </Field>
+      ) : (
+        <OneBox d={d} set={set} modes={modes} kit={kit} hs={hs} fe={fe} />
       )}
-      {door && <StopRows d={d} set={set} places={places} />}
     </div>
   );
 }

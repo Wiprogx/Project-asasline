@@ -8,7 +8,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { RouteStop } from "../../../domain/route-service";
+import type { RouteBox, RouteStop } from "../../../domain/route-service";
 import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import {
@@ -76,6 +76,8 @@ export const quotationRoutes = pgTable(
     loadAddressId: uuid().references(() => contacts.id),
     /** The other places the truck calls at, in order (legacy stops). */
     stops: jsonb().$type<RouteStop[]>().notNull().default([]),
+    /** Each container of the destination: its mode, address, stops and its HS rows (one per box). */
+    boxDetails: jsonb().$type<RouteBox[]>().notNull().default([]),
     /** The box quoted (Settings › Lists › Container types). */
     containerTypeId: uuid().references(() => containerTypes.id),
     declined: boolean().notNull().default(false),
@@ -117,20 +119,4 @@ export const quotationLines = pgTable(
     index("quotation_lines_route_idx").on(t.routeId, t.position),
     index("quotation_lines_item_idx").on(t.itemId),
   ],
-);
-
-/** What the quotation ships, one row per product (legacy q.commodities): an HS code and its words. */
-export const quotationCommodities = pgTable(
-  "quotation_commodities",
-  {
-    ...recordColumns,
-    quotationId: uuid()
-      .notNull()
-      .references(() => quotations.id),
-    position: integer().notNull().default(0),
-    /** The HS code (Settings › HS codes), 4 to 10 digits. */
-    code: text().notNull(),
-    description: text(),
-  },
-  (t) => [index("quotation_commodities_quotation_idx").on(t.quotationId, t.position)],
 );
