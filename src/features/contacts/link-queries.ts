@@ -101,6 +101,7 @@ const asOption = (c: { id: string; name: string; city: string | null }) => ({
  * a person carries a person's role there; from a location, a location's.
  */
 export async function linkPanel(c: { id: string; type: string }) {
+  await requirePermission("app.contacts");
   const [links, all, personRoles, locationRoles] = await Promise.all([
     linksOf(c.id),
     linkCandidates(),

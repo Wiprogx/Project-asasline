@@ -70,3 +70,13 @@ would have re-planned against the old rule book.
 connection, which cannot see rows the saving transaction has not committed yet.
 **Rule.** Write in one transaction, invalidate the cache, then run the sync in a second one
 (`saveAndReplan` in `src/features/rules/actions.ts`).
+
+## 2026-10-30 · A word list stored as words drifts from its list
+
+**What happened.** Rewording or removing a value in a Settings word list (cancel reasons, document
+types, ports…) left records holding words no list offered any more, and a list a rule relied on
+could be edited out from under it.
+**Why.** The lists were JSON rows of `config_tables` and records copied their text.
+**Rule.** A word list is a table of its own (`schema/lists`, `server/lookups`, Settings › Lists);
+a record points at its row by foreign key; a row the app relies on carries a `code`. Structured
+tables stay `config_tables` rows.
