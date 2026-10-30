@@ -13,7 +13,7 @@ async function openPdf(src: string) {
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url,
   ).toString();
-  return pdfjs.getDocument({ url: src }).promise;
+  return pdfjs.getDocument({ url: src });
 }
 
 /** One page: a placeholder of its size until it scrolls near, then drawn sharp for the screen. */
@@ -104,10 +104,11 @@ export function PdfStage({
 
   useEffect(() => {
     let live = true;
-    let opened: PDFDocumentProxy | null = null;
-    openPdf(src)
+    // pdf.js 6 closes a document through its loading task.
+    const task = openPdf(src);
+    task
+      .then((t) => t.promise)
       .then(async (d) => {
-        opened = d;
         const p = await d.getPage(1);
         const v = p.getViewport({ scale: 1 });
         if (!live) return;
@@ -118,7 +119,7 @@ export function PdfStage({
       .catch(() => live && setFailed(true));
     return () => {
       live = false;
-      void opened?.destroy();
+      void task.then((t) => t.destroy());
     };
   }, [src, onPages]);
 
