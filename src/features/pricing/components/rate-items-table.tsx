@@ -74,7 +74,7 @@ export function RateItemsTable({
       <TableToolbar
         view={view}
         filters={spec.spec.filters}
-        searchLabel="Search a port, carrier, document or name…"
+        searchLabel="Search a port, carrier, name…"
         noun="items"
       />
       {rows.length === 0 ? (

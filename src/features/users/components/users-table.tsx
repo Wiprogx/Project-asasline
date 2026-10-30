@@ -110,7 +110,7 @@ export function UsersTable({ rows, selfId }: { rows: UserRow[]; selfId: string }
       <TableToolbar
         view={view}
         filters={SPEC.filters}
-        searchLabel="Search by name, email, role or job title"
+        searchLabel="Search a name, email, role…"
         noun="users"
       />
       <Table aria-label="Users">

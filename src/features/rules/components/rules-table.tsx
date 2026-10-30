@@ -91,13 +91,13 @@ export function RulesTable({ rules, version }: { rules: DocRule[]; version: numb
       <TableToolbar
         view={view}
         filters={SPEC.filters}
-        searchLabel="Search a step, code, country or port"
+        searchLabel="Search a step, code, country…"
         noun="rules"
       />
       <Table aria-label="Rules">
         <TableHeader>
           <TableRow>
-            <SortableHead sortKey="rule" {...head}>
+            <SortableHead sortKey="rule" className="w-2/5" {...head}>
               Rule
             </SortableHead>
             <SortableHead sortKey="applies" {...head}>
@@ -116,7 +116,7 @@ export function RulesTable({ rules, version }: { rules: DocRule[]; version: numb
               key={`${r.code}-${r.pol}-${i}`}
               className={cn(!r.active && "text-muted-foreground")}
             >
-              <TableCell className="max-w-sm whitespace-normal">
+              <TableCell className="min-w-64 whitespace-normal">
                 <span className="font-medium">
                   {r.blocking && "⛔ "}
                   {r.step}

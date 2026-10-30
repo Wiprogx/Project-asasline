@@ -52,7 +52,7 @@ export function VesselsTable({ rows }: { rows: Row[] }) {
       <TableToolbar
         view={view}
         filters={spec.filters}
-        searchLabel="Search a vessel, voyage, carrier or port…"
+        searchLabel="Search a vessel, voyage, port…"
         noun="sailings"
       />
       {rows.length === 0 ? (

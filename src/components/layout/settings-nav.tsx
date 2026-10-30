@@ -1,6 +1,19 @@
 "use client";
 
-import { ChevronRightIcon, SearchIcon } from "lucide-react";
+import {
+  BookOpenIcon,
+  Building2Icon,
+  CalculatorIcon,
+  ChevronRightIcon,
+  FileCheckIcon,
+  FileTextIcon,
+  ListIcon,
+  type LucideIcon,
+  MailIcon,
+  SearchIcon,
+  ShipIcon,
+  UsersIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,6 +32,18 @@ import {
 import { cn } from "@/lib/utils";
 
 export type SettingsGroup = { label: string; items: { href: string; label: string }[] };
+
+/** A module's mark in the menu; one it does not know gets a book. */
+const ICON: Record<string, LucideIcon> = {
+  Office: Building2Icon,
+  Contacts: UsersIcon,
+  Quotations: FileTextIcon,
+  Bookings: ShipIcon,
+  Documents: FileCheckIcon,
+  Messages: MailIcon,
+  Accounting: CalculatorIcon,
+  Lists: ListIcon,
+};
 
 const isOn = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`);
@@ -56,7 +81,7 @@ function SettingsPicker({ groups, current }: { groups: SettingsGroup[]; current:
 
 function ModuleLinks({ group, pathname }: { group: SettingsGroup; pathname: string }) {
   return (
-    <div className="grid gap-0.5 pt-0.5 pl-2">
+    <div className="mt-0.5 mb-1 ml-[1.1rem] grid gap-0.5 border-l pl-2">
       {group.items.map((i) => {
         const on = isOn(pathname, i.href);
         return (
@@ -66,8 +91,9 @@ function ModuleLinks({ group, pathname }: { group: SettingsGroup; pathname: stri
             aria-current={on ? "page" : undefined}
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "w-full justify-start border-l font-normal",
-              on && "border-primary bg-muted font-medium text-foreground",
+              "relative w-full justify-start font-normal text-muted-foreground",
+              on &&
+                "bg-muted font-medium text-foreground before:absolute before:inset-y-1.5 before:-left-[0.5625rem] before:w-0.5 before:rounded-full before:bg-primary",
             )}
           >
             {i.label}
@@ -91,24 +117,23 @@ function ModuleSection({
   onOpenChange: (open: boolean) => void;
 }) {
   const here = group.items.some((i) => isOn(pathname, i.href));
+  const Icon = ICON[group.label] ?? BookOpenIcon;
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <h2>
         <CollapsibleTrigger
           className={cn(
             buttonVariants({ variant: "ghost", size: "sm" }),
-            "w-full justify-between text-xs font-medium tracking-wide text-muted-foreground uppercase",
+            "w-full justify-start gap-2 font-medium text-muted-foreground",
             here && "text-foreground",
           )}
         >
+          <Icon aria-hidden className="size-4" />
           {group.label}
-          <span className="flex items-center gap-1.5">
-            <span className="font-normal normal-case tabular-nums">{group.items.length}</span>
-            <ChevronRightIcon
-              aria-hidden
-              className={cn("size-4 transition-transform", open && "rotate-90")}
-            />
-          </span>
+          <ChevronRightIcon
+            aria-hidden
+            className={cn("ml-auto size-4 opacity-60 transition-transform", open && "rotate-90")}
+          />
         </CollapsibleTrigger>
       </h2>
       <CollapsibleContent>

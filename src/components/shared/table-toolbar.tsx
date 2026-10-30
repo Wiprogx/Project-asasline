@@ -64,11 +64,14 @@ export function TableToolbar<T>({
   filters = [],
   searchLabel,
   noun = "rows",
+  one = noun.replace(/s$/, ""),
 }: {
   view: TableView<T>;
   filters?: readonly TableFilter<T>[];
   searchLabel?: string;
   noun?: string;
+  /** The noun for a single row, when dropping the "s" is not it ("person" for "people"). */
+  one?: string;
 }) {
   const { state } = view;
   const [text, setText] = useState(state.q);
@@ -94,7 +97,7 @@ export function TableToolbar<T>({
   return (
     <div className="flex flex-wrap items-center gap-2" aria-busy={view.pending}>
       {searchLabel && (
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full sm:w-72">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -129,8 +132,8 @@ export function TableToolbar<T>({
       )}
       <span className="ml-auto text-xs text-muted-foreground tabular-nums" aria-live="polite">
         {view.rows.length === view.total
-          ? `${view.total} ${noun}`
-          : `${view.rows.length} of ${view.total} ${noun}`}
+          ? `${view.total} ${view.total === 1 ? one : noun}`
+          : `${view.rows.length} of ${view.total} ${view.total === 1 ? one : noun}`}
       </span>
     </div>
   );

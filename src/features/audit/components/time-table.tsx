@@ -56,7 +56,7 @@ export function TimeTable({
           {window.from ? `${window.from} → ${window.to}` : `everything up to ${window.to}`}
         </span>
       </nav>
-      <TableToolbar view={view} searchLabel="Search a person" noun="people" />
+      <TableToolbar view={view} searchLabel="Search a person" noun="people" one="person" />
       <Table aria-label="Time per person and app">
         <TableHeader>
           <TableRow>

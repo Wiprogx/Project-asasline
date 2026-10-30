@@ -32,7 +32,7 @@ export function BooksSettingsForm({ books, version }: { books: BooksSettings; ve
       <CardContent>
         <ActionForm
           action={run}
-          className="grid gap-3 sm:grid-cols-3 lg:grid-cols-[12rem_10rem_12rem_8rem_8rem_auto] lg:items-end"
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:items-end 2xl:grid-cols-[12rem_10rem_12rem_8rem_8rem_auto]"
         >
           <input type="hidden" name="version" value={version} />
           <Field id="approveOver" label="Approval from (EUR)" error={fe?.approveOver}>
