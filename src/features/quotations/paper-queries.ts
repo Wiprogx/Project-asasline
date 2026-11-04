@@ -1,23 +1,76 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { termIdFor } from "@/domain/accounting-settings";
-import type { PaperBox, PaperQuotation, PaperRoute } from "@/domain/quotation-paper";
-import { commodityWords, type RouteStop } from "@/domain/route-service";
+import {
+  type PaperBox,
+  type PaperPlace,
+  type PaperQuotation,
+  type PaperRoute,
+  placeBlock,
+} from "@/domain/quotation-paper";
+import { commodityWords, type RouteStop, stopAddress } from "@/domain/route-service";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { requirePermission } from "@/server/auth/dal";
 import { cityNameOf } from "@/server/city-sql";
 import { officeToday } from "@/server/clock";
-import { db } from "@/server/db/client";
+import { readCountries } from "@/server/countries";
+import { db, type DbOrTx } from "@/server/db/client";
 import { contacts } from "@/server/db/schema";
 import { lookupLabels } from "@/server/lookups";
-import { addressesOf } from "./accept-store";
 import { getQuotation } from "./queries";
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 type Route = Quotation["routes"][number];
 
-const stopWords = (at: Map<string, string>, s: RouteStop) =>
-  [at.get(s.contactId) ?? "", [s.date, s.time].filter(Boolean).join(" ")]
+/** A place in words: the loading address in full (domain placeBlock), a stop on one line. */
+type Place = { block: string; line: string };
+
+/**
+ * The customer's places the paper names (location contacts): the loading address with what
+ * the driver needs — mobile, instructions, note — and each stop as one line.
+ */
+async function placesOf(tx: DbOrTx, ids: readonly string[]): Promise<Map<string, Place>> {
+  if (!ids.length) return new Map();
+  const [rows, countries] = await Promise.all([
+    tx
+      .select({
+        id: contacts.id,
+        name: contacts.name,
+        street: contacts.street,
+        zip: contacts.zip,
+        city: cityNameOf(contacts.cityId),
+        country: contacts.country,
+        mobile: contacts.mobile,
+        instructions: contacts.instructions,
+        note: contacts.note,
+      })
+      .from(contacts)
+      .where(inArray(contacts.id, [...ids])),
+    readCountries(),
+  ]);
+  const countryName = new Map(countries.map((c) => [c.code, c.name]));
+  return new Map(
+    rows.map((r) => {
+      const place: PaperPlace = {
+        ...r,
+        country: r.country ? (countryName.get(r.country) ?? r.country) : null,
+      };
+      const address = stopAddress({
+        street: r.street ?? "",
+        zip: r.zip,
+        city: r.city ?? "",
+        country: r.country ?? "",
+      });
+      return [
+        r.id,
+        { block: placeBlock(place), line: [r.name, address].filter(Boolean).join(", ") },
+      ];
+    }),
+  );
+}
+
+const stopWords = (at: Map<string, Place>, s: RouteStop) =>
+  [at.get(s.contactId)?.line ?? "", [s.date, s.time].filter(Boolean).join(" ")]
     .filter(Boolean)
     .join(" · ");
 
@@ -25,13 +78,13 @@ const stopWords = (at: Map<string, string>, s: RouteStop) =>
  * Each container's loading in words (as accepting the destination carries it, accept-store
  * loadingOf): the box's own details, else the destination's.
  */
-function boxesOf(r: Route, at: Map<string, string>): PaperBox[] {
+function boxesOf(r: Route, at: Map<string, Place>): PaperBox[] {
   return Array.from({ length: Math.max(1, r.boxes) }, (_, i) => {
     const b = r.boxDetails[i];
     const addressId = b?.loadAddressId ?? r.loadAddressId;
     return {
       loadingMode: b?.loadingMode ?? r.loadingMode,
-      loadAddress: addressId ? (at.get(addressId) ?? null) : null,
+      loadAddress: addressId ? (at.get(addressId)?.block ?? null) : null,
       stops: (b?.stops ?? r.stops).map((s) => stopWords(at, s)),
     };
   });
@@ -70,7 +123,7 @@ export async function quotationPaper(id: string): Promise<PaperQuotation | null>
       .where(eq(contacts.id, q.clientId)),
     readPaymentTerms(),
     lookupLabels("doc-types"),
-    addressesOf(
+    placesOf(
       db,
       placeIds(q.routes).filter((x): x is string => !!x),
     ),

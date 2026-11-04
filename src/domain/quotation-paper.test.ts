@@ -4,6 +4,7 @@ import {
   paperDestinations,
   paperHead,
   paperMentions,
+  placeBlock,
   type PaperQuotation,
   type PaperRoute,
   paperTotals,
@@ -145,6 +146,35 @@ describe("the printed quotation", () => {
       "Loading address",
       "CMDLA — Warehouse, Kaai 12, Zeebrugge\nTRMER — To be advised",
     ]);
+  });
+
+  it("prints a loading address as its name, street, city, mobile, instructions and note", () => {
+    expect(
+      placeBlock({
+        name: "Warehouse Dupont",
+        street: "Kaai 12",
+        zip: "8380",
+        city: "Zeebrugge",
+        country: "Belgium",
+        mobile: "+32 470 00 00 00",
+        instructions: "Gate 3, ask for Jan",
+        note: "Closed on Fridays",
+      }),
+    ).toBe(
+      "Warehouse Dupont\nKaai 12\nZeebrugge 8380 Belgium\nMobile: +32 470 00 00 00\nInstructions: Gate 3, ask for Jan\nNote: Closed on Fridays",
+    );
+    expect(
+      placeBlock({
+        name: "Depot",
+        street: null,
+        zip: null,
+        city: "Brugge",
+        country: null,
+        mobile: null,
+        instructions: null,
+        note: null,
+      }),
+    ).toBe("Depot\nBrugge");
   });
 
   it("calls the address an unloading address on an import", () => {

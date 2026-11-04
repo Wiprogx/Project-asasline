@@ -54,6 +54,36 @@ export const PAPER_NOTE =
 
 export const PORT_TO_PORT = "Port to port — no inland transport";
 
+/** A place of the customer as the query reads it: a location contact and what the driver needs. */
+export type PaperPlace = {
+  name: string;
+  street: string | null;
+  zip: string | null;
+  city: string | null;
+  /** The country's name ("Belgium"). */
+  country: string | null;
+  mobile: string | null;
+  instructions: string | null;
+  note: string | null;
+};
+
+/**
+ * The loading address as the paper prints it, one line each: the name, the street, the city
+ * with its postal code and country, then the mobile, the instructions and the note when the
+ * place has them.
+ */
+export const placeBlock = (p: PaperPlace) =>
+  [
+    p.name,
+    p.street,
+    [p.city, p.zip, p.country].filter(Boolean).join(" ") || null,
+    p.mobile && `Mobile: ${p.mobile}`,
+    p.instructions && `Instructions: ${p.instructions}`,
+    p.note && `Note: ${p.note}`,
+  ]
+    .filter((x): x is string => !!x)
+    .join("\n");
+
 const dash = (v: string | null | undefined) => v || "—";
 const live = (q: PaperQuotation) => q.routes.filter((r) => !r.declined);
 const boxCount = (r: PaperRoute) => Math.max(1, r.boxes);
