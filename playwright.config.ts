@@ -29,6 +29,9 @@ const port = process.env.E2E_PORT ?? "3001";
 // wrote; only the suite's own dev server is sent to .next-e2e by default.
 const serverCmd = process.env.E2E_SERVER_CMD;
 if (!serverCmd) process.env.NEXT_DIST_DIR ??= ".next-e2e";
+// The suite's numbers are made up: the EU registers are not asked (no network in a test), and
+// a contact's VAT and EORI stay unchecked.
+process.env.ID_REGISTERS ??= "off";
 // `npm run x` needs `--` before an argument meant for the script itself.
 const command = serverCmd
   ? `${serverCmd}${serverCmd.startsWith("npm ") ? " --" : ""} --port ${port}`

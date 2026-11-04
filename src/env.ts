@@ -22,6 +22,8 @@ const schema = z.object({
   APP_URL: z.url().optional(),
   /** The scheduled jobs' key (POST /api/jobs/tick): unset, the endpoint does not exist. */
   JOBS_TOKEN: z.string().min(24).optional(),
+  /** The EU registers (VIES, EORI) asked for a contact's numbers; "off" (the browser suite) asks nothing and leaves them unchecked. */
+  ID_REGISTERS: z.enum(["live", "off"]).default("live"),
   /** OVH Object Storage (S3): all four set, contacts' papers go to the bucket; else FILES_DIR. */
   S3_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().min(1).default("gra"),
@@ -42,6 +44,7 @@ export const env = schema.parse({
   WHATSAPP_TOKEN: process.env.WHATSAPP_TOKEN || undefined,
   WHATSAPP_PHONE_ID: process.env.WHATSAPP_PHONE_ID || undefined,
   JOBS_TOKEN: process.env.JOBS_TOKEN || undefined,
+  ID_REGISTERS: process.env.ID_REGISTERS || undefined,
   APP_URL: process.env.APP_URL || undefined,
   S3_ENDPOINT: process.env.S3_ENDPOINT || undefined,
   S3_REGION: process.env.S3_REGION || undefined,

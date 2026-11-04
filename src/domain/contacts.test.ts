@@ -1,11 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { ID_FORMATS, idClean, idFormatLines, idProblem, parseIdFormatLines } from "./contacts";
+import {
+  checkDigitProblem,
+  ID_FORMATS,
+  idClean,
+  idFormatLines,
+  idProblem,
+  parseIdFormatLines,
+} from "./contacts";
 
 describe("idProblem", () => {
   it("reads a Belgian VAT number however it is typed, and checks its check digits", () => {
     expect(idClean("be 0464.648.410")).toBe("BE0464648410");
     expect(idProblem("be 0464.648.410", "BE", "vat")).toBeNull();
     expect(idProblem("BE0464648411", "BE", "vat")).toMatch(/check digits/);
+  });
+
+  it("takes the newer Belgian numbers that start with a 1", () => {
+    expect(idProblem("BE1234567894", "BE", "vat")).toBeNull();
+    expect(idProblem("BE1234567894", "BE", "eori")).toBeNull();
   });
 
   it("says what the country expects, with an example", () => {
@@ -26,6 +38,20 @@ describe("idProblem", () => {
   it("checks EORI numbers with their own format", () => {
     expect(idProblem("DE123456789012345", "DE", "eori")).toBeNull();
     expect(idProblem("DE123456789", "DE", "eori")).toMatch(/15 digits/);
+  });
+});
+
+describe("checkDigitProblem", () => {
+  it("checks a Belgian number's ten digits and their check, whatever it starts with", () => {
+    expect(checkDigitProblem("BE0464648410", "BE", "vat")).toBeNull();
+    expect(checkDigitProblem("BE1234567894", "BE", "vat")).toBeNull();
+    expect(checkDigitProblem("BE1234567895", "BE", "vat")).toMatch(/check digits/);
+    expect(checkDigitProblem("BE046464841", "BE", "eori")).toMatch(/BE \+ 10 digits/);
+  });
+
+  it("applies no pattern to another country's number", () => {
+    expect(checkDigitProblem("NL8612", "NL", "vat")).toBeNull();
+    expect(checkDigitProblem("", "BE", "vat")).toBeNull();
   });
 });
 

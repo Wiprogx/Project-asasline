@@ -23,11 +23,12 @@ test("a contact's numbers carry the day they were checked, its tags are searched
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   await expect(page.getByText(`Key account ${t}`, { exact: true })).toBeVisible();
 
-  // Checked today; a new number is unchecked again.
+  // A Belgian number is VIES's to judge: the suite runs with the registers off, so the number
+  // stays unchecked and the button says why; a new number is unchecked again.
   await expect(page.getByText("never checked against the register")).toHaveCount(2); // VAT and EORI
-  await submit(page, page.getByRole("button", { name: "VAT number checked today" }));
-  await expectToast(page, /VAT number checked/);
-  await expect(page.getByText(/checked against the register on \d{4}-\d{2}-\d{2}/)).toBeVisible();
+  await submit(page, page.getByRole("button", { name: "Check VAT number at VIES" }));
+  await expectToast(page, /VIES is not answering .*switched off/);
+  await expect(page.getByText("never checked against the register")).toHaveCount(2);
   await page.getByLabel("VAT number").fill(uniqueVat("BE"));
   await submit(page, page.getByRole("button", { name: "Save", exact: true }));
   await expectToast(page, "Saved");

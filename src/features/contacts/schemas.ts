@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { CONTACT_TYPES, idClean, type IdFormat, idProblem, LANGUAGES } from "@/domain/contacts";
+import {
+  checkDigitProblem,
+  CONTACT_TYPES,
+  idClean,
+  type IdFormat,
+  idProblem,
+  LANGUAGES,
+} from "@/domain/contacts";
+import { registerOf } from "@/domain/registers";
 import { ibanOk } from "@/domain/iban";
 import { toCents } from "@/domain/money";
 import { parseCommaList } from "@/domain/lookups";
@@ -109,16 +117,23 @@ const settleName = (c: Raw) => ({
 });
 
 /** The numbers each type carries and has checked: a company VAT and EORI, a person a VAT given, a location none. */
-const CHECKED = { company: ["vat", "eori"], person: ["vat"], location: [] } as const;
+export const CHECKED = { company: ["vat", "eori"], person: ["vat"], location: [] } as const;
 
-/** The contact with its VAT and EORI numbers checked against its country's formats (Settings › Number formats). */
+/**
+ * The contact with its VAT and EORI numbers read: a number an online register answers for
+ * (VIES, the EORI register) is only checked for the arithmetic it carries — the register,
+ * asked on save, is the judge of the rest; a number of another country must fit its format
+ * (Settings › Number formats).
+ */
 export const checkedContactSchema = (formats?: readonly IdFormat[]) =>
   contactSchema
     .superRefine((c, ctx) => {
       requiredByType(c, ctx);
       // A number out of sight for the type is kept as it is, not checked.
       for (const kind of CHECKED[c.type]) {
-        const problem = idProblem(c[kind], c.country, kind, formats);
+        const problem = registerOf(c.country, kind)
+          ? checkDigitProblem(c[kind], c.country, kind)
+          : idProblem(c[kind], c.country, kind, formats);
         if (problem) need(ctx, kind, problem);
       }
     })
@@ -126,7 +141,7 @@ export const checkedContactSchema = (formats?: readonly IdFormat[]) =>
 
 export type ContactInput = z.output<ReturnType<typeof checkedContactSchema>>;
 
-/** Marking a number as checked against the register today. */
+/** Asking the register about a number today. */
 export const idCheckedSchema = z.object({ id: z.uuid(), kind: z.enum(["vat", "eori"]) });
 
 export const versionRef = z.object({

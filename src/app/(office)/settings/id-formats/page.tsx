@@ -16,7 +16,7 @@ export default async function IdFormatsPage() {
       action={saveIdFormats}
       title="VAT and EORI number formats"
       description={
-        'One format per line: "country | vat or eori | pattern | what it expects | example". A contact of a country with a format must match it; a country without one is taken as written. Belgian numbers also carry their check digits.'
+        'One format per line: "country | vat or eori | pattern | what it expects | example". An EU number is judged by its register (VIES for a VAT number, the EORI register for an EORI), never by a pattern; a Belgian one also carries its check digits. Elsewhere a contact of a country with a format must match it, and a country without one is taken as written.'
       }
       label="Number formats, one per line"
       submitLabel="Save number formats"

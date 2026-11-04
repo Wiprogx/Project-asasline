@@ -14,6 +14,7 @@ import { bookings, contacts } from "@/server/db/schema";
 import { isPartyOn } from "@/server/booking-parties";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { postedRow, toRow, wordsOf } from "./contact-row";
+import { isRefusal, registerChecks, verdictWords } from "./register-checks";
 import { refused } from "./save-checks";
 import { archiveSchema, checkedContactSchema, versionRef } from "./schemas";
 import { readIdFormats } from "@/server/id-config";
@@ -34,13 +35,22 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
   if (!parsed.success) return invalid(parsed.error);
   const taken = await refused(parsed.data);
   if (taken) return taken;
+  // Its numbers asked of their registers (VIES, EORI): known, they carry today as their check day.
+  const checks = await registerChecks(parsed.data, (k) => !!parsed.data[k]);
+  if (isRefusal(checks)) return checks;
 
   // No language chosen: the one the office writes to that country in (legacy langOf).
   const lang = parsed.data.lang ?? langOf(await readCountries(), parsed.data.country);
   const id = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(contacts)
-      .values({ ...toRow(parsed.data), lang, createdBy: user.id, updatedBy: user.id })
+      .values({
+        ...toRow(parsed.data),
+        ...checks.stamps,
+        lang,
+        createdBy: user.id,
+        updatedBy: user.id,
+      })
       .returning({ id: contacts.id });
     await setContactLabels(tx, row.id, wordsOf(parsed.data), user.id);
     await audit(tx, {
@@ -48,6 +58,7 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
       userId: user.id,
       entity: "contact",
       entityId: row.id,
+      detail: Object.keys(checks.found).length ? { registers: checks.found } : undefined,
     });
     return row.id;
   });
@@ -65,6 +76,8 @@ const picksOf = (id: string) =>
       country: contacts.country,
       cityId: contacts.cityId,
       zip: contacts.zip,
+      vat: contacts.vat,
+      eori: contacts.eori,
     })
     .from(contacts)
     .where(eq(contacts.id, id))
@@ -77,26 +90,25 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
   const parsed = checkedContactSchema(await readIdFormats()).safeParse(raw);
   if (!ref.success) return invalid(ref.error);
   if (!parsed.success) return invalid(parsed.error);
-  const taken = await refused(parsed.data, await picksOf(ref.data.id));
+  const picks = await picksOf(ref.data.id);
+  const taken = await refused(parsed.data, picks);
   if (taken) return taken;
+  const values = postedRow(parsed.data, (k) => fd.has(k));
+  // A number that changed is asked of its register again: known, checked today; else unchecked.
+  const changed = (k: "vat" | "eori") =>
+    k in values && (values[k] ?? null) !== (picks?.[k] ?? null);
+  const checks = await registerChecks(parsed.data, changed);
+  if (isRefusal(checks)) return checks;
   try {
     await db.transaction(async (tx) => {
-      // A number that changed is a number not yet checked against the register.
       const [cur] = await tx.select().from(contacts).where(eq(contacts.id, ref.data.id));
       const before = await labelsOf(tx, ref.data.id);
-      const values = postedRow(parsed.data, (k) => fd.has(k));
-      const changed = (k: "vat" | "eori") =>
-        k in values && (values[k] ?? null) !== (cur?.[k] ?? null);
-      const unchecked = {
-        ...(changed("vat") ? { vatCheckedOn: null } : {}),
-        ...(changed("eori") ? { eoriCheckedOn: null } : {}),
-      };
       await updateVersioned(
         tx,
         contacts,
         ref.data.id,
         ref.data.version,
-        { ...values, ...unchecked, updatedBy: user.id },
+        { ...values, ...checks.stamps, updatedBy: user.id },
         "This contact",
       );
       await setContactLabels(tx, ref.data.id, wordsOf(parsed.data), user.id);
@@ -118,6 +130,7 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
             after,
             fields,
           ),
+          ...(Object.keys(checks.found).length ? { registers: checks.found } : {}),
         },
       });
     });
@@ -126,7 +139,10 @@ export async function updateContact(_p: ActionResult, fd: FormData): Promise<Act
     throw e;
   }
   await settle(ref.data.id);
-  return { ok: true, data: undefined, message: "Saved" };
+  const said = Object.entries(checks.found).map(([kind, f]) =>
+    verdictWords(kind as "vat" | "eori", f.register, { state: "valid", ...f }),
+  );
+  return { ok: true, data: undefined, message: ["Saved", ...said, ...checks.notes].join(" · ") };
 }
 
 /**

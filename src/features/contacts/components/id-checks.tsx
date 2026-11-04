@@ -10,9 +10,11 @@ type Check = {
   label: string;
   value: string | null;
   checkedOn: string | null;
+  /** The online register that knows this number (VIES, the EORI register), or null: the office's word. */
+  register: string | null;
 };
 
-/** When each number was last checked against the register (legacy tvaChecked / eoriChecked), and the button that says "today". */
+/** When each number was last found in its register (legacy tvaChecked / eoriChecked), and the button that asks the register again. */
 export function IdChecks({ contactId, checks }: { contactId: string; checks: Check[] }) {
   const [, run, pending] = useToastedAction(markIdChecked);
   const shown = checks.filter((c) => c.value);
@@ -33,7 +35,7 @@ export function IdChecks({ contactId, checks }: { contactId: string; checks: Che
             <input type="hidden" name="id" value={contactId} />
             <input type="hidden" name="kind" value={c.kind} />
             <Button type="submit" size="sm" variant="outline" disabled={pending}>
-              {c.label} checked today
+              {c.register ? `Check ${c.label} at ${c.register}` : `${c.label} checked today`}
             </Button>
           </ActionForm>
         </li>

@@ -1,12 +1,35 @@
 import { describe, expect, it } from "vitest";
+import { ID_FORMATS } from "@/domain/contacts";
 import { checkedContactSchema, sendContactFileSchema } from "./schemas";
 
 const address = { street: "Kaai 1", city: "Antwerpen", country: "BE" };
 const company = { ...address, type: "company", name: "Acme", vat: "x", eori: "x" };
-const errorsOf = (raw: Record<string, string>) => {
-  const r = checkedContactSchema([]).safeParse(raw);
+const errorsOf = (raw: Record<string, string>, formats = [] as typeof ID_FORMATS) => {
+  const r = checkedContactSchema(formats).safeParse(raw);
   return r.success ? {} : r.error.flatten().fieldErrors;
 };
+
+describe("a contact's VAT and EORI numbers on save", () => {
+  const full = { ...company, professions: "Transporter" };
+
+  it("leaves an EU number's shape to its register, keeping only the Belgian check digits", () => {
+    expect(
+      errorsOf({ ...full, vat: "BE1234567894", eori: "BE1234567894" }, ID_FORMATS).vat,
+    ).toBeUndefined();
+    expect(errorsOf({ ...full, vat: "BE1234567895" }, ID_FORMATS).vat).toEqual([
+      "This VAT number fails the Belgian check digits — a digit is wrong",
+    ]);
+    const nl = { ...full, country: "NL", vat: "NL8612", eori: "NL8612" };
+    expect(errorsOf(nl, ID_FORMATS).vat).toBeUndefined();
+  });
+
+  it("holds a number of a country without a register to its format", () => {
+    const tr = { ...full, country: "TR", vat: "12345", eori: "TR1" };
+    expect(errorsOf(tr, ID_FORMATS).vat).toEqual([
+      "A TR VAT number is 10 digits — for example 1234567890",
+    ]);
+  });
+});
 
 describe("a contact's profession", () => {
   it("is required of a company", () => {

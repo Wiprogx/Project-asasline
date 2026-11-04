@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { may } from "@/domain/permissions";
+import { registerOf } from "@/domain/registers";
 import { CreditLine } from "@/features/accounting/components/credit-line";
 import { creditStanding } from "@/features/accounting/reminder-queries";
 import { updateContact } from "@/features/contacts/actions";
@@ -52,8 +53,20 @@ export default async function ContactPage({ params }: PageProps<"/contacts/[id]"
       <IdChecks
         contactId={c.id}
         checks={[
-          { kind: "vat", label: "VAT number", value: c.vat, checkedOn: c.vatCheckedOn },
-          { kind: "eori", label: "EORI", value: c.eori, checkedOn: c.eoriCheckedOn },
+          {
+            kind: "vat",
+            label: "VAT number",
+            value: c.vat,
+            checkedOn: c.vatCheckedOn,
+            register: registerOf(c.country, "vat")?.name ?? null,
+          },
+          {
+            kind: "eori",
+            label: "EORI",
+            value: c.eori,
+            checkedOn: c.eoriCheckedOn,
+            register: registerOf(c.country, "eori")?.name ?? null,
+          },
         ]}
       />
       <ContactForm

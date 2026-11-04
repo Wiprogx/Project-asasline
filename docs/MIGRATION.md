@@ -78,8 +78,8 @@ Lnnnn is a line of `legacy/asasline-demo.html`.
   the chart of accounts' Odoo import (L14600); the close-period preview (L13913); the Odoo number during the
   parallel run (L12894); VAT and payer per draft line (L12812, L12865); a booking picker in
   Accounting (L14717); loading a saved copy (L14443).
-- **Home and Contacts** — the VAT register lookup and the EORI
-  duplicate check (L5270, L5362); the stats strip, "used as" badges and tab counts
+- **Home and Contacts** — the EORI duplicate check (L5362; the VIES and EORI lookups the
+  legacy only pretended are real calls now, `server/registers`); the stats strip, "used as" badges and tab counts
   (L4746–4757); detach an address into its own contact (L5062–5140); sending from the contact
   logged to its messages (L4772–4790); the Map and Tasks views and the kanban (L4614, L4641);
   industries as a multi-pick; the dial code from the country.

@@ -17,9 +17,10 @@ export function lettermark(name: string): string {
 }
 
 /**
- * VAT and EORI number formats per country (legacy ID_FORMATS). A country without a format is
- * taken as written; a known country's number must match — a typo there breaks Peppol, the
- * listings and customs declarations.
+ * VAT and EORI number formats per country (legacy ID_FORMATS), for the countries no online
+ * register answers for: there a country without a format is taken as written and a known
+ * country's number must match. Where a register answers (`registerOf`), the register decides
+ * and no pattern is applied — a pattern falls behind the issuer (BE1… beside BE0…).
  */
 export type IdKind = "vat" | "eori";
 export type IdFormat = { country: string; kind: IdKind; pattern: string; hint: string; eg: string };
@@ -28,8 +29,8 @@ export const ID_FORMATS: readonly IdFormat[] = [
   {
     country: "BE",
     kind: "vat",
-    pattern: "^BE0\\d{9}$",
-    hint: "BE + 10 digits, the first a 0",
+    pattern: "^BE[01]\\d{9}$",
+    hint: "BE + 10 digits, the first a 0 or a 1",
     eg: "BE0464648410",
   },
   {
@@ -120,7 +121,30 @@ export const idClean = (v: string | null | undefined) =>
 const belgianCheckOk = (digits10: string) =>
   97 - (Number(digits10.slice(0, 8)) % 97) === Number(digits10.slice(8));
 
-/** What is wrong with a VAT or EORI number for its country, or null when it reads right. */
+const labelOf = (kind: IdKind) => (kind === "vat" ? "VAT number" : "EORI number");
+const countryOf = (v: string, country: string | null | undefined) =>
+  (country ?? /^[A-Z]{2}/.exec(v)?.[0] ?? "").toUpperCase();
+
+/**
+ * The arithmetic a number carries in itself, checked before any register is asked: a Belgian
+ * enterprise number (BE0… or BE1…, the same rule) is ten digits whose last two are its check.
+ * Null for every other country.
+ */
+export function checkDigitProblem(
+  value: string | null | undefined,
+  country: string | null | undefined,
+  kind: IdKind,
+): string | null {
+  const v = idClean(value);
+  if (!v || countryOf(v, country) !== "BE") return null;
+  if (!/^BE\d{10}$/.test(v))
+    return `A Belgian ${labelOf(kind)} is BE + 10 digits — for example BE0464648410`;
+  if (!belgianCheckOk(v.slice(2)))
+    return `This ${labelOf(kind)} fails the Belgian check digits — a digit is wrong`;
+  return null;
+}
+
+/** What is wrong with a VAT or EORI number for its country's format, or null when it reads right. */
 export function idProblem(
   value: string | null | undefined,
   country: string | null | undefined,
@@ -129,17 +153,14 @@ export function idProblem(
 ): string | null {
   const v = idClean(value);
   if (!v) return null;
-  const cc = (country ?? /^[A-Z]{2}/.exec(v)?.[0] ?? "").toUpperCase();
+  const cc = countryOf(v, country);
   const f = formats.find((x) => x.country === cc && x.kind === kind);
-  if (!f) return null;
-  const label = kind === "vat" ? "VAT number" : "EORI number";
-  if (!new RegExp(f.pattern).test(v)) return `A ${cc} ${label} is ${f.hint} — for example ${f.eg}`;
-  if (cc === "BE" && !belgianCheckOk(v.slice(2)))
-    return `This ${label} fails the Belgian check digits — a digit is wrong`;
-  return null;
+  if (f && !new RegExp(f.pattern).test(v))
+    return `A ${cc} ${labelOf(kind)} is ${f.hint} — for example ${f.eg}`;
+  return checkDigitProblem(v, cc, kind);
 }
 
-/* ---- the Settings table, one format per line: "BE | vat | ^BE0\\d{9}$ | BE + 10 digits | BE0464648410" ---- */
+/* ---- the Settings table, one format per line: "BE | vat | ^BE[01]\\d{9}$ | BE + 10 digits | BE0464648410" ---- */
 
 export const idFormatLines = (formats: readonly IdFormat[]) =>
   formats.map((f) => [f.country, f.kind, f.pattern, f.hint, f.eg].join(" | ")).join("\n");
