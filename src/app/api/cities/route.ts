@@ -1,9 +1,12 @@
-import { cityOptions } from "@/features/geo/queries";
+import { cityOptions, citySearch } from "@/features/geo/queries";
 
-/** The cities of `?country=BE` for the city fields (the feature checks the permission first). */
+/**
+ * The cities of `?country=BE` for the city fields, or those `?q=antw` names in any country for
+ * a place field (the feature checks the permission first).
+ */
 export async function GET(req: Request) {
-  const country = new URL(req.url).searchParams.get("country") ?? "";
-  return Response.json(await cityOptions(country), {
-    headers: { "Cache-Control": "private, max-age=300" },
-  });
+  const params = new URL(req.url).searchParams;
+  const q = params.get("q");
+  const rows = q !== null ? await citySearch(q) : await cityOptions(params.get("country") ?? "");
+  return Response.json(rows, { headers: { "Cache-Control": "private, max-age=300" } });
 }

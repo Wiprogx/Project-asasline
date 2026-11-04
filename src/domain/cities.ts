@@ -21,6 +21,19 @@ export const citySearchKey = (c: {
   region?: string | null;
 }) => cityKey([c.name, ...c.aliases, c.region ?? ""].join(" "));
 
+/** A city found by a search over every country, as a place field offers it. */
+export type PlaceOption = {
+  id: string;
+  name: string;
+  country: string;
+  region: string | null;
+  /** What it is searched by (its search key): never shown. */
+  keywords: string;
+};
+
+/** A place as the catalogue writes it: the city and its country's code, "Antwerp (BE)". */
+export const placeWords = (c: { name: string; country: string }) => `${c.name} (${c.country})`;
+
 /** "Saint-Denis (Réunion)": the region tells two cities of one name apart. */
 export const cityLabel = (c: { name: string; region?: string | null }) =>
   c.region && c.region !== c.name ? `${c.name} (${c.region})` : c.name;

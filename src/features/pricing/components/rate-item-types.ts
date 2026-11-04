@@ -12,6 +12,8 @@ export type RateItemValues = Partial<
     | "containerType"
     | "carrierId"
     | "transitDays"
+    | "fromCityId"
+    | "toCityId"
     | "fromPlace"
     | "toPlace"
     | "docCode"

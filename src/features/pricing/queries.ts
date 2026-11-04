@@ -33,6 +33,7 @@ export async function listRateItems(opts: { q?: string; category?: string; archi
               sql`exists (select 1 from contacts c where c.id = ${rateItems.carrierId} and c.name ilike ${like})`,
               ilike(rateItems.docCode, like),
               ilike(rateItems.country, like),
+              ilike(rateItems.fromPlace, like),
               ilike(rateItems.toPlace, like),
             )
           : undefined,

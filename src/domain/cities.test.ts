@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityKey, cityLabel, citySearchKey } from "./cities";
+import { cityKey, cityLabel, citySearchKey, placeWords } from "./cities";
 
 describe("cities", () => {
   it("reads words without accents or case, as the migration's key does", () => {
@@ -21,5 +21,8 @@ describe("cities", () => {
     expect(cityLabel({ name: "Mersin", region: "Mersin" })).toBe("Mersin");
     expect(cityLabel({ name: "Saint-Denis", region: "Réunion" })).toBe("Saint-Denis (Réunion)");
     expect(cityLabel({ name: "Kraainem", region: null })).toBe("Kraainem");
+  });
+  it("writes a catalogue place as the city and its country's code", () => {
+    expect(placeWords({ name: "Antwerp", country: "BE" })).toBe("Antwerp (BE)");
   });
 });

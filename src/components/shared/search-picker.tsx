@@ -49,6 +49,7 @@ export function SearchPicker({
   empty = "Nothing matches.",
   className,
   onChange,
+  onTyped,
   limit,
   free = false,
   ...aria
@@ -66,6 +67,8 @@ export function SearchPicker({
   "aria-invalid"?: boolean;
   /** Told the value picked (or matched on blur), null when cleared. */
   onChange?: (value: string | null) => void;
+  /** Told what is typed, as it is typed (a field whose options are fetched for the words). */
+  onTyped?: (text: string) => void;
   /** At most this many matches shown (a country's thousands of cities); all when unset. */
   limit?: number;
   /** Text matching no option is kept and posted as typed (a port code not yet in the list). */
@@ -99,6 +102,7 @@ export function SearchPicker({
       inputValue={typed}
       onInputValueChange={(t) => {
         setTyped(t);
+        onTyped?.(t);
         if (!t) setValue(null);
       }}
       name={name}

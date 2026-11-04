@@ -37,6 +37,18 @@ test("the catalogue prices an item, and a customer agreement overrides it", asyn
   const label = `BEANR › ${pod} · 40HC · ${line}`;
   await expect(page.getByRole("link", { name: label })).toBeVisible();
 
+  // An inland move's points are cities, searched over every country and written "Rumst (BE)".
+  await page.getByRole("button", { name: "New item" }).click();
+  await choose(page.getByLabel("Category"), { label: "Inland transport" });
+  await pick(page, page.getByRole("combobox", { name: "Pickup point" }), "Antwerp");
+  await expect(page.getByRole("combobox", { name: "Pickup point" })).toHaveValue("Antwerp (BE)");
+  await pick(page, page.getByRole("combobox", { name: "Delivery / loading point" }), "Rumst");
+  await page.getByLabel("Sell price (€)").fill("340");
+  await page.getByLabel("Buy price / cost (€)").fill("190");
+  await submit(page, page.getByRole("button", { name: "Save" }));
+  await expectToast(page, "Added to the catalogue");
+  await expect(page.getByRole("link", { name: "Antwerp (BE) › Rumst (BE) · 40HC" })).toBeVisible();
+
   // Each category has its own form (legacy fItem): a document's, not the leg's.
   await page.getByRole("button", { name: "New item" }).click();
   await choose(page.getByLabel("Category"), { label: "Country document" });

@@ -13,7 +13,7 @@ import { cents, day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
 import { containerTypes } from "./lists";
 import { ports } from "./ports";
-import { countries } from "./geo";
+import { cities, countries } from "./geo";
 
 /**
  * The rate catalogue (legacy RATE_ITEMS): every chargeable thing — an ocean leg, an inland
@@ -36,6 +36,12 @@ export const rateItems = pgTable(
     /** The line that operates the sailing, or the trucker: a contact with that profession. */
     carrierId: uuid().references(() => contacts.id),
     transitDays: integer(),
+    /**
+     * An inland move's points: a city of Settings › Countries, and its words as the item reads
+     * them ("Antwerp (BE)"); a row from before the cities has its words alone.
+     */
+    fromCityId: uuid().references(() => cities.id),
+    toCityId: uuid().references(() => cities.id),
     fromPlace: text(),
     toPlace: text(),
     docCode: text(),

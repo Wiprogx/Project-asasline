@@ -9,6 +9,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { readCountries } from "@/server/countries";
 import { db } from "@/server/db/client";
 import { liveLookupIdByLabel } from "@/server/lookups";
+import { cityPlace } from "@/server/places";
 import { portCountry, portIds } from "@/server/ports";
 import { contacts, rateItems } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
@@ -24,6 +25,8 @@ const OPTIONAL = [
   "containerTypeId",
   "carrierId",
   "transitDays",
+  "fromCityId",
+  "toCityId",
   "fromPlace",
   "toPlace",
   "docCode",
@@ -44,9 +47,25 @@ async function problemOf(d: Fields): Promise<ActionResult | null> {
   return p ? fail(p) : null;
 }
 
+/** An inland move's points as posted (a city's id each), as the city and its words. */
+async function placesOf({ fromPlace, toPlace }: Pick<Fields, "fromPlace" | "toPlace">) {
+  const [from, to] = await Promise.all([cityPlace(db, fromPlace), cityPlace(db, toPlace)]);
+  const problem = from.problem ?? to.problem;
+  if (problem) return { places: null, problem: fail(problem) };
+  return {
+    places: {
+      fromCityId: from.cityId,
+      fromPlace: from.words,
+      toCityId: to.cityId,
+      toPlace: to.words,
+    },
+    problem: null,
+  };
+}
+
 /**
- * The box code typed, as its row of Settings › Lists › Container types (none: any box), and the
- * ports typed, as their rows of Settings › Ports.
+ * The box code typed, as its row of Settings › Lists › Container types (none: any box), the
+ * ports typed, as their rows of Settings › Ports, and the points as their cities.
  */
 async function rowOf({ containerType, pol, pod, ...rest }: Fields, userId: string) {
   const containerTypeId = containerType
@@ -66,11 +85,13 @@ async function rowOf({ containerType, pol, pod, ...rest }: Fields, userId: strin
       .where(and(eq(contacts.id, rest.carrierId), isNull(contacts.archivedAt)));
     if (!c) return { row: null, problem: fail("Pick the carrier from the contacts.") };
   }
+  const places = await placesOf(rest);
+  if (places.problem) return { row: null, problem: places.problem };
   const ports = await portIds(db, { pol, pod }, userId);
   // An ocean leg's country is its port of discharge's, never typed beside it: the destination's
   // documents are found by it.
   const country = rest.category === "ocean" ? await portCountry(db, ports.podId) : rest.country;
-  return { row: { ...rest, ...ports, containerTypeId, country }, problem: null };
+  return { row: { ...rest, ...ports, ...places.places, containerTypeId, country }, problem: null };
 }
 
 const done = (message: string, id?: string): ActionResult => {

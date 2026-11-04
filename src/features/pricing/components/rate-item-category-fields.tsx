@@ -5,6 +5,7 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { SearchPicker } from "@/components/shared/search-picker";
 import { Input } from "@/components/ui/input";
 import { FREE_KINDS, FREE_SIDES } from "@/domain/pricing";
+import { PlaceField } from "./rate-item-place-field";
 import type { Errors, Group, RateItemValues } from "./rate-item-types";
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -203,20 +204,8 @@ export function CategoryFields({ category, ...g }: Group & { category: string })
     case "inland":
       return (
         <>
-          <TextField
-            name="fromPlace"
-            label="Pickup point"
-            value={v?.fromPlace}
-            fe={fe}
-            placeholder="Depot, port or contact address"
-          />
-          <TextField
-            name="toPlace"
-            label="Delivery / loading point"
-            value={v?.toPlace}
-            fe={fe}
-            placeholder="Loading address or city"
-          />
+          <PlaceField name="fromPlace" label="Pickup point" v={v} fe={fe} />
+          <PlaceField name="toPlace" label="Delivery / loading point" v={v} fe={fe} />
           <BoxField {...g} />
           <CarrierField {...g} trucker />
         </>

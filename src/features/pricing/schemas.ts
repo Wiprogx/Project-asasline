@@ -44,6 +44,7 @@ export const rateItemSchema = z.object({
     .transform((v) => v || null)
     .pipe(z.uuid().nullable()),
   transitDays: count,
+  /** An inland move's points: a city's id (Settings › Countries), or a legacy row's words. */
   fromPlace: text(120),
   toPlace: text(120),
   docCode: upper(20),

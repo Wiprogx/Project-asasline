@@ -4,6 +4,7 @@ import { cityKey } from "@/domain/cities";
 import { COUNTRY_CODE } from "@/domain/countries";
 import { requirePermission } from "@/server/auth/dal";
 import { citiesOf } from "@/server/cities";
+import { searchCities } from "@/server/places";
 import { postcodesLike, postcodesOfCity } from "@/server/postcodes";
 import { db } from "@/server/db/client";
 import { cities, countries } from "@/server/db/schema";
@@ -13,6 +14,12 @@ export async function cityOptions(country: string) {
   await requirePermission("app.contacts");
   const cc = country.toUpperCase();
   return COUNTRY_CODE.test(cc) ? citiesOf(cc) : [];
+}
+
+/** The cities some letters name, in any country, for a place field (an inland move's points). */
+export async function citySearch(q: string) {
+  await requirePermission("app.contacts");
+  return searchCities(q);
 }
 
 /**

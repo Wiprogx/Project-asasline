@@ -582,6 +582,13 @@
       "when": 1793799257120,
       "tag": "0082_user_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1793801751984,
+      "tag": "0083_rate_item_cities",
+      "breakpoints": true
     }
   ]
 }

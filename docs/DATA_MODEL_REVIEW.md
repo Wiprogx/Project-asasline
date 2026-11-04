@@ -39,7 +39,7 @@ Paths are under `src/`. "Words" means a text column holding a list's label, with
 - `vessels.carrier`, `rate_items.carrier` (free text): shipping lines are contacts → FK to `contacts`, as `bookings.shippingCoId` already is.
 - `bookings.vesselName`, `bookings.voyage` beside `bookings.vesselId`: keep the FK only, or keep the words as a fallback for a sailing not in the register (decision 4).
 - `bookings.pickupDepot`, `bookings.terminal` (words picked from contact addresses): FKs to location contacts.
-- `rate_items.fromPlace`/`toPlace`, `quotation_routes.finalPlace`: candidates for FKs to `cities` or `ports`.
+- `quotation_routes.finalPlace`: a candidate for an FK to `cities` or `ports` (`rate_items.fromCityId`/`toCityId` point at `cities` since migration 0083; the words stay beside them for the rows from before).
 - `quotation_lines.itemCode` beside `itemId`: a copy, to drop or justify.
 - Container specs (`containerSpecs`: tare and max gross by ISO type) repeat `container_types`: merge as two columns.
 - `EU_COUNTRIES` (`domain/accounting.ts`) repeats what a country is: an `eu` column on `countries`.
