@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { filterLabel, filterParam, parseContactFilters, whyMatched } from "./contact-list";
+import {
+  excludeParam,
+  filterLabel,
+  filterParam,
+  parseContactExclusions,
+  parseContactFilters,
+  whyMatched,
+} from "./contact-list";
 
 describe("the contacts filters", () => {
   it("reads each field from its URL key, in order, and ignores the empty ones", () => {
@@ -11,6 +18,15 @@ describe("the contacts filters", () => {
     ]);
     expect(filterParam("tag")).toBe("f.tag");
     expect(filterLabel("profession")).toBe("Industry");
+  });
+});
+
+describe("what the contacts list leaves out", () => {
+  it("reads the excluded values from their own keys, apart from the filters", () => {
+    expect(parseContactExclusions({ "x.lang": "fr", "f.lang": "nl" })).toEqual([
+      { field: "lang", value: "fr" },
+    ]);
+    expect(excludeParam("lang")).toBe("x.lang");
   });
 });
 

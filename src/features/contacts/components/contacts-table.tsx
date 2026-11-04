@@ -1,17 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { type CellMenuItem, MenuCell, similarAndOut } from "@/components/shared/cell-menu";
 import { PagerSource } from "@/components/shared/pager-source";
 import { ResizableHead } from "@/components/shared/resizable-head";
 import { ariaSort, SortToggle } from "@/components/shared/sortable-head";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
-import { CONTACT_COLUMNS, CONTACT_NAME_COLUMN, type ContactColumnKey } from "@/domain/contact-list";
+import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  CONTACT_COLUMNS,
+  CONTACT_NAME_COLUMN,
+  type ContactColumnKey,
+  excludeParam,
+  type FilterField,
+  filterParam,
+} from "@/domain/contact-list";
 import { lettermark } from "@/domain/contacts";
 import { useColumnWidths, type Widths } from "@/hooks/use-column-widths";
-import { nextSort } from "@/lib/table-view";
+import { useUrlSort } from "@/hooks/use-url-sort";
+import { hrefWith } from "@/lib/url";
 import type { ContactRow } from "../list-queries";
 import { saveContactView } from "../view-actions";
 import { ContactTypeIcon } from "./contact-type-icon";
@@ -51,34 +60,34 @@ const CELLS: Record<ContactColumnKey, (c: ContactRow) => React.ReactNode> = {
   note: (c) => (c.note ? <span className="line-clamp-2 max-w-56">{c.note}</span> : none),
 };
 
-const saveWidths = (widths: Widths) => saveContactView({ widths });
+type Hint = { field: FilterField; value: string; label: string };
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** The order asked in the URL (?sort=&dir=), and a click on a header that moves it on. */
-function useUrlSort() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const state = {
-    sort: params.get("sort"),
-    dir: params.get("dir") === "desc" ? ("desc" as const) : ("asc" as const),
-  };
-  const toggleSort = (key: string) => {
-    const s = nextSort(state, key);
-    const next = new URLSearchParams(params);
-    next.delete("page");
-    if (s.sort) next.set("sort", s.sort);
-    else next.delete("sort");
-    if (s.sort && s.dir === "desc") next.set("dir", "desc");
-    else next.delete("dir");
-    const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
-  return { state, toggleSort };
-}
+/** What a cell's right-click menu can filter on: the values it shows that are filters too. */
+const HINTS: Partial<Record<"name" | ContactColumnKey, (c: ContactRow) => Hint[]>> = {
+  name: (c) => [{ field: "type", value: c.type, label: `Type: ${cap(c.type)}` }],
+  professions: (c) =>
+    c.professions.map((p) => ({ field: "profession", value: p, label: `Industry: ${p}` })),
+  place: (c) => [
+    ...(c.city ? [{ field: "city" as const, value: c.city, label: `City: ${c.city}` }] : []),
+    ...(c.country
+      ? [
+          {
+            field: "country" as const,
+            value: c.country,
+            label: `Country: ${c.countryName ?? c.country}`,
+          },
+        ]
+      : []),
+  ],
+  lang: (c) => [{ field: "lang", value: c.lang, label: `Language: ${c.lang.toUpperCase()}` }],
+};
+
+const saveWidths = (widths: Widths) => saveContactView({ widths });
 
 /**
  * The contacts in the columns the person chose, each as wide as they dragged it (legacy cvList,
- * C_COLS): the widths are the person's own and follow them to every browser.
+ * C_COLS), ordered as asked; a right click on a cell keeps or leaves out the rows like it.
  */
 export function ContactsTable({
   rows,
@@ -91,12 +100,28 @@ export function ContactsTable({
 }) {
   const { widths, resize, pending } = useColumnWidths(given, saveWidths);
   const { state, toggleSort } = useUrlSort();
+  const pathname = usePathname();
+  const params = useSearchParams();
   if (rows.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">No contacts match.</p>;
   }
   const cols = [CONTACT_NAME_COLUMN, ...CONTACT_COLUMNS.filter((c) => columns.includes(c.key))];
   const widthOf = (c: (typeof cols)[number]) => widths[c.key] ?? c.width;
   const total = cols.reduce((sum, c) => sum + widthOf(c), 0);
+  const menuOf = (key: "name" | ContactColumnKey, c: ContactRow): CellMenuItem[] =>
+    (HINTS[key]?.(c) ?? []).flatMap((h) =>
+      similarAndOut(
+        h.label,
+        hrefWith(pathname, params, {
+          [filterParam(h.field)]: h.value,
+          [excludeParam(h.field)]: null,
+        }),
+        hrefWith(pathname, params, {
+          [excludeParam(h.field)]: h.value,
+          [filterParam(h.field)]: null,
+        }),
+      ),
+    );
   return (
     <Table
       aria-label="Contacts"
@@ -130,7 +155,7 @@ export function ContactsTable({
       <TableBody>
         {rows.map((c) => (
           <TableRow key={c.id} className={c.archived ? "text-muted-foreground" : undefined}>
-            <TableCell className="overflow-hidden align-top">
+            <MenuCell items={menuOf("name", c)} className="overflow-hidden align-top">
               <Link
                 href={`/contacts/${c.id}`}
                 className="flex items-center gap-2 font-medium hover:underline"
@@ -142,11 +167,15 @@ export function ContactsTable({
                 <span className="truncate">{c.name}</span>
               </Link>
               <Matched matched={c.matched} />
-            </TableCell>
+            </MenuCell>
             {cols.slice(1).map((k) => (
-              <TableCell key={k.key} className="overflow-hidden align-top text-ellipsis">
+              <MenuCell
+                key={k.key}
+                items={menuOf(k.key as ContactColumnKey, c)}
+                className="overflow-hidden align-top text-ellipsis"
+              >
                 {CELLS[k.key as ContactColumnKey](c)}
-              </TableCell>
+              </MenuCell>
             ))}
           </TableRow>
         ))}

@@ -44,15 +44,27 @@ function matches<T>(row: T, spec: TableSpec<T>, state: TableState): boolean {
   });
 }
 
-/** The rows shown: those that match, in the chosen order (a stable sort; none keeps theirs). */
-export function viewRows<T>(rows: readonly T[], spec: TableSpec<T>, state: TableState): T[] {
-  const shown = rows.filter((r) => matches(r, spec, state));
-  const by = state.sort ? spec.sorts[state.sort] : undefined;
-  if (!by) return shown;
-  return shown
+/** The rows in the order asked (a stable sort; no sort, or an unknown key, keeps theirs). */
+export function sortRows<T>(
+  rows: readonly T[],
+  sorts: Record<string, (row: T) => SortValue>,
+  state: Pick<TableState, "sort" | "dir">,
+): T[] {
+  const by = state.sort ? sorts[state.sort] : undefined;
+  if (!by) return [...rows];
+  return rows
     .map((row, i) => ({ row, i, v: by(row) }))
     .sort((a, b) => compareValues(a.v, b.v, state.dir) || a.i - b.i)
     .map((x) => x.row);
+}
+
+/** The rows shown: those that match, in the chosen order. */
+export function viewRows<T>(rows: readonly T[], spec: TableSpec<T>, state: TableState): T[] {
+  return sortRows(
+    rows.filter((r) => matches(r, spec, state)),
+    spec.sorts,
+    state,
+  );
 }
 
 /** A click on a column: ascending, then descending, then back to the table's own order. */

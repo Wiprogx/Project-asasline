@@ -1,3 +1,5 @@
+import type { TableViewSpec } from "./table-prefs";
+
 /**
  * The contacts list as the office reads it (legacy vContacts, C_COLS, FILTER_FIELDS,
  * filteredContacts): who is a customer or a supplier, the filters added one by one, the
@@ -14,6 +16,7 @@ export const FILTER_FIELDS = [
   { key: "country", label: "Country", pick: true },
   { key: "profession", label: "Industry", pick: true },
   { key: "tag", label: "Tag", pick: true },
+  { key: "lang", label: "Language", pick: true },
   { key: "vat", label: "VAT no.", pick: false },
   { key: "email", label: "Email", pick: false },
   { key: "mobile", label: "Mobile", pick: false },
@@ -23,12 +26,16 @@ export type FilterField = (typeof FILTER_FIELDS)[number]["key"];
 export type ContactFilter = { field: FilterField; value: string };
 
 const PREFIX = "f.";
+const EXCLUDE = "x.";
 
 /** The filters in the URL (`f.city=Antwerpen&f.tag=VIP`), in the order of FILTER_FIELDS. */
-export function parseContactFilters(sp: Record<string, string | string[] | undefined>) {
+export function parseContactFilters(
+  sp: Record<string, string | string[] | undefined>,
+  prefix: string = PREFIX,
+) {
   const out: ContactFilter[] = [];
   for (const f of FILTER_FIELDS) {
-    const raw = sp[PREFIX + f.key];
+    const raw = sp[prefix + f.key];
     const v = (Array.isArray(raw) ? raw[0] : raw)?.trim();
     if (v) out.push({ field: f.key, value: v.slice(0, 100) });
   }
@@ -36,6 +43,10 @@ export function parseContactFilters(sp: Record<string, string | string[] | undef
 }
 
 export const filterParam = (field: FilterField) => PREFIX + field;
+/** The filters a list leaves out ("Filter out" on a row): `x.city=Antwerpen`. */
+export const excludeParam = (field: FilterField) => EXCLUDE + field;
+export const parseContactExclusions = (sp: Record<string, string | string[] | undefined>) =>
+  parseContactFilters(sp, EXCLUDE);
 export const filterLabel = (field: FilterField) =>
   FILTER_FIELDS.find((f) => f.key === field)?.label ?? field;
 
@@ -55,8 +66,6 @@ export const CONTACT_COLUMNS = [
 ] as const;
 /** The name column is always shown; it is sized like the others. */
 export const CONTACT_NAME_COLUMN = { key: "name", label: "Name", width: 260 } as const;
-/** The user_prefs key the list's columns and widths are kept under. */
-export const CONTACT_VIEW_PREF = "contacts.list";
 export type ContactColumnKey = (typeof CONTACT_COLUMNS)[number]["key"];
 export const DEFAULT_CONTACT_COLUMNS: readonly ContactColumnKey[] = [
   "professions",
@@ -64,6 +73,13 @@ export const DEFAULT_CONTACT_COLUMNS: readonly ContactColumnKey[] = [
   "vat",
   "email",
 ];
+/** Where a person's columns and widths are kept, and what they may size. */
+export const CONTACT_VIEW: TableViewSpec<ContactColumnKey> = {
+  key: "contacts.list",
+  all: CONTACT_COLUMNS,
+  defaults: DEFAULT_CONTACT_COLUMNS,
+  sizable: [CONTACT_NAME_COLUMN.key, ...CONTACT_COLUMNS.map((c) => c.key)],
+};
 
 /** The linked contacts that answered the search, when its own fields did not (legacy whyMatched). */
 export function whyMatched(

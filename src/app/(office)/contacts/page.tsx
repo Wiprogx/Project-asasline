@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Pager } from "@/components/shared/pager";
 import { SearchInput } from "@/components/shared/search-input";
-import { filterParam, parseContactFilters } from "@/domain/contact-list";
+import {
+  excludeParam,
+  filterParam,
+  parseContactExclusions,
+  parseContactFilters,
+} from "@/domain/contact-list";
 import { countryName } from "@/domain/countries";
 import { pageOf } from "@/domain/period";
 import { ContactCards } from "@/features/contacts/components/contact-cards";
@@ -26,10 +31,11 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
   const archived = sp.archived === "1";
   const cards = sp.view === "cards";
   const filters = parseContactFilters(sp);
+  const excluded = parseContactExclusions(sp);
   const sort = one(sp.sort);
   const dir = sp.dir === "desc" ? "desc" : undefined;
   const [rows, values, countries, view] = await Promise.all([
-    listContacts({ q, archived, filters, sort, dir }),
+    listContacts({ q, archived, filters, excluded, sort, dir }),
     contactFilterValues(),
     readCountries(),
     contactView(),
@@ -42,6 +48,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
     sort,
     dir,
     ...Object.fromEntries(filters.map((f) => [filterParam(f.field), f.value])),
+    ...Object.fromEntries(excluded.map((f) => [excludeParam(f.field), f.value])),
   };
   return (
     <>
@@ -57,6 +64,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
         </div>
         <ContactFilters
           active={filters}
+          excluded={excluded}
           values={values}
           countryName={Object.fromEntries(
             values.countries.map((c) => [c, countryName(countries, c)]),

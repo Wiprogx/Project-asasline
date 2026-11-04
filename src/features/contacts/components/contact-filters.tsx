@@ -6,8 +6,10 @@ import { useState } from "react";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LANGUAGES } from "@/domain/contacts";
 import {
   type ContactFilter,
+  excludeParam,
   FILTER_FIELDS,
   type FilterField,
   filterLabel,
@@ -28,6 +30,7 @@ const optionsOf = (field: FilterField, v: Values, countryName: Record<string, st
     return v.countries.map((x) => ({ value: x, label: countryName[x] ?? x }));
   if (field === "tag") return v.tags.map((x) => ({ value: x, label: x }));
   if (field === "profession") return v.professions.map((x) => ({ value: x, label: x }));
+  if (field === "lang") return LANGUAGES.map((x) => ({ value: x, label: x.toUpperCase() }));
   return null;
 };
 
@@ -38,10 +41,13 @@ const optionsOf = (field: FilterField, v: Values, countryName: Record<string, st
  */
 export function ContactFilters({
   active,
+  excluded = [],
   values,
   countryName,
 }: {
   active: readonly ContactFilter[];
+  /** What the list leaves out ("Filter out" on a row). */
+  excluded?: readonly ContactFilter[];
   values: Values;
   countryName: Record<string, string>;
 }) {
@@ -66,7 +72,13 @@ export function ContactFilters({
       ? (countryName[f.value] ?? f.value)
       : f.field === "type"
         ? f.value.charAt(0).toUpperCase() + f.value.slice(1)
-        : f.value;
+        : f.field === "lang"
+          ? f.value.toUpperCase()
+          : f.value;
+  const chips = [
+    ...active.map((f) => ({ ...f, out: false })),
+    ...excluded.map((f) => ({ ...f, out: true })),
+  ];
   return (
     <div className="grid gap-2">
       <form
@@ -109,21 +121,26 @@ export function ContactFilters({
           Add filter
         </Button>
       </form>
-      {active.length > 0 && (
+      {chips.length > 0 && (
         <nav aria-label="Filters" className="flex flex-wrap items-center gap-1.5">
-          {active.map((f) => (
+          {chips.map((f) => (
             <Link
-              key={f.field}
-              href={hrefWith({ [filterParam(f.field)]: "" })}
+              key={(f.out ? "x." : "f.") + f.field}
+              href={hrefWith({ [(f.out ? excludeParam : filterParam)(f.field)]: "" })}
               className="inline-flex min-h-6 items-center gap-1 rounded-full border border-primary bg-primary/10 px-2.5 text-xs"
             >
+              {f.out && "Not "}
               {filterLabel(f.field)}: {shown(f)}
               <span aria-hidden="true">✕</span>
               <span className="sr-only">(remove)</span>
             </Link>
           ))}
           <Link
-            href={hrefWith(Object.fromEntries(active.map((f) => [filterParam(f.field), ""])))}
+            href={hrefWith(
+              Object.fromEntries(
+                chips.map((f) => [(f.out ? excludeParam : filterParam)(f.field), ""]),
+              ),
+            )}
             className="text-xs underline"
           >
             Clear all

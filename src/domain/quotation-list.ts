@@ -1,4 +1,5 @@
 import type { QuotationStatus } from "./shipments";
+import type { TableViewSpec } from "./table-prefs";
 
 /**
  * The figures above the quotations list (legacy STAT_DEFS, statsPanel): how many, how many
@@ -99,19 +100,24 @@ export function parseFigureKeys(param: unknown): FigureKey[] {
   return keys.length ? keys : [...DEFAULT_FIGURE_KEYS];
 }
 
-/* ---- the rankings (legacy topCustomers) -------------------------------------------------- */
+/* ---- the columns (the person's own; domain/table-prefs) ---------------------------------- */
 
-export type Ranked = { label: string; n: number; valueCents: number };
-
-/** The customers by what was booked with them, then by what they asked for (legacy topCustomers). */
-export function topCustomers(rows: readonly (Row & { clientName: string })[], n = 5): Ranked[] {
-  const m = new Map<string, Ranked>();
-  for (const r of rows) {
-    if (r.status === "cancelled") continue;
-    const e = m.get(r.clientName) ?? { label: r.clientName, n: 0, valueCents: 0 };
-    e.n++;
-    if (r.status === "accepted") e.valueCents += r.valueCents;
-    m.set(r.clientName, e);
-  }
-  return [...m.values()].sort((a, b) => b.valueCents - a.valueCents || b.n - a.n).slice(0, n);
-}
+export const QUOTATION_COLUMNS = [
+  { key: "customer", label: "Customer", width: 240 },
+  { key: "validUntil", label: "Valid until", width: 120 },
+  { key: "value", label: "Value", width: 140 },
+  { key: "destinations", label: "Destinations", width: 120 },
+  { key: "status", label: "Status", width: 130 },
+] as const;
+export type QuotationColumnKey = (typeof QUOTATION_COLUMNS)[number]["key"];
+/** The ref column is always shown; it is sized like the others. */
+export const QUOTATION_REF_COLUMN = { key: "ref", label: "Ref", width: 120 } as const;
+export const DEFAULT_QUOTATION_COLUMNS: readonly QuotationColumnKey[] = QUOTATION_COLUMNS.map(
+  (c) => c.key,
+);
+export const QUOTATION_VIEW: TableViewSpec<QuotationColumnKey> = {
+  key: "quotations.list",
+  all: QUOTATION_COLUMNS,
+  defaults: DEFAULT_QUOTATION_COLUMNS,
+  sizable: [QUOTATION_REF_COLUMN.key, ...QUOTATION_COLUMNS.map((c) => c.key)],
+};

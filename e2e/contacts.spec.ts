@@ -135,6 +135,20 @@ test("the list's columns and their widths are the person's own and survive a rel
     "ascending",
   );
 
+  // A right click on a cell leaves out the rows like it; the chip puts them back.
+  await table
+    .getByRole("row")
+    .filter({ hasText: `E2E Columns ${t}` })
+    .getByRole("cell")
+    .first()
+    .click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Filter out · Type: Company" }).click();
+  await expect(page).toHaveURL(/x\.type=company/);
+  await expect(page.getByRole("row").filter({ hasText: `E2E Columns ${t}` })).toHaveCount(0);
+  await page.getByRole("link", { name: /Not Type: Company/ }).click();
+  await expect(page).not.toHaveURL(/x\.type/);
+  await expect(table.getByRole("row").filter({ hasText: `E2E Columns ${t}` })).toBeVisible();
+
   // Reset puts the columns and the widths back.
   await page.locator("summary", { hasText: "Columns" }).click();
   saved = page.waitForResponse((r) => r.request().method() === "POST");

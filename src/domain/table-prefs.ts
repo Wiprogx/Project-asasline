@@ -49,3 +49,15 @@ export function mergeTablePrefs<K extends string>(
     widths: patch.widths ? { ...patch.widths } : prev.widths,
   };
 }
+
+/** What a list offers and where its person's view is kept (user_prefs `key`). */
+export type TableViewSpec<K extends string> = {
+  key: string;
+  all: readonly { key: K; label: string; width: number }[];
+  defaults: readonly K[];
+  /** The keys a person may size: the fixed first column and every column offered. */
+  sizable: readonly string[];
+};
+
+export const parseTableView = <K extends string>(spec: TableViewSpec<K>, raw: unknown) =>
+  parseTablePrefs(spec.all, spec.defaults, raw, spec.sizable);

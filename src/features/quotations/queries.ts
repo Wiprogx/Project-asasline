@@ -21,7 +21,8 @@ import {
   rateItems,
 } from "@/server/db/schema";
 import { cache } from "react";
-import { scopeWhere, type ListScope } from "./figure-queries";
+import { type ListScope, scopeKey, scopeWhere } from "./list-scope";
+import { type SortDir, type SortValue, sortRows } from "@/lib/table-view";
 
 export type QuotationRow = {
   id: string;
@@ -41,12 +42,23 @@ const valueOf = sql<number>`(select coalesce(sum(ql.qty * (case when ql.per_box 
 const destinationsOf = sql<number>`(select count(*) from quotation_routes qr
   where qr.quotation_id = ${quotations.id} and qr.archived_at is null)::int`;
 
-export async function listQuotations(opts: ListScope & { clientId?: string } = {}) {
+/** What each column sorts on: the value as the table shows it. */
+const SORTS: Record<string, (r: QuotationRow) => SortValue> = {
+  ref: (r) => r.ref,
+  customer: (r) => r.clientName,
+  validUntil: (r) => r.validUntil,
+  value: (r) => r.valueCents,
+  destinations: (r) => r.destinations,
+  status: (r) => r.status,
+};
+
+/** The quotations list, narrowed and ordered; Redis-cached for 30 s under the quotations tag. */
+export async function listQuotations(
+  opts: ListScope & { clientId?: string; sort?: string; dir?: SortDir } = {},
+): Promise<QuotationRow[]> {
   await requirePermission("app.quotations");
-  const q = opts.q?.trim() ?? "";
-  const when = opts.period ? `${opts.period.from}_${opts.period.to}` : "*";
-  return cached(
-    `quotations:list:${opts.clientId ?? "*"}:${opts.status ?? "*"}:${q.toLowerCase()}:${when}`,
+  const rows = await cached(
+    `quotations:list:v2:${opts.clientId ?? "*"}:${scopeKey(opts)}`,
     { ttlSeconds: 30, tags: [tags.quotations] },
     (): Promise<QuotationRow[]> => {
       return db
@@ -68,6 +80,7 @@ export async function listQuotations(opts: ListScope & { clientId?: string } = {
         .limit(500);
     },
   );
+  return sortRows(rows, SORTS, { sort: opts.sort ?? null, dir: opts.dir ?? "asc" });
 }
 
 /** One quotation with its client, routes and lines; cached per request (layout + page share it). */
@@ -130,12 +143,6 @@ export async function catalogueChoices() {
     items: named.map((it) => option(it, itemLabel(it))),
     ports: ports.map((p) => ({ value: p.code, label: portHint(p), code: p.code })),
   };
-}
-
-/** The live ports a quotation's port fields offer, by name and country, found by code too. */
-export async function portChoices() {
-  await requirePermission("app.quotations");
-  return (await livePorts()).map((p) => ({ value: p.code, label: portHint(p), code: p.code }));
 }
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;

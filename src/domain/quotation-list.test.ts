@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DEFAULT_FIGURE_KEYS,
-  parseFigureKeys,
-  quotationFigures,
-  topCustomers,
-} from "./quotation-list";
+import { DEFAULT_FIGURE_KEYS, parseFigureKeys, quotationFigures } from "./quotation-list";
 
 describe("quotationFigures", () => {
   it("counts open, won and lost, values each side, and rates the wins over what was decided", () => {
@@ -43,22 +38,5 @@ describe("the figures chosen", () => {
     expect(parseFigureKeys("winRate,open,bogus")).toEqual(["open", "winRate"]);
     expect(parseFigureKeys("bogus")).toEqual(DEFAULT_FIGURE_KEYS);
     expect(parseFigureKeys("none")).toEqual([]);
-  });
-});
-
-describe("topCustomers", () => {
-  it("ranks by booked value, then by how often they asked, five at most, cancelled aside", () => {
-    const rows = [
-      { status: "accepted" as const, valueCents: 500, clientName: "Os Textile" },
-      { status: "sent" as const, valueCents: 900, clientName: "Os Textile" },
-      { status: "accepted" as const, valueCents: 700, clientName: "Douala Trading" },
-      { status: "cancelled" as const, valueCents: 9_000, clientName: "Ghost" },
-      { status: "draft" as const, valueCents: 10, clientName: "Newcomer" },
-    ];
-    expect(topCustomers(rows)).toEqual([
-      { label: "Douala Trading", n: 1, valueCents: 700 },
-      { label: "Os Textile", n: 2, valueCents: 500 },
-      { label: "Newcomer", n: 1, valueCents: 0 },
-    ]);
   });
 });

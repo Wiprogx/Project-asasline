@@ -67,8 +67,35 @@ test("the quotations list carries its figures, a value per quotation and status 
   await expect(page).toHaveURL(/figs=/);
   await expect(figures).not.toContainText("Shown");
   await expect(figures).toContainText("Win rate 100%");
-  await expect(page.getByRole("region", { name: "Top 5 customers" })).toContainText(client);
-  await expect(page.getByRole("region", { name: "Top 5 port-to-port" })).toContainText(
-    "BEANR → TRMER",
-  );
+
+  // The columns are the person's own and survive a reload; a header orders the list.
+  await open(page, `/quotations?q=${encodeURIComponent(client)}`);
+  const table = page.getByRole("table", { name: "Quotations" });
+  await page.locator("summary", { hasText: "Columns" }).click();
+  let saved = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByRole("group", { name: "Columns" }).getByLabel("Valid until").uncheck();
+  await saved;
+  await expect(table.getByRole("columnheader", { name: "Valid until" })).toHaveCount(0);
+  await open(page, `/quotations?q=${encodeURIComponent(client)}`);
+  await expect(table.getByRole("columnheader", { name: "Valid until" })).toHaveCount(0);
+  await table.getByRole("button", { name: "Ref" }).click();
+  await expect(page).toHaveURL(/sort=ref/);
+
+  // A right click on the customer keeps the rows like it, then leaves them out.
+  await row().getByRole("cell").nth(1).click({ button: "right" });
+  await page.getByRole("menuitem", { name: `Show similar · Customer: ${client}` }).click();
+  await expect(page).toHaveURL(/client=/);
+  await expect(row()).toBeVisible();
+  await row().getByRole("cell").nth(1).click({ button: "right" });
+  await page.getByRole("menuitem", { name: `Filter out · Customer: ${client}` }).click();
+  await expect(page).toHaveURL(/xclient=/);
+  await expect(page.getByText("No quotations match.")).toBeVisible();
+  await page.getByRole("link", { name: /Not customer: / }).click();
+  await expect(row()).toBeVisible();
+
+  await page.locator("summary", { hasText: "Columns" }).click();
+  saved = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByRole("button", { name: "Reset" }).click();
+  await saved;
+  await expect(table.getByRole("columnheader", { name: "Valid until" })).toBeVisible();
 });

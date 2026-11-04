@@ -11,7 +11,7 @@ import { professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
 import { cityNameOf } from "@/server/city-sql";
-import { compareValues, type SortDir, type SortValue } from "@/lib/table-view";
+import { type SortDir, type SortValue, sortRows } from "@/lib/table-view";
 
 // The list selects from contacts alone, and in a single-table select Drizzle drops the table
 // prefix: ${contacts.id} would read as a bare "id" and bind to the subquery's own table.
@@ -47,6 +47,8 @@ export type ContactScope = {
   q?: string;
   archived?: boolean;
   filters?: readonly ContactFilter[];
+  /** The filters the list leaves out ("Filter out" on a row). */
+  excluded?: readonly ContactFilter[];
   /** A column of CONTACT_COLUMNS or "name"; any other word keeps the list by name. */
   sort?: string;
   dir?: SortDir;
@@ -79,6 +81,7 @@ function filterWhere({ field, value }: ContactFilter): SQL {
   if (field === "vat") return ilike(c.vat, like);
   if (field === "email") return ilike(c.email, like);
   if (field === "mobile") return or(ilike(c.mobile, like), ilike(c.phone, like))!;
+  if (field === "lang") return eq(c.lang, value.toLowerCase());
   return ilike(c.note, like);
 }
 
@@ -112,6 +115,8 @@ async function selectRows(s: ContactScope, today: string) {
         s.archived ? isNotNull(c.archivedAt) : isNull(c.archivedAt),
         q ? searchWhere(q) : undefined,
         ...(s.filters ?? []).map(filterWhere),
+        // A row the filter cannot judge (the field empty) is left out too: null is not "other".
+        ...(s.excluded ?? []).map((f) => sql`not coalesce(${filterWhere(f)}, false)`),
       ),
     )
     .orderBy(asc(c.name))
@@ -151,13 +156,7 @@ const SORTS: Record<string, (r: ContactRow) => SortValue> = {
 
 /** The rows in the order asked, a stable sort over the list by name (empty values last). */
 function sorted(rows: ContactRow[], s: ContactScope): ContactRow[] {
-  const by = s.sort ? SORTS[s.sort] : undefined;
-  if (!by) return rows;
-  const dir = s.dir === "desc" ? "desc" : "asc";
-  return rows
-    .map((row, i) => ({ row, i, v: by(row) }))
-    .sort((a, b) => compareValues(a.v, b.v, dir) || a.i - b.i)
-    .map((x) => x.row);
+  return sortRows(rows, SORTS, { sort: s.sort ?? null, dir: s.dir ?? "asc" });
 }
 
 /** The contacts list, searched, filtered and ordered; Redis-cached for 60 s under the contacts tag. */
@@ -168,6 +167,7 @@ export async function listContacts(s: ContactScope = {}): Promise<ContactRow[]> 
     !!s.archived,
     today,
     ...(s.filters ?? []).map((f) => `${f.field}=${f.value.toLowerCase()}`),
+    ...(s.excluded ?? []).map((f) => `!${f.field}=${f.value.toLowerCase()}`),
     (s.q ?? "").trim().toLowerCase(),
   ].join(":");
   const [rows, countries] = await Promise.all([

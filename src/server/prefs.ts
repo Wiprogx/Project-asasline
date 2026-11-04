@@ -1,5 +1,11 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
+import {
+  mergeTablePrefs,
+  parseTableView,
+  type TablePrefs,
+  type TableViewSpec,
+} from "@/domain/table-prefs";
 import { db } from "./db/client";
 import { userPrefs } from "./db/schema";
 
@@ -24,4 +30,23 @@ export async function writePref(userId: string, key: string, value: unknown): Pr
       target: [userPrefs.userId, userPrefs.key],
       set: { value, updatedAt: new Date() },
     });
+}
+
+/** The columns and widths a person chose for a list, read safely. */
+export async function readTableView<K extends string>(
+  userId: string,
+  spec: TableViewSpec<K>,
+): Promise<TablePrefs<K>> {
+  return parseTableView(spec, await readPref(userId, spec.key));
+}
+
+/** A change to a person's view of a list laid over what was saved; a part left out is kept. */
+export async function writeTableView<K extends string>(
+  userId: string,
+  spec: TableViewSpec<K>,
+  patch: { columns?: readonly K[]; widths?: Record<string, number> },
+): Promise<TablePrefs<K>> {
+  const next = parseTableView(spec, mergeTablePrefs(await readTableView(userId, spec), patch));
+  await writePref(userId, spec.key, next);
+  return next;
 }

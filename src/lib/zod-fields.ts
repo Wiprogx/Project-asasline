@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parseYmd } from "@/domain/dates";
 import { toCents } from "@/domain/money";
+import { type TableViewSpec, WIDTH_MAX, WIDTH_MIN } from "@/domain/table-prefs";
 
 /** A day typed as "YYYY-MM-DD" and real on the calendar (invariant 4: never a Date, never 2026-02-30). */
 export const dayField = (message = "Date as YYYY-MM-DD") =>
@@ -29,4 +30,11 @@ export const centsField = (label: string, opts: { allowNegative?: boolean } = {}
       return 0;
     }
     return c;
+  });
+
+/** How a person reads a list: the columns ticked and/or the widths dragged (domain/table-prefs). */
+export const tableViewSchema = <K extends string>(spec: TableViewSpec<K>) =>
+  z.object({
+    columns: z.array(z.enum(spec.all.map((c) => c.key) as [K, ...K[]])).optional(),
+    widths: z.record(z.string().max(40), z.number().min(WIDTH_MIN).max(WIDTH_MAX)).optional(),
   });

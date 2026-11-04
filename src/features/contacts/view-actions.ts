@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { CONTACT_VIEW } from "@/domain/contact-list";
 import { type ActionResult, invalid } from "@/lib/action-result";
-import { CONTACT_COLUMNS, CONTACT_VIEW_PREF, DEFAULT_CONTACT_COLUMNS } from "@/domain/contact-list";
-import { mergeTablePrefs, parseTablePrefs } from "@/domain/table-prefs";
+import { tableViewSchema } from "@/lib/zod-fields";
 import { requirePermission } from "@/server/auth/dal";
-import { readPref, writePref } from "@/server/prefs";
-import { contactViewSchema } from "./view-schema";
-import { SIZABLE_CONTACT_COLUMNS } from "./view-queries";
+import { writeTableView } from "@/server/prefs";
+
+const schema = tableViewSchema(CONTACT_VIEW);
 
 /**
  * Saves how the signed-in person reads the contacts list: the columns ticked, the widths
@@ -15,21 +15,9 @@ import { SIZABLE_CONTACT_COLUMNS } from "./view-queries";
  */
 export async function saveContactView(patch: unknown): Promise<ActionResult> {
   const user = await requirePermission("app.contacts");
-  const parsed = contactViewSchema.safeParse(patch);
+  const parsed = schema.safeParse(patch);
   if (!parsed.success) return invalid(parsed.error);
-  const prev = parseTablePrefs(
-    CONTACT_COLUMNS,
-    DEFAULT_CONTACT_COLUMNS,
-    await readPref(user.id, CONTACT_VIEW_PREF),
-    SIZABLE_CONTACT_COLUMNS,
-  );
-  const next = parseTablePrefs(
-    CONTACT_COLUMNS,
-    DEFAULT_CONTACT_COLUMNS,
-    mergeTablePrefs(prev, parsed.data),
-    SIZABLE_CONTACT_COLUMNS,
-  );
-  await writePref(user.id, CONTACT_VIEW_PREF, next);
+  await writeTableView(user.id, CONTACT_VIEW, parsed.data);
   revalidatePath("/contacts");
   return { ok: true, data: undefined };
 }
