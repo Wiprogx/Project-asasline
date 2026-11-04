@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAliases, portCode, portHint } from "./ports";
+import { parseAliases, portCode, portHint, portWords } from "./ports";
 
 describe("ports", () => {
   it("reads a typed code, upper-cased, and refuses what is not a UN/LOCODE", () => {
@@ -17,5 +17,15 @@ describe("ports", () => {
     expect(portHint({ code: "TRMER", name: "Mersin", country: "TR", preClearance: true })).toBe(
       "Mersin (TR) · pre-clearance",
     );
+  });
+});
+
+describe("portWords", () => {
+  it("spells a port as its city, country and code for the ocean-leg picker", () => {
+    expect(portWords({ code: "CMDLA", name: "Douala", country: "CM" })).toBe("Douala (CM) (CMDLA)");
+  });
+  it("keeps the code alone for a port the table knows by its code only", () => {
+    expect(portWords({ code: "XAABC", name: "XAABC", country: "XA" })).toBe("XAABC");
+    expect(portWords({ code: "XAABC", name: "", country: "XA" })).toBe("XAABC");
   });
 });

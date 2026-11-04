@@ -97,7 +97,7 @@ export function uniqueVat(country: "BE" | "DE"): string {
   return `BE${base}${String(97 - (Number(base) % 97)).padStart(2, "0")}`;
 }
 
-type Choice = string | { label: string } | { value: string } | { index: number };
+type Choice = string | { label: string | RegExp } | { value: string } | { index: number };
 
 /**
  * Picks an option in the app's select (Base UI, not a native <select>): opens it and clicks the

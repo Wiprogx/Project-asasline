@@ -38,7 +38,9 @@ test("a price changed on a quotation line is kept in the customer's agreement an
       sell: "900",
       service: "Ocean freight to Mersin",
     });
-    await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod} · 40HC` });
+    await choose(page.getByLabel("Ocean leg"), {
+      label: new RegExp(`\\(BEANR\\) › ${pod} · 40HC`),
+    });
     await submit(page, page.getByRole("button", { name: "Add destination" }));
     await expectToast(page, "Destination added");
     return page

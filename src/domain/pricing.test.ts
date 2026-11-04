@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   itemLabel,
   itemProblem,
+  laneLabel,
   latestQuoted,
   listIsLive,
   periodsOverlap,
@@ -44,6 +45,22 @@ describe("itemLabel", () => {
     expect(itemLabel({ ...blank, category: "freetime", name: "Demurrage", freeDays: 14 })).toBe(
       "Demurrage · 14 free days",
     );
+  });
+});
+
+describe("laneLabel", () => {
+  const leg = { ...blank, category: "ocean", pol: "BEANR", pod: "CMDLA", containerType: "40HC" };
+  const ports = new Map([
+    ["BEANR", { code: "BEANR", name: "Antwerp", country: "BE" }],
+    ["CMDLA", { code: "CMDLA", name: "Douala", country: "CM" }],
+  ]);
+  it("spells each port as its city, country and code", () => {
+    expect(laneLabel({ ...leg, carrier: "MSC" }, ports)).toBe(
+      "Antwerp (BE) (BEANR) › Douala (CM) (CMDLA) · 40HC · MSC",
+    );
+  });
+  it("keeps the code of a port the table does not hold", () => {
+    expect(laneLabel({ ...leg, pod: "TRMER" }, ports)).toBe("Antwerp (BE) (BEANR) › TRMER · 40HC");
   });
 });
 

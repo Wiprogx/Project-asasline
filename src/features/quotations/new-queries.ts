@@ -1,6 +1,6 @@
 import "server-only";
 import { and, asc, eq, isNull } from "drizzle-orm";
-import { itemLabel } from "@/domain/pricing";
+import { laneLabel } from "@/domain/pricing";
 import { requirePermission } from "@/server/auth/dal";
 import { readCountries } from "@/server/countries";
 import { db } from "@/server/db/client";
@@ -13,8 +13,9 @@ import { livePorts } from "@/server/ports";
 import { withRouteWords } from "@/server/route-words";
 
 /**
- * The ocean legs a destination is built from (legacy laneOpts): "BEANR › CMDLA · MSC", found
- * by either port's name or code, the destination country or the carrier.
+ * The ocean legs a destination is built from (legacy laneOpts), each port as its city, country
+ * and code — "Antwerp (BE) (BEANR) › Douala (CM) (CMDLA) · 40HC · MSC" — found by either
+ * port's name or code, the destination country or the carrier.
  */
 async function laneChoices() {
   const rows = await withRouteWords(
@@ -25,19 +26,12 @@ async function laneChoices() {
       .orderBy(asc(rateItems.name)),
   );
   const [ports, countries] = await Promise.all([livePorts(), readCountries()]);
-  const portName = new Map(ports.map((p) => [p.code, p.name]));
+  const byCode = new Map(ports.map((p) => [p.code, p]));
   const countryName = new Map(countries.map((c) => [c.code, c.name]));
   return rows.map((it) => ({
     value: it.id,
-    label: itemLabel(it),
-    keywords: [
-      it.pol && portName.get(it.pol),
-      it.pod && portName.get(it.pod),
-      it.country,
-      it.country && countryName.get(it.country),
-      it.carrier,
-      it.containerType,
-    ]
+    label: laneLabel(it, byCode),
+    keywords: [it.country, it.country && countryName.get(it.country), it.carrier, it.containerType]
       .filter(Boolean)
       .join(" "),
   }));

@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { formatCents } from "@/domain/money";
 import { portHint } from "@/domain/ports";
-import { itemLabel } from "@/domain/pricing";
+import { itemLabel, laneLabel } from "@/domain/pricing";
 import { destinationsPhrase, letterLines, quotationDoc } from "@/domain/quotation-doc";
 import { DEFAULT_TEMPLATES, fillTemplate } from "@/domain/templates";
 import type { QuotationStatus } from "@/domain/shipments";
@@ -115,12 +115,20 @@ export async function catalogueChoices() {
     .from(rateItems)
     .where(isNull(rateItems.archivedAt))
     .orderBy(asc(rateItems.category), asc(portCodeOf(rateItems.podId)), asc(rateItems.name));
-  const named = await withRouteWords(rows);
-  const all = named.map((it) => ({ value: it.id, label: itemLabel(it), category: it.category }));
+  const [named, ports] = await Promise.all([withRouteWords(rows), livePorts()]);
+  const byCode = new Map(ports.map((p) => [p.code, p]));
+  const option = (it: (typeof named)[number], label: string) => ({
+    value: it.id,
+    label,
+    category: it.category,
+  });
   return {
-    lanes: all.filter((x) => x.category === "ocean"),
-    items: all,
-    ports: await portChoices(),
+    // An ocean leg by its ports in words; a line by the catalogue's own label.
+    lanes: named
+      .filter((it) => it.category === "ocean")
+      .map((it) => option(it, laneLabel(it, byCode))),
+    items: named.map((it) => option(it, itemLabel(it))),
+    ports: ports.map((p) => ({ value: p.code, label: portHint(p), code: p.code })),
   };
 }
 

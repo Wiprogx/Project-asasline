@@ -35,3 +35,10 @@ export function parseAliases(text: string): string[] {
 /** The suggestion a port field shows beside the code: "Douala (CM) · pre-clearance". */
 export const portHint = (p: Port) =>
   `${p.name} (${p.country})${p.preClearance ? " · pre-clearance" : ""}`;
+
+/**
+ * A port as an ocean-leg picker spells it: "Douala (CM) (CMDLA)" — the city, its country, its
+ * code; a port the table knows by its code alone (added from a record) stays the code.
+ */
+export const portWords = (p: Port) =>
+  !p.name || p.name === p.code ? p.code : `${p.name} (${p.country}) (${p.code})`;

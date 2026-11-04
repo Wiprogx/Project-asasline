@@ -10,6 +10,8 @@
  * fields that identify it and where the quotation editor offers it. The app's own words — the
  * pricing rules key on these codes — so a fixed list, each with its own form.
  */
+import { type Port, portWords } from "./ports";
+
 export const RATE_CATEGORIES = [
   { code: "ocean", label: "Ocean freight" },
   { code: "inland", label: "Inland transport" },
@@ -53,8 +55,10 @@ export type RateItemFields = {
 
 const q = (v: string | null) => v ?? "?";
 const box = (it: RateItemFields) => (it.containerType ? ` · ${it.containerType}` : "");
+/** What follows an ocean leg's ports: its box and its shipping line. */
+const legTail = (it: RateItemFields) => `${box(it)}${it.carrier ? ` · ${it.carrier}` : ""}`;
 const LABELS: Record<string, (it: RateItemFields) => string> = {
-  ocean: (it) => `${q(it.pol)} › ${q(it.pod)}${box(it)}${it.carrier ? ` · ${it.carrier}` : ""}`,
+  ocean: (it) => `${q(it.pol)} › ${q(it.pod)}${legTail(it)}`,
   inland: (it) => `${q(it.fromPlace)} › ${q(it.toPlace)}${box(it)}`,
   docs: (it) => `${q(it.docCode)} — ${q(it.country)}`,
   freetime: (it) => `${it.name ?? "Free time"} · ${it.freeDays ?? 0} free days`,
@@ -63,6 +67,19 @@ const LABELS: Record<string, (it: RateItemFields) => string> = {
 /** How an item reads in a picker and on a quotation line (legacy itemLabel). */
 export function itemLabel(it: RateItemFields): string {
   return LABELS[it.category]?.(it) ?? it.name ?? "(unnamed)";
+}
+
+/**
+ * An ocean leg as the quotation's leg picker offers it, each port in words (legacy laneOpts
+ * showed the codes alone): "Antwerp (BE) (BEANR) › Douala (CM) (CMDLA) · 40HC · MSC". A port
+ * the table does not hold stays its code.
+ */
+export function laneLabel(it: RateItemFields, ports: ReadonlyMap<string, Port>): string {
+  const words = (code: string | null) => {
+    const p = code ? ports.get(code) : undefined;
+    return p ? portWords(p) : q(code);
+  };
+  return `${words(it.pol)} › ${words(it.pod)}${legTail(it)}`;
 }
 
 type Need = [fields: (keyof RateItemFields)[], problem: string];

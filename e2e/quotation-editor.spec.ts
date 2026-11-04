@@ -89,7 +89,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   });
 
   // A second destination from the leg: its lines come priced, agreement first.
-  await choose(page.getByLabel("Ocean leg"), { label: `BEANR › ${pod} · 40HC` });
+  await choose(page.getByLabel("Ocean leg"), { label: new RegExp(`\\(BEANR\\) › ${pod} · 40HC`) });
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");
   const leg = card(page, new RegExp(`BEANR → ${pod}`));
