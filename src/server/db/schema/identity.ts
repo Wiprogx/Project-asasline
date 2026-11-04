@@ -146,6 +146,23 @@ export const visits = pgTable(
   ],
 );
 
+/**
+ * How a person reads the office's screens (legacy localStorage prefs): the columns of a list, how
+ * wide they dragged them... One JSON value per person and key, upserted; nothing else depends on it.
+ */
+export const userPrefs = pgTable(
+  "user_prefs",
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id),
+    key: text().notNull(),
+    value: jsonb().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.key] })],
+);
+
 /** The go-live import's legacy id → new id map (scripts/import). */
 export { legacyLinks } from "./legacy";
 

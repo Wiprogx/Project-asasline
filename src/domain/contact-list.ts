@@ -42,17 +42,21 @@ export const filterLabel = (field: FilterField) =>
 /* ---- the columns (legacy C_COLS; city and country read together) ------------------------ */
 
 export const CONTACT_COLUMNS = [
-  { key: "professions", label: "Industry" },
-  { key: "place", label: "Place" },
-  { key: "vat", label: "VAT no." },
-  { key: "email", label: "Email" },
-  { key: "mobile", label: "Mobile" },
-  { key: "lang", label: "Language" },
-  { key: "linked", label: "Linked" },
-  { key: "bookings", label: "Bookings" },
-  { key: "tasks", label: "Open activities" },
-  { key: "note", label: "Note" },
+  { key: "professions", label: "Industry", width: 160 },
+  { key: "place", label: "Place", width: 180 },
+  { key: "vat", label: "VAT no.", width: 140 },
+  { key: "email", label: "Email", width: 220 },
+  { key: "mobile", label: "Mobile", width: 150 },
+  { key: "lang", label: "Language", width: 90 },
+  { key: "linked", label: "Linked", width: 90 },
+  { key: "bookings", label: "Bookings", width: 100 },
+  { key: "tasks", label: "Open activities", width: 160 },
+  { key: "note", label: "Note", width: 240 },
 ] as const;
+/** The name column is always shown; it is sized like the others. */
+export const CONTACT_NAME_COLUMN = { key: "name", label: "Name", width: 260 } as const;
+/** The user_prefs key the list's columns and widths are kept under. */
+export const CONTACT_VIEW_PREF = "contacts.list";
 export type ContactColumnKey = (typeof CONTACT_COLUMNS)[number]["key"];
 export const DEFAULT_CONTACT_COLUMNS: readonly ContactColumnKey[] = [
   "professions",

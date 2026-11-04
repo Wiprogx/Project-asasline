@@ -11,6 +11,7 @@ import { professionsOf, tagsOf } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { bookings, contacts } from "@/server/db/schema";
 import { cityNameOf } from "@/server/city-sql";
+import { compareValues, type SortDir, type SortValue } from "@/lib/table-view";
 
 // The list selects from contacts alone, and in a single-table select Drizzle drops the table
 // prefix: ${contacts.id} would read as a bare "id" and bind to the subquery's own table.
@@ -42,7 +43,14 @@ const tasksOf = (
   from activities t where t.state = 'open' and ((t.link_kind = 'contact' and t.link_id = ${contactId})
   or (t.link_kind = 'booking' and t.link_id in (select ${bookings.id} from ${bookings} where ${onBooking}))))`;
 
-export type ContactScope = { q?: string; archived?: boolean; filters?: readonly ContactFilter[] };
+export type ContactScope = {
+  q?: string;
+  archived?: boolean;
+  filters?: readonly ContactFilter[];
+  /** A column of CONTACT_COLUMNS or "name"; any other word keeps the list by name. */
+  sort?: string;
+  dir?: SortDir;
+};
 
 /** Everything the contact knows, and what is linked to it (legacy contactHay). */
 function searchWhere(q: string): SQL {
@@ -126,7 +134,33 @@ export type ContactRow = Awaited<ReturnType<typeof selectRows>>[number] & {
   countryName: string | null;
 };
 
-/** The contacts list, searched and filtered; Redis-cached for 60 s under the contacts tag. */
+/** What each column sorts on (legacy sortContacts): the value as the table shows it. */
+const SORTS: Record<string, (r: ContactRow) => SortValue> = {
+  name: (r) => r.name,
+  professions: (r) => r.professions.join(", "),
+  place: (r) => [r.city, r.countryName ?? r.country].filter(Boolean).join(", "),
+  vat: (r) => r.vat,
+  email: (r) => r.email,
+  mobile: (r) => r.mobile ?? r.phone,
+  lang: (r) => r.lang,
+  linked: (r) => r.linked,
+  bookings: (r) => r.bookings,
+  tasks: (r) => r.openTasks,
+  note: (r) => r.note,
+};
+
+/** The rows in the order asked, a stable sort over the list by name (empty values last). */
+function sorted(rows: ContactRow[], s: ContactScope): ContactRow[] {
+  const by = s.sort ? SORTS[s.sort] : undefined;
+  if (!by) return rows;
+  const dir = s.dir === "desc" ? "desc" : "asc";
+  return rows
+    .map((row, i) => ({ row, i, v: by(row) }))
+    .sort((a, b) => compareValues(a.v, b.v, dir) || a.i - b.i)
+    .map((x) => x.row);
+}
+
+/** The contacts list, searched, filtered and ordered; Redis-cached for 60 s under the contacts tag. */
 export async function listContacts(s: ContactScope = {}): Promise<ContactRow[]> {
   await requirePermission("app.contacts");
   const today = officeToday();
@@ -144,10 +178,13 @@ export async function listContacts(s: ContactScope = {}): Promise<ContactRow[]> 
     ),
     readCountries(),
   ]);
-  return rows.map((r) => ({
-    ...r,
-    countryName: r.country ? countryName(countries, r.country) : null,
-  }));
+  return sorted(
+    rows.map((r) => ({
+      ...r,
+      countryName: r.country ? countryName(countries, r.country) : null,
+    })),
+    s,
+  );
 }
 
 /** The values each pick filter offers (legacy distinctVals): what the contacts actually hold. */

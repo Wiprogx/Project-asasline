@@ -88,3 +88,57 @@ test("a location is added as a contact of its own, found through the company, an
   await expectToast(page, "Unlinked");
   await expect(item).toHaveCount(0);
 });
+
+test("the list's columns and their widths are the person's own and survive a reload", async ({
+  page,
+}) => {
+  const t = tag();
+  await login(page);
+  await open(page, "/contacts/new");
+  await page.getByLabel("Name").fill(`E2E Columns ${t}`);
+  await fillMandatory(page);
+  await page.getByRole("button", { name: "Create contact" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: `E2E Columns ${t}` })).toBeVisible();
+
+  await open(page, "/contacts");
+  const table = page.getByRole("table", { name: "Contacts" });
+  await expect(table.getByRole("columnheader", { name: "Language" })).toHaveCount(0);
+  await page.locator("summary", { hasText: "Columns" }).click();
+  const picks = page.getByRole("group", { name: "Columns" });
+  let saved = page.waitForResponse((r) => r.request().method() === "POST");
+  await picks.getByLabel("Language").check();
+  await saved;
+  await expect(table.getByRole("columnheader", { name: "Language" })).toBeVisible();
+
+  // Dragged wider with the keyboard: three steps of 16 px from the default 90.
+  const handle = page.getByRole("separator", { name: "Resize column Language" });
+  saved = page.waitForResponse((r) => r.request().method() === "POST");
+  await handle.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(handle).toHaveAttribute("aria-valuenow", "138");
+  await saved;
+
+  await open(page, "/contacts");
+  await expect(table.getByRole("columnheader", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("separator", { name: "Resize column Language" })).toHaveAttribute(
+    "aria-valuenow",
+    "138",
+  );
+
+  // A header orders the list, the order in the URL.
+  await table.getByRole("button", { name: "Name" }).click();
+  await expect(page).toHaveURL(/sort=name/);
+  await expect(table.getByRole("columnheader", { name: "Name" })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+
+  // Reset puts the columns and the widths back.
+  await page.locator("summary", { hasText: "Columns" }).click();
+  saved = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByRole("button", { name: "Reset" }).click();
+  await saved;
+  await expect(table.getByRole("columnheader", { name: "Language" })).toHaveCount(0);
+});
