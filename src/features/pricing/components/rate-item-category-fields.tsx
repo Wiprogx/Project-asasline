@@ -6,6 +6,7 @@ import { SearchPicker } from "@/components/shared/search-picker";
 import { Input } from "@/components/ui/input";
 import { FREE_KINDS, FREE_SIDES } from "@/domain/pricing";
 import { PlaceField } from "./rate-item-place-field";
+import { useFieldId } from "./rate-item-ids";
 import type { Errors, Group, RateItemValues } from "./rate-item-types";
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -25,10 +26,11 @@ export function TextField({
   type?: string;
   placeholder?: string;
 }) {
+  const fid = useFieldId();
   return (
-    <Field id={`ri-${name}`} label={label} error={fe?.[name]}>
+    <Field id={fid(name)} label={label} error={fe?.[name]}>
       <Input
-        id={`ri-${name}`}
+        id={fid(name)}
         name={name}
         type={type}
         step={type === "number" ? "0.01" : undefined}
@@ -40,10 +42,11 @@ export function TextField({
 }
 
 function PortField({ name, label, v, fe, lists }: Group & { name: "pol" | "pod"; label: string }) {
+  const fid = useFieldId();
   return (
-    <Field id={`ri-${name}`} label={label} error={fe?.[name]}>
+    <Field id={fid(name)} label={label} error={fe?.[name]}>
       <SearchPicker
-        id={`ri-${name}`}
+        id={fid(name)}
         name={name}
         options={lists.ports}
         defaultValue={(v?.[name] as string) ?? null}
@@ -57,10 +60,11 @@ function PortField({ name, label, v, fe, lists }: Group & { name: "pol" | "pod";
 
 /** The country a document is required for (an ocean leg's is its port of discharge's). */
 function CountryField({ v, fe, lists }: Group) {
+  const fid = useFieldId();
   return (
-    <Field id="ri-country" label="Required for country" error={fe?.country}>
+    <Field id={fid("country")} label="Required for country" error={fe?.country}>
       <SearchPicker
-        id="ri-country"
+        id={fid("country")}
         name="country"
         options={lists.countries}
         defaultValue={(v?.country as string) ?? null}
@@ -72,10 +76,11 @@ function CountryField({ v, fe, lists }: Group) {
 }
 
 function BoxField({ v, fe, lists }: Group) {
+  const fid = useFieldId();
   return (
-    <Field id="ri-containerType" label="Container type" error={fe?.containerType}>
+    <Field id={fid("containerType")} label="Container type" error={fe?.containerType}>
       <SearchPicker
-        id="ri-containerType"
+        id={fid("containerType")}
         name="containerType"
         options={lists.containerTypes.map((t) => ({ value: t, label: t }))}
         defaultValue={(v?.containerType as string) ?? (v?.id ? null : "40HC")}
@@ -88,9 +93,10 @@ function BoxField({ v, fe, lists }: Group) {
 
 /** The line that operates the sailing, or the trucker: a contact with that profession. */
 function CarrierField({ v, fe, lists, trucker }: Group & { trucker?: boolean }) {
+  const fid = useFieldId();
   return (
     <Field
-      id="ri-carrierId"
+      id={fid("carrierId")}
       label={trucker ? "Trucker" : "Shipping line"}
       error={fe?.carrierId}
       hint={
@@ -100,7 +106,7 @@ function CarrierField({ v, fe, lists, trucker }: Group & { trucker?: boolean }) 
       }
     >
       <SearchPicker
-        id="ri-carrierId"
+        id={fid("carrierId")}
         name="carrierId"
         options={trucker ? lists.truckers : lists.carriers}
         defaultValue={(v?.carrierId as string) ?? null}
@@ -112,10 +118,11 @@ function CarrierField({ v, fe, lists, trucker }: Group & { trucker?: boolean }) 
 }
 
 function ScopeField({ v, fe, both = true }: { v?: RateItemValues; fe: Errors; both?: boolean }) {
+  const fid = useFieldId();
   return (
-    <Field id="ri-scope" label="Applies to" error={fe?.scope}>
+    <Field id={fid("scope")} label="Applies to" error={fe?.scope}>
       <NativeSelect
-        id="ri-scope"
+        id={fid("scope")}
         name="scope"
         defaultValue={v?.scope ?? (both ? "" : "export")}
         options={[
@@ -141,20 +148,21 @@ function NameField({
 }
 
 function FreeTimeFields(g: Group) {
+  const fid = useFieldId();
   const { v, fe } = g;
   return (
     <>
-      <Field id="ri-freeKind" label="Charge kind" error={fe?.freeKind}>
+      <Field id={fid("freeKind")} label="Charge kind" error={fe?.freeKind}>
         <NativeSelect
-          id="ri-freeKind"
+          id={fid("freeKind")}
           name="freeKind"
           defaultValue={v?.freeKind ?? "demurrage"}
           options={FREE_KINDS.map((k) => ({ value: k, label: cap(k) }))}
         />
       </Field>
-      <Field id="ri-side" label="Where" error={fe?.side}>
+      <Field id={fid("side")} label="Where" error={fe?.side}>
         <NativeSelect
-          id="ri-side"
+          id={fid("side")}
           name="side"
           defaultValue={v?.side ?? "destination"}
           options={FREE_SIDES.map((k) => ({ value: k, label: `At ${k}` }))}

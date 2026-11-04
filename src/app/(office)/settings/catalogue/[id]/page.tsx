@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DuplicateItemDialog } from "@/features/pricing/components/duplicate-item-dialog";
 import { RateItemArchive } from "@/features/pricing/components/rate-item-archive";
 import { RateItemForm } from "@/features/pricing/components/rate-item-form";
 import { catalogueLists, getRateItem } from "@/features/pricing/queries";
@@ -32,7 +33,10 @@ export default async function RateItemPage({ params }: PageProps<"/settings/cata
           </p>
           {it.archivedAt && <ToneBadge tone="neutral">Out of use — {it.archivedReason}</ToneBadge>}
         </div>
-        <RateItemArchive id={it.id} archived={!!it.archivedAt} />
+        <div className="flex flex-wrap gap-2">
+          <DuplicateItemDialog item={it} lists={lists} sources={sources} />
+          <RateItemArchive id={it.id} archived={!!it.archivedAt} />
+        </div>
       </CardHeader>
       <CardContent>
         <RateItemForm lists={lists} values={it} sources={sources} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
@@ -13,6 +13,7 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { createRateItem, updateRateItem } from "../item-actions";
 import { rateItemSchema, rateItemUpdateSchema } from "../schemas";
 import { CategoryFields, TextField } from "./rate-item-category-fields";
+import { FieldPrefix } from "./rate-item-ids";
 import type { RateItemLists, RateItemValues } from "./rate-item-types";
 
 export type { RateItemLists, RateItemValues } from "./rate-item-types";
@@ -42,76 +43,81 @@ export function RateItemForm({
     editing ? rateItemUpdateSchema : rateItemSchema,
   );
   const fe = !state.ok ? state.fieldErrors : undefined;
+  // Its own field ids: a second form on the page (the Duplicate dialog) must not share them.
+  const prefix = `ri${useId()}`;
+  const fid = (name: string) => `${prefix}-${name}`;
   return (
-    <ActionForm
-      action={run}
-      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-      key={editing ? `${values?.id}-${values?.version}` : undefined}
-    >
-      {editing && (
-        <>
-          <input type="hidden" name="id" value={values?.id} />
-          <input type="hidden" name="version" value={values?.version} />
-        </>
-      )}
-      <Field id="ri-category" label="Category" error={fe?.category}>
-        <NativeSelect
-          id="ri-category"
-          name="category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          options={RATE_CATEGORIES.map((c) => ({ value: c.code, label: c.label }))}
-        />
-      </Field>
-      <CategoryFields key={category} category={category} v={values} fe={fe} lists={lists} />
-      <TextField
-        name="sellCents"
-        label="Sell price (€)"
-        type="number"
-        value={centsToInput(values?.sellCents)}
-        fe={fe}
-      />
-      <TextField
-        name="buyCents"
-        label="Buy price / cost (€)"
-        type="number"
-        value={centsToInput(values?.buyCents)}
-        fe={fe}
-      />
-      <Field id="ri-rateType" label="Rate source" error={fe?.rateType}>
-        <NativeSelect
-          id="ri-rateType"
-          name="rateType"
-          defaultValue={values?.rateType ?? "contract"}
-          options={sources.map((r) => ({ value: r.key, label: r.label }))}
-        />
-      </Field>
-      <Field
-        id="ri-vatCode"
-        label="VAT"
-        hint="The default for every invoice line made from this item."
-        error={fe?.vatCode}
+    <FieldPrefix value={prefix}>
+      <ActionForm
+        action={run}
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        key={editing ? `${values?.id}-${values?.version}` : undefined}
       >
-        <NativeSelect
-          id="ri-vatCode"
-          name="vatCode"
-          defaultValue={values?.vatCode ?? "EX41"}
-          options={VAT_CODES.map((v) => ({ value: v.code, label: v.label }))}
+        {editing && (
+          <>
+            <input type="hidden" name="id" value={values?.id} />
+            <input type="hidden" name="version" value={values?.version} />
+          </>
+        )}
+        <Field id={fid("category")} label="Category" error={fe?.category}>
+          <NativeSelect
+            id={fid("category")}
+            name="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            options={RATE_CATEGORIES.map((c) => ({ value: c.code, label: c.label }))}
+          />
+        </Field>
+        <CategoryFields key={category} category={category} v={values} fe={fe} lists={lists} />
+        <TextField
+          name="sellCents"
+          label="Sell price (€)"
+          type="number"
+          value={centsToInput(values?.sellCents)}
+          fe={fe}
         />
-      </Field>
-      <TextField
-        name="validUntil"
-        label="Valid until"
-        type="date"
-        value={values?.validUntil}
-        fe={fe}
-      />
-      <TextField name="note" label="Notes" value={values?.note} fe={fe} />
-      <div className="sm:col-span-full">
-        <Button type="submit" disabled={pending}>
-          Save
-        </Button>
-      </div>
-    </ActionForm>
+        <TextField
+          name="buyCents"
+          label="Buy price / cost (€)"
+          type="number"
+          value={centsToInput(values?.buyCents)}
+          fe={fe}
+        />
+        <Field id={fid("rateType")} label="Rate source" error={fe?.rateType}>
+          <NativeSelect
+            id={fid("rateType")}
+            name="rateType"
+            defaultValue={values?.rateType ?? "contract"}
+            options={sources.map((r) => ({ value: r.key, label: r.label }))}
+          />
+        </Field>
+        <Field
+          id={fid("vatCode")}
+          label="VAT"
+          hint="The default for every invoice line made from this item."
+          error={fe?.vatCode}
+        >
+          <NativeSelect
+            id={fid("vatCode")}
+            name="vatCode"
+            defaultValue={values?.vatCode ?? "EX41"}
+            options={VAT_CODES.map((v) => ({ value: v.code, label: v.label }))}
+          />
+        </Field>
+        <TextField
+          name="validUntil"
+          label="Valid until"
+          type="date"
+          value={values?.validUntil}
+          fe={fe}
+        />
+        <TextField name="note" label="Notes" value={values?.note} fe={fe} />
+        <div className="sm:col-span-full">
+          <Button type="submit" disabled={pending}>
+            Save
+          </Button>
+        </div>
+      </ActionForm>
+    </FieldPrefix>
   );
 }

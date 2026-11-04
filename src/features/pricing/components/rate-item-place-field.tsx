@@ -2,6 +2,7 @@
 
 import { Field } from "@/components/shared/field";
 import { PlacePicker } from "@/components/shared/place-picker";
+import { useFieldId } from "./rate-item-ids";
 import type { Errors, RateItemValues } from "./rate-item-types";
 
 /**
@@ -20,12 +21,13 @@ export function PlaceField({
   v?: RateItemValues;
   fe: Errors;
 }) {
+  const fid = useFieldId();
   const words = (v?.[name] as string | null | undefined) ?? null;
   const cityId = (v?.[name === "fromPlace" ? "fromCityId" : "toCityId"] as string | null) ?? null;
   return (
-    <Field id={`ri-${name}`} label={label} error={fe?.[name]}>
+    <Field id={fid(name)} label={label} error={fe?.[name]}>
       <PlacePicker
-        id={`ri-${name}`}
+        id={fid(name)}
         name={name}
         defaultValue={cityId ?? words}
         defaultLabel={words}
