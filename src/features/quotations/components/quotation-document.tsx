@@ -1,92 +1,70 @@
-import { formatCents } from "@/domain/money";
-import { QUOTATION_DISPLAY_LABEL, quotationDoc, routeFacts } from "@/domain/quotation-doc";
-import type { getQuotation } from "../queries";
+import { RowGrid, SheetTitle } from "@/components/shared/sheet-parts";
+import { clientBlock } from "@/domain/booking-doc";
+import { QUOTATION_DISPLAY_LABEL } from "@/domain/quotation-doc";
+import {
+  loadingRows,
+  PAPER_NOTE,
+  type PaperContact,
+  paperHead,
+  paperMentions,
+  type PaperQuotation,
+  paperTotals,
+} from "@/domain/quotation-paper";
 import { DEFAULT_QUOTE_FIELDS, type QuoteFields } from "@/domain/quote-fields";
-
-type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
+import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
+import { DestinationsTable, TotalsTable } from "./quotation-paper-table";
 
 /**
- * The quotation as the customer reads it: each destination with its lines and amounts
- * (itemized) or one price naming the services included (all-inclusive). Declined destinations
- * are not on it.
+ * The quotation as the customer reads it (legacy quoteDoc), laid out as the booking
+ * confirmation: the customer and the quotation's facts, where the boxes are collected, then
+ * each destination with its lines — itemized, or one price naming the services included — the
+ * totals, the VAT mentions and the terms. Declined destinations are not on it.
  */
 export function QuotationDocument({
-  q,
+  paper: q,
   fields = DEFAULT_QUOTE_FIELDS,
   contact = null,
 }: {
-  q: Quotation;
+  paper: PaperQuotation;
   /** What the office shows on the paper (Settings › Quotation document). */
   fields?: QuoteFields;
   /** The sales contact printed when the office shows one. */
-  contact?: { name: string; email: string } | null;
+  contact?: PaperContact;
 }) {
-  const doc = quotationDoc(q.routes, q.display);
-  const lines = (r: (typeof doc.routes)[number]) =>
-    r.lines.filter((l) => (l.term ? fields.freetime : fields.services));
+  const mentions = fields.terms ? paperMentions(q) : [];
   return (
-    <section className="grid gap-6 text-sm">
+    <section className="grid gap-5 text-sm">
+      <div className="text-right text-xs font-bold uppercase">{SHIPMENT_KIND_LABEL[q.kind]}</div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <div className="text-xs text-neutral-500 uppercase">For</div>
-          <div className="font-semibold">{q.client.name}</div>
-          {fields.contact && contact && (
-            <div className="mt-2 text-xs text-neutral-600">
-              Sales contact: {contact.name} · {contact.email}
-            </div>
-          )}
+          <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Customer</div>
+          {clientBlock(q.client).map((l) => (
+            <div key={l}>{l}</div>
+          ))}
         </div>
         <div className="text-right">
-          {fields.validity && (
-            <div>
-              <span className="text-neutral-500">Valid until</span> {q.validUntil ?? "—"}
-            </div>
-          )}
+          <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Quotation</div>
+          <div className="font-mono">{q.ref}</div>
           {fields.price && (
             <div className="text-neutral-500">{QUOTATION_DISPLAY_LABEL[q.display]} price</div>
           )}
         </div>
       </div>
-      {doc.routes.map((r, ri) => (
-        <div key={ri} className="grid gap-1 border-t pt-3">
-          <div className="flex justify-between font-semibold">
-            <span>
-              {r.freight && <span className="font-normal text-neutral-500">{r.freight} — </span>}
-              {r.title}
-            </span>
-            {fields.price && <span className="tabular-nums">{formatCents(r.totalCents)}</span>}
-          </div>
-          {routeFacts(r, fields).length > 0 && (
-            <div className="text-neutral-500">{routeFacts(r, fields).join(" · ")}</div>
-          )}
-          {q.display === "inclusive" && lines(r).length > 0 && (
-            <div className="text-neutral-500">Includes:</div>
-          )}
-          <ul className="grid gap-0.5">
-            {lines(r).map((l, i) => (
-              <li key={i} className="flex justify-between gap-4 pl-3">
-                <span>{l.text}</span>
-                {fields.price && l.amountCents !== null && (
-                  <span className="tabular-nums">{formatCents(l.amountCents)}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-      {fields.price && doc.routes.length > 1 && (
-        <div className="flex justify-between border-t-2 pt-3 font-semibold">
-          <span>All {doc.routes.length} destinations</span>
-          <span className="tabular-nums">{formatCents(doc.totalCents)}</span>
-        </div>
-      )}
+      <RowGrid rows={paperHead(q, fields, contact)} />
+      <SheetTitle>{q.kind === "import" ? "Delivery" : "Loading"}</SheetTitle>
+      <RowGrid cols={2} rows={loadingRows(q)} />
+      <SheetTitle>{fields.price ? "Price" : "Services"}</SheetTitle>
+      <DestinationsTable q={q} fields={fields} />
+      {fields.price && <TotalsTable t={paperTotals(q)} />}
       {fields.terms && (
         <p className="text-xs text-neutral-600">
-          Prices in EUR, excluding VAT where it applies. Services linked to the export of goods are
-          exempt under article 41 of the Belgian VAT Code. Subject to space and equipment
-          availability at the time of booking.
+          Prices in EUR, excluding VAT.
+          {mentions.map((m) => (
+            <span key={m}> {m}.</span>
+          ))}
         </p>
       )}
+      <p className="text-xs text-neutral-600">{PAPER_NOTE}</p>
     </section>
   );
 }

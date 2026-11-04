@@ -1,6 +1,6 @@
 import type { Row } from "@/domain/booking-doc";
 
-/** Label-over-value cells, four to a row on paper (legacy f4). */
+/** Label-over-value cells on a printed sheet, four to a row (legacy f4), or two. */
 export function RowGrid({ rows, cols = 4 }: { rows: Row[]; cols?: 2 | 4 }) {
   return (
     <dl
@@ -16,6 +16,7 @@ export function RowGrid({ rows, cols = 4 }: { rows: Row[]; cols?: 2 | 4 }) {
   );
 }
 
+/** A section's title on a printed sheet. */
 export function SheetTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-center text-sm font-bold tracking-wide uppercase">{children}</h2>;
 }

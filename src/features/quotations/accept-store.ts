@@ -16,8 +16,11 @@ type Route = {
   boxDetails: RouteBox[];
 };
 
-/** A place as the booking and the trucker copy write it: "Name, Kaai 1, 2000 Antwerpen, BE". */
-async function addressesOf(tx: DbOrTx, ids: readonly string[]): Promise<Map<string, string>> {
+/** A place as the booking, the trucker copy and the quotation write it: "Name, Kaai 1, 2000 Antwerpen, BE". */
+export async function addressesOf(
+  tx: DbOrTx,
+  ids: readonly string[],
+): Promise<Map<string, string>> {
   if (!ids.length) return new Map();
   const rows = await tx
     .select({

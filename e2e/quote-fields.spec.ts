@@ -22,7 +22,9 @@ test("the office says what the printed quotation shows", async ({ page }) => {
   // Everything on: the price, the sales contact, the VAT note.
   await open(page, print);
   await expect(page.getByText("€900.00").first()).toBeVisible();
-  await expect(page.getByText(/Sales contact:/)).toBeVisible();
+  await expect(page.getByText("Subtotal")).toBeVisible();
+  await expect(page.getByText("Sales contact", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Payment terms/)).toBeVisible();
   await expect(page.getByText(/article 41/)).toBeVisible();
 
   // The price and the VAT note switched off: the paper obeys.
@@ -34,6 +36,7 @@ test("the office says what the printed quotation shows", async ({ page }) => {
   await open(page, print);
   await expect(page.getByText("Ocean freight to Mersin")).toBeVisible();
   await expect(page.getByText("€900.00")).toHaveCount(0);
+  await expect(page.getByText("Subtotal")).toHaveCount(0);
   await expect(page.getByText(/article 41/)).toHaveCount(0);
 
   // Back on for the other journeys.

@@ -53,8 +53,9 @@ test("an all-inclusive quotation is printed and sent, with a follow-up for tomor
 
   await open(page, url.replace("/quotations/", "/print/quotations/"));
   await expect(page.getByRole("heading", { name: "Quotation" })).toBeVisible();
-  await expect(page.getByText("BEANR › TRMER").first()).toBeVisible();
-  await expect(page.getByText("€2,110.00")).toBeVisible();
+  await expect(page.getByText("Antwerp (BE) (BEANR) › Mersin (TR) (TRMER)").first()).toBeVisible();
+  await expect(page.getByText("Port to port — no inland transport")).toBeVisible();
+  await expect(page.getByText("€2,110.00").first()).toBeVisible();
   await expect(page.getByText("Ocean freight to Mersin")).toBeVisible();
   await expect(page.getByText("Terminal handling")).toHaveCount(0);
 

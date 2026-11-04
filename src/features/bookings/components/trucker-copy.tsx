@@ -9,7 +9,7 @@ import {
 import { formatKg, vgm } from "@/domain/container";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
-import { RowGrid, SheetTitle } from "./copy-parts";
+import { RowGrid, SheetTitle } from "@/components/shared/sheet-parts";
 import { cargoKgOf } from "@/domain/goods";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof bookingCopy>>>;

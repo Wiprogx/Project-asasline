@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PrintSheet } from "@/components/shared/print-sheet";
 import { QuotationDocument } from "@/features/quotations/components/quotation-document";
-import { getQuotation } from "@/features/quotations/queries";
+import { quotationPaper } from "@/features/quotations/paper-queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { readQuoteFields } from "@/server/quote-fields-config";
 
@@ -17,12 +17,16 @@ export default async function PrintQuotationPage({ params }: PageProps<"/print/q
   const user = await requirePagePermission("app.quotations");
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
-  const [q, fields] = await Promise.all([getQuotation(id.data), readQuoteFields()]);
-  if (!q || q.status === "cancelled") notFound();
+  const [paper, fields] = await Promise.all([quotationPaper(id.data), readQuoteFields()]);
+  if (!paper) notFound();
 
   return (
-    <PrintSheet kind="Quotation" number={q.ref}>
-      <QuotationDocument q={q} fields={fields} contact={{ name: user.name, email: user.email }} />
+    <PrintSheet kind="Quotation" number={paper.ref}>
+      <QuotationDocument
+        paper={paper}
+        fields={fields}
+        contact={{ name: user.name, email: user.email }}
+      />
     </PrintSheet>
   );
 }
