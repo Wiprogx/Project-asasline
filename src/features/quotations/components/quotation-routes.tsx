@@ -6,9 +6,10 @@ import { AcceptQuotation } from "./accept-quotation";
 import { AddLineForm } from "./add-line-form";
 import { AddRouteForm } from "./add-route-form";
 import { RouteControls } from "./route-controls";
-import { routeTotals } from "@/domain/quotation-doc";
+import { routeFacts, routeTotals } from "@/domain/quotation-doc";
 import { RouteLines } from "./route-lines";
 import { type LoadingMode } from "@/domain/loading";
+import { ROUTE_SERVICE_FREIGHT } from "@/domain/route-service";
 
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 type Choices = Awaited<ReturnType<typeof catalogueChoices>>;
@@ -59,11 +60,15 @@ export function QuotationRoutes({
         const booked = q.bookings.some(
           (b) => b.quotationRouteId === r.id && b.status !== "cancelled",
         );
+        const facts = routeFacts(r, { carrier: true, transit: true });
         return (
           <Card key={r.id} className={r.declined ? "text-muted-foreground" : undefined}>
             <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
-              <CardTitle className="font-mono">
-                {r.pol} → {r.pod}
+              <CardTitle>
+                <span className="mr-2 rounded-sm bg-muted px-1.5 py-0.5 font-sans text-xs font-medium text-muted-foreground">
+                  {ROUTE_SERVICE_FREIGHT[r.service]}
+                </span>
+                {r.polWords} → {r.podWords}
                 {r.finalPlace && (
                   <span className="font-sans text-muted-foreground"> · {r.finalPlace}</span>
                 )}
@@ -82,6 +87,9 @@ export function QuotationRoutes({
                   </span>
                 )}
               </CardTitle>
+              {facts.length > 0 && (
+                <p className="basis-full text-sm text-muted-foreground">{facts.join(" · ")}</p>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 {!r.declined && <RouteBooking q={q} routeId={r.id} canBook={canBook} />}
                 {edit && <RouteControls {...edit} route={r} booked={booked} modes={modes} />}

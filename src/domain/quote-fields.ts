@@ -7,6 +7,7 @@ export const QUOTE_FIELD_KEYS = [
   "services",
   "freetime",
   "validity",
+  "transit",
   "contact",
   "terms",
 ] as const;
@@ -17,6 +18,7 @@ export const QUOTE_FIELD_LABEL: Record<QuoteFieldKey, string> = {
   services: "What is included",
   freetime: "Free time terms",
   validity: "Valid until",
+  transit: "Transit time",
   contact: "Sales contact",
   terms: "VAT note",
 };
@@ -28,6 +30,7 @@ export const DEFAULT_QUOTE_FIELDS: QuoteFields = {
   services: true,
   freetime: true,
   validity: true,
+  transit: true,
   contact: true,
   terms: true,
 };

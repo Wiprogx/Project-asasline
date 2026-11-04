@@ -9,11 +9,11 @@ import { configTables } from "./db/schema";
 const NAME = "quoteFields";
 export const QUOTE_FIELDS_TAG = `config:${NAME}`;
 
+// A switch added after the table was saved reads its default until Settings saves it again.
 export const quoteFieldsSchema = z.object(
-  Object.fromEntries(QUOTE_FIELD_KEYS.map((k) => [k, z.boolean()])) as Record<
-    (typeof QUOTE_FIELD_KEYS)[number],
-    z.ZodBoolean
-  >,
+  Object.fromEntries(
+    QUOTE_FIELD_KEYS.map((k) => [k, z.boolean().default(DEFAULT_QUOTE_FIELDS[k])]),
+  ) as Record<(typeof QUOTE_FIELD_KEYS)[number], z.ZodDefault<z.ZodBoolean>>,
 );
 
 /** What the printed quotation shows (legacy QUOTE_FIELDS): everything until Settings says otherwise. */

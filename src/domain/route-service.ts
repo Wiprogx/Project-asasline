@@ -10,6 +10,12 @@ export const ROUTE_SERVICE_LABELS: Record<RouteService, string> = {
   door_port: "Door to port — inland transport included",
 };
 
+/** What a service moves, said at the top of a destination: ocean freight alone, or the inland leg with it. */
+export const ROUTE_SERVICE_FREIGHT: Record<RouteService, string> = {
+  port_port: "Ocean freight",
+  door_port: "Inland transport + ocean freight",
+};
+
 /**
  * A stop of a destination or of one of its boxes (legacy stops): one of the customer's places
  * (a location contact), and when the truck calls there.

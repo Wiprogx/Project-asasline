@@ -45,7 +45,7 @@ test("a price changed on a quotation line is kept in the customer's agreement an
     await expectToast(page, "Destination added");
     return page
       .locator("[data-slot=card]")
-      .filter({ has: page.getByText(new RegExp(`BEANR → ${pod}`)) })
+      .filter({ has: page.getByText(new RegExp(`\\(BEANR\\) → ${pod}`)) })
       .getByRole("row")
       .filter({ hasText: `BEANR › ${pod}` });
   };

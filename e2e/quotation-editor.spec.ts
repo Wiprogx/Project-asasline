@@ -92,7 +92,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await choose(page.getByLabel("Ocean leg"), { label: new RegExp(`\\(BEANR\\) › ${pod} · 40HC`) });
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");
-  const leg = card(page, new RegExp(`BEANR → ${pod}`));
+  const leg = card(page, new RegExp(`\\(BEANR\\) → ${pod}`));
   const legLine = leg.getByRole("row").filter({ hasText: `BEANR › ${pod}` });
   await expect(legLine).toContainText("Agreed");
   await expect(legLine).toContainText("€2,800.00");
@@ -128,7 +128,7 @@ test("a quotation with two destinations, priced from the agreement and the catal
   await expect(footer).toHaveText(before!);
 
   // The customer declines Mersin, and takes the other destination.
-  const mersin = card(page, /BEANR → TRMER/);
+  const mersin = card(page, /\(BEANR\) → .*\(TRMER\)/);
   await mersin.getByRole("button", { name: "Declined" }).click();
   await page
     .getByPlaceholder("Why? It stays on the record.")

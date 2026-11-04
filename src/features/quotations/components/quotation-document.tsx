@@ -1,5 +1,5 @@
 import { formatCents } from "@/domain/money";
-import { QUOTATION_DISPLAY_LABEL, quotationDoc } from "@/domain/quotation-doc";
+import { QUOTATION_DISPLAY_LABEL, quotationDoc, routeFacts } from "@/domain/quotation-doc";
 import type { getQuotation } from "../queries";
 import { DEFAULT_QUOTE_FIELDS, type QuoteFields } from "@/domain/quote-fields";
 
@@ -50,9 +50,15 @@ export function QuotationDocument({
       {doc.routes.map((r, ri) => (
         <div key={ri} className="grid gap-1 border-t pt-3">
           <div className="flex justify-between font-semibold">
-            <span>{r.title}</span>
+            <span>
+              {r.freight && <span className="font-normal text-neutral-500">{r.freight} — </span>}
+              {r.title}
+            </span>
             {fields.price && <span className="tabular-nums">{formatCents(r.totalCents)}</span>}
           </div>
+          {routeFacts(r, fields).length > 0 && (
+            <div className="text-neutral-500">{routeFacts(r, fields).join(" · ")}</div>
+          )}
           {q.display === "inclusive" && lines(r).length > 0 && (
             <div className="text-neutral-500">Includes:</div>
           )}

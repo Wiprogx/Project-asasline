@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { destinationsPhrase, letterLines, quotationDoc, routeTotals } from "./quotation-doc";
+import {
+  destinationsPhrase,
+  letterLines,
+  quotationDoc,
+  routeFacts,
+  routeTotals,
+} from "./quotation-doc";
 
 const charge = { perBox: true, condition: false };
 
@@ -97,6 +103,41 @@ describe("quotationDoc", () => {
 
   it("titles a destination by its ports, box and final place", () => {
     expect(quotationDoc([mersin], "itemized").routes[0].title).toBe("BEANR › TRMER · to Adana");
+  });
+});
+
+describe("a destination spelled out for the paper", () => {
+  const spelled = {
+    ...douala,
+    polWords: "Antwerp (BE) (BEANR)",
+    podWords: "Douala (CM) (CMDLA)",
+    service: "door_port" as const,
+    carrier: "MSC",
+    transitDays: 22,
+  };
+  it("titles it by its ports in words, and by their codes for a subject", () => {
+    const [r] = quotationDoc([spelled], "itemized").routes;
+    expect(r.title).toBe("Antwerp (BE) (BEANR) › Douala (CM) (CMDLA) · 40HC");
+    expect(r.short).toBe("BEANR › CMDLA · 40HC");
+    expect(destinationsPhrase(quotationDoc([spelled], "itemized"))).toBe("BEANR › CMDLA · 40HC");
+  });
+  it("says at the top what the service moves", () => {
+    expect(quotationDoc([spelled], "itemized").routes[0].freight).toBe(
+      "Inland transport + ocean freight",
+    );
+    expect(quotationDoc([{ ...spelled, service: "port_port" }], "itemized").routes[0].freight).toBe(
+      "Ocean freight",
+    );
+    expect(quotationDoc([douala], "itemized").routes[0].freight).toBeNull();
+  });
+  it("says the line and the transit only when known and asked for", () => {
+    expect(routeFacts(spelled, { carrier: true, transit: true })).toEqual([
+      "MSC",
+      "22 days transit",
+    ]);
+    expect(routeFacts(spelled, { transit: true })).toEqual(["22 days transit"]);
+    expect(routeFacts({ ...spelled, transitDays: null }, { transit: true })).toEqual([]);
+    expect(routeFacts({}, { carrier: true, transit: true })).toEqual([]);
   });
 });
 

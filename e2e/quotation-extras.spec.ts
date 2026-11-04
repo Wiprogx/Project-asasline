@@ -78,7 +78,9 @@ test("a destination starts with the direction's customs, VGM and free time, and 
   await choose(page.getByLabel("Ocean leg"), { label: new RegExp(`\\(BEANR\\) › ${pod} · 40HC`) });
   await submit(page, page.getByRole("button", { name: "Add destination" }));
   await expectToast(page, "Destination added");
-  const leg = page.locator("[data-slot=card]").filter({ has: page.getByText(`BEANR → ${pod}`) });
+  const leg = page
+    .locator("[data-slot=card]")
+    .filter({ has: page.getByText(new RegExp(`\\(BEANR\\) → ${pod}`)) });
   await expect(
     leg
       .getByRole("row")

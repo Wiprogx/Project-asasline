@@ -22,6 +22,7 @@ import {
 } from "@/server/db/schema";
 import { cache } from "react";
 import { type ListScope, scopeKey, scopeWhere } from "./list-scope";
+import { withRouteFacts } from "./route-facts";
 import { type SortDir, type SortValue, sortRows } from "@/lib/table-view";
 
 export type QuotationRow = {
@@ -106,10 +107,11 @@ export const getQuotation = cache(async (id: string) => {
     },
   });
   if (!q) return undefined;
-  // Each destination's box and ports in words (Settings › Lists, Settings › Ports).
+  // Each destination's box and ports in words (Settings › Lists, Settings › Ports), and what
+  // its ocean leg says: the shipping line and the transit.
   return {
     ...q,
-    routes: (await withRouteWords(q.routes)).map((r) => ({
+    routes: (await withRouteFacts(await withRouteWords(q.routes))).map((r) => ({
       ...r,
       pol: r.pol ?? "",
       pod: r.pod ?? "",

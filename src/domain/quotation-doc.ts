@@ -4,6 +4,8 @@
  * be listed. The choice is the quotation's, and the document obeys it. Declined destinations
  * are left out.
  */
+import { ROUTE_SERVICE_FREIGHT, type RouteService } from "./route-service";
+
 export const QUOTATION_DISPLAYS = ["itemized", "inclusive"] as const;
 export type QuotationDisplay = (typeof QUOTATION_DISPLAYS)[number];
 export const QUOTATION_DISPLAY_LABEL: Record<QuotationDisplay, string> = {
@@ -25,6 +27,14 @@ export type DocLine = {
 export type DocRoute = {
   pol: string;
   pod: string;
+  /** The ports as the paper spells them, "Antwerp (BE) (BEANR)"; the code when not given. */
+  polWords?: string | null;
+  podWords?: string | null;
+  /** Port to port, or door to port with the inland leg: said at the top of the destination. */
+  service?: RouteService | null;
+  /** What the ocean leg of the catalogue says: its shipping line and its transit. */
+  carrier?: string | null;
+  transitDays?: number | null;
   finalPlace: string | null;
   containerType: string | null;
   /** How many containers the destination is quoted for. */
@@ -35,7 +45,14 @@ export type DocRoute = {
 
 export type QuotationDoc = {
   routes: {
+    /** The ports in words, the box, the count and the final place. */
     title: string;
+    /** The same by the port codes, for a subject line. */
+    short: string;
+    /** "Ocean freight" or "Inland transport + ocean freight", from the service; null when unknown. */
+    freight: string | null;
+    carrier: string | null;
+    transitDays: number | null;
     /** `term`: a free-time condition, named on the paper and never totalled. */
     lines: { text: string; amountCents: number | null; term: boolean }[];
     totalCents: number;
@@ -71,11 +88,29 @@ export function routeTotals(r: {
   };
 }
 
-export function routeTitle(r: Omit<DocRoute, "lines" | "declined">): string {
+type Titled = Omit<DocRoute, "lines" | "declined">;
+
+/** "Antwerp (BE) (BEANR) › Douala (CM) (CMDLA) · 40HC × 2 · to Yaoundé"; `short` keeps the codes. */
+export function routeTitle(r: Titled, short = false): string {
   const box = r.containerType ? ` · ${r.containerType}` : "";
   const n = r.boxes > 1 ? ` × ${r.boxes}` : "";
   const final = r.finalPlace ? ` · to ${r.finalPlace}` : "";
-  return `${r.pol} › ${r.pod}${box}${n}${final}`;
+  const [pol, pod] = short ? [r.pol, r.pod] : [r.polWords || r.pol, r.podWords || r.pod];
+  return `${pol} › ${pod}${box}${n}${final}`;
+}
+
+/**
+ * What is said under a destination's title (legacy rt-sub: "MSC · 22 days"): the line and the
+ * transit, each only when known and asked for.
+ */
+export function routeFacts(
+  r: Pick<DocRoute, "carrier" | "transitDays">,
+  show: { carrier?: boolean; transit?: boolean },
+): string[] {
+  return [
+    show.carrier ? r.carrier : null,
+    show.transit && r.transitDays != null ? `${r.transitDays} days transit` : null,
+  ].filter((x): x is string => !!x);
 }
 
 export function quotationDoc(routes: readonly DocRoute[], display: QuotationDisplay): QuotationDoc {
@@ -83,6 +118,10 @@ export function quotationDoc(routes: readonly DocRoute[], display: QuotationDisp
     .filter((r) => !r.declined)
     .map((r) => ({
       title: routeTitle(r),
+      short: routeTitle(r, true),
+      freight: r.service ? ROUTE_SERVICE_FREIGHT[r.service] : null,
+      carrier: r.carrier ?? null,
+      transitDays: r.transitDays ?? null,
       lines:
         display === "itemized"
           ? r.lines.map((l) => ({
@@ -102,7 +141,7 @@ export function quotationDoc(routes: readonly DocRoute[], display: QuotationDisp
 export function destinationsPhrase(doc: QuotationDoc): string {
   const [first, ...rest] = doc.routes;
   if (!first) return "—";
-  return rest.length ? `${first.title} and ${rest.length} more` : first.title;
+  return rest.length ? `${first.short} and ${rest.length} more` : first.short;
 }
 
 /** The quotation in a few lines of a letter: each destination and its price. */
