@@ -247,10 +247,12 @@ export async function firstSignIn(page: Page, email: string, temporary: string) 
 
 /**
  * "Issue invoice" once the draft's last change has landed: the toast of an added line comes
- * before the page holds the draft's new version, and issuing the old one is a conflict.
+ * before the page holds the draft's new version, and issuing the old one is a conflict. A form
+ * is still saving while its submit button is disabled. (Not "networkidle": the time beacon's
+ * POST is never seen ending by the browser driver, so that state never comes on the built app.)
  */
 export async function issue(page: Page) {
-  await page.waitForLoadState("networkidle");
+  await expect(page.locator("form[data-action-form] button[type=submit][disabled]")).toHaveCount(0);
   await submit(page, page.getByRole("button", { name: "Issue invoice" }));
 }
 
