@@ -55,7 +55,12 @@ export function ColumnPicks({
         <Columns3Icon aria-hidden /> Columns
       </summary>
       <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border bg-popover p-3 text-sm shadow-md">
-        <fieldset className="grid gap-1" aria-busy={pending} aria-label="Columns">
+        {/* A long list scrolls inside the panel: under a sticky header the page cannot bring it into view. */}
+        <fieldset
+          className="grid max-h-[50vh] gap-1 overflow-y-auto pr-1"
+          aria-busy={pending}
+          aria-label="Columns"
+        >
           {defs.map((d) => (
             <label key={d.key} className="flex min-h-6 items-center gap-2">
               <input

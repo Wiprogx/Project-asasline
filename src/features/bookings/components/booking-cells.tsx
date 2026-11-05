@@ -67,7 +67,7 @@ function Docs({ got, need }: { got: number; need: number }) {
 type Cell = (b: BookingRow, today: string) => React.ReactNode;
 
 /** Each column of the list: one real field of the booking (legacy B_COLS). */
-export const CELLS: Record<BookingColumnKey, Cell> = {
+export const CELLS: Record<"ref" | BookingColumnKey, Cell> = {
   ref: (b) => (
     <>
       <Link href={`/bookings/${b.id}`} className="font-mono font-medium hover:underline">

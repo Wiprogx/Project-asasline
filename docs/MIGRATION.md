@@ -104,9 +104,9 @@ unreachable or superseded before it lands here.
 
 - **Bookings list — the period starts on "All time"**, not the legacy "This month": the office
   keeps reaching every file from one search box, and a file without dates would otherwise count
-  on today and older dated ones drop out of view. The period, its comparison, the figures and
-  the columns chosen live in the URL, so a view can be bookmarked and shared (legacy: session
-  state lost on reload).
+  on today and older dated ones drop out of view. The period, the filters and the order live
+  in the URL, so a view can be bookmarked and shared (legacy: session state lost on reload);
+  the columns and their widths are the person's own (`user_prefs`), as on Contacts and Quotations.
 
 ## Legacy behaviour waiting on a missing record
 

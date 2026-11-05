@@ -33,7 +33,6 @@ test("the bookings list says what a shipment is worth and whether it is invoiced
   await expect(row()).toContainText("€1,250.00");
   await expect(row().getByText("Not invoiced")).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Invoiced" })).toBeVisible();
-  await expect(page.getByRole("term").filter({ hasText: "Waiting for an invoice" })).toBeVisible();
   await open(page, `/bookings?q=${ref}&billing=done`);
   await expect(page.getByText("No bookings match.")).toBeVisible();
 

@@ -2,98 +2,69 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
-import { UrlPicks } from "@/components/shared/url-picks";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  BOOKING_COLUMNS,
-  BOOKING_FIGURE_DEFS,
-  DEFAULT_BOOKING_COLUMNS,
-  DEFAULT_BOOKING_FIGURES,
-} from "@/domain/booking-list";
-import { parsePicks } from "@/domain/picks";
-import { BILL_FILTERS } from "@/domain/invoicing";
-import { parsePeriodKey, periodScope } from "@/domain/periods";
+import { periodScope } from "@/domain/periods";
 import { may } from "@/domain/permissions";
-import { BOOKING_STATUSES, SHIPMENT_KINDS } from "@/domain/shipments";
-import { BookingsFigures } from "@/features/bookings/components/bookings-figures";
+import { BookingColumns } from "@/features/bookings/components/booking-columns";
 import { BookingsFilters } from "@/features/bookings/components/bookings-filters";
 import { BookingsTable } from "@/features/bookings/components/bookings-table";
+import { parseBookingListParams } from "@/features/bookings/list-params";
 import { listBookings, listCarriers } from "@/features/bookings/list-queries";
+import { narrowBookings, sortBookings } from "@/features/bookings/list-view";
+import { bookingView } from "@/features/bookings/view-queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 
 export const metadata: Metadata = { title: "Bookings" };
 
-const one = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-
 export default async function BookingsPage({ searchParams }: PageProps<"/bookings">) {
   const user = await requirePagePermission("app.bookings");
-  const sp = await searchParams;
-  const status = BOOKING_STATUSES.find((s) => s === sp.status);
-  const billing = BILL_FILTERS.find((b) => b === sp.billing);
-  const kind = SHIPMENT_KINDS.find((k) => k === sp.kind);
-  const [q, carrierId] = [one(sp.q), one(sp.carrier)];
-  const period = parsePeriodKey(sp.period);
+  const params = parseBookingListParams(await searchParams);
   const today = officeToday();
-  const now = periodScope(period, today);
-  const cmp = sp.cmp === "prev" && period !== "all";
-  const scope = { q, kind, carrierId, billing, cancelled: true };
-  const [all, before, carriers] = await Promise.all([
-    listBookings({ ...scope, period: now }),
-    cmp ? listBookings({ ...scope, period: periodScope(period, today, 1) }) : null,
+  const now = periodScope(params.period, today);
+  const [found, carriers, view] = await Promise.all([
+    listBookings({
+      q: params.q,
+      kind: params.kind,
+      carrierId: params.carrier,
+      billing: params.billing,
+      period: now,
+      cancelled: true,
+    }),
     listCarriers(),
+    bookingView(),
   ]);
-  // The chips count every status; the table and the figures show the one asked for.
-  const pick = (rs: typeof all) =>
-    rs.filter((r) => (status ? r.status === status : r.status !== "cancelled"));
-  const rows = pick(all);
-  const columns = parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, sp.cols);
+  // The chips count every status; the table shows the one asked for, the cancelled ones only when asked.
+  const all = narrowBookings(found, params);
+  const rows = sortBookings(
+    all.filter((r) => (params.status ? r.status === params.status : r.status !== "cancelled")),
+    params,
+  );
+  const periodLabel = now ? `${now.label} · ${now.from} → ${now.to}` : "All time";
   return (
     <>
-      <PageHeader
-        title="Bookings"
-        description={`${rows.length} shown · ${now ? `${now.label} · ${now.from} → ${now.to}` : "all time"}`}
-        actions={
-          may(user, "bookings.edit") && (
-            <Link href="/bookings/new" className={buttonVariants({ size: "sm" })}>
-              New booking
-            </Link>
-          )
-        }
-      />
-      <div className="mb-3 grid gap-2">
-        <SearchInput placeholder="Ref, customer, consignee, container, seal, vessel, B/L…" />
-        <BookingsFilters carriers={carriers} />
-      </div>
-      <BookingsFigures
-        all={all}
-        rows={rows}
-        before={before && pick(before)}
-        shown={parsePicks(BOOKING_FIGURE_DEFS, DEFAULT_BOOKING_FIGURES, sp.figs)}
-        params={{
-          q,
-          status,
-          billing,
-          kind,
-          carrier: carrierId,
-          period: now ? period : undefined,
-          cmp: cmp ? "prev" : undefined,
-          figs: one(sp.figs),
-          cols: one(sp.cols),
-        }}
-        periodLabel={now?.label ?? "All time"}
-      />
-      <div className="mb-2">
-        <UrlPicks
-          param="cols"
-          title="Choose the columns"
-          defs={BOOKING_COLUMNS}
-          defaults={DEFAULT_BOOKING_COLUMNS}
-          shown={columns}
-          fixed={["ref"]}
+      {/* The title, its button, the search and the filters stay under the office header while the list scrolls. */}
+      <div className="sticky top-12 z-10 -mx-4 -mt-4 mb-4 grid gap-3 border-b bg-background/95 px-4 pt-4 pb-3 backdrop-blur md:-mx-6 md:-mt-6 md:px-6 md:pt-6">
+        <PageHeader
+          title="Bookings"
+          description={`${rows.length} bookings · ${periodLabel}`}
+          actions={
+            may(user, "bookings.edit") && (
+              <Link href="/bookings/new" className={buttonVariants({ size: "sm" })}>
+                New booking
+              </Link>
+            )
+          }
         />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-64 flex-1">
+            <SearchInput placeholder="Ref, customer, consignee, container, seal, vessel, B/L…" />
+          </div>
+          <BookingColumns shown={view.columns} />
+        </div>
+        <BookingsFilters params={params} all={all} carriers={carriers} periodLabel={periodLabel} />
       </div>
-      <BookingsTable rows={rows} columns={columns} today={today} />
+      <BookingsTable rows={rows} columns={view.columns} widths={view.widths} today={today} />
     </>
   );
 }

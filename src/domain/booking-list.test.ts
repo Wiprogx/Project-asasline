@@ -1,57 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
   BOOKING_COLUMNS,
-  bookingFigures,
+  BOOKING_REF_COLUMN,
+  BOOKING_VIEW,
   closingLate,
   DEFAULT_BOOKING_COLUMNS,
-  topDestinations,
 } from "./booking-list";
-import { parsePicks } from "./picks";
+import { parseTableView } from "./table-prefs";
 
-const row = (o: Partial<Parameters<typeof bookingFigures>[0][number]> = {}) => ({
-  status: "confirmed",
-  pod: "TRMER",
-  boxes: 1,
-  valueCents: 1000,
-  billedCents: 0,
-  billing: "not" as const,
-  lateSteps: 0,
-  ...o,
-});
+describe("the bookings columns", () => {
+  it("offers every column but the reference, which is always first and sizable too", () => {
+    expect(BOOKING_COLUMNS.map((c) => c.key)).not.toContain("ref");
+    expect(BOOKING_VIEW.sizable[0]).toBe(BOOKING_REF_COLUMN.key);
+    expect(BOOKING_VIEW.sizable).toHaveLength(BOOKING_COLUMNS.length + 1);
+    for (const k of DEFAULT_BOOKING_COLUMNS)
+      expect(BOOKING_COLUMNS.some((c) => c.key === k)).toBe(true);
+  });
 
-describe("the bookings figures", () => {
-  it("counts boxes, destinations, the voyage and the money, never a cancelled one", () => {
-    const f = bookingFigures([
-      row({ boxes: 2 }),
-      row({ pod: "CNSHA", status: "in_transit", billing: "done", billedCents: 1000, lateSteps: 2 }),
-      row({ status: "cancelled", boxes: 9, valueCents: 99999 }),
+  it("reads a saved view in the table's order and falls back to the defaults", () => {
+    expect(parseTableView(BOOKING_VIEW, { columns: ["eta", "status"] }).columns).toEqual([
+      "status",
+      "eta",
     ]);
-    expect(f).toMatchObject({
-      count: 2,
-      boxes: 3,
-      dests: 2,
-      transit: 1,
-      value: 2000,
-      billed: 1000,
-      waiting: 1,
-      late: 2,
+    expect(parseTableView(BOOKING_VIEW, null).columns).toEqual(DEFAULT_BOOKING_COLUMNS);
+    expect(parseTableView(BOOKING_VIEW, { widths: { ref: 300, bogus: 100 } }).widths).toEqual({
+      ref: 300,
     });
-  });
-
-  it("ranks the destinations by bookings, then boxes", () => {
-    const top = topDestinations([row(), row({ boxes: 3 }), row({ pod: "CNSHA", boxes: 5 })]);
-    expect(top[0]).toEqual({ label: "TRMER", n: 2, boxes: 4 });
-    expect(top[1].label).toBe("CNSHA");
-  });
-});
-
-describe("the columns and figures chosen", () => {
-  it("reads the URL value, keeps the table order, and falls back to the defaults", () => {
-    expect(parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, "eta,ref")).toEqual(["ref", "eta"]);
-    expect(parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, "bogus")).toEqual(
-      DEFAULT_BOOKING_COLUMNS,
-    );
-    expect(parsePicks(BOOKING_COLUMNS, DEFAULT_BOOKING_COLUMNS, "none")).toEqual([]);
   });
 
   it("marks a closing passed before sailing", () => {
