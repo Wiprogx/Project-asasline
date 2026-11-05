@@ -5,14 +5,16 @@ import { BookingDetailsForm } from "@/features/bookings/components/booking-detai
 import { toDetailsValues } from "@/features/bookings/form-values";
 import { bookingPlaces } from "@/features/bookings/place-queries";
 import { getBooking } from "@/features/bookings/queries";
+import { NewPlaceDialog } from "@/features/contacts/components/new-place-dialog";
 import { contactOptions } from "@/features/contacts/queries";
 import { BookingLegs } from "@/features/vessels/components/booking-legs";
 import { BookingSailing } from "@/features/vessels/components/booking-sailing";
 import { bookingLegs, sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
+import { readCountries } from "@/server/countries";
 import { readLoadingModes } from "@/server/loading-config";
-import { lookupOptions } from "@/server/lookups";
+import { liveLookups, lookupOptions } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Edit booking" };
 
@@ -27,11 +29,14 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
   ]);
   if (!b) notFound();
   if (b.status === "cancelled") redirect(`/bookings/${id}`);
-  const [sailings, legs, places] = await Promise.all([
+  const [sailings, legs, places, countries, salutations] = await Promise.all([
     sailingOptions(officeToday(), { pol: b.pol, pod: b.pod }),
     bookingLegs(id),
     bookingPlaces(),
+    readCountries(),
+    liveLookups("salutations"),
   ]);
+  const lists = { countries, salutations };
 
   const values = toDetailsValues(b);
   return (
@@ -56,6 +61,10 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
         modes={modes}
         docTypes={docTypes}
         places={places}
+        dialogs={{
+          depot: <NewPlaceDialog lists={lists} role="depot" />,
+          terminal: <NewPlaceDialog lists={lists} role="terminal" />,
+        }}
       />
     </div>
   );

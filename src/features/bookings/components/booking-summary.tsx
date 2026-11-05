@@ -92,13 +92,20 @@ export function BookingSummary({
               const who = b[p.key.replace(/Id$/, "") as OfficeRelation];
               return who ? <Row key={p.key} k={p.label} v={party(who)} /> : null;
             })}
-            {(b.pickupDepot || b.pickupDate) && (
+            {(b.depotPlace || b.pickupDepot || b.pickupDate) && (
               <Row
                 k="Pick-up depot"
-                v={[b.pickupDepot, b.pickupDate].filter(Boolean).join(" · ")}
+                v={
+                  <>
+                    {b.depotPlace ? party(b.depotPlace) : b.pickupDepot}
+                    {b.pickupDate && ` · ${b.pickupDate}`}
+                  </>
+                }
               />
             )}
-            {b.terminal && <Row k="Terminal" v={b.terminal} />}
+            {(b.terminalPlace || b.terminal) && (
+              <Row k="Terminal" v={b.terminalPlace ? party(b.terminalPlace) : b.terminal} />
+            )}
             <Row
               k="Vessel / voyage"
               v={

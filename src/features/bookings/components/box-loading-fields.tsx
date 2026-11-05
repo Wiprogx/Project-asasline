@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
+import type { PickerOption } from "@/components/shared/search-picker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { type CustomerPlace, defaultLoadPlace, loadPlaces } from "@/domain/load-place";
 import { isDropMode, type LoadingMode, modeNote, type Stop, stopLines } from "@/domain/loading";
+import { PlaceField } from "./place-field";
 
 export type BoxLoading = {
+  /** The place this box is loaded at (domain/load-place); the words beside it are written from it. */
+  loadAddressId: string | null;
   loadAddress: string | null;
   loadDate: string | null;
   loadTime: string | null;
@@ -20,11 +25,26 @@ export type BoxLoading = {
   stops: Stop[];
 };
 
+/** Where a box may be loaded, what is proposed, and how a new place is made. */
+export type LoadPlaces = {
+  /** The customer's places, its delivery address first (contacts placesOf). */
+  customer: readonly CustomerPlace[];
+  /** Every other live location: a box may well be loaded at a place of another contact. */
+  locations: readonly PickerOption[];
+  clientId: string | null;
+  /** What the booking proposes for its boxes: the place it was made or quoted with. */
+  proposed: string | null;
+  /** "+ New location", rendered by the page (it lives with the contacts). */
+  newPlace?: ReactNode;
+};
+
 type Errors = Record<string, string[] | undefined> | undefined;
 
 /**
  * Loading — this box only (legacy per-box loading card). Nothing here is inherited by the
  * other boxes: a missing detail prints as missing on the trucker copy, and the copy says so.
+ * The loading address is a place: the booking's proposal — the customer's delivery address,
+ * else its own — stands in the picker until another is chosen, and any location may be.
  * A drop mode (box left on site) asks when the truck comes back for it.
  */
 export function BoxLoadingFields({
@@ -32,34 +52,46 @@ export function BoxLoadingFields({
   box,
   modes,
   truckers,
+  places,
   fe,
 }: {
   p: string;
   box: BoxLoading;
   modes: readonly LoadingMode[];
   truckers: readonly { id: string; name: string }[];
+  places: LoadPlaces;
   fe: Errors;
 }) {
   const [mode, setMode] = useState(box.loadingMode ?? "");
   const drop = isDropMode(modes, mode);
+  // A box from before keeps the words it carried until a place is chosen for it.
+  const [place, setPlace] = useState<string | null>(
+    box.loadAddressId ??
+      (box.loadAddress
+        ? null
+        : (places.proposed ?? defaultLoadPlace(places.customer, places.clientId))),
+  );
+  const [made, setMade] = useState<CustomerPlace[]>([]);
   return (
     <fieldset className="grid gap-3 rounded-md border p-3 sm:col-span-2 lg:col-span-6 lg:grid-cols-4">
       <legend className="px-1 text-xs font-medium text-muted-foreground">
         Loading — this box only
       </legend>
-      <Field
+      <PlaceField
         id={`${p}-load-address`}
+        name="loadAddressId"
         label="Loading address"
+        hint="The customer's places first, its delivery address proposed; any other location after."
+        options={loadPlaces([...made, ...places.customer], places.locations)}
+        ownerId={places.clientId}
+        value={place}
+        set={setPlace}
+        made={(m) => setMade((ms) => [{ ...m, delivery: true }, ...ms])}
+        before={box.loadAddress}
+        dialog={places.newPlace}
+        error={fe?.loadAddressId}
         className="lg:col-span-2"
-        error={fe?.loadAddress}
-      >
-        <Input
-          id={`${p}-load-address`}
-          name="loadAddress"
-          defaultValue={box.loadAddress ?? ""}
-          placeholder="Where this box is filled"
-        />
-      </Field>
+      />
       <Field
         id={`${p}-load-date`}
         label={drop ? "Dropped off on" : "Loading date"}

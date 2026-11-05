@@ -30,6 +30,8 @@ export const getBooking = cache(async (id: string) => {
       destForwarder: { columns: { id: true, name: true } },
       forwarder: { columns: { id: true, name: true } },
       customsAgent: { columns: { id: true, name: true } },
+      depotPlace: { columns: { id: true, name: true } },
+      terminalPlace: { columns: { id: true, name: true } },
       quotation: { columns: { id: true, ref: true, version: true } },
       /** The register's dates, to see a date typed over them (domain/vessels scheduleConflict). */
       vessel: { columns: { id: true, etd: true, eta: true } },

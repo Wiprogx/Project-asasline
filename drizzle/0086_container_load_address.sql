@@ -1,0 +1,2 @@
+ALTER TABLE "containers" ADD COLUMN "load_address_id" uuid;--> statement-breakpoint
+ALTER TABLE "containers" ADD CONSTRAINT "containers_load_address_id_contacts_id_fk" FOREIGN KEY ("load_address_id") REFERENCES "public"."contacts"("id") ON DELETE no action ON UPDATE no action;

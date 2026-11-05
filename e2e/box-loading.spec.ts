@@ -35,7 +35,8 @@ test("each box has its own loading, and the trucker copy says what a box still l
   // Box 1 is dropped on site, with a stop on the way; box 2 is left untouched.
   await open(page, `/bookings/${id}/containers`);
   await page.locator("#c0-number").fill("MSCU1234566");
-  await page.locator("#c0-load-address").fill(`Quay 730, Antwerp ${t}`);
+  // The loading address is a place: the booking's — the customer's own — is proposed.
+  await expect(page.locator("#c0-load-address")).toHaveValue(new RegExp(`^${client}`));
   await page.locator("#c0-load-date").fill("2026-10-20");
   await page.locator("#c0-load-time").fill("07:30");
   await choose(page.locator("#c0-mode"), "Drop off container on ground");
@@ -47,7 +48,7 @@ test("each box has its own loading, and the trucker copy says what a box still l
 
   // The driver of box 1 has everything; the copy of box 2 says what is missing.
   await page.goto(`/print/bookings/${id}/trucker?box=1`);
-  await expect(page.getByText(`Quay 730, Antwerp ${t}`)).toBeVisible();
+  await expect(page.getByText(`${client}, Kaai 1`)).toBeVisible();
   await expect(page.getByText("Drop off container on ground")).toBeVisible();
   await expect(page.getByText("Depot Zeebrugge · 2026-10-21 09:00")).toBeVisible();
   await expect(page.getByText("2026-10-22")).toBeVisible();

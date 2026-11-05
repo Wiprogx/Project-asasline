@@ -19,7 +19,7 @@ import {
 } from "@/server/db/schema";
 import { liveLookupLabel, lookupIdByCode } from "@/server/lookups";
 import { readPaymentTerms } from "@/server/accounting-config";
-import { loadingOf } from "./accept-store";
+import { loadingOf, partiesOf } from "./accept-store";
 import { clientTerm, createDestinations } from "./create-store";
 import { withPorts } from "@/server/ports";
 import { syncBookingRules } from "@/server/rules-sync";
@@ -140,8 +140,9 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
         "This quotation",
       );
       const ref = await nextRef(tx, "SB", officeToday());
-      // The loading agreed on the quotation, for the booking and each of its boxes.
-      const loading = await loadingOf(tx, route);
+      // The loading agreed on the quotation, for the booking and each of its boxes; the line
+      // and the trucker it was priced with, and the line's depot and terminal.
+      const [loading, parties] = await Promise.all([loadingOf(tx, route), partiesOf(tx, route)]);
       const [b] = await tx
         .insert(bookings)
         .values({
@@ -154,9 +155,11 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
           // The customer ships an export and receives an import (legacy doConvert).
           shipperId: q.kind === "import" ? null : q.clientId,
           consigneeId: q.kind === "import" ? q.clientId : null,
+          ...parties,
           polId: route.polId,
           podId: route.podId,
           loadingMode: loading.booking.loadingMode,
+          loadAddressId: loading.booking.loadAddressId,
           loadAddress: loading.booking.loadAddress,
           commodity: q.commodity,
           docTypeId: q.docTypeId ?? (await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE)),

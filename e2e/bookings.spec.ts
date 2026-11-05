@@ -22,6 +22,10 @@ test("a booking from creation to history", async ({ page }) => {
 
   await open(page, "/bookings/new");
   await choose(page.getByLabel("Customer"), { label: client });
+  // The boxes are loaded at the customer's own address when it has no delivery address.
+  await expect(page.getByRole("combobox", { name: "Loading address" })).toHaveValue(
+    new RegExp(`^${client}`),
+  );
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("2");

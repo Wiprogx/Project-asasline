@@ -10,9 +10,10 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { removeContainer, updateContainer } from "../container-actions";
 import { containerSchema } from "../schemas";
 import { type BoxGoodsValues, BoxGoodsFields } from "./box-goods-fields";
-import { type BoxLoading, BoxLoadingFields } from "./box-loading-fields";
+import { type BoxLoading, BoxLoadingFields, type LoadPlaces } from "./box-loading-fields";
 import { type LoadingMode } from "@/domain/loading";
 import { type HsCode } from "@/domain/goods";
+import type { BoxOwner } from "@/domain/lookups";
 
 export type Box = BoxLoading &
   BoxGoodsValues & {
@@ -25,36 +26,42 @@ export type Box = BoxLoading &
     cargoKg: number | null;
   };
 
-export function ContainerRow({
-  box,
-  index,
-  bookingId,
-  types,
-  modes,
-  truckers,
-  hsCodes,
-  packageTypes,
-  canRemove,
-  children,
-  sealSources,
-}: {
-  box: Box;
-  index: number;
-  bookingId: string;
+/** What the boxes' forms offer: the lists of Settings and the places a box may be loaded at. */
+export type BoxLists = {
   types: string[];
   modes: readonly LoadingMode[];
   truckers: readonly { id: string; name: string }[];
   hsCodes: readonly HsCode[];
   packageTypes: readonly string[];
-  canRemove: boolean;
-  children?: React.ReactNode;
   /** Who may have sealed a box (Settings › Lists › Seal sources). */
   sealSources: readonly string[];
+  owners: readonly BoxOwner[];
+  specs: Record<string, { tareKg: number; maxGrossKg: number }>;
+  places: LoadPlaces;
+};
+
+export function ContainerRow({
+  box,
+  index,
+  bookingId,
+  lists,
+  canRemove,
+  children,
+}: {
+  box: Box;
+  index: number;
+  bookingId: string;
+  lists: BoxLists;
+  canRemove: boolean;
+  children?: React.ReactNode;
 }) {
   const [state, action, pending] = useToastedAction(updateContainer, undefined, containerSchema);
   const fe = !state.ok ? state.fieldErrors : undefined;
   const p = `c${index}`;
-  const typeOptions = [...new Set([box.type, ...types])].map((t) => ({ value: t, label: t }));
+  const typeOptions = [...new Set([box.type, ...lists.types])].map((t) => ({
+    value: t,
+    label: t,
+  }));
 
   return (
     <div className="grid gap-3 rounded-lg border p-3">
@@ -102,7 +109,7 @@ export function ContainerRow({
         <Field
           id={`${p}-seals`}
           label="Seals (comma-separated)"
-          hint={`Who sealed it after the number: "ABC1234 (${sealSources.join(" · ")})"`}
+          hint={`Who sealed it after the number: "ABC1234 (${lists.sealSources.join(" · ")})"`}
           error={fe?.seals}
         >
           <Input
@@ -128,8 +135,21 @@ export function ContainerRow({
             defaultValue={box.cargoKg ?? ""}
           />
         </Field>
-        <BoxGoodsFields p={p} box={box} hsCodes={hsCodes} packageTypes={packageTypes} fe={fe} />
-        <BoxLoadingFields p={p} box={box} modes={modes} truckers={truckers} fe={fe} />
+        <BoxGoodsFields
+          p={p}
+          box={box}
+          hsCodes={lists.hsCodes}
+          packageTypes={lists.packageTypes}
+          fe={fe}
+        />
+        <BoxLoadingFields
+          p={p}
+          box={box}
+          modes={lists.modes}
+          truckers={lists.truckers}
+          places={lists.places}
+          fe={fe}
+        />
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save"}
         </Button>

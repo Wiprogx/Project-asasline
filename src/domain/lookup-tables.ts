@@ -37,6 +37,13 @@ export const DEFAULT_CONTAINER_TYPE = "default_box";
 /** A customer's delivery address (a linked location): where a door service loads by default. */
 export const DELIVERY_ROLE = "delivery";
 
+/**
+ * The places a shipping line keeps linked under it (Settings › Lists › Location roles): the
+ * depot an empty box is collected at, the terminal a full one is delivered to.
+ */
+export const PLACE_ROLE_CODES = { depot: "depot", terminal: "terminal" } as const;
+export type PlaceRole = keyof typeof PLACE_ROLE_CODES;
+
 /** The professions the catalogue picks a contact by: a shipping line, a trucker. */
 export const PROFESSION_CODES = { carrier: "carrier", transporter: "transporter" } as const;
 

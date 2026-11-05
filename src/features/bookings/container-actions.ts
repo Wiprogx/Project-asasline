@@ -5,6 +5,7 @@ import { type ActionResult, formToObject, invalid, nullMissing } from "@/lib/act
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db, type Tx } from "@/server/db/client";
+import { addressOf } from "@/server/addresses";
 import { syncBookingRules } from "@/server/rules-sync";
 import { bookings, containers } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
@@ -34,7 +35,7 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
   const parsed = containerSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
   const { id, bookingId, version, seals, hsLines, packageType, type, ...fields } = parsed.data;
-  const values = nullMissing(fields, CLEARABLE_CONTAINER);
+  const values: Record<string, unknown> = nullMissing(fields, CLEARABLE_CONTAINER);
 
   return guarded(
     bookingId,
@@ -46,6 +47,11 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
           .from(containers)
           .where(eq(containers.id, id));
         if (box?.bookingId !== bookingId) throw new ConflictError("This container");
+        // A place chosen writes the words the trucker copy reads; a box from before keeps its own.
+        if (values.loadAddressId) {
+          values.loadAddress = await addressOf(tx, values.loadAddressId as string);
+          if (!values.loadAddress) throw new Refused("The loading address no longer exists.");
+        }
         // Every package type and seal source must be in its Settings list (Package types, Seal sources).
         const goods = await resolveGoods(tx, { hsLines, seals, packageType });
         if (goods.problem !== null) throw new Refused(goods.problem);

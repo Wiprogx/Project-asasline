@@ -24,7 +24,8 @@ export const newBookingSchema = z.object({
   kind: z.enum(SHIPMENT_KINDS).default("export"),
   pol: port,
   pod: port,
-  loadAddress: z.string().max(500).optional(),
+  /** The customer's place the boxes are loaded at (domain/load-place). */
+  loadAddressId: z.uuid().optional(),
   loadDate: day.optional(),
   commodity: optional,
   containerType: z.string().min(2).max(10).default("40HC"),
@@ -69,12 +70,13 @@ export const bookingDetailsSchema = z
     destForwarderId: party,
     forwarderId: party,
     customsAgentId: party,
-    pickupDepot: optional,
+    // Where the empty box is collected and the full one delivered: locations linked under the
+    // line with the Depot or Terminal role (domain/line-places); a booking from before keeps its words.
+    pickupDepotId: party,
     pickupDate: day.optional(),
-    terminal: optional,
+    terminalId: party,
     pol: port,
     pod: port,
-    loadAddress: z.string().max(500).optional(),
     loadDate: day.optional(),
     loadTime: time,
     /** The mode agreed on the quotation, the default for a one-box booking. */
@@ -113,12 +115,11 @@ export const CLEARABLE_DETAILS = [
   "destForwarderId",
   "forwarderId",
   "customsAgentId",
-  "pickupDepot",
+  "pickupDepotId",
   "pickupDate",
-  "terminal",
+  "terminalId",
   "pol",
   "pod",
-  "loadAddress",
   "loadDate",
   "loadTime",
   "loadingMode",
@@ -159,8 +160,9 @@ export const containerSchema = z.object({
     ),
   tareKg: kg,
   cargoKg: kg,
-  // Loading — this box only (domain/loading): nothing is inherited between boxes.
-  loadAddress: z.string().max(500).optional(),
+  // Loading — this box only (domain/loading): nothing is inherited between boxes. The loading
+  // address is a place (domain/load-place); its words are written from the contact.
+  loadAddressId: party,
   loadDate: day.optional(),
   loadTime: time,
   loadingMode: z.string().max(80).optional(),
@@ -234,7 +236,7 @@ export const CLEARABLE_CONTAINER = [
   "number",
   "tareKg",
   "cargoKg",
-  "loadAddress",
+  "loadAddressId",
   "loadDate",
   "loadTime",
   "loadingMode",

@@ -54,10 +54,19 @@ export const bookings = pgTable(
     pickupDepot: text(),
     pickupDate: day(),
     terminal: text(),
+    /**
+     * The same as contacts: locations linked under the shipping line with the Depot or Terminal
+     * role (domain/line-places). The words above are what a booking from before said; a place
+     * chosen empties them.
+     */
+    pickupDepotId: uuid().references(() => contacts.id),
+    terminalId: uuid().references(() => contacts.id),
     /** The ports of loading and discharge (Settings › Ports). */
     polId: uuid().references(() => ports.id),
     podId: uuid().references(() => ports.id),
     loadAddress: text(),
+    /** The customer's place the boxes are loaded at (domain/load-place); the words above are written from it. */
+    loadAddressId: uuid().references(() => contacts.id),
     loadDate: day(),
     loadTime: text(),
     /** The mode agreed on the quotation; each box may say its own (domain/loading boxLoading). */
@@ -135,6 +144,8 @@ export const containers = pgTable(
     cargoKg: integer(),
     // Loading — this box only (legacy per-box loading card): nothing is inherited between boxes.
     loadAddress: text(),
+    /** The place this box is loaded at (domain/load-place); the words above are written from it. */
+    loadAddressId: uuid().references(() => contacts.id),
     loadDate: day(),
     loadTime: text(),
     loadingMode: text(),

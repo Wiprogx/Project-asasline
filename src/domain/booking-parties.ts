@@ -14,6 +14,8 @@ export type PartyDef = {
   match?: PartyMatch;
   /** May receive the shipment's invoice (legacy BILLABLE). */
   billable?: boolean;
+  /** Only the contacts that fit are offered (a line is a carrier), not everyone else after them. */
+  only?: boolean;
 };
 
 export const TRADE_PARTIES = [
@@ -34,8 +36,9 @@ export const OFFICE_PARTIES = [
   {
     key: "shippingCoId",
     label: "Shipping line",
-    hint: "The line the box is booked with — it may differ from the one priced on the quotation.",
+    hint: "The line the box is booked with — it may differ from the one priced on the quotation. Contacts with the Carrier profession.",
     match: { professions: ["Carrier", "Company carrier"], tags: ["Company carrier"] },
+    only: true,
   },
   {
     key: "transporterId",
@@ -92,14 +95,15 @@ export function fits(c: Candidate, m: PartyMatch | undefined): boolean {
   );
 }
 
-/** The picker's options: the contacts that fit first, then everyone else, each by name. */
+/** The picker's options: the contacts that fit first, then everyone else (none when `only`), each by name. */
 export function partyOptions(
   contacts: readonly Candidate[],
   m: PartyMatch | undefined,
+  only = false,
 ): { value: string; label: string }[] {
   const byName = (a: Candidate, b: Candidate) => a.name.localeCompare(b.name);
   const first = contacts.filter((c) => fits(c, m)).sort(byName);
-  const rest = contacts.filter((c) => !fits(c, m)).sort(byName);
+  const rest = only ? [] : contacts.filter((c) => !fits(c, m)).sort(byName);
   return [...first, ...rest].map((c) => ({ value: c.id, label: c.name }));
 }
 

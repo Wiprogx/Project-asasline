@@ -1,6 +1,16 @@
 import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, optionsOf, submit, tag } from "./helpers";
+import {
+  choose,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  optionsOf,
+  pickCity,
+  submit,
+  tag,
+} from "./helpers";
 
 async function contact(page: Page, name: string, extra: Record<string, string> = {}) {
   await open(page, "/contacts/new");
@@ -11,7 +21,7 @@ async function contact(page: Page, name: string, extra: Record<string, string> =
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 }
 
-test("the office's counterparts are on the file: doc check gets the news, the line, the depot and the courier pick-up", async ({
+test("the office's counterparts are on the file: doc check gets the news, the line with its depot and terminal, and the courier pick-up", async ({
   page,
 }) => {
   const t = tag();
@@ -22,6 +32,18 @@ test("the office's counterparts are on the file: doc check gets the news, the li
   await contact(page, client, { Email: `client.${t}@example.com` });
   await contact(page, checker, { Email: `check.${t}@example.com`, Tags: "Doc Check" });
   await contact(page, line, { Professions: "Carrier" });
+  // The line's depot: a location linked under it with the Depot role (legacy child address).
+  await page.getByRole("button", { name: "+ Add" }).click();
+  const add = page.getByRole("dialog");
+  await choose(add.getByRole("combobox", { name: "Type" }), { label: "Location" });
+  await choose(add.getByRole("combobox", { name: "Role" }), { label: "Depot" });
+  await add.getByLabel("Name", { exact: true }).fill(`Depot ${t}`);
+  await add.getByLabel("Street").fill("Kaai 1");
+  await add.getByRole("combobox", { name: "Country" }).fill("be");
+  await page.getByRole("option").first().click();
+  await pickCity(page, "Antwerpen", add);
+  await submit(page, add.getByRole("button", { name: "Add", exact: true }));
+  await expectToast(page, `Depot ${t} added as Depot`);
 
   await open(page, "/bookings/new");
   await choose(page.getByLabel("Customer"), { label: client });
@@ -40,15 +62,34 @@ test("the office's counterparts are on the file: doc check gets the news, the li
     const texts = await (await optionsOf(page.getByLabel(label))).allInnerTexts();
     await page.keyboard.press("Escape");
     const at = (name: string) => texts.findIndex((x) => x.trim() === name);
-    expect(at(fits)).toBeGreaterThan(0);
+    expect(at(fits)).toBeGreaterThanOrEqual(0);
     expect(at(fits)).toBeLessThan(at(other));
   };
-  await before("Shipping line", line, client);
+  // The line is a carrier: the customer is not offered as one.
+  const lines = await (await optionsOf(page.getByLabel("Shipping line"))).allInnerTexts();
+  await page.keyboard.press("Escape");
+  expect(lines.map((x) => x.trim())).toContain(line);
+  expect(lines.map((x) => x.trim())).not.toContain(client);
   await before("Doc check", checker, client);
   await choose(page.getByLabel("Doc check"), { label: checker });
+  // The line chosen brings its depot by itself; a terminal it has none of is made in place,
+  // linked under the line as its terminal and picked at once.
   await choose(page.getByLabel("Shipping line"), { label: line });
-  await page.getByLabel("Pick-up depot").fill(`Depot ${t}`);
-  await page.getByLabel("Terminal").fill(`Terminal ${t}`);
+  await expect(page.getByRole("combobox", { name: "Pick-up depot" })).toHaveValue(
+    new RegExp(`^Depot ${t}`),
+  );
+  await page.getByRole("button", { name: "+ New terminal" }).click();
+  const dlg = page.getByRole("dialog");
+  await dlg.getByLabel("Name", { exact: true }).fill(`Terminal ${t}`);
+  await dlg.getByLabel("Street", { exact: true }).fill("Scheldelaan 1");
+  await dlg.getByRole("combobox", { name: "Country" }).fill("BE");
+  await page.getByRole("option").first().click();
+  await pickCity(page, "Antwerpen", dlg);
+  await submit(page, dlg.getByRole("button", { name: "Add the terminal" }));
+  await expectToast(page, `Terminal ${t} added as Terminal`);
+  await expect(page.getByRole("combobox", { name: "Terminal" })).toHaveValue(
+    new RegExp(`^Terminal ${t}`),
+  );
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, "Saved");
 
@@ -56,8 +97,8 @@ test("the office's counterparts are on the file: doc check gets the news, the li
   await expect(page.getByText("Doc check", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: checker })).toBeVisible();
   await expect(page.getByRole("link", { name: line })).toBeVisible();
-  await expect(page.getByText(`Depot ${t}`)).toBeVisible();
-  await expect(page.getByText(`Terminal ${t}`)).toBeVisible();
+  await expect(page.getByRole("link", { name: `Depot ${t}` })).toBeVisible();
+  await expect(page.getByRole("link", { name: `Terminal ${t}` })).toBeVisible();
 
   // Doc check can be written to from the booking.
   await open(page, `${url}/messages`);

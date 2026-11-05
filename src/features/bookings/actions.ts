@@ -17,6 +17,7 @@ import {
 import { DEFAULT_DOC_TYPE } from "@/domain/lookup-tables";
 import { syncBookingRules } from "@/server/rules-sync";
 import { nextRef } from "@/server/sequences";
+import { addressOf } from "@/server/addresses";
 import { portIds } from "@/server/ports";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { cancelSchema, newBookingSchema, restoreSchema, statusSchema } from "./schemas";
@@ -38,6 +39,7 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
       .values({
         ...fields,
         ...(await portIds(tx, { pol, pod }, user.id)),
+        loadAddress: await addressOf(tx, fields.loadAddressId ?? null),
         ref,
         payerId: fields.clientId,
         docTypeId: await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE),

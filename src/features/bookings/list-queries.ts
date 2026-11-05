@@ -82,7 +82,7 @@ function searchWhere(q: string): SQL {
     portMatches(b.podId, like),
     ...[b.commodity, b.terminal, b.pickupDepot, b.loadAddress].map((c) => ilike(c, like)),
     ilike(contacts.name, like),
-    sql`exists (select 1 from contacts p where p.name ilike ${like} and p.id in (${b.payerId}, ${b.shipperId}, ${b.consigneeId}, ${b.notifyId}, ${b.docCheckId}, ${b.shippingCoId}, ${b.transporterId}, ${b.destForwarderId}, ${b.forwarderId}, ${b.customsAgentId}))`,
+    sql`exists (select 1 from contacts p where p.name ilike ${like} and p.id in (${b.payerId}, ${b.shipperId}, ${b.consigneeId}, ${b.notifyId}, ${b.docCheckId}, ${b.shippingCoId}, ${b.transporterId}, ${b.destForwarderId}, ${b.forwarderId}, ${b.customsAgentId}, ${b.pickupDepotId}, ${b.terminalId}))`,
     sql`exists (select 1 ${liveBoxes} and (c.number ilike ${like} or c.load_address ilike ${like}
       or c.bl_description ilike ${like}
       or exists (select 1 from container_seals s where s.container_id = c.id and s.archived_at is null and s.number ilike ${like})

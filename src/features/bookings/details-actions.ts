@@ -11,10 +11,11 @@ import { syncBookingRules } from "@/server/rules-sync";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import { bookingDetailsSchema, CLEARABLE_DETAILS } from "./schemas";
 import { PARTY_KEYS } from "@/domain/booking-parties";
+import { PLACE_KEYS } from "@/domain/line-places";
 import { guarded, Refused } from "./settle";
 
-// Every party the form edits; the customer has its own path (domain/booking-parties).
-const PARTIES = PARTY_KEYS.filter((k) => k !== "clientId");
+// Every contact the form edits: the parties (the customer has its own path) and the places.
+const PARTIES = [...PARTY_KEYS.filter((k) => k !== "clientId"), ...PLACE_KEYS];
 
 /**
  * Saves the editable details. Parties are stored by contact id, never by name (legacy 10.1):
@@ -40,6 +41,9 @@ export async function updateBookingDetails(_p: ActionResult, fd: FormData): Prom
           ...details,
           ...(await portIds(tx, { pol: pol as string | null, pod: pod as string | null }, user.id)),
         };
+        // A place chosen says it all: the words a booking from before carried are emptied.
+        if (values.pickupDepotId) values.pickupDepot = null;
+        if (values.terminalId) values.terminal = null;
 
         const picked = values as Record<string, unknown>;
         const ids = PARTIES.map((k) => picked[k]).filter((v): v is string => typeof v === "string");

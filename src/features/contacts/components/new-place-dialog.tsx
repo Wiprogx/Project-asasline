@@ -15,7 +15,8 @@ import {
 import type { Country } from "@/domain/countries";
 import { usePlaceSlot } from "@/components/shared/place-slot";
 import { useToastedAction } from "@/hooks/use-action-toast";
-import { createDeliveryPlace } from "../place-actions";
+import { createLinkedPlace } from "../place-actions";
+import { type LinkedPlaceRole, PLACE_WORDS } from "../place-roles";
 import { LinkedFields } from "./linked-fields";
 
 /** What a page gives the dialog once: the lists its form offers. */
@@ -25,35 +26,44 @@ export type NewPlaceLists = {
 };
 
 /**
- * "+ New location" on a quotation: a location contact typed in full — the same form as a
- * location added from a contact's page — linked to the customer as its delivery address when
- * one is chosen, a location of its own otherwise; picked for the box at once.
+ * "+ New location" on a quotation, "+ New depot" / "+ New terminal" on a booking: a location
+ * contact typed in full — the same form as a location added from a contact's page — linked
+ * under the contact chosen (the customer as its delivery address, the shipping line as its
+ * depot or terminal) when one is, a location of its own otherwise; picked at once.
  */
-export function NewPlaceDialog({ lists }: { lists: NewPlaceLists }) {
-  // The customer chosen and what to do with the place: lent by the form it sits in.
+export function NewPlaceDialog({
+  lists,
+  role = "delivery",
+}: {
+  lists: NewPlaceLists;
+  role?: LinkedPlaceRole;
+}) {
+  // The contact chosen and what to do with the place: lent by the form it sits in.
   const { clientId, onMade } = usePlaceSlot();
   const [open, setOpen] = useState(false);
-  const [state, run, pending] = useToastedAction(createDeliveryPlace, (place) => {
+  const [state, run, pending] = useToastedAction(createLinkedPlace, (place) => {
     onMade(place);
     setOpen(false);
   });
   const fe = !state.ok ? state.fieldErrors : undefined;
+  const w = PLACE_WORDS[role];
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button type="button" variant="outline" size="sm" />}>
-        + New location
+        + New {w.noun}
       </DialogTrigger>
       <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-5xl">
         <ActionForm action={run} className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>New location</DialogTitle>
+            <DialogTitle>New {w.noun}</DialogTitle>
             <DialogDescription>
               {clientId
-                ? "Kept as a location contact of the customer — its delivery address — offered first on its next quotations."
-                : "Kept as a location contact of its own; choose the customer to link it as its delivery address."}
+                ? `Kept as a location contact of the ${w.owner} — its ${w.role.toLowerCase()} — offered first on its next ${w.next}.`
+                : `Kept as a location contact of its own; choose the ${w.owner} to link it as its ${w.role.toLowerCase()}.`}
             </DialogDescription>
           </DialogHeader>
           {clientId && <input type="hidden" name="contactId" value={clientId} />}
+          <input type="hidden" name="role" value={role} />
           <LinkedFields
             type="location"
             values={{}}
@@ -69,7 +79,7 @@ export function NewPlaceDialog({ lists }: { lists: NewPlaceLists }) {
           )}
           <DialogFooter>
             <Button type="submit" disabled={pending}>
-              {pending ? "Adding…" : "Add the location"}
+              {pending ? "Adding…" : `Add the ${w.noun}`}
             </Button>
           </DialogFooter>
         </ActionForm>

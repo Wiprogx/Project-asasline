@@ -41,7 +41,7 @@ test("each box's trucker copy goes to its own trucker, naming only its container
   // Box 1 is agreed with its own trucker; box 2 is not.
   await open(page, `/bookings/${id}/containers`);
   await page.locator("#c0-number").fill("MSCU1234566");
-  await page.locator("#c0-load-address").fill(`Quay 730, Antwerp ${t}`);
+  await expect(page.locator("#c0-load-address")).toHaveValue(new RegExp(`^${client}`));
   await page.locator("#c0-load-date").fill("2026-10-20");
   await page.locator("#c0-load-time").fill("07:30");
   await choose(page.locator("#c0-mode"), "Drop off container on ground");
@@ -56,5 +56,5 @@ test("each box's trucker copy goes to its own trucker, naming only its container
   await expect(page.getByLabel("WhatsApp number")).toHaveValue("+32470111222");
   const body = page.getByLabel("Message", { exact: true });
   await expect(body).toHaveValue(/MSCU1234566 \(box 1\)/);
-  await expect(body).toHaveValue(new RegExp(`Quay 730, Antwerp ${t}`));
+  await expect(body).toHaveValue(new RegExp(`${client}, Kaai 1`));
 });

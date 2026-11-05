@@ -1,12 +1,46 @@
 import "server-only";
-import { inArray } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import type { Stop } from "@/domain/loading";
-import { type RouteBox, type RouteStop, stopAddress } from "@/domain/route-service";
-import { cityNameOf } from "@/server/city-sql";
+import type { RouteBox, RouteStop } from "@/domain/route-service";
+import { addressesOf } from "@/server/addresses";
 import type { DbOrTx } from "@/server/db/client";
-import { contacts } from "@/server/db/schema";
+import { quotationLines, rateItems } from "@/server/db/schema";
+import { lineDefaults } from "@/server/line-places";
 
-// Internal to accepting a destination: its loading, carried onto the booking and its boxes.
+// Internal to accepting a destination: its loading and its carriers, carried onto the booking.
+
+/**
+ * Who the destination was priced with (legacy: the lane's carrier on the booking): the shipping
+ * line of the ocean leg it was built from, the trucker of its inland line, and — the line
+ * known — its latest linked depot and terminal. The office may change any of them on the booking.
+ */
+export async function partiesOf(tx: DbOrTx, route: { id: string; laneId: string | null }) {
+  const [lane] = route.laneId
+    ? await tx
+        .select({ carrierId: rateItems.carrierId })
+        .from(rateItems)
+        .where(eq(rateItems.id, route.laneId))
+    : [];
+  const [inland] = await tx
+    .select({ carrierId: rateItems.carrierId })
+    .from(quotationLines)
+    .innerJoin(rateItems, eq(rateItems.id, quotationLines.itemId))
+    .where(
+      and(
+        eq(quotationLines.routeId, route.id),
+        isNull(quotationLines.archivedAt),
+        eq(rateItems.category, "inland"),
+      ),
+    )
+    .orderBy(asc(quotationLines.position))
+    .limit(1);
+  const shippingCoId = lane?.carrierId ?? null;
+  return {
+    shippingCoId,
+    transporterId: inland?.carrierId ?? null,
+    ...(await lineDefaults(tx, shippingCoId)),
+  };
+}
 
 type Route = {
   boxes: number;
@@ -15,38 +49,6 @@ type Route = {
   stops: RouteStop[];
   boxDetails: RouteBox[];
 };
-
-/** A place as the booking and the trucker copy write it: "Name, Kaai 1, 2000 Antwerpen, BE". */
-async function addressesOf(tx: DbOrTx, ids: readonly string[]): Promise<Map<string, string>> {
-  if (!ids.length) return new Map();
-  const rows = await tx
-    .select({
-      id: contacts.id,
-      name: contacts.name,
-      street: contacts.street,
-      zip: contacts.zip,
-      city: cityNameOf(contacts.cityId),
-      country: contacts.country,
-    })
-    .from(contacts)
-    .where(inArray(contacts.id, [...ids]));
-  return new Map(
-    rows.map((r) => [
-      r.id,
-      [
-        r.name,
-        stopAddress({
-          street: r.street ?? "",
-          zip: r.zip,
-          city: r.city ?? "",
-          country: r.country ?? "",
-        }),
-      ]
-        .filter(Boolean)
-        .join(", "),
-    ]),
-  );
-}
 
 /**
  * What accepting a destination carries over (legacy doConvert): the booking's loading address
@@ -72,8 +74,10 @@ export async function loadingOf(tx: DbOrTx, route: Route) {
   const at = await addressesOf(tx, ids);
   const asStops = (stops: readonly RouteStop[]): Stop[] =>
     stops.map((s) => ({ address: at.get(s.contactId) ?? "", date: s.date, time: s.time }));
+  const loadAddressId = route.loadAddressId ?? per[0].loadAddressId ?? null;
   return {
     booking: {
+      loadAddressId,
       loadAddress: route.loadAddressId
         ? (at.get(route.loadAddressId) ?? null)
         : per[0].loadAddressId

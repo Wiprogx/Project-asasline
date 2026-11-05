@@ -1,8 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
+import { SearchPicker } from "@/components/shared/search-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +13,7 @@ import { useToastedAction } from "@/hooks/use-action-toast";
 import { updateBookingDetails } from "../details-actions";
 import { bookingDetailsSchema } from "../schemas";
 import { modeNote, type LoadingMode } from "@/domain/loading";
-import { OfficePartiesCard } from "./office-parties-card";
+import { type BookingPlaces, OfficePartiesCard } from "./office-parties-card";
 
 type Values = { id: string; version: number; [field: string]: string | number | null };
 type Option = { id: string; name: string; professions?: string[] | null; tags?: string[] | null };
@@ -50,14 +52,17 @@ export function BookingDetailsForm({
   modes,
   docTypes,
   places = { depots: [], terminals: [] },
+  dialogs = {},
 }: {
   values: Values;
   contacts: Option[];
   modes: readonly LoadingMode[];
   /** The transport documents (Settings › Lists › Document types). */
   docTypes: readonly { value: string; label: string }[];
-  /** Depot and terminal suggestions from the contacts' addresses. */
-  places?: { depots: readonly string[]; terminals: readonly string[] };
+  /** The depots and terminals linked to the contacts (domain/line-places). */
+  places?: BookingPlaces;
+  /** "+ New depot" / "+ New terminal", rendered by the page. */
+  dialogs?: { depot?: ReactNode; terminal?: ReactNode };
 }) {
   const [state, action, pending] = useToastedAction(
     updateBookingDetails,
@@ -78,18 +83,25 @@ export function BookingDetailsForm({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           {PARTY_FIELDS.map(([name, label]) => (
             <Field key={name} id={name} label={label} error={fe?.[name]}>
-              <NativeSelect
+              <SearchPicker
                 id={name}
                 name={name}
-                defaultValue={values[name] ?? ""}
-                placeholder="—"
+                defaultValue={values[name] ? String(values[name]) : null}
+                placeholder="Search…"
+                empty="No contact matches."
                 options={contactOptions}
               />
             </Field>
           ))}
         </CardContent>
       </Card>
-      <OfficePartiesCard values={values} contacts={contacts} places={places} errors={fe} />
+      <OfficePartiesCard
+        values={values}
+        contacts={contacts}
+        places={places}
+        dialogs={dialogs}
+        errors={fe}
+      />
       <Card>
         <CardHeader>
           <CardTitle>Shipment</CardTitle>
@@ -123,9 +135,6 @@ export function BookingDetailsForm({
               />
             </Field>
           ))}
-          <Field id="loadAddress" label="Loading address" className="sm:col-span-2 lg:col-span-3">
-            <Input id="loadAddress" name="loadAddress" defaultValue={values.loadAddress ?? ""} />
-          </Field>
           <Field
             id="loadingMode"
             label="Loading mode"

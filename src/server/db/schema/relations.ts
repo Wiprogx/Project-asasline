@@ -135,6 +135,21 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
     references: [contacts.id],
     relationName: "customsAgent",
   }),
+  depotPlace: one(contacts, {
+    fields: [bookings.pickupDepotId],
+    references: [contacts.id],
+    relationName: "depotPlace",
+  }),
+  terminalPlace: one(contacts, {
+    fields: [bookings.terminalId],
+    references: [contacts.id],
+    relationName: "terminalPlace",
+  }),
+  loadPlace: one(contacts, {
+    fields: [bookings.loadAddressId],
+    references: [contacts.id],
+    relationName: "loadPlace",
+  }),
   containers: many(containers),
 }));
 
