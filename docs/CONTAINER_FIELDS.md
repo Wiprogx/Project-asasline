@@ -1,3 +1,12 @@
+---
+title: "Container fields"
+description: "What belongs to the container and what to the booking: the rule, the inventory of every column, and the steps that move the last box-level facts off the booking."
+category: plan
+status: living
+audience: ["developer", "agent"]
+tags: ["tms", "bookings"]
+---
+
 # What belongs to the container, what belongs to the booking
 
 Analysis of 2026-11-05, before moving the last box-level facts off the booking. Lnnnn is a
