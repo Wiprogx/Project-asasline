@@ -12,6 +12,7 @@ import { readContainerSpecs } from "@/server/container-config";
 import { cityNameOf } from "@/server/city-sql";
 import { specsByType } from "@/domain/lookups";
 import { scheduleConflict } from "@/domain/vessels";
+import { addressesOf } from "@/server/addresses";
 
 /**
  * What a printed copy of the booking needs: the booking with its boxes, the customer as it
@@ -33,12 +34,17 @@ export async function bookingCopy(id: string) {
         .where(inArray(contacts.id, truckerIds))
     : [];
   const nameOf = new Map(truckers.map((t) => [t.id, t.name]));
+  // The depots the empties are collected at, written as the driver needs them: name and address.
+  const depotWords = await addressesOf(db, [
+    ...new Set(booking.containers.map((c) => c.pickupDepotId).filter((x): x is string => !!x)),
+  ]);
   const hs = await readHsCodes();
   const b = {
     ...booking,
     containers: booking.containers.map((c) => ({
       ...c,
       transporter: c.transporterId ? (nameOf.get(c.transporterId) ?? null) : null,
+      pickupDepot: c.pickupDepotId ? (depotWords.get(c.pickupDepotId) ?? null) : null,
       hsLines: c.hsLines.map((l) => ({ ...l, description: hsDescription(hs, l.code) })),
     })),
   };

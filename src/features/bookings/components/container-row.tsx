@@ -11,11 +11,13 @@ import { removeContainer, updateContainer } from "../container-actions";
 import { containerSchema } from "../schemas";
 import { type BoxGoodsValues, BoxGoodsFields } from "./box-goods-fields";
 import { type BoxLoading, BoxLoadingFields, type LoadPlaces } from "./box-loading-fields";
+import { type BoxPickup, BoxPickupFields, type PickupPlaces } from "./box-pickup-fields";
 import { type LoadingMode } from "@/domain/loading";
 import { type HsCode } from "@/domain/goods";
 import type { BoxOwner } from "@/domain/lookups";
 
 export type Box = BoxLoading &
+  BoxPickup &
   BoxGoodsValues & {
     id: string;
     version: number;
@@ -38,6 +40,7 @@ export type BoxLists = {
   owners: readonly BoxOwner[];
   specs: Record<string, { tareKg: number; maxGrossKg: number }>;
   places: LoadPlaces;
+  pickup: PickupPlaces;
 };
 
 export function ContainerRow({
@@ -142,6 +145,7 @@ export function ContainerRow({
           packageTypes={lists.packageTypes}
           fe={fe}
         />
+        <BoxPickupFields p={p} box={box} places={lists.pickup} fe={fe} />
         <BoxLoadingFields
           p={p}
           box={box}

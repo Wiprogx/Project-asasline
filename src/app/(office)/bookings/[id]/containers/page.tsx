@@ -60,6 +60,14 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
     proposed: b.loadAddressId,
     newPlace: <NewPlaceDialog lists={{ countries, salutations }} />,
   };
+  // Where its empty is collected: the line's depots first, the booking's proposed.
+  const pickup = {
+    depots: rolePlaces.depots,
+    locations: rolePlaces.locations,
+    lineId: b.shippingCoId,
+    proposed: b.pickupDepotId,
+    newDepot: <NewPlaceDialog lists={{ countries, salutations }} role="depot" />,
+  };
   const lists = {
     types,
     modes,
@@ -70,6 +78,7 @@ export default async function ContainersPage({ params }: PageProps<"/bookings/[i
     owners,
     specs,
     places,
+    pickup,
   };
 
   return (

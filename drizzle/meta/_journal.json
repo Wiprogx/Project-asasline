@@ -610,6 +610,13 @@
       "when": 1793882327981,
       "tag": "0086_container_load_address",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1793887510810,
+      "tag": "0087_container_pickup",
+      "breakpoints": true
     }
   ]
 }

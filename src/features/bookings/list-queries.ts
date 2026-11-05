@@ -85,6 +85,7 @@ function searchWhere(q: string): SQL {
     sql`exists (select 1 from contacts p where p.name ilike ${like} and p.id in (${b.payerId}, ${b.shipperId}, ${b.consigneeId}, ${b.notifyId}, ${b.docCheckId}, ${b.shippingCoId}, ${b.transporterId}, ${b.destForwarderId}, ${b.forwarderId}, ${b.customsAgentId}, ${b.pickupDepotId}, ${b.terminalId}))`,
     sql`exists (select 1 ${liveBoxes} and (c.number ilike ${like} or c.load_address ilike ${like}
       or c.bl_description ilike ${like}
+      or exists (select 1 from contacts d where d.id = c.pickup_depot_id and d.name ilike ${like})
       or exists (select 1 from container_seals s where s.container_id = c.id and s.archived_at is null and s.number ilike ${like})
       or exists (select 1 from container_hs_lines h where h.container_id = c.id and h.archived_at is null and h.code ilike ${like})))`,
   )!;

@@ -58,6 +58,9 @@ export type CopyBox = {
   loadingMode: string | null;
   /** The trucker's name, resolved by the query; null when none is chosen. */
   transporter: string | null;
+  /** The depot the empty is collected at, as the paper writes a place; and the day. */
+  pickupDepot: string | null;
+  pickupDate: string | null;
   pickBackDate: string | null;
   pickBackTime: string | null;
   stops: readonly Stop[];
@@ -135,6 +138,8 @@ export function loadingRows(b: CopyBooking, box: CopyBox, boxCount: number): Row
   const l = boxLoading({ ...b, boxCount }, box);
   const when = [l.date, l.time].filter(Boolean).join(" ");
   return [
+    ["Empty collected at", dash(box.pickupDepot)],
+    ["Empty collected on", dash(box.pickupDate)],
     [addressLabel(b.kind), dash(l.address)],
     ["Loading date", when || "—"],
     ["Loading mode", dash(l.mode)],

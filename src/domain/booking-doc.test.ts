@@ -24,6 +24,8 @@ const bare = (number: string | null): CopyBox => ({
   loadTime: null,
   loadingMode: null,
   transporter: null,
+  pickupDepot: null,
+  pickupDate: null,
   pickBackDate: null,
   pickBackTime: null,
   stops: [],

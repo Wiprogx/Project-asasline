@@ -129,13 +129,13 @@ per-box dates either. They arrive with the messages that report them, not from t
 
 Each is one commit, gate green, browser suite green on a production build.
 
-- **A — loading date, time and mode out of the editor.** Remove them from the booking details
+- **A — loading date, time and mode out of the editor** (done 2026-11-05). Remove them from the booking details
   form as the address was; the booking's values become the proposal shown read-only on the
   booking ("Proposed for the boxes: date, time, mode, trucker — change them on each box").
   A new box starts from the booking's proposal (legacy `BOX_DEF`). The `loading` anchor of the
   document rules reads the earliest box date, the booking's proposal standing in while no box
   has one; a per-box rule reads its box's date. `boxLoading` keeps the one-box shortcut.
-- **B — pick-up depot and date per box.** Migration: `containers.pickup_depot_id`,
+- **B — pick-up depot and date per box** (done 2026-11-05, migration 0087). Migration: `containers.pickup_depot_id`,
   `containers.pickup_date`. The per-box card gets "Empty collected at / on", the line's depot
   proposed; the trucker copy reads the box's; the bookings search finds a booking by a box's
   depot. The booking's `pickup_depot_id` / `pickup_date` stay as the proposal.
