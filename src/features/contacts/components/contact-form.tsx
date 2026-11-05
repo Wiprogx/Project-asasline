@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { IdFormat } from "@/domain/contacts";
-import { type Country, langOf } from "@/domain/countries";
+import { type AddressPlace, type Country, langOfAddress } from "@/domain/countries";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import type { ActionResult } from "@/lib/action-result";
 import type { ContactFormValues } from "../form-values";
 import { checkedContactSchema } from "../schemas";
-import { AddressFields, type Errors, ReachFields, SiteFields } from "./contact-field-groups";
+import { AddressFields } from "./address-fields";
+import { type Errors, ReachFields, SiteFields } from "./contact-field-groups";
 import { FormSection, SectionJumps, TextFields, type TextFieldSpec } from "./form-section";
 import { IdentityFields } from "./identity-fields";
 import { PricingFields } from "./pricing-fields";
@@ -117,12 +118,13 @@ export function ContactForm({
   const fe = !state.ok ? state.fieldErrors : undefined;
   // The type decides the fields: a location has its site and no tax numbers or billing.
   const [type, setType] = useState(values.type ?? "company");
-  // The language follows the country picked (Settings › Countries) until it is chosen by hand.
+  // The language follows the address — the country (Settings › Countries), its region or postcode
+  // (Settings › Regional languages: Flanders in Dutch) — until it is chosen by hand.
   const [lang, setLang] = useState(values.lang ?? (values.id ? "en" : ""));
   const langByHand = useRef(false);
   // A country whose language the office does not write (China: Chinese) means English.
-  const followCountry = (code: string | null) => {
-    if (code && !langByHand.current) setLang(langOf(countries, code));
+  const followAddress = (place: AddressPlace) => {
+    if (place.country && !langByHand.current) setLang(langOfAddress(countries, place));
   };
   const isLocation = type === "location";
 
@@ -155,7 +157,7 @@ export function ContactForm({
         <ReachFields values={values} fe={fe} isPerson={type === "person"} />
       </FormSection>
       <FormSection id="contact-address">
-        <AddressFields values={values} fe={fe} countries={countries} onCountry={followCountry} />
+        <AddressFields values={values} fe={fe} countries={countries} onAddress={followAddress} />
       </FormSection>
       <FormSection id="contact-lists">
         <ListField

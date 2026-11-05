@@ -156,3 +156,43 @@ test("the list's columns and their widths are the person's own and survive a rel
   await saved;
   await expect(table.getByRole("columnheader", { name: "Language" })).toHaveCount(0);
 });
+
+test("a new contact's language follows its address: Dutch in Flanders, French in Brussels, until chosen by hand", async ({
+  page,
+}) => {
+  const name = `E2E Flanders ${tag()}`;
+  await login(page);
+  await open(page, "/contacts/new");
+  const lang = page.locator("#lang");
+  await expect(lang).toHaveAttribute("data-value", "");
+  await page.getByLabel("Name", { exact: true }).fill(name);
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  // Belgium writes French; a Flemish postcode typed says Dutch before its city is even known
+  // (8000 is Brugge and Koolkerke: no city is filled in, the postcode alone decides).
+  await expect(lang).toHaveAttribute("data-value", "fr");
+  await page.getByLabel("Postcode").fill("8000");
+  await expect(lang).toHaveAttribute("data-value", "nl");
+  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("");
+  // A city of the Brussels region picked: French again.
+  await pickCity(page, "Brussels");
+  await expect(lang).toHaveAttribute("data-value", "fr");
+  await page.getByLabel("Postcode").fill("9000");
+  await expect(lang).toHaveAttribute("data-value", "nl");
+  // Chosen by hand, the language no longer follows the address.
+  await choose(lang, "fr");
+  await page.getByLabel("Postcode").fill("2000");
+  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue(/^Antwerp/);
+  await expect(lang).toHaveAttribute("data-value", "fr");
+  // Left to the address, the server writes the same language on the saved contact.
+  await open(page, "/contacts/new");
+  await page.getByLabel("Name", { exact: true }).fill(name);
+  await page.getByLabel("Country", { exact: true }).fill("BE");
+  await page.getByRole("option").first().click();
+  await page.getByLabel("Postcode").fill("2000");
+  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue(/^Antwerp/);
+  await fillMandatory(page);
+  await page.getByRole("button", { name: "Create contact" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await expect(page.locator("#lang")).toHaveAttribute("data-value", "nl");
+});

@@ -18,8 +18,7 @@ import { isRefusal, registerChecks, verdictWords } from "./register-checks";
 import { refused } from "./save-checks";
 import { archiveSchema, checkedContactSchema, versionRef } from "./schemas";
 import { readIdFormats } from "@/server/id-config";
-import { langOf } from "@/domain/countries";
-import { readCountries } from "@/server/countries";
+import { langForAddress } from "@/server/address-lang";
 import { withCities } from "@/server/cities";
 
 async function settle(id: string) {
@@ -39,8 +38,8 @@ export async function createContact(_p: ActionResult, fd: FormData): Promise<Act
   const checks = await registerChecks(parsed.data, (k) => !!parsed.data[k]);
   if (isRefusal(checks)) return checks;
 
-  // No language chosen: the one the office writes to that country in (legacy langOf).
-  const lang = parsed.data.lang ?? langOf(await readCountries(), parsed.data.country);
+  // No language chosen: the one the office writes to that address (its region, else its country).
+  const lang = parsed.data.lang ?? (await langForAddress(parsed.data));
   const id = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(contacts)

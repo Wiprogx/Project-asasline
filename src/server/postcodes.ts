@@ -32,6 +32,7 @@ export async function postcodesLike(
       place: postalCodes.place,
       cityId: postalCodes.cityId,
       city: cities.name,
+      region: cities.region,
     })
     .from(postalCodes)
     .leftJoin(cities, eq(cities.id, postalCodes.cityId))
@@ -58,6 +59,7 @@ export function postcodesOfCity(country: string, cityId: string): Promise<Postco
       place: postalCodes.place,
       cityId: postalCodes.cityId,
       city: cities.name,
+      region: cities.region,
     })
     .from(postalCodes)
     .innerJoin(cities, eq(cities.id, postalCodes.cityId))

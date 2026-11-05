@@ -35,8 +35,8 @@ export function PostcodeField({
   defaultValue?: string | null;
   /** The codes suggested before anything is typed: the city's own, once it is picked. */
   offered?: readonly PostcodeOption[];
-  /** Told the city of the postcode typed or picked, when the list knows it. */
-  onCity?: (city: { id: string; name: string }) => void;
+  /** Told the city of the postcode typed or picked, when the list knows it, with its region. */
+  onCity?: (city: { id: string; name: string; region: string | null }) => void;
   /** Told what the field holds as the person types. */
   onValue?: (zip: string) => void;
   "aria-describedby"?: string;
@@ -51,7 +51,7 @@ export function PostcodeField({
     if (!country) return;
     const hits = among.filter((o) => o.code === postcodeKey(country, value) && o.cityId);
     if (new Set(hits.map((o) => o.cityId)).size === 1 && hits[0].cityId && hits[0].city)
-      onCity?.({ id: hits[0].cityId, name: hits[0].city });
+      onCity?.({ id: hits[0].cityId, name: hits[0].city, region: hits[0].region });
   };
 
   /** The suggestions for what was typed, fetched once the typing pauses. */

@@ -5,16 +5,16 @@ import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { type Country, langOf } from "@/domain/countries";
+import { type Country, langOfAddress } from "@/domain/countries";
 import type { ContactFormValues } from "../form-values";
 import {
-  AddressFields,
   type Errors,
   LanguageSelect,
   PersonNameFields,
   ReachFields,
   SiteFields,
 } from "./contact-field-groups";
+import { AddressFields } from "./address-fields";
 
 /** The role the linked contact has here; one no longer offered still shows, so a save keeps it. */
 export function RoleSelect({
@@ -99,8 +99,8 @@ export function LinkedFields({
           {...group}
           countries={countries}
           compact
-          onCountry={(code) => {
-            if (code && !byHand.current) setLang(langOf(countries, code));
+          onAddress={(place) => {
+            if (place.country && !byHand.current) setLang(langOfAddress(countries, place));
           }}
         />
         <LanguageSelect

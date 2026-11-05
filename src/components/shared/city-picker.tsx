@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type CityOption, cityKey, cityLabel } from "@/domain/cities";
 import { type PickerOption, SearchPicker } from "./search-picker";
 
@@ -34,6 +34,7 @@ export function CityPicker({
   country,
   defaultValue,
   defaultLabel,
+  onChange,
   ...props
 }: {
   id: string;
@@ -43,15 +44,16 @@ export function CityPicker({
   defaultValue?: string | null;
   defaultLabel?: string | null;
   required?: boolean;
-  /** Told the city picked (its id), null when cleared. */
-  onChange?: (id: string | null) => void;
+  /** Told the city picked (its id and the row itself), null when cleared. */
+  onChange?: (id: string | null, city: CityOption | null) => void;
   "aria-describedby"?: string;
   "aria-invalid"?: boolean;
 }) {
-  const [options, setOptions] = useState<PickerOption[]>([]);
+  const [cities, setCities] = useState<CityOption[]>([]);
+  const options = useMemo(() => cities.map(optionOf), [cities]);
   useEffect(() => {
     let live = true;
-    if (country) void citiesOf(country).then((cs) => live && setOptions(cs.map(optionOf)));
+    if (country) void citiesOf(country).then((cs) => live && setCities(cs));
     return () => {
       live = false;
     };
@@ -68,6 +70,7 @@ export function CityPicker({
       id={id}
       name={name}
       options={[...own, ...options]}
+      onChange={(id) => onChange?.(id, cities.find((c) => c.id === id) ?? null)}
       defaultValue={defaultValue}
       limit={50}
       placeholder={country ? "Search a city" : "Choose the country first"}

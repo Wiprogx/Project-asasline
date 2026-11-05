@@ -22,9 +22,9 @@ export default async function CountriesPage({ searchParams }: PageProps<"/settin
           <CardTitle>Countries</CardTitle>
           <CardDescription>
             Every ISO country, offered on the country fields: the name the lists show, the dial code
-            of its phones and the language a new contact there is written to. A country&rsquo;s
-            cities are what its contacts&rsquo; city field offers — open a country to add, correct
-            or merge them.
+            of its phones and the language a new contact there is written to — unless its region
+            says otherwise (Regional languages). A country&rsquo;s cities are what its
+            contacts&rsquo; city field offers — open a country to add, correct or merge them.
           </CardDescription>
         </div>
         <AddCountry />

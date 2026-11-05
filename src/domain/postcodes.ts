@@ -8,6 +8,8 @@ export type PostcodeOption = {
   place: string;
   cityId: string | null;
   city: string | null;
+  /** The city's region (Settings › Countries), which may decide the language written to. */
+  region: string | null;
 };
 
 /** The code as the list holds it: "1011 ab" → "1011" in the Netherlands, "l-1009" → "L-1009". */

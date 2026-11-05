@@ -1,12 +1,11 @@
 "use server";
 
-import { langOf } from "@/domain/countries";
 import { DELIVERY_ROLE } from "@/domain/lookup-tables";
 import { type ActionResult, formToObject, invalid } from "@/lib/action-result";
+import { langForAddress } from "@/server/address-lang";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
-import { readCountries } from "@/server/countries";
 import { setContactLabels } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { contacts } from "@/server/db/schema";
@@ -37,7 +36,7 @@ async function createLocation(
   if (!parsed.success) return invalid(parsed.error);
   const taken = await refused(parsed.data);
   if (taken) return taken;
-  const lang = parsed.data.lang ?? langOf(await readCountries(), parsed.data.country);
+  const lang = parsed.data.lang ?? (await langForAddress(parsed.data));
   const id = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(contacts)

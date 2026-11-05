@@ -1,17 +1,22 @@
 import "server-only";
 import { asc } from "drizzle-orm";
 import type { Country } from "@/domain/countries";
+import { withRegions } from "@/domain/region-languages";
 import { cached, invalidateTags } from "./cache/cache";
 import { db } from "./db/client";
 import { countries } from "./db/schema";
+import { readRegionLanguages, REGION_LANGUAGES_TAG } from "./region-languages-config";
 
 export const COUNTRIES_TAG = "countries";
 
-/** Every country by name, archived ones flagged (a record keeps naming its country). */
+/**
+ * Every country by name, archived ones flagged (a record keeps naming its country), each with
+ * the regions written to in another language (Settings › Regional languages).
+ */
 export const readCountries = () =>
   cached(
     "countries:all",
-    { ttlSeconds: 600, tags: [COUNTRIES_TAG] },
+    { ttlSeconds: 600, tags: [COUNTRIES_TAG, REGION_LANGUAGES_TAG] },
     async (): Promise<Country[]> => {
       const rows = await db
         .select({
@@ -23,7 +28,10 @@ export const readCountries = () =>
         })
         .from(countries)
         .orderBy(asc(countries.name));
-      return rows.map(({ archivedAt, ...c }) => ({ ...c, archived: archivedAt !== null }));
+      return withRegions(
+        rows.map(({ archivedAt, ...c }) => ({ ...c, archived: archivedAt !== null })),
+        await readRegionLanguages(),
+      );
     },
   );
 

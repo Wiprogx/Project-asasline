@@ -6,11 +6,18 @@ import { officeToday } from "@/server/clock";
 import { db } from "@/server/db/client";
 import { bookings, quotations, sequences } from "@/server/db/schema";
 import { readRateSourcesForEdit } from "@/server/rate-sources-config";
+import { readRegionLanguagesForEdit } from "@/server/region-languages-config";
 
 /** The rate sources table as Settings edits it, with the version the save is checked against. */
 export async function rateSourcesForEdit() {
   await requirePermission("app.settings");
   return readRateSourcesForEdit();
+}
+
+/** The regional languages table as Settings edits it, with the version the save is checked against. */
+export async function regionLanguagesForEdit() {
+  await requirePermission("app.settings");
+  return readRegionLanguagesForEdit();
 }
 
 /**

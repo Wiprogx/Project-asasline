@@ -36,6 +36,7 @@ export const SETTINGS_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
       list("location-roles"),
       list("contact-doc-kinds"),
       page("countries", "Countries"),
+      page("region-languages", "Regional languages"),
       page("id-formats", "Number formats"),
       page("links", "Links"),
     ],

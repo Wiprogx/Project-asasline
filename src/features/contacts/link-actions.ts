@@ -2,14 +2,13 @@
 
 import { and, eq, isNull, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { langOf } from "@/domain/countries";
 import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
+import { langForAddress } from "@/server/address-lang";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { invalidateTags, tags } from "@/server/cache/cache";
 import { cityProblem } from "@/server/cities";
 import { postcodeProblem } from "@/server/postcodes";
-import { readCountries } from "@/server/countries";
 import { setContactLabels } from "@/server/contact-labels";
 import { db } from "@/server/db/client";
 import { contactLinks, contacts } from "@/server/db/schema";
@@ -107,7 +106,7 @@ export async function linkNew(
     (await cityProblem(db, fields.cityId, fields.country)) ??
     (await postcodeProblem(db, fields.zip, fields.country));
   if (city) return fail(city);
-  const lang = fields.lang ?? langOf(await readCountries(), fields.country);
+  const lang = fields.lang ?? (await langForAddress(fields));
   const id = await db.transaction(async (tx) => {
     const [made] = await tx
       .insert(contacts)
