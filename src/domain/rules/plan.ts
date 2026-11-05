@@ -13,7 +13,7 @@ import {
 
 export type StepStatus = "done" | "open" | "waiting";
 
-export type PlanBox = { id: string; label: string };
+export type PlanBox = { id: string; label: string; loadDate?: string | null };
 
 export type PlanStep = {
   rule: DocRule;
@@ -33,7 +33,13 @@ export const codeOfKey = (key: string) => key.split("#")[0];
 /** A booking with no box yet gets one step for a per-box rule, as a booking has one box. */
 function boxesOf(rule: DocRule, b: BookingFacts): (PlanBox | null)[] {
   if (!rule.perBox || !b.boxes?.length) return [null];
-  return b.boxes.map((x) => ({ id: x.id, label: x.label }));
+  return b.boxes.map((x) => ({ id: x.id, label: x.label, loadDate: x.loadDate }));
+}
+
+/** A per-box step anchored on the loading day follows its own box's day, when the box has one. */
+function factsFor(rule: DocRule, b: BookingFacts, box: PlanBox | null): BookingFacts {
+  if (!box?.loadDate || rule.anchor !== "loading") return b;
+  return { ...b, anchors: { ...b.anchors, loading: box.loadDate } };
 }
 
 /** What a rule waits for before its box is weighed: every box's cargo weight (legacy weightsReady). */
@@ -73,7 +79,8 @@ export function planChain(
         const done = settled.has(key);
         const status: StepStatus = done ? "done" : waitingOn.length ? "waiting" : "open";
         const title = `${fillStep(rule.step, b)}${box ? ` — ${box.label}` : ""} — ${b.ref}`;
-        return { rule, key, box, title, due: dueOf(rule, b, holidays), status, waitingOn };
+        const due = dueOf(rule, factsFor(rule, b, box), holidays);
+        return { rule, key, box, title, due, status, waitingOn };
       }),
     )
     .sort((x, y) => (x.due?.day ?? "9999").localeCompare(y.due?.day ?? "9999"));

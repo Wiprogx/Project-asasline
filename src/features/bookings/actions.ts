@@ -34,12 +34,13 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
 
   const id = await db.transaction(async (tx) => {
     const ref = await nextRef(tx, "SB", officeToday());
+    const loadAddress = await addressOf(tx, fields.loadAddressId ?? null);
     const [row] = await tx
       .insert(bookings)
       .values({
         ...fields,
         ...(await portIds(tx, { pol, pod }, user.id)),
-        loadAddress: await addressOf(tx, fields.loadAddressId ?? null),
+        loadAddress,
         ref,
         payerId: fields.clientId,
         docTypeId: await lookupIdByCode(tx, "doc-types", DEFAULT_DOC_TYPE),
@@ -57,6 +58,9 @@ export async function createBooking(_p: ActionResult, fd: FormData): Promise<Act
         bookingId: row.id,
         position: i,
         typeId,
+        // Each box starts at the proposed place (legacy BOX_DEF); its date and hour are its own.
+        loadAddressId: fields.loadAddressId ?? null,
+        loadAddress,
         createdBy: user.id,
       })),
     );

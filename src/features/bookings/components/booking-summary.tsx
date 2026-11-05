@@ -55,9 +55,10 @@ export function BookingSummary({
             <Row k="Customer" v={party(b.client)} />
             <Row k="Direction" v={SHIPMENT_KIND_LABEL[b.kind]} />
             <Row k="Route" v={route} />
+            {/* Date, time, mode and address are each box's own (Containers); the booking proposes. */}
             <Row
-              k="Loading"
-              v={[b.loadDate, b.loadTime, b.loadAddress].filter(Boolean).join(" · ")}
+              k="Proposed loading"
+              v={[b.loadDate, b.loadTime, b.loadingMode, b.loadAddress].filter(Boolean).join(" · ")}
             />
             <Row k="Commodity" v={b.commodity} />
             <Row k="Document" v={b.docType} />

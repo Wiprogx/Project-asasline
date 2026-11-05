@@ -22,12 +22,18 @@ import { liveLookupIdByLabel } from "@/server/lookups";
 /** Box changes are logged on the booking, so its history tells the whole story. */
 async function editableBooking(tx: Tx, bookingId: string) {
   const [b] = await tx
-    .select({ status: bookings.status })
+    .select({
+      status: bookings.status,
+      loadingMode: bookings.loadingMode,
+      loadAddressId: bookings.loadAddressId,
+      loadAddress: bookings.loadAddress,
+    })
     .from(bookings)
     .where(eq(bookings.id, bookingId));
   if (!b) throw new ConflictError("This booking");
   if (b.status === "cancelled")
     throw new Refused("Put the booking back before changing its boxes.");
+  return b;
 }
 
 export async function updateContainer(_p: ActionResult, fd: FormData): Promise<ActionResult> {
@@ -93,7 +99,7 @@ export async function addContainer(_p: ActionResult, fd: FormData): Promise<Acti
     bookingId,
     () =>
       db.transaction(async (tx) => {
-        await editableBooking(tx, bookingId);
+        const b = await editableBooking(tx, bookingId);
         const [{ last }] = await tx
           .select({ last: max(containers.position) })
           .from(containers)
@@ -109,6 +115,11 @@ export async function addContainer(_p: ActionResult, fd: FormData): Promise<Acti
             bookingId,
             typeId,
             position: (last ?? -1) + 1,
+            // What a fresh box inherits (legacy BOX_DEF): the quoted mode and the proposed place —
+            // never a date or an hour, which are each box's own.
+            loadingMode: b.loadingMode,
+            loadAddressId: b.loadAddressId,
+            loadAddress: b.loadAddress,
             createdBy: user.id,
             updatedBy: user.id,
           })

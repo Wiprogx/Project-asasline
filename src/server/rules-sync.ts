@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq, inArray, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
-import type { BookingFacts } from "@/domain/rules/engine";
+import { type BookingFacts, loadingAnchor } from "@/domain/rules/engine";
 import { isSettled, planChain, type PlanStep, syncDiff } from "@/domain/rules/plan";
 import { type AuditEntry, auditMany } from "./audit";
 import type { DbOrTx } from "./db/client";
@@ -31,7 +31,7 @@ export function factsOf(
     pod: b.pod,
     docType: docName,
     anchors: {
-      loading: b.loadDate,
+      loading: loadingAnchor(b.loadDate, boxes),
       customs: b.customsClosing,
       vgm: b.vgmClosing,
       si: b.siClosing,
@@ -122,6 +122,7 @@ async function boxesByBooking(tx: DbOrTx, bookingIds: readonly string[]) {
         id: c.id,
         label: c.number ?? `box ${list.length + 1}`,
         weightsIn: cargoKgOf({ ...c, ...goods.get(c.id)! }) !== null,
+        loadDate: c.loadDate,
       });
       byBooking.set(c.bookingId, list);
     }

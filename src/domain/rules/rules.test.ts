@@ -12,6 +12,7 @@ import {
   soldOnQuote,
 } from "./engine";
 import { isSettled, planChain, syncDiff } from "./plan";
+import { loadingAnchor } from "./engine";
 
 const booking = (o: Partial<BookingFacts> = {}): BookingFacts => ({
   ref: "SB2609001",
@@ -249,6 +250,34 @@ describe("per-container rules", () => {
       { id: "t2", ruleCode: "CERTIWEIGHT#b2", state: "open", due: null },
     ]);
     expect(diff.withdraw).toEqual([{ id: "t2", code: "box_left" }]);
+  });
+  it("anchors the loading day on the earliest box, the booking's proposal standing in", () => {
+    expect(loadingAnchor("2026-10-20", undefined)).toBe("2026-10-20");
+    expect(loadingAnchor("2026-10-20", [{ loadDate: null }])).toBe("2026-10-20");
+    expect(
+      loadingAnchor("2026-10-20", [{ loadDate: "2026-10-23" }, { loadDate: "2026-10-21" }]),
+    ).toBe("2026-10-21");
+    expect(loadingAnchor(null, [{ loadDate: null }])).toBeNull();
+  });
+  it("dates a per-box step on its own box's loading day", () => {
+    const dated = [
+      { ...boxes[0], loadDate: "2026-10-21" },
+      { ...boxes[1], loadDate: null },
+    ];
+    const plan = planChain(
+      [certi],
+      booking({ boxes: dated, anchors: { loading: "2026-10-14" } }),
+      DEFAULT_HOLIDAYS,
+      new Set(),
+    );
+    const onBooking = dueOf(
+      certi,
+      booking({ anchors: { loading: "2026-10-14" } }),
+      DEFAULT_HOLIDAYS,
+    );
+    const onBox = dueOf(certi, booking({ anchors: { loading: "2026-10-21" } }), DEFAULT_HOLIDAYS);
+    expect(plan.find((s) => s.key === "CERTIWEIGHT#b1")?.due).toEqual(onBox);
+    expect(plan.find((s) => s.key === "CERTIWEIGHT#b2")?.due).toEqual(onBooking);
   });
   it("holds the VGM until every box's weight is in", () => {
     const vgm = DEFAULT_RULES.find((r) => r.code === "VGM")!;

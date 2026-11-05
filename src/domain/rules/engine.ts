@@ -88,8 +88,20 @@ export type BookingFacts = {
   /** The quotation's line descriptions; null when no quotation is behind the booking. */
   soldLines?: readonly string[] | null;
   /** The live boxes, for per-box rules and the weights check; their label is the number or "box n". */
-  boxes?: readonly { id: string; label: string; weightsIn: boolean }[];
+  boxes?: readonly { id: string; label: string; weightsIn: boolean; loadDate?: string | null }[];
 };
+
+/**
+ * The booking's loading day, as the rules anchor on it: the earliest day a box is loaded, the
+ * booking's own proposal standing in while no box says (docs/CONTAINER_FIELDS.md §1).
+ */
+export function loadingAnchor(
+  proposed: string | null,
+  boxes: readonly { loadDate?: string | null }[] | undefined,
+): string | null {
+  const days = (boxes ?? []).map((b) => b.loadDate).filter((d): d is string => !!d);
+  return days.length ? days.sort()[0] : proposed;
+}
 
 /** Whether the quotation sold what a rule needs. No quotation behind it: assume it is ours. */
 export function soldOnQuote(

@@ -27,9 +27,7 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const id = page.url().split("/bookings/")[1];
   await expect(
-    page
-      .getByText("missing: loading address, loading date, loading mode, container number")
-      .first(),
+    page.getByText("missing: loading date, loading mode, container number").first(),
   ).toBeVisible();
 
   // Box 1 is dropped on site, with a stop on the way; box 2 is left untouched.
@@ -55,8 +53,6 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await expect(page.getByText(/Not ready to go out/)).toHaveCount(0);
   await page.goto(`/print/bookings/${id}/trucker?box=2`);
   await expect(
-    page.getByText(
-      "Not ready to go out — missing: loading address, loading date, loading mode, container number.",
-    ),
+    page.getByText("Not ready to go out — missing: loading date, loading mode, container number."),
   ).toBeVisible();
 });

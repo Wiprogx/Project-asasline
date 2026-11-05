@@ -12,7 +12,6 @@ import { SHIPMENT_KIND_LABEL, SHIPMENT_KINDS } from "@/domain/shipments";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { updateBookingDetails } from "../details-actions";
 import { bookingDetailsSchema } from "../schemas";
-import { modeNote, type LoadingMode } from "@/domain/loading";
 import { type BookingPlaces, OfficePartiesCard } from "./office-parties-card";
 
 type Values = { id: string; version: number; [field: string]: string | number | null };
@@ -29,8 +28,6 @@ const TEXT = (
   [
     ["pol", "Port of loading", "text"],
     ["pod", "Port of discharge", "text"],
-    ["loadDate", "Loading date", "date"],
-    ["loadTime", "Loading time", "time"],
     ["commodity", "Commodity", "text"],
     ["carrierBookingNo", "Carrier booking no.", "text"],
     ["blNo", "B/L no.", "text"],
@@ -49,14 +46,12 @@ const TEXT = (
 export function BookingDetailsForm({
   values,
   contacts,
-  modes,
   docTypes,
   places = { depots: [], terminals: [] },
   dialogs = {},
 }: {
   values: Values;
   contacts: Option[];
-  modes: readonly LoadingMode[];
   /** The transport documents (Settings › Lists › Document types). */
   docTypes: readonly { value: string; label: string }[];
   /** The depots and terminals linked to the contacts (domain/line-places). */
@@ -135,20 +130,6 @@ export function BookingDetailsForm({
               />
             </Field>
           ))}
-          <Field
-            id="loadingMode"
-            label="Loading mode"
-            hint={modeNote(modes, values.loadingMode ? String(values.loadingMode) : null)}
-            className="sm:col-span-2 lg:col-span-3"
-          >
-            <NativeSelect
-              id="loadingMode"
-              name="loadingMode"
-              defaultValue={values.loadingMode ?? ""}
-              placeholder="— not agreed yet —"
-              options={modes.map((m) => ({ value: m.name, label: m.name }))}
-            />
-          </Field>
         </CardContent>
       </Card>
       {!state.ok && state.error && (

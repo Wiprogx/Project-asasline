@@ -13,7 +13,6 @@ import { bookingLegs, sailingOptions } from "@/features/vessels/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 import { officeToday } from "@/server/clock";
 import { readCountries } from "@/server/countries";
-import { readLoadingModes } from "@/server/loading-config";
 import { liveLookups, lookupOptions } from "@/server/lookups";
 
 export const metadata: Metadata = { title: "Edit booking" };
@@ -21,10 +20,9 @@ export const metadata: Metadata = { title: "Edit booking" };
 export default async function EditBookingPage({ params }: PageProps<"/bookings/[id]/edit">) {
   await requirePagePermission("bookings.edit");
   const { id } = await params;
-  const [b, contacts, modes, docTypes] = await Promise.all([
+  const [b, contacts, docTypes] = await Promise.all([
     getBooking(id),
     contactOptions(),
-    readLoadingModes(),
     lookupOptions("doc-types", null),
   ]);
   if (!b) notFound();
@@ -58,7 +56,6 @@ export default async function EditBookingPage({ params }: PageProps<"/bookings/[
         key={b.version}
         values={values}
         contacts={contacts}
-        modes={modes}
         docTypes={docTypes}
         places={places}
         dialogs={{
