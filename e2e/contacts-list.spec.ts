@@ -66,9 +66,11 @@ test("contacts are filtered by type and field by field, found through what is li
     .click();
   await expect(row).toBeVisible();
 
-  // The columns chosen, and the cards.
-  await page.getByText("Choose the columns").click();
-  await page.getByRole("checkbox", { name: "Linked" }).check();
+  // The columns chosen (the person's own, saved as ticked), and the cards.
+  await page.locator("summary", { hasText: "Columns" }).click();
+  const saved = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByRole("group", { name: "Columns" }).getByLabel("Linked").check();
+  await saved;
   await expect(page.getByRole("columnheader", { name: "Linked" })).toBeVisible();
   await page.getByRole("navigation", { name: "View" }).getByRole("link", { name: "Cards" }).click();
   await expect(page).toHaveURL(/view=cards/);
