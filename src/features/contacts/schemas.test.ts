@@ -31,6 +31,14 @@ describe("a contact's VAT and EORI numbers on save", () => {
   });
 });
 
+describe("a company's numbers", () => {
+  it("needs a VAT number but not an EORI", () => {
+    const without = { ...company, professions: "Transporter", vat: "", eori: "" };
+    expect(errorsOf(without).vat).toEqual(["A company needs its VAT number"]);
+    expect(errorsOf(without).eori).toBeUndefined();
+  });
+});
+
 describe("a contact's profession", () => {
   it("is required of a company", () => {
     expect(errorsOf(company).professions).toEqual(["A company needs at least one profession"]);

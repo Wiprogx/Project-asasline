@@ -79,17 +79,12 @@ export const contactSchema = z.object({
     }),
 });
 
-const REQUIRED = {
-  vat: "A company needs its VAT number",
-  eori: "A company needs its EORI number",
-} as const;
-
 type Raw = z.infer<typeof contactSchema>;
 type Ctx = z.RefinementCtx;
 const need = (ctx: Ctx, path: string, message: string) =>
   ctx.addIssue({ code: "custom", path: [path], message });
 
-/** What each contact must carry: an address; a company its name, VAT, EORI and a profession; a location its name; a person a last name and a way to reach them. */
+/** What each contact must carry: an address; a company its name, VAT and a profession (its EORI when it has one); a location its name; a person a last name and a way to reach them. */
 function requiredByType(c: Raw, ctx: Ctx) {
   // Every contact is written to or delivered to: an address is never optional (some countries have no postcode).
   if (!c.street) need(ctx, "street", "The street is needed");
@@ -97,7 +92,7 @@ function requiredByType(c: Raw, ctx: Ctx) {
   if (!c.country) need(ctx, "country", "The country is needed");
   if (c.type === "company") {
     if (!c.name) need(ctx, "name", "A contact needs a name");
-    for (const kind of ["vat", "eori"] as const) if (!c[kind]) need(ctx, kind, REQUIRED[kind]);
+    if (!c.vat) need(ctx, "vat", "A company needs its VAT number");
     if (!c.professions.length) need(ctx, "professions", "A company needs at least one profession");
     return;
   }

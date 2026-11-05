@@ -29,14 +29,14 @@ const CREDIT_FIELDS = [
   ["creditLimit", "Credit limit (EUR)", "text"],
 ] as const satisfies readonly TextFieldSpec[];
 
-/** A company's VAT and EORI (both required), a person's VAT and passport (optional). */
+/** A company's VAT (required) and EORI (optional: not every company is a customs operator), a person's VAT and passport (optional). */
 function TaxFields({ values, fe, type }: { values: ContactFormValues; fe: Errors; type: string }) {
   const isCompany = type === "company";
   const common = { values, errors: fe, className: "contents" };
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <TextFields fields={VAT} {...common} required={isCompany} />
-      {isCompany && <TextFields fields={EORI} {...common} required />}
+      {isCompany && <TextFields fields={EORI} {...common} />}
       {type === "person" && <TextFields fields={PASSPORT} {...common} />}
     </div>
   );
