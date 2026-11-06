@@ -2,6 +2,7 @@
 
 import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
+import { MomentField } from "@/components/shared/moment-field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,25 +21,32 @@ type Values = Partial<
     | "pol"
     | "pod"
     | "etd"
+    | "etdTime"
     | "eta"
+    | "etaTime"
     | "atd"
-    | "ata",
+    | "atdTime"
+    | "ata"
+    | "ataTime",
     string | null
   >
 > & { id?: string; version?: number; status?: string };
 
-const FIELDS = [
-  ["name", "Vessel", "text"],
-  ["voyage", "Voyage", "text"],
-  ["carrier", "Carrier", "text"],
-  ["service", "Service", "text"],
-  ["pol", "From (UN/LOCODE)", "text"],
-  ["pod", "To (UN/LOCODE)", "text"],
-  ["etd", "ETD", "date"],
-  ["eta", "ETA", "date"],
-  ["atd", "Sailed on", "date"],
-  ["ata", "Arrived on", "date"],
-  ["imo", "IMO", "text"],
+const TEXT = [
+  ["name", "Vessel"],
+  ["voyage", "Voyage"],
+  ["carrier", "Carrier"],
+  ["service", "Service"],
+  ["pol", "From (UN/LOCODE)"],
+  ["pod", "To (UN/LOCODE)"],
+] as const;
+
+/** Each moment of the sailing, a day and an hour as one field (domain/moments). */
+const MOMENTS = [
+  ["etd", "ETD"],
+  ["eta", "ETA"],
+  ["atd", "Sailed on"],
+  ["ata", "Arrived on"],
 ] as const;
 
 /** A sailing: new, or changed — a changed one moves every booking on it. */
@@ -62,18 +70,32 @@ export function VesselForm({ values }: { values?: Values }) {
           <input type="hidden" name="version" value={values?.version} />
         </>
       )}
-      {FIELDS.map(([name, label, type]) => (
+      {TEXT.map(([name, label]) => (
         <Field key={name} id={`v-${name}`} label={label} error={fe?.[name]}>
           <Input
             id={`v-${name}`}
             name={name}
-            type={type}
+            type="text"
             defaultValue={values?.[name] ?? ""}
             required={name === "name" || name === "voyage"}
             list={name === "pol" || name === "pod" ? "ports" : undefined}
           />
         </Field>
       ))}
+      {MOMENTS.map(([name, label]) => (
+        <MomentField
+          key={name}
+          id={`v-${name}`}
+          label={label}
+          date={values?.[name] ?? null}
+          time={values?.[`${name}Time`] ?? null}
+          dateName={name}
+          error={fe?.[name] ?? fe?.[`${name}Time`]}
+        />
+      ))}
+      <Field id="v-imo" label="IMO" error={fe?.imo}>
+        <Input id="v-imo" name="imo" type="text" defaultValue={values?.imo ?? ""} />
+      </Field>
       <Field id="v-status" label="State" error={fe?.status}>
         <NativeSelect
           id="v-status"

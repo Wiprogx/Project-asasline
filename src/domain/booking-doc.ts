@@ -9,6 +9,7 @@ import { lineAmount, type QuotationDisplay, quotationDoc } from "./quotation-doc
 import type { ShipmentKind } from "./shipments";
 import { formatKg } from "./container";
 import { boxLoading, truckerCopyGaps, type Stop } from "./loading";
+import { momentWords } from "./moments";
 import { cargoKgOf, packagesOf, packageTypeOf, type HsLine } from "./goods";
 import { sealLabel, sealOf } from "./seals";
 
@@ -31,6 +32,13 @@ export type CopyBooking = {
   vgmClosing: string | null;
   siClosing: string | null;
   portCutOff: string | null;
+  /** The hour beside each date, when known (domain/moments). */
+  etdTime?: string | null;
+  etaTime?: string | null;
+  customsClosingTime?: string | null;
+  vgmClosingTime?: string | null;
+  siClosingTime?: string | null;
+  portCutOffTime?: string | null;
   docType: string;
   commodity: string | null;
 };
@@ -113,17 +121,18 @@ export function shipmentRows(b: CopyBooking): Row[] {
     ["Document type", dash(b.docType)],
     ["Shipping line booking", dash(b.carrierBookingNo)],
     ["Vessel · voyage", [b.vesselName, b.voyage].filter(Boolean).join(" · ") || "—"],
-    ["ETD", dash(b.etd)],
-    ["ETA", dash(b.eta)],
+    ["ETD", dash(momentWords(b.etd, b.etdTime))],
+    ["ETA", dash(momentWords(b.eta, b.etaTime))],
   ];
 }
 
+/** Each closing with its hour: "2026-08-31 22:00". */
 export function cutOffRows(b: CopyBooking): Row[] {
   return [
-    ["Port cut-off", dash(b.portCutOff)],
-    ["VGM closing", dash(b.vgmClosing)],
-    ["Customs closing", dash(b.customsClosing)],
-    ["SI & doc closing", dash(b.siClosing)],
+    ["Port cut-off", dash(momentWords(b.portCutOff, b.portCutOffTime))],
+    ["VGM closing", dash(momentWords(b.vgmClosing, b.vgmClosingTime))],
+    ["Customs closing", dash(momentWords(b.customsClosing, b.customsClosingTime))],
+    ["SI & doc closing", dash(momentWords(b.siClosing, b.siClosingTime))],
   ];
 }
 

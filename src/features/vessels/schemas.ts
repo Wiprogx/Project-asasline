@@ -1,9 +1,17 @@
 import { z } from "zod";
+import { snapQuarterHour } from "@/domain/moments";
 import { PORT_CODE } from "@/domain/ports";
 import { VESSEL_STATUSES } from "@/domain/vessels";
 import { optionalDayField } from "@/lib/zod-fields";
 
 const day = optionalDayField("A date").transform((v) => v ?? undefined);
+
+/** The hour beside a date, "HH:MM" on the quarter hour (domain/moments); none is null. */
+const hour = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "The hour as HH:MM")
+  .optional()
+  .transform((v) => (v ? snapQuarterHour(v) : null));
 
 const text = (max: number) =>
   z
@@ -37,9 +45,13 @@ export const vesselSchema = z.object({
   pol: port,
   pod: port,
   etd: day.transform((v) => v ?? null),
+  etdTime: hour,
   eta: day.transform((v) => v ?? null),
+  etaTime: hour,
   atd: day.transform((v) => v ?? null),
+  atdTime: hour,
   ata: day.transform((v) => v ?? null),
+  ataTime: hour,
   status: z.enum(VESSEL_STATUSES).default("scheduled"),
 });
 

@@ -20,11 +20,17 @@ const FIELDS = [
   "vesselName",
   "voyage",
   "etd",
+  "etdTime",
   "eta",
+  "etaTime",
   "customsClosing",
+  "customsClosingTime",
   "vgmClosing",
+  "vgmClosingTime",
   "siClosing",
+  "siClosingTime",
   "portCutOff",
+  "portCutOffTime",
 ] as const;
 
 type Field = (typeof FIELDS)[number];

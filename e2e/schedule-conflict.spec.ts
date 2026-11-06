@@ -18,8 +18,8 @@ test("a date typed over the sailing's stops the copies until the sailing's dates
   await page.getByLabel("Voyage", { exact: true }).fill("V200");
   await page.getByLabel("From (UN/LOCODE)").fill("BEANR");
   await page.getByLabel("To (UN/LOCODE)").fill("TRMER");
-  await page.getByLabel("ETD", { exact: true }).fill(day(20));
-  await page.getByLabel("ETA", { exact: true }).fill(day(35));
+  await page.getByLabel("ETD", { exact: true }).fill(`${day(20)}T12:00`);
+  await page.getByLabel("ETA", { exact: true }).fill(`${day(35)}T12:00`);
   await submit(page, page.getByRole("button", { name: "Add sailing" }));
   await expectToast(page, `${ship} · V200 added`);
 
@@ -50,7 +50,7 @@ test("a date typed over the sailing's stops the copies until the sailing's dates
 
   // A date typed over the sailing's: the page says so, the copies will not come out.
   await open(page, `${base}/edit`);
-  await page.getByLabel("ETD", { exact: true }).fill(day(22));
+  await page.getByLabel("ETD", { exact: true }).fill(`${day(22)}T12:00`);
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, "Saved");
   await open(page, base);
@@ -76,8 +76,8 @@ test("a date typed over the sailing's stops the copies until the sailing's dates
   await open(page, "/settings/vessels");
   await page.getByRole("link", { name: `${ship} · V200` }).click();
   await expect(page.getByRole("link", { name: ref })).toBeVisible();
-  await page.getByLabel("ETD", { exact: true }).fill(day(25));
-  await page.getByLabel("ETA", { exact: true }).fill(day(40));
+  await page.getByLabel("ETD", { exact: true }).fill(`${day(25)}T12:00`);
+  await page.getByLabel("ETA", { exact: true }).fill(`${day(40)}T12:00`);
   await submit(page, page.getByRole("button", { name: "Save sailing" }));
   await expectToast(page, "Saved — 1 booking moved with it");
   await open(page, `${base}/tasks`);

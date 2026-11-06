@@ -19,10 +19,15 @@ export const vessels = pgTable(
     /** Where the sailing loads and discharges (Settings › Ports). */
     polId: uuid().references(() => ports.id),
     podId: uuid().references(() => ports.id),
+    // Each moment a day and, when known, an "HH:MM" hour beside it (domain/moments).
     etd: day(),
+    etdTime: text(),
     eta: day(),
+    etaTime: text(),
     atd: day(),
+    atdTime: text(),
     ata: day(),
+    ataTime: text(),
     status: vesselStatusEnum().notNull().default("scheduled"),
   },
   (t) => [index("vessels_etd_idx").on(t.etd)],

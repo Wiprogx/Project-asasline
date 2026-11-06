@@ -6,6 +6,7 @@ import { SortableHead } from "@/components/shared/sortable-head";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import { ToneBadge } from "@/components/shared/tone-badge";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { momentWords } from "@/domain/moments";
 import { VESSEL_STATUS_META, VESSEL_STATUSES } from "@/domain/vessels";
 import { useTableView } from "@/hooks/use-table-view";
 import type { TableSpec } from "@/lib/table-view";
@@ -96,8 +97,12 @@ export function VesselsTable({ rows }: { rows: Row[] }) {
                 <TableCell className="font-mono text-xs">
                   {v.pol ?? "?"} › {v.pod ?? "?"}
                 </TableCell>
-                <TableCell className="font-mono text-xs">{v.etd ?? "—"}</TableCell>
-                <TableCell className="font-mono text-xs">{v.eta ?? "—"}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  {momentWords(v.etd, v.etdTime) || "—"}
+                </TableCell>
+                <TableCell className="font-mono text-xs">
+                  {momentWords(v.eta, v.etaTime) || "—"}
+                </TableCell>
                 <TableCell>
                   <ToneBadge tone={VESSEL_STATUS_META[v.status].tone}>
                     {VESSEL_STATUS_META[v.status].label}

@@ -92,13 +92,20 @@ export const bookings = pgTable(
     vesselId: uuid().references(() => vessels.id),
     vesselName: text(),
     voyage: text(),
+    // Each moment a day and, when known, an "HH:MM" hour beside it (domain/moments).
     etd: day(),
+    etdTime: text(),
     eta: day(),
+    etaTime: text(),
     // Closings the document rules anchor on (legacy vessel cut-offs, kept on the booking for now).
     customsClosing: day(),
+    customsClosingTime: text(),
     vgmClosing: day(),
+    vgmClosingTime: text(),
     siClosing: day(),
+    siClosingTime: text(),
     portCutOff: day(),
+    portCutOffTime: text(),
     commodity: text(),
     // Where the shipment stands for the consignee (domain/release): a hold names who asked and why.
     release: text().notNull().default("pending"),

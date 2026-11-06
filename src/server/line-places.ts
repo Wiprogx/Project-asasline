@@ -20,17 +20,7 @@ export type RolePlaces = {
  * every live location besides, to be picked when the place is not the line's own.
  */
 export async function rolePlaces(tx: DbOrTx): Promise<RolePlaces> {
-  const locations = await tx
-    .select({
-      id: contacts.id,
-      name: contacts.name,
-      street: contacts.street,
-      zip: contacts.zip,
-      city: cityNameOf(contacts.cityId),
-    })
-    .from(contacts)
-    .where(and(eq(contacts.type, "location"), isNull(contacts.archivedAt)))
-    .orderBy(asc(contacts.name));
+  const locations = await liveLocations(tx);
   const rows = await tx
     .select({
       id: contacts.id,
@@ -72,8 +62,27 @@ export async function rolePlaces(tx: DbOrTx): Promise<RolePlaces> {
   return {
     depots: [...byRole[PLACE_ROLE_CODES.depot].values()],
     terminals: [...byRole[PLACE_ROLE_CODES.terminal].values()],
-    locations: locations.map((l) => ({ value: l.id, label: placeLabel(l), under: [] })),
+    locations,
   };
+}
+
+/**
+ * Every live location, by name: a box may well be loaded at, or call at, a place of another
+ * contact than the customer — offered after the customer's own places (domain/load-place).
+ */
+export async function liveLocations(tx: DbOrTx): Promise<LinePlace[]> {
+  const rows = await tx
+    .select({
+      id: contacts.id,
+      name: contacts.name,
+      street: contacts.street,
+      zip: contacts.zip,
+      city: cityNameOf(contacts.cityId),
+    })
+    .from(contacts)
+    .where(and(eq(contacts.type, "location"), isNull(contacts.archivedAt)))
+    .orderBy(asc(contacts.name));
+  return rows.map((l) => ({ value: l.id, label: placeLabel(l), under: [] }));
 }
 
 /** What a booking with this line starts with: its latest linked depot and terminal, if any. */

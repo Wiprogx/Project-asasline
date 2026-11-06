@@ -3,6 +3,7 @@ import { ToneBadge } from "@/components/shared/tone-badge";
 import { ALERT_META, type AlertLevel } from "@/domain/alerts";
 import { type BookingColumnKey, closingLate } from "@/domain/booking-list";
 import { BILL_STATUS_LABEL, BILL_STATUS_TONE } from "@/domain/invoicing";
+import { momentWords } from "@/domain/moments";
 import { formatCents } from "@/domain/money";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { BookingRow } from "../list-queries";
@@ -31,13 +32,23 @@ function AlertLine({ alert }: { alert: string | null }) {
   );
 }
 
-/** A closing, amber once passed while the box has not sailed (legacy cutCell). */
-function Closing({ day, status, today }: { day: string | null; status: string; today: string }) {
+/** A closing with its hour, amber once its day has passed while the box has not sailed (legacy cutCell). */
+function Closing({
+  day,
+  time,
+  status,
+  today,
+}: {
+  day: string | null;
+  time?: string | null;
+  status: string;
+  today: string;
+}) {
   if (!day) return none;
   const late = closingLate(day, status, today);
   return (
     <span className={late ? "font-mono text-xs font-semibold text-warning" : "font-mono text-xs"}>
-      {day}
+      {momentWords(day, time)}
       {late && <span className="sr-only"> (passed)</span>}
     </span>
   );
@@ -101,12 +112,22 @@ export const CELLS: Record<"ref" | BookingColumnKey, Cell> = {
       true,
     ),
   vessel: (b) => (b.vesselName ? [b.vesselName, b.voyage].filter(Boolean).join(" · ") : none),
-  portCutOff: (b, t) => <Closing day={b.portCutOff} status={b.status} today={t} />,
-  vgmClosing: (b, t) => <Closing day={b.vgmClosing} status={b.status} today={t} />,
-  customsClosing: (b, t) => <Closing day={b.customsClosing} status={b.status} today={t} />,
-  siClosing: (b, t) => <Closing day={b.siClosing} status={b.status} today={t} />,
-  etd: (b) => (b.etd ? <span className="font-mono text-xs">{b.etd}</span> : none),
-  eta: (b) => (b.eta ? <span className="font-mono text-xs">{b.eta}</span> : none),
+  portCutOff: (b, t) => (
+    <Closing day={b.portCutOff} time={b.portCutOffTime} status={b.status} today={t} />
+  ),
+  vgmClosing: (b, t) => (
+    <Closing day={b.vgmClosing} time={b.vgmClosingTime} status={b.status} today={t} />
+  ),
+  customsClosing: (b, t) => (
+    <Closing day={b.customsClosing} time={b.customsClosingTime} status={b.status} today={t} />
+  ),
+  siClosing: (b, t) => (
+    <Closing day={b.siClosing} time={b.siClosingTime} status={b.status} today={t} />
+  ),
+  etd: (b) =>
+    b.etd ? <span className="font-mono text-xs">{momentWords(b.etd, b.etdTime)}</span> : none,
+  eta: (b) =>
+    b.eta ? <span className="font-mono text-xs">{momentWords(b.eta, b.etaTime)}</span> : none,
   steps: (b) => <Steps open={b.openSteps} late={b.lateSteps} />,
   docs: (b) => <Docs got={b.docsIn} need={b.docsNeeded} />,
   value: (b) =>

@@ -38,11 +38,11 @@ test("a booking from creation to history", async ({ page }) => {
   await page.getByRole("link", { name: "Edit" }).click();
   await choose(page.getByLabel("Consignee"), { label: consignee });
   await page.getByLabel("Vessel").fill("MSC E2E");
-  await page.getByLabel("ETD").fill("2026-11-10");
-  await page.getByLabel("ETA").fill("2026-11-01");
+  await page.getByLabel("ETD").fill("2026-11-10T18:00");
+  await page.getByLabel("ETA").fill("2026-11-01T08:00");
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expect(page.getByText("ETA is before ETD")).toBeVisible();
-  await page.getByLabel("ETA").fill("2026-12-01");
+  await page.getByLabel("ETA").fill("2026-12-01T08:00");
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, "Saved");
 

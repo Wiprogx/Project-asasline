@@ -20,8 +20,8 @@ async function sailing(
   await page.getByLabel("Voyage", { exact: true }).fill(voyage);
   await page.getByLabel("From (UN/LOCODE)").fill(pol);
   await page.getByLabel("To (UN/LOCODE)").fill(pod);
-  await page.getByLabel("ETD", { exact: true }).fill(day(etd));
-  await page.getByLabel("ETA", { exact: true }).fill(day(eta));
+  await page.getByLabel("ETD", { exact: true }).fill(`${day(etd)}T12:00`);
+  await page.getByLabel("ETA", { exact: true }).fill(`${day(eta)}T12:00`);
   await submit(page, page.getByRole("button", { name: "Add sailing" }));
   await expectToast(page, /Saved|added|Sailing/i);
 }
@@ -60,16 +60,16 @@ test("a transhipment leg carries the arrival: the last vessel decides the ETA, t
   await submit(page, page.getByRole("button", { name: "Set sailing" }));
   await expectToast(page, "On the sailing — dates and closings set");
   await open(page, edit);
-  await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(day(25));
+  await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(`${day(25)}T12:00`);
   await choose(page.getByLabel("Connecting sailing"), {
     label: `${mother} · M1 — ESVLC › TRMER · ETD ${day(27)}`,
   });
   await submit(page, page.getByRole("button", { name: "Add transhipment leg" }));
   await expectToast(page, "Leg added — the arrival follows the last one");
   await open(page, edit);
-  await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(day(40));
-  await expect(page.getByLabel("ETD", { exact: true })).toHaveValue(day(20));
-  await expect(page.getByLabel("Port cut-off", { exact: true })).toHaveValue(day(19));
+  await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(`${day(40)}T12:00`);
+  await expect(page.getByLabel("ETD", { exact: true })).toHaveValue(`${day(20)}T12:00`);
+  await expect(page.getByLabel("Port cut-off", { exact: true })).toHaveValue(`${day(19)}T22:00`);
 
   // The booking reads the routing; the copies are not blocked by the later arrival.
   await open(page, bookingUrl);
@@ -81,5 +81,5 @@ test("a transhipment leg carries the arrival: the last vessel decides the ETA, t
   await submit(page, page.getByRole("button", { name: "Take off" }));
   await expectToast(page, "Leg taken off");
   await open(page, edit);
-  await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(day(25));
+  await expect(page.getByLabel("ETA", { exact: true })).toHaveValue(`${day(25)}T12:00`);
 });

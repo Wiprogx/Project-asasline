@@ -2,9 +2,9 @@
 
 import { type ReactNode, useState } from "react";
 import { Field } from "@/components/shared/field";
+import { MomentField } from "@/components/shared/moment-field";
 import { NativeSelect } from "@/components/shared/native-select";
 import type { PickerOption } from "@/components/shared/search-picker";
-import { Input } from "@/components/ui/input";
 import { type CustomerPlace, defaultLoadPlace, loadPlaces } from "@/domain/load-place";
 import { isDropMode, type LoadingMode, modeNote, type Stop } from "@/domain/loading";
 import { BoxStopRows } from "./box-stop-rows";
@@ -40,7 +40,10 @@ export type LoadPlaces = {
 
 type Errors = Record<string, string[] | undefined> | undefined;
 
-/** A date and an hour side by side, as every moment of the loading card is asked. */
+/**
+ * A day and an hour as one field on the quarter hour, as every moment of the loading card is
+ * asked; it posts `<name>Date` and `<name>Time` as the server has always read them.
+ */
 function Moment({
   p,
   name,
@@ -58,17 +61,18 @@ function Moment({
   time: string | null;
   fe: Errors;
 }) {
-  const dateName = `${name}Date`;
-  const timeName = `${name}Time`;
   return (
-    <>
-      <Field id={`${p}-${name}-date`} label={label} hint={hint} error={fe?.[dateName]}>
-        <Input id={`${p}-${name}-date`} name={dateName} type="date" defaultValue={date ?? ""} />
-      </Field>
-      <Field id={`${p}-${name}-time`} label={`${label} — time`} error={fe?.[timeName]}>
-        <Input id={`${p}-${name}-time`} name={timeName} type="time" defaultValue={time ?? ""} />
-      </Field>
-    </>
+    <MomentField
+      id={`${p}-${name}`}
+      label={label}
+      hint={hint}
+      date={date}
+      time={time}
+      dateName={`${name}Date`}
+      timeName={`${name}Time`}
+      error={fe?.[`${name}Date`] ?? fe?.[`${name}Time`]}
+      className="lg:col-span-2"
+    />
   );
 }
 

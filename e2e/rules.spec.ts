@@ -55,7 +55,7 @@ test("a booking's document chain follows the rules", async ({ page }) => {
 
   await open(page, `${base}/edit`);
   for (const [label, day] of Object.entries(CLOSINGS))
-    await page.getByLabel(label, { exact: true }).fill(day);
+    await page.getByLabel(label, { exact: true }).fill(`${day}T12:00`);
   await saveDetails(page);
 
   // The VGM step waits on the box's weight (legacy weightsReady): give it one.
@@ -85,7 +85,7 @@ test("a booking's document chain follows the rules", async ({ page }) => {
 
   // Dates follow the booking: a later VGM closing redates the open VGM step.
   await open(page, `${base}/edit`);
-  await page.getByLabel("VGM closing").fill("2026-10-07");
+  await page.getByLabel("VGM closing").fill("2026-10-07T12:00");
   await saveDetails(page);
   await open(page, `${base}/tasks`);
   await expect(taskRow(page, "Confirm the VGM was sent")).toContainText("2026-10-07");
@@ -124,7 +124,7 @@ test("a holiday moves a deadline, and removing it moves it back", async ({ page 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^SB/);
   const base = page.url();
   await open(page, `${base}/edit`);
-  await page.getByLabel("VGM closing").fill("2026-10-21"); // a Wednesday
+  await page.getByLabel("VGM closing").fill("2026-10-21T12:00"); // a Wednesday
   await saveDetails(page);
 
   await open(page, "/settings/holidays");

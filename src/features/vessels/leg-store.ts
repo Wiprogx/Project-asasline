@@ -18,6 +18,7 @@ export async function legsOf(tx: DbOrTx, bookingId: string) {
       pod: portCodeOf(vessels.podId),
       etd: vessels.etd,
       eta: vessels.eta,
+      etaTime: vessels.etaTime,
     })
     .from(bookingLegs)
     .innerJoin(vessels, eq(vessels.id, bookingLegs.vesselId))
@@ -32,17 +33,26 @@ export async function legsOf(tx: DbOrTx, bookingId: string) {
  */
 export async function refreshArrival(tx: DbOrTx, bookingId: string, userId: string) {
   const [b] = await tx
-    .select({ eta: bookings.eta, version: bookings.version, mainEta: vessels.eta })
+    .select({
+      eta: bookings.eta,
+      etaTime: bookings.etaTime,
+      version: bookings.version,
+      mainEta: vessels.eta,
+      mainEtaTime: vessels.etaTime,
+    })
     .from(bookings)
     .leftJoin(vessels, eq(vessels.id, bookings.vesselId))
     .where(eq(bookings.id, bookingId));
   if (!b) return false;
   const legs = await legsOf(tx, bookingId);
   const eta = arrivalOf(b.mainEta, legs);
-  if (eta === b.eta) return false;
+  // The hour goes with the day: the leg that gives the arrival gives its hour, else the main sailing's.
+  const from = [...legs].reverse().find((l) => l.eta);
+  const etaTime = eta ? (from ? from.etaTime : b.mainEtaTime) : null;
+  if (eta === b.eta && etaTime === b.etaTime) return false;
   await tx
     .update(bookings)
-    .set({ eta, version: b.version + 1, updatedBy: userId, updatedAt: new Date() })
+    .set({ eta, etaTime, version: b.version + 1, updatedBy: userId, updatedAt: new Date() })
     .where(eq(bookings.id, bookingId));
   return true;
 }

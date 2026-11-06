@@ -178,7 +178,13 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
             typeId: route.containerTypeId ?? defaultBox,
             position,
             loadingMode: box.loadingMode,
+            // The quoted place itself, so the box's picker shows it; its words for the copies.
+            loadAddressId: box.loadAddressId,
             loadAddress: box.loadAddress,
+            loadDate: box.loadDate,
+            loadTime: box.loadTime,
+            pickBackDate: box.pickBackDate,
+            pickBackTime: box.pickBackTime,
             // The empty is collected at the line's depot unless the box says otherwise (step B).
             pickupDepotId: parties.pickupDepotId ?? null,
             stops: box.stops,

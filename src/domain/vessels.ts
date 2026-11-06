@@ -30,20 +30,33 @@ export const CUTOFF_LABEL: Record<CutoffKey, string> = {
   portCutOff: "Port cut-off",
 };
 
-export type CutoffRules = Record<CutoffKey, number>;
+/** One closing's rule: so many days before the ETD, at this hour of the day (none: the day alone). */
+export type CutoffRule = { days: number; time: string | null };
+export type CutoffRules = Record<CutoffKey, CutoffRule>;
 
+/** The legacy offsets and hours (CUTOFF_RULES): customs and SI at noon, VGM at 16:00, the port at 22:00. */
 export const DEFAULT_CUTOFFS: CutoffRules = {
-  customsClosing: 3,
-  siClosing: 2,
-  vgmClosing: 2,
-  portCutOff: 1,
+  customsClosing: { days: 3, time: "12:00" },
+  siClosing: { days: 2, time: "12:00" },
+  vgmClosing: { days: 2, time: "16:00" },
+  portCutOff: { days: 1, time: "22:00" },
 };
 
-export function cutoffsFor(etd: string, rules: CutoffRules): Record<CutoffKey, string> {
-  return Object.fromEntries(CUTOFF_KEYS.map((k) => [k, addDays(etd, -rules[k])])) as Record<
-    CutoffKey,
-    string
-  >;
+/** The hour column beside a closing's day: `customsClosing` → `customsClosingTime`. */
+export const cutoffTimeKey = (k: CutoffKey) => `${k}Time` as const;
+export type CutoffTimeKey = ReturnType<typeof cutoffTimeKey>;
+
+/** Every closing's day and hour from an ETD (legacy cutoffsFor): the day so many before, the rule's hour. */
+export function cutoffsFor(
+  etd: string,
+  rules: CutoffRules,
+): Record<CutoffKey | CutoffTimeKey, string | null> {
+  return Object.fromEntries(
+    CUTOFF_KEYS.flatMap((k) => [
+      [k, addDays(etd, -rules[k].days)],
+      [cutoffTimeKey(k), rules[k].time],
+    ]),
+  ) as Record<CutoffKey | CutoffTimeKey, string | null>;
 }
 
 export type Sailing = {
@@ -51,18 +64,28 @@ export type Sailing = {
   voyage: string;
   etd: string | null;
   eta: string | null;
+  /** The hours beside the dates, when the line gave them. */
+  etdTime?: string | null;
+  etaTime?: string | null;
 };
 
-/** What a booking takes from its sailing: the ship, the voyage, the dates and the closings. */
+/** What a booking takes from its sailing: the ship, the voyage, the dates with their hours and the closings. */
 export function bookingFieldsOf(v: Sailing, rules: CutoffRules) {
   return {
     vesselName: v.name,
     voyage: v.voyage,
     etd: v.etd,
+    etdTime: v.etd ? (v.etdTime ?? null) : null,
     eta: v.eta,
+    etaTime: v.eta ? (v.etaTime ?? null) : null,
     ...(v.etd
       ? cutoffsFor(v.etd, rules)
-      : { customsClosing: null, siClosing: null, vgmClosing: null, portCutOff: null }),
+      : (Object.fromEntries(
+          CUTOFF_KEYS.flatMap((k) => [
+            [k, null],
+            [cutoffTimeKey(k), null],
+          ]),
+        ) as Record<CutoffKey | CutoffTimeKey, null>)),
   };
 }
 

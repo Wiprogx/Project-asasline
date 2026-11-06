@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { containerNumberOk } from "@/domain/container";
+import { momentWords } from "@/domain/moments";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import { OFFICE_PARTIES } from "@/domain/booking-parties";
 import type { getBooking } from "../queries";
@@ -121,14 +122,22 @@ export function BookingSummary({
               }
             />
             {routing && <Row k="Transhipment" v={routing} />}
-            <Row k="ETD → ETA" v={b.etd || b.eta ? `${b.etd ?? "?"} → ${b.eta ?? "?"}` : null} />
+            <Row
+              k="ETD → ETA"
+              v={
+                b.etd || b.eta
+                  ? `${momentWords(b.etd, b.etdTime) || "?"} → ${momentWords(b.eta, b.etaTime) || "?"}`
+                  : null
+              }
+            />
             <Row
               k="Closings"
               v={[
-                b.customsClosing && `customs ${b.customsClosing}`,
-                b.vgmClosing && `VGM ${b.vgmClosing}`,
-                b.siClosing && `SI ${b.siClosing}`,
-                b.portCutOff && `port ${b.portCutOff}`,
+                b.customsClosing &&
+                  `customs ${momentWords(b.customsClosing, b.customsClosingTime)}`,
+                b.vgmClosing && `VGM ${momentWords(b.vgmClosing, b.vgmClosingTime)}`,
+                b.siClosing && `SI ${momentWords(b.siClosing, b.siClosingTime)}`,
+                b.portCutOff && `port ${momentWords(b.portCutOff, b.portCutOffTime)}`,
               ]
                 .filter(Boolean)
                 .join(" · ")}

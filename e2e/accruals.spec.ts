@@ -32,7 +32,7 @@ test("a sailed shipment's cost not yet invoiced is booked to receive, then cance
 
   // It sailed yesterday.
   await open(page, `${page.url()}/edit`);
-  await page.getByLabel("ETD").fill(yesterday);
+  await page.getByLabel("ETD").fill(`${yesterday}T12:00`);
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, /saved/i);
 

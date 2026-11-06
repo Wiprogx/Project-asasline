@@ -6,6 +6,7 @@ import { readCountries } from "@/server/countries";
 import { db } from "@/server/db/client";
 import { rateItems } from "@/server/db/schema";
 import { readHsCodes } from "@/server/goods-config";
+import { liveLocations } from "@/server/line-places";
 import { readLoadingModes } from "@/server/loading-config";
 import { liveLookups } from "@/server/lookups";
 import { readPaymentTerms } from "@/server/accounting-config";
@@ -40,12 +41,13 @@ async function laneChoices() {
 /** Everything the new-quotation form offers, but the contacts (the page brings those). */
 export async function newQuotationChoices() {
   await requirePermission("app.quotations");
-  const [lanes, docTypes, terms, modes, hs] = await Promise.all([
+  const [lanes, docTypes, terms, modes, hs, locations] = await Promise.all([
     laneChoices(),
     liveLookups("doc-types"),
     readPaymentTerms(),
     readLoadingModes(),
     readHsCodes(),
+    liveLocations(db),
   ]);
   return {
     lanes,
@@ -53,6 +55,8 @@ export async function newQuotationChoices() {
     terms: terms.map((t) => ({ value: t.id, label: t.name })),
     modes,
     hs: hs.map((h) => ({ value: h.code, label: h.description, code: h.code })),
+    /** Every live location, offered after the customer's own places (domain/load-place). */
+    locations: locations.map((l) => ({ value: l.value, label: l.label })),
   };
 }
 

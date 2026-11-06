@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { snapQuarterHour } from "@/domain/moments";
 import { ROUTE_SERVICES } from "@/domain/route-service";
 import { dayField } from "@/lib/zod-fields";
 
@@ -24,16 +25,19 @@ const optionalId = z
   .optional()
   .transform((v) => v ?? null);
 
+/** An hour of the day, "HH:MM", kept to the quarter hour (domain/moments); none is null. */
+const optionalTime = z
+  .string()
+  .regex(TIME, "The hour as HH:MM")
+  .nullable()
+  .optional()
+  .transform((v) => (v ? snapQuarterHour(v) : null));
+
 /** A stop: one of the customer's places, and when the truck calls there. */
 const stop = z.object({
   contactId: z.uuid("Pick the stop's address"),
   date: optionalDay,
-  time: z
-    .string()
-    .regex(TIME, "The hour as HH:MM")
-    .nullable()
-    .optional()
-    .transform((v) => v ?? null),
+  time: optionalTime,
 });
 
 /** One product shipped: its HS code and, when the list has none, its words. */
@@ -51,12 +55,19 @@ const commodity = z.object({
     .transform((v) => v || null),
 });
 
-/** A container of the destination: its own mode, address and stops, and its HS rows. */
+/**
+ * A container of the destination: its own mode, address and stops, and its HS rows; under a
+ * drop mode, when the box is delivered and when it is picked back (domain/route-service).
+ */
 const box = z.object({
   loadingMode: optionalText(80),
   loadAddressId: optionalId,
   stops: z.array(stop).max(10).default([]),
   hs: z.array(commodity).max(30).default([]),
+  loadDate: optionalDay,
+  loadTime: optionalTime,
+  pickBackDate: optionalDay,
+  pickBackTime: optionalTime,
 });
 
 /** One destination (legacy fQ): an ocean leg of the catalogue, its service and its loading. */

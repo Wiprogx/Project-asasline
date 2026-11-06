@@ -8,6 +8,7 @@ import { NativeSelect } from "@/components/shared/native-select";
 import { type PickerOption, SearchPicker } from "@/components/shared/search-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { type CustomerPlace, loadPlaces } from "@/domain/load-place";
 import { ROUTE_SERVICE_LABELS } from "@/domain/route-service";
 import { useToastedAction } from "@/hooks/use-action-toast";
 import { createQuotation } from "../actions";
@@ -70,16 +71,18 @@ export function NewQuotationForm({
   const [draft, setDraft] = useState(emptyDestination);
   const [draftKey, setDraftKey] = useState(0);
   const [term, setTerm] = useState("");
-  // The customer's places (delivery addresses first, the most recent the default).
+  // The customer's places (delivery addresses first, the most recent the default), then every
+  // other location: a box may be loaded at, or call at, a place of another company.
   const [clientId, setClientId] = useState<string | null>(null);
-  const [places, setPlaces] = useState<PickerOption[]>([]);
+  const [customer, setCustomer] = useState<CustomerPlace[]>([]);
+  const places = loadPlaces(customer, choices.locations);
   const pickClient = async (id: string | null) => {
     setClientId(id);
     setTerm(clients.find((c) => c.id === id)?.paymentTermId ?? "");
-    const found: (PickerOption & { delivery: boolean })[] = id
+    const found: CustomerPlace[] = id
       ? await fetch(`/api/contacts/${id}/places`).then((r) => (r.ok ? r.json() : []))
       : [];
-    setPlaces(found);
+    setCustomer(found);
     const first = found.find((p) => p.delivery)?.value ?? null;
     // Only the address pickers follow (they are keyed on their value); the rest stays as typed.
     setDraft((d) => ({ ...d, loadAddressId: first }));
@@ -88,7 +91,7 @@ export function NewQuotationForm({
     places,
     clientId,
     newPlace,
-    addPlace: (p: PickerOption) => setPlaces((ps) => [p, ...ps]),
+    addPlace: (p: PickerOption) => setCustomer((ps) => [{ ...p, delivery: true }, ...ps]),
   };
   const seaWaybill = choices.docTypes.find((d) => d.code === "sea_waybill")?.value;
   // An HS row left empty is not sent.

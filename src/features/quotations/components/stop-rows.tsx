@@ -1,14 +1,14 @@
 "use client";
 
+import { MomentInput } from "@/components/shared/moment-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { RouteStop } from "@/domain/route-service";
 import { type PlaceKit, PlacePicker } from "./place-picker";
 
 /**
  * "+ Add stop" (legacy stopRow): another place the truck calls at — one of the customer's
  * places like the loading address, or a new location made on the spot — and the day and hour
- * it is expected there.
+ * it is expected there, asked as one field on the quarter hour.
  */
 export function StopRows({
   label,
@@ -31,7 +31,7 @@ export function StopRows({
       {stops.map((s, i) => (
         <div
           key={i}
-          className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_9rem_6rem_auto] sm:items-end"
+          className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_14rem_auto] sm:items-end"
         >
           <PlacePicker
             id={`${idPrefix}-${i}`}
@@ -40,19 +40,12 @@ export function StopRows({
             set={(v) => put(i, { contactId: v ?? "" })}
             kit={kit}
           />
-          <Input
-            id={`${idPrefix}-${i}-date`}
-            type="date"
-            aria-label={`Stop ${i + 1} date`}
-            value={s.date ?? ""}
-            onChange={(e) => put(i, { date: e.target.value || null })}
-          />
-          <Input
-            id={`${idPrefix}-${i}-time`}
-            type="time"
-            aria-label={`Stop ${i + 1} hour`}
-            value={s.time ?? ""}
-            onChange={(e) => put(i, { time: e.target.value || null })}
+          <MomentInput
+            id={`${idPrefix}-${i}-when`}
+            aria-label={`Stop ${i + 1} date and hour`}
+            date={s.date}
+            time={s.time}
+            onChange={(date, time) => put(i, { date, time })}
           />
           <Button
             type="button"

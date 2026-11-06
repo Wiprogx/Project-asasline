@@ -11,29 +11,47 @@ import {
 const roma = { name: "MSC ROMA", voyage: "FA534A", etd: "2026-09-01", eta: "2026-09-19" };
 
 describe("cutoffsFor", () => {
-  it("puts each closing its days before the ETD, across a month end", () => {
+  it("puts each closing its days before the ETD, across a month end, at the rule's hour", () => {
     expect(cutoffsFor("2026-09-01", DEFAULT_CUTOFFS)).toEqual({
       customsClosing: "2026-08-29",
+      customsClosingTime: "12:00",
       siClosing: "2026-08-30",
+      siClosingTime: "12:00",
       vgmClosing: "2026-08-30",
+      vgmClosingTime: "16:00",
       portCutOff: "2026-08-31",
+      portCutOffTime: "22:00",
+    });
+  });
+
+  it("leaves a closing's hour empty when its rule names none", () => {
+    const rules = { ...DEFAULT_CUTOFFS, portCutOff: { days: 1, time: null } };
+    expect(cutoffsFor("2026-09-01", rules)).toMatchObject({
+      portCutOff: "2026-08-31",
+      portCutOffTime: null,
     });
   });
 });
 
 describe("bookingFieldsOf", () => {
-  it("gives a booking the ship, the voyage, the dates and the closings", () => {
-    expect(bookingFieldsOf(roma, DEFAULT_CUTOFFS)).toMatchObject({
+  it("gives a booking the ship, the voyage, the dates with their hours and the closings", () => {
+    expect(bookingFieldsOf({ ...roma, etdTime: "18:00" }, DEFAULT_CUTOFFS)).toMatchObject({
       vesselName: "MSC ROMA",
       voyage: "FA534A",
       etd: "2026-09-01",
+      etdTime: "18:00",
       eta: "2026-09-19",
+      etaTime: null,
       portCutOff: "2026-08-31",
+      portCutOffTime: "22:00",
     });
   });
 
-  it("clears the closings of a sailing without an ETD rather than keep stale ones", () => {
-    expect(bookingFieldsOf({ ...roma, etd: null }, DEFAULT_CUTOFFS).customsClosing).toBeNull();
+  it("clears the closings and their hours of a sailing without an ETD rather than keep stale ones", () => {
+    const fields = bookingFieldsOf({ ...roma, etd: null, etdTime: "18:00" }, DEFAULT_CUTOFFS);
+    expect(fields.customsClosing).toBeNull();
+    expect(fields.customsClosingTime).toBeNull();
+    expect(fields.etdTime).toBeNull();
   });
 });
 

@@ -54,6 +54,11 @@ function boxesOf(d: DestinationInput, table: readonly HsCode[]): RouteBox[] {
         code: h.code,
         description: h.description ?? hsDescription(table, h.code),
       })),
+      // A drop mode's moments are each box's own, a single box included (asked beside its mode).
+      loadDate: b?.loadDate ?? null,
+      loadTime: b?.loadTime ?? null,
+      pickBackDate: b?.pickBackDate ?? null,
+      pickBackTime: b?.pickBackTime ?? null,
     };
   });
 }

@@ -6,6 +6,7 @@ import type { LoadingMode } from "@/domain/loading";
 import type { RouteBox } from "@/domain/route-service";
 import type { PickerOption } from "@/components/shared/search-picker";
 import { CommodityRows } from "./commodity-rows";
+import { DropMoments } from "./drop-moments";
 import { type PlaceKit, PlacePicker } from "./place-picker";
 import { StopRows } from "./stop-rows";
 
@@ -52,6 +53,7 @@ export function BoxRows({
             set={(v) => put(i, { loadAddressId: v })}
             kit={kit}
           />
+          <DropMoments idPrefix={`box-${i}`} box={b} set={(nb) => put(i, nb)} modes={modes} />
           <StopRows
             label={`Extra stops for box ${i + 1}`}
             idPrefix={`box-${i}-stop`}

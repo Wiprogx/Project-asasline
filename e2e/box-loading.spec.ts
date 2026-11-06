@@ -48,19 +48,17 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await page.locator("#c0-number").fill("MSCU1234566");
   // The loading address is a place: the booking's — the customer's own — is proposed.
   await expect(page.locator("#c0-load-address")).toHaveValue(new RegExp(`^${client}`));
-  await page.locator("#c0-load-date").fill("2026-10-20");
-  await page.locator("#c0-load-time").fill("07:30");
+  await page.locator("#c0-load").fill("2026-10-20T07:30");
   await choose(page.locator("#c0-mode"), "Drop off container on ground");
   await expect(page.getByText(/Box left on site/).first()).toBeVisible();
   // A drop mode asks when the box is delivered and when it is picked back, never the CMR's end.
-  await expect(page.locator("#c0-pickBack-date")).toBeVisible();
-  await expect(page.locator("#c0-loadEnd-date")).toHaveCount(0);
-  await page.locator("#c0-pickBack-date").fill("2026-10-22");
+  await expect(page.locator("#c0-pickBack")).toBeVisible();
+  await expect(page.locator("#c0-loadEnd")).toHaveCount(0);
+  await page.locator("#c0-pickBack").fill("2026-10-22T10:00");
   await page.getByRole("button", { name: "+ Add stop" }).first().click();
   await page.locator("#c0-stop-0").fill(client);
   await page.getByRole("listbox").getByRole("option").first().click();
-  await page.locator("#c0-stop-0-date").fill("2026-10-21");
-  await page.locator("#c0-stop-0-time").fill("09:00");
+  await page.locator("#c0-stop-0-when").fill("2026-10-21T09:00");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
   await expectToast(page, "Container saved");
 

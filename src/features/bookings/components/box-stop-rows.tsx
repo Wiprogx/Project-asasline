@@ -1,8 +1,8 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
+import { MomentInput } from "@/components/shared/moment-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { PickerOption } from "@/components/shared/search-picker";
 import type { Stop } from "@/domain/loading";
 import { PlaceField } from "./place-field";
@@ -59,7 +59,7 @@ export function BoxStopRows({
       {rows.map((r, i) => (
         <div
           key={r.key}
-          className="grid gap-2 rounded-md border p-2 lg:grid-cols-[1fr_9rem_6rem_auto] lg:items-end"
+          className="grid gap-2 rounded-md border p-2 lg:grid-cols-[1fr_14rem_auto] lg:items-end"
         >
           <PlaceField
             id={`${p}-stop-${i}`}
@@ -75,21 +75,14 @@ export function BoxStopRows({
             dialog={newPlace}
             error={i === 0 ? error : undefined}
           />
-          <Input
-            id={`${p}-stop-${i}-date`}
-            name="stopDate"
-            type="date"
-            aria-label={`Stop ${i + 1} date`}
-            value={r.date}
-            onChange={(e) => put(r.key, { date: e.target.value })}
-          />
-          <Input
-            id={`${p}-stop-${i}-time`}
-            name="stopTime"
-            type="time"
-            aria-label={`Stop ${i + 1} hour`}
-            value={r.time}
-            onChange={(e) => put(r.key, { time: e.target.value })}
+          <MomentInput
+            id={`${p}-stop-${i}-when`}
+            aria-label={`Stop ${i + 1} date and hour`}
+            date={r.date || null}
+            time={r.time || null}
+            onChange={(date, time) => put(r.key, { date: date ?? "", time: time ?? "" })}
+            dateName="stopDate"
+            timeName="stopTime"
           />
           <Button
             type="button"

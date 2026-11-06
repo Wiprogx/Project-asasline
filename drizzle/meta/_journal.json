@@ -624,6 +624,13 @@
       "when": 1793964361063,
       "tag": "0088_container_specs_and_box_owners",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1793966740929,
+      "tag": "0089_booking_vessel_hours",
+      "breakpoints": true
     }
   ]
 }

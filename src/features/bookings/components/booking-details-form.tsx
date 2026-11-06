@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { ActionForm } from "@/components/shared/action-form";
 import { Field } from "@/components/shared/field";
+import { MomentField } from "@/components/shared/moment-field";
 import { NativeSelect } from "@/components/shared/native-select";
 import { SearchPicker } from "@/components/shared/search-picker";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ import { type BookingPlaces, OfficePartiesCard } from "./office-parties-card";
 
 type Values = { id: string; version: number; [field: string]: string | number | null };
 type Option = { id: string; name: string; professions?: string[] | null; tags?: string[] | null };
+
+/** A value of the record as a date-and-hour field reads it: text or nothing. */
+const str = (v: string | number | null | undefined) => (v == null ? null : String(v));
 
 const PARTY_FIELDS = [
   ["payerId", "Payer (invoiced)"],
@@ -118,18 +122,30 @@ export function BookingDetailsForm({
               options={docTypes}
             />
           </Field>
-          {TEXT.map((f) => (
-            <Field key={f.name} id={f.name} label={f.label} error={fe?.[f.name]}>
-              <Input
+          {TEXT.map((f) =>
+            f.type === "date" ? (
+              // A day and its hour as one field, posted as `etd` and `etdTime` (domain/moments).
+              <MomentField
+                key={f.name}
                 id={f.name}
-                name={f.name}
-                type={f.type}
-                defaultValue={values[f.name] ?? ""}
-                aria-invalid={!!fe?.[f.name]}
-                list={f.name === "pol" || f.name === "pod" ? "ports" : undefined}
+                label={f.label}
+                date={str(values[f.name])}
+                time={str(values[`${f.name}Time`])}
+                error={fe?.[f.name] ?? fe?.[`${f.name}Time`]}
               />
-            </Field>
-          ))}
+            ) : (
+              <Field key={f.name} id={f.name} label={f.label} error={fe?.[f.name]}>
+                <Input
+                  id={f.name}
+                  name={f.name}
+                  type={f.type}
+                  defaultValue={values[f.name] ?? ""}
+                  aria-invalid={!!fe?.[f.name]}
+                  list={f.name === "pol" || f.name === "pod" ? "ports" : undefined}
+                />
+              </Field>
+            ),
+          )}
         </CardContent>
       </Card>
       {!state.ok && state.error && (

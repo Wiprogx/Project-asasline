@@ -3,6 +3,7 @@ import { containerNumberOk } from "@/domain/container";
 import { BOOKING_FLOW, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
 import { dayField } from "@/lib/zod-fields";
 import { parseHsLines } from "@/domain/goods";
+import { snapQuarterHour } from "@/domain/moments";
 import { parseEmails } from "@/domain/messages";
 import { PORT_CODE } from "@/domain/ports";
 
@@ -47,10 +48,12 @@ export const cancelSchema = z.object({
 export const restoreSchema = cancelSchema.omit({ reasonId: true });
 
 const party = z.uuid("Choose a contact").optional();
+/** An hour of the day, "HH:MM", kept to the quarter hour (domain/moments). */
 const time = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time as HH:MM")
-  .optional();
+  .optional()
+  .transform((v) => (v ? snapQuarterHour(v) : v));
 
 /** The editable part of a booking. The ref, client and status have their own paths. */
 export const bookingDetailsSchema = z
@@ -85,12 +88,19 @@ export const bookingDetailsSchema = z
     docTypeId: z.uuid("Choose a document"),
     vesselName: optional,
     voyage: optional,
+    // Each moment a day and the hour beside it (domain/moments), posted as one field.
     etd: day.optional(),
+    etdTime: time,
     eta: day.optional(),
+    etaTime: time,
     customsClosing: day.optional(),
+    customsClosingTime: time,
     vgmClosing: day.optional(),
+    vgmClosingTime: time,
     siClosing: day.optional(),
+    siClosingTime: time,
     portCutOff: day.optional(),
+    portCutOffTime: time,
   })
   .superRefine((v, ctx) => {
     const p = sailingProblem(v.etd ?? null, v.eta ?? null);
@@ -119,11 +129,17 @@ export const CLEARABLE_DETAILS = [
   "vesselName",
   "voyage",
   "etd",
+  "etdTime",
   "eta",
+  "etaTime",
   "customsClosing",
+  "customsClosingTime",
   "vgmClosing",
+  "vgmClosingTime",
   "siClosing",
+  "siClosingTime",
   "portCutOff",
+  "portCutOffTime",
 ] as const;
 
 const kg = z.coerce.number().int().min(0, "Kilograms, 0 or more").max(100_000).optional();

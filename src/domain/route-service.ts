@@ -27,13 +27,20 @@ export type RouteHs = { code: string; description: string | null };
 
 /**
  * One container of a destination (legacy qb-row, a box's hs[]): its loading mode, address and
- * stops, and what it carries — one HS row per product.
+ * stops, and what it carries — one HS row per product. A drop mode (chassis disconnected, box
+ * on the ground) agrees the moments the booking will ask: when the box is delivered to the
+ * address and when it is picked back, each a day and an hour (domain/moments); a box quoted
+ * before they were asked has none.
  */
 export type RouteBox = {
   loadingMode: string | null;
   loadAddressId: string | null;
   stops: RouteStop[];
   hs: RouteHs[];
+  loadDate?: string | null;
+  loadTime?: string | null;
+  pickBackDate?: string | null;
+  pickBackTime?: string | null;
 };
 
 /** What a quotation ships, in words, from every box's HS rows: "630900 Worn clothes, 940360". */

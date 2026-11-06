@@ -13,6 +13,7 @@ import {
   type RouteStop,
 } from "@/domain/route-service";
 import { BoxRows } from "./box-rows";
+import { DropMoments } from "./drop-moments";
 import { type PlaceKit, PlacePicker } from "./place-picker";
 import { CommodityRows } from "./commodity-rows";
 import { StopRows } from "./stop-rows";
@@ -111,9 +112,18 @@ function OneBox({
           value={d.loadingMode ?? ""}
           placeholder="— not agreed yet —"
           options={modes.map((m) => ({ value: m.name, label: m.name }))}
-          onChange={(e) => set({ ...d, loadingMode: e.target.value || null })}
+          onChange={(e) => {
+            const loadingMode = e.target.value || null;
+            set({ ...d, loadingMode, boxDetails: [{ ...box, loadingMode }] });
+          }}
         />
       </Field>
+      <DropMoments
+        idPrefix="box"
+        box={box}
+        set={(b) => set({ ...d, boxDetails: [b] })}
+        modes={modes}
+      />
       {d.service === "door_port" && (
         <>
           <PlacePicker

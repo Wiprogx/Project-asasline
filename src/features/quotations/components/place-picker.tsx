@@ -15,8 +15,9 @@ export type PlaceKit = {
 };
 
 /**
- * The loading address: one of the customer's places (its delivery addresses first, the most
- * recent picked by default), or "+ New location" when it has none yet.
+ * The loading address or a stop: the customer's places first (its delivery addresses before
+ * the rest, the most recent picked by default), then every other location — a box may be
+ * loaded at, or call at, a place of another company — or "+ New location" for one not yet known.
  */
 export function PlacePicker({
   id,
@@ -44,8 +45,10 @@ export function PlacePicker({
             name={id}
             options={kit.places}
             defaultValue={value}
-            placeholder={kit.clientId ? "Search addresses…" : "Choose the customer first"}
-            empty="No address of this customer matches — add a new location."
+            placeholder={
+              kit.clientId ? "Search places — the customer's first…" : "Choose the customer first"
+            }
+            empty="No place matches — add a new location."
             onChange={set}
           />
         </div>

@@ -92,9 +92,15 @@ export async function loadingOf(tx: DbOrTx, route: Route) {
     },
     boxes: per.map((b) => ({
       loadingMode: b.loadingMode,
+      loadAddressId: b.loadAddressId,
       loadAddress: b.loadAddressId ? (at.get(b.loadAddressId) ?? null) : null,
       stops: asStops(b.stops),
       hs: b.hs ?? [],
+      // The moments a drop mode agreed, onto the box's loading card as "Delivered on" / "Picked back on".
+      loadDate: b.loadDate ?? null,
+      loadTime: b.loadTime ?? null,
+      pickBackDate: b.pickBackDate ?? null,
+      pickBackTime: b.pickBackTime ?? null,
     })),
   };
 }
