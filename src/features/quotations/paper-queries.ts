@@ -9,6 +9,7 @@ import {
   type PaperStop,
   placeBlock,
 } from "@/domain/quotation-paper";
+import { isDropMode, type LoadingMode } from "@/domain/loading";
 import { momentWords } from "@/domain/moments";
 import { commodityWords, type RouteStop } from "@/domain/route-service";
 import { readPaymentTerms } from "@/server/accounting-config";
@@ -16,6 +17,7 @@ import { requirePermission } from "@/server/auth/dal";
 import { cityNameOf } from "@/server/city-sql";
 import { officeToday } from "@/server/clock";
 import { readCountries } from "@/server/countries";
+import { readLoadingModes } from "@/server/loading-config";
 import { db, type DbOrTx } from "@/server/db/client";
 import { contacts } from "@/server/db/schema";
 import { lookupLabels } from "@/server/lookups";
@@ -62,22 +64,26 @@ async function placesOf(tx: DbOrTx, ids: readonly string[]): Promise<Map<string,
   );
 }
 
-/** A stop as the paper prints it: the place in full, and the day and hour the truck is expected. */
+/** A stop as the paper prints it: the place in full, when the truck is expected, its mode and, dropped, when the box is picked back. */
 const stopOf = (at: Map<string, Place>, s: RouteStop): PaperStop => ({
   place: at.get(s.contactId)?.block ?? "",
-  when: [s.date, s.time].filter(Boolean).join(" ") || null,
+  when: momentWords(s.date, s.time) || null,
+  mode: s.loadingMode ?? null,
+  pickedBack: momentWords(s.pickBackDate, s.pickBackTime) || null,
 });
 
 /**
  * Each container's loading in words (as accepting the destination carries it, accept-store
  * loadingOf): the box's own details, else the destination's.
  */
-function boxesOf(r: Route, at: Map<string, Place>): PaperBox[] {
+function boxesOf(r: Route, at: Map<string, Place>, modes: readonly LoadingMode[]): PaperBox[] {
   return Array.from({ length: Math.max(1, r.boxes) }, (_, i) => {
     const b = r.boxDetails[i];
     const addressId = b?.loadAddressId ?? r.loadAddressId;
+    const loadingMode = b?.loadingMode ?? r.loadingMode;
     return {
-      loadingMode: b?.loadingMode ?? r.loadingMode,
+      loadingMode,
+      dropped: isDropMode(modes, loadingMode),
       loadAddress: addressId ? (at.get(addressId)?.block ?? null) : null,
       stops: (b?.stops ?? r.stops).map((s) => stopOf(at, s)),
       delivered: momentWords(b?.loadDate, b?.loadTime) || null,
@@ -102,7 +108,7 @@ export async function quotationPaper(id: string): Promise<PaperQuotation | null>
   await requirePermission("app.quotations");
   const q = await getQuotation(id);
   if (!q || q.status === "cancelled") return null;
-  const [[client], terms, docTypes, at] = await Promise.all([
+  const [[client], terms, docTypes, modes, at] = await Promise.all([
     db
       .select({
         name: contacts.name,
@@ -119,6 +125,7 @@ export async function quotationPaper(id: string): Promise<PaperQuotation | null>
       .where(eq(contacts.id, q.clientId)),
     readPaymentTerms(),
     lookupLabels("doc-types"),
+    readLoadingModes(),
     placesOf(
       db,
       placeIds(q.routes).filter((x): x is string => !!x),
@@ -136,7 +143,7 @@ export async function quotationPaper(id: string): Promise<PaperQuotation | null>
       condition: l.condition,
       vatCode: l.vatCode,
     })),
-    boxDetails: boxesOf(r, at),
+    boxDetails: boxesOf(r, at, modes),
   }));
   return {
     ref: q.ref,

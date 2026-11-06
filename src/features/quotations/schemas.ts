@@ -33,11 +33,20 @@ const optionalTime = z
   .optional()
   .transform((v) => (v ? snapQuarterHour(v) : null));
 
-/** A stop: one of the customer's places, and when the truck calls there. */
+/** A stop: one of the customer's places, when the truck calls there, how the box is handled there and, dropped, when it is picked back. */
 const stop = z.object({
   contactId: z.uuid("Pick the stop's address"),
+  loadingMode: z
+    .string()
+    .trim()
+    .max(80)
+    .nullable()
+    .optional()
+    .transform((v) => v || null),
   date: optionalDay,
   time: optionalTime,
+  pickBackDate: optionalDay,
+  pickBackTime: optionalTime,
 });
 
 /** One product shipped: its HS code and, when the list has none, its words. */

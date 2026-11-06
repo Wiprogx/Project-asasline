@@ -63,6 +63,8 @@ test("a door-to-port quotation for two containers, each box asked separately, it
   // field each (day and hour), as the booking will.
   await choose(page.getByLabel("Box 2 loading mode"), "Drop off container on ground");
   await expect(page.locator("#box-0-delivered")).toHaveCount(0);
+  // Under direct loading the quotation asks the loading day and hour all the same.
+  await page.locator("#box-0-loading").fill("2026-11-10T07:30");
   await page.locator("#box-1-delivered").fill("2026-11-12T08:00");
   await page.locator("#box-1-pickBack").fill("2026-11-14T16:00");
   await expect(page.getByRole("combobox", { name: "Box 2 loading address" })).toHaveValue(
@@ -87,8 +89,13 @@ test("a door-to-port quotation for two containers, each box asked separately, it
   await expect(page.getByRole("combobox", { name: "Stop 1", exact: true })).toHaveValue(
     new RegExp(`^Depot ${t}`),
   );
+  // The stop has a loading mode of its own; a drop mode asks when the box is delivered and picked back.
+  await choose(page.getByLabel("Stop 1 loading mode"), "Disconnect chassis");
+  await page.locator("#box-1-stop-0-when").fill("2026-11-13T09:00");
+  await page.locator("#box-1-stop-0-pickBack").fill("2026-11-15T10:00");
   await page.getByRole("button", { name: "Create quotation" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^QT/);
+  const quotationId = page.url().split("/quotations/")[1];
   await expect(page.getByText(/40HC × 2|× 2/).first()).toBeVisible();
 
   // One booking for the destination, its two boxes carrying their own loading.
@@ -99,9 +106,17 @@ test("a door-to-port quotation for two containers, each box asked separately, it
   await expect(page.locator("#c0-load-address")).toHaveValue(new RegExp(`^Warehouse ${t}`));
   await expect(page.locator("#c1-stop-0")).toHaveValue(new RegExp(`^Depot ${t}`));
   await expect(page.getByText(/630900/).first()).toBeVisible();
-  // The dropped box carries the moments agreed on the quotation onto its loading card.
+  // Each box carries the moments agreed on the quotation onto its loading card.
+  await expect(page.locator("#c0-load")).toHaveValue("2026-11-10T07:30");
   await expect(page.locator("#c1-load")).toHaveValue("2026-11-12T08:00");
   await expect(page.locator("#c1-pickBack")).toHaveValue("2026-11-14T16:00");
+
+  // The printed quotation says the stop as its own rows: the place, then when and how.
+  await open(page, `/print/quotations/${quotationId}`);
+  await expect(page.getByText("Container 2 · Stop 1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Container 2 · Stop 1 — when and how")).toBeVisible();
+  await expect(page.getByText("Disconnect chassis").first()).toBeVisible();
+  await expect(page.getByText("Picked back on 2026-11-15 10:00")).toBeVisible();
 
   // Both places are the customer's own linked locations, with the delivery role.
   await open(page, `/contacts?q=${encodeURIComponent(client)}`);

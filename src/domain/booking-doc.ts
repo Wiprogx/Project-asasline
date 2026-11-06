@@ -22,6 +22,9 @@ export type CopyBooking = {
   loadDate: string | null;
   loadTime: string | null;
   loadingMode: string | null;
+  /** The depot the empty boxes are collected at, as the paper writes a place; and the day. */
+  pickupDepot: string | null;
+  pickupDate: string | null;
   carrierBookingNo: string | null;
   blNo: string | null;
   vesselName: string | null;
@@ -66,9 +69,6 @@ export type CopyBox = {
   loadingMode: string | null;
   /** The trucker's name, resolved by the query; null when none is chosen. */
   transporter: string | null;
-  /** The depot the empty is collected at, as the paper writes a place; and the day. */
-  pickupDepot: string | null;
-  pickupDate: string | null;
   pickBackDate: string | null;
   pickBackTime: string | null;
   stops: readonly Stop[];
@@ -147,15 +147,23 @@ export function loadingRows(b: CopyBooking, box: CopyBox, boxCount: number): Row
   const l = boxLoading({ ...b, boxCount }, box);
   const when = [l.date, l.time].filter(Boolean).join(" ");
   return [
-    ["Empty collected at", dash(box.pickupDepot)],
-    ["Empty collected on", dash(box.pickupDate)],
+    ["Empty collected at", dash(b.pickupDepot)],
+    ["Empty collected on", dash(b.pickupDate)],
     [addressLabel(b.kind), dash(l.address)],
     ["Loading date", when || "—"],
     ["Loading mode", dash(l.mode)],
     ["Trucker", dash(box.transporter)],
     ...box.stops.map((st, k): Row => [
       `Stop ${k + 1}`,
-      [st.address, [st.date, st.time].filter(Boolean).join(" ")].filter(Boolean).join(" · "),
+      [
+        st.address,
+        [st.date, st.time].filter(Boolean).join(" "),
+        st.loadingMode,
+        st.pickBackDate &&
+          `picked back ${[st.pickBackDate, st.pickBackTime].filter(Boolean).join(" ")}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
     ]),
     ...(box.pickBackDate
       ? [["Picked back up", [box.pickBackDate, box.pickBackTime].filter(Boolean).join(" ")] as Row]

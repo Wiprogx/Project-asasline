@@ -112,13 +112,18 @@ export function loadingModesFromRows(rows: readonly LoadingModeRow[]): {
 /**
  * Another place the truck calls at for this box (legacy stopRow): a location contact
  * (`placeId` — none on a box from before or a legacy import) and its words as written when the
- * box was saved, which the trucker copy prints, and when the truck is expected there.
+ * box was saved, which the trucker copy prints, when the truck is expected there, how the box
+ * is handled there (a loading mode of its own, as the quotation agreed it; none on a stop from
+ * before) and, dropped there, when it is picked back.
  */
 export type Stop = {
   placeId?: string | null;
   address: string;
   date: string | null;
   time: string | null;
+  loadingMode?: string | null;
+  pickBackDate?: string | null;
+  pickBackTime?: string | null;
 };
 
 /* ---- what a driver is told, and what is still missing ------------------------------------ */

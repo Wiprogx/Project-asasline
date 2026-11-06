@@ -78,6 +78,9 @@ export async function loadingOf(tx: DbOrTx, route: Route) {
       address: at.get(s.contactId) ?? "",
       date: s.date,
       time: s.time,
+      loadingMode: s.loadingMode ?? null,
+      pickBackDate: s.pickBackDate ?? null,
+      pickBackTime: s.pickBackTime ?? null,
     }));
   const loadAddressId = route.loadAddressId ?? per[0].loadAddressId ?? null;
   return {

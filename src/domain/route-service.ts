@@ -20,17 +20,30 @@ export const ROUTE_SERVICE_FREIGHT: Record<RouteService, string> = {
  * A stop of a destination or of one of its boxes (legacy stops): one of the customer's places
  * (a location contact), and when the truck calls there.
  */
-export type RouteStop = { contactId: string; date: string | null; time: string | null };
+/**
+ * A stop on the way: one of the customer's places, when the truck is expected there — delivered
+ * there, under a drop mode — how the box is handled there (a loading mode of its own, or none
+ * said) and, dropped there, when it is picked back.
+ */
+export type RouteStop = {
+  contactId: string;
+  date: string | null;
+  time: string | null;
+  loadingMode?: string | null;
+  pickBackDate?: string | null;
+  pickBackTime?: string | null;
+};
 
 /** A product in a box: its HS code (Settings › HS codes) and, when the list has none, its words. */
 export type RouteHs = { code: string; description: string | null };
 
 /**
  * One container of a destination (legacy qb-row, a box's hs[]): its loading mode, address and
- * stops, and what it carries — one HS row per product. A drop mode (chassis disconnected, box
- * on the ground) agrees the moments the booking will ask: when the box is delivered to the
- * address and when it is picked back, each a day and an hour (domain/moments); a box quoted
- * before they were asked has none.
+ * stops, and what it carries — one HS row per product. The loading moment the booking will
+ * ask is agreed here: under direct loading the day and hour the truck loads (`loadDate`,
+ * `loadTime`); under a drop mode (chassis disconnected, box on the ground) when the box is
+ * delivered to the address and when it is picked back, each a day and an hour
+ * (domain/moments); a box quoted before they were asked has none.
  */
 export type RouteBox = {
   loadingMode: string | null;

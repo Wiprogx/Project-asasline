@@ -24,8 +24,6 @@ const bare = (number: string | null): CopyBox => ({
   loadTime: null,
   loadingMode: null,
   transporter: null,
-  pickupDepot: null,
-  pickupDate: null,
   pickBackDate: null,
   pickBackTime: null,
   stops: [],
@@ -44,6 +42,8 @@ const booking: CopyBooking = {
   loadDate: "2026-10-02",
   loadTime: null,
   loadingMode: null,
+  pickupDepot: null,
+  pickupDate: null,
   carrierBookingNo: null,
   blNo: null,
   vesselName: "MSC ROMA",
@@ -75,14 +75,25 @@ describe("the copies", () => {
       transporter: "Transports Dupont",
       pickBackDate: "2026-10-05",
       pickBackTime: "16:00",
-      stops: [{ address: "Depot Zeebrugge", date: "2026-10-04", time: null }],
+      stops: [
+        {
+          address: "Depot Zeebrugge",
+          date: "2026-10-04",
+          time: null,
+          loadingMode: "Disconnect chassis",
+          pickBackDate: "2026-10-06",
+          pickBackTime: "10:00",
+        },
+      ],
     };
     const rows = Object.fromEntries(loadingRows(booking, box, 2));
     expect(rows["Loading address"]).toBe("Quay 730, Antwerp");
     expect(rows["Loading date"]).toBe("2026-10-03 07:30");
     expect(rows["Loading mode"]).toBe("Drop off container on ground");
     expect(rows["Trucker"]).toBe("Transports Dupont");
-    expect(rows["Stop 1"]).toBe("Depot Zeebrugge · 2026-10-04");
+    expect(rows["Stop 1"]).toBe(
+      "Depot Zeebrugge · 2026-10-04 · Disconnect chassis · picked back 2026-10-06 10:00",
+    );
     expect(rows["Picked back up"]).toBe("2026-10-05 16:00");
     expect(copyGaps(booking, box, 2)).toEqual([]);
     // the second box inherits nothing from the first, not even the booking's date

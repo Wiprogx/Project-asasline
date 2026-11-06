@@ -21,6 +21,7 @@ import {
   professions,
   salutations,
   tagList,
+  listTable,
 } from "./lists";
 
 export const contacts = pgTable(
@@ -192,3 +193,14 @@ export const contactTags = pgTable(
   },
   (t) => [index("contact_tags_contact_idx").on(t.contactId)],
 );
+
+/**
+ * Whose box a container is, by the four letters its number starts with (legacy BOX_OWNERS): the
+ * row's words are the prefix (MSCU), `owner` the name shown next to the number on the booking,
+ * `carrierId` the shipping line it is when it is one of the office's contacts — what the
+ * tracking will follow; a lessor's prefix (TCLU, Triton) has no contact.
+ */
+export const boxOwners = listTable("box_owners", {
+  owner: text().notNull(),
+  carrierId: uuid().references(() => contacts.id),
+});

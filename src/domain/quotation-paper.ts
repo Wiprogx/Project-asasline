@@ -18,8 +18,17 @@ import type { QuoteFields } from "./quote-fields";
 import { ROUTE_SERVICE_FREIGHT } from "./route-service";
 import type { ShipmentKind } from "./shipments";
 
-/** A stop on the way: the place in full (placeBlock) and the day and hour, "2026-11-12 08:00". */
-export type PaperStop = { place: string; when: string | null };
+/**
+ * A stop on the way: the place in full (placeBlock), the day and hour the truck is expected —
+ * the box delivered, under a drop mode — ("2026-11-12 08:00"), how the box is handled there and,
+ * dropped, when it is picked back.
+ */
+export type PaperStop = {
+  place: string;
+  when: string | null;
+  mode: string | null;
+  pickedBack: string | null;
+};
 
 /** One container's loading as the paper says it, in words the query resolved. */
 export type PaperBox = {
@@ -27,7 +36,9 @@ export type PaperBox = {
   loadAddress: string | null;
   /** The stops on the way: each place printed as the loading address is, and when the truck is expected there. */
   stops: readonly PaperStop[];
-  /** Under a drop mode: when the box is put down, "2026-11-12 08:00", and when it is picked back. */
+  /** The box is left on site (a drop mode): its moment is "Delivered on", else "Loading on". */
+  dropped?: boolean;
+  /** When the box is loaded — put down, under a drop mode — "2026-11-12 08:00"; dropped, when it is picked back. */
   delivered?: string | null;
   pickedBack?: string | null;
 };
@@ -128,8 +139,9 @@ const perRoute = (routes: readonly PaperRoute[], get: (r: PaperRoute) => string 
 
 /**
  * Each stop on the way as its own pair of rows — the place printed as the loading address is
- * (name, street, city, mobile…), and beside it the day and hour the truck is expected — named
- * by its container when the destination has several, by its destination when there are several.
+ * (name, street, city, mobile…), and beside it when the truck is expected and how the box is
+ * handled there — named by its container when the destination has several, by its destination
+ * when there are several.
  */
 function stopRows(doors: readonly PaperRoute[]): Row[] {
   const many = doors.length > 1;
@@ -145,7 +157,12 @@ function stopRows(doors: readonly PaperRoute[]): Row[] {
           .join(" · ");
         return [
           [name, s.place || "To be advised"],
-          [`${name} — expected on`, dash(s.when)],
+          [
+            `${name} — when and how`,
+            [s.when, s.mode, s.pickedBack && `Picked back on ${s.pickedBack}`]
+              .filter(Boolean)
+              .join("\n") || "—",
+          ],
         ];
       }),
     ),
@@ -165,11 +182,17 @@ export function loadingRows(q: PaperQuotation): Row[] {
   );
   const modes = perRoute(doors, (r) => perBox(r, (b) => b.loadingMode));
   // A drop mode's moments, agreed here as the booking will ask them.
-  const delivered = perRoute(doors, (r) => perBox(r, (b) => b.delivered ?? null));
+  const loadingOn = perRoute(doors, (r) =>
+    perBox(r, (b) => (b.dropped ? null : (b.delivered ?? null))),
+  );
+  const delivered = perRoute(doors, (r) =>
+    perBox(r, (b) => (b.dropped ? (b.delivered ?? null) : null)),
+  );
   const pickedBack = perRoute(doors, (r) => perBox(r, (b) => b.pickedBack ?? null));
   return [
     [addressLabel(q.kind), addresses ?? "To be advised"],
     ...(modes ? [["Loading mode", modes] as Row] : []),
+    ...(loadingOn ? [["Loading on", loadingOn] as Row] : []),
     ...(delivered ? [["Delivered on", delivered] as Row] : []),
     ...(pickedBack ? [["Picked back on", pickedBack] as Row] : []),
     ...stopRows(doors),

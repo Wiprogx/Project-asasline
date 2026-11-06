@@ -53,7 +53,14 @@ const route = (over: Partial<PaperRoute> = {}): PaperRoute => ({
     {
       loadingMode: "Direct loading — 2 hours",
       loadAddress: "Warehouse, Kaai 12, Zeebrugge",
-      stops: [{ place: "Depot\nIndustrieweg 5\nBrugge", when: "2026-11-12" }],
+      stops: [
+        {
+          place: "Depot\nIndustrieweg 5\nBrugge",
+          when: "2026-11-12 08:00",
+          mode: "Disconnect chassis",
+          pickedBack: "2026-11-14 16:00",
+        },
+      ],
     },
   ],
   ...over,
@@ -117,7 +124,10 @@ describe("the printed quotation", () => {
       ["Loading address", "Warehouse, Kaai 12, Zeebrugge"],
       ["Loading mode", "Direct loading — 2 hours"],
       ["Container 2 · Stop 1", "Depot\nIndustrieweg 5\nBrugge"],
-      ["Container 2 · Stop 1 — expected on", "2026-11-12"],
+      [
+        "Container 2 · Stop 1 — when and how",
+        "2026-11-12 08:00\nDisconnect chassis\nPicked back on 2026-11-14 16:00",
+      ],
     ]);
     const differ = route({
       boxDetails: [
@@ -141,6 +151,7 @@ describe("the printed quotation", () => {
           loadingMode: "Drop off container on ground",
           loadAddress: "Depot, Brugge",
           stops: [],
+          dropped: true,
           delivered: "2026-11-12 08:00",
           pickedBack: "2026-11-14 16:00",
         },
@@ -148,6 +159,7 @@ describe("the printed quotation", () => {
           loadingMode: "Drop off container on ground",
           loadAddress: "Depot, Brugge",
           stops: [],
+          dropped: true,
           delivered: "2026-11-13 08:00",
           pickedBack: "2026-11-14 16:00",
         },
@@ -158,6 +170,32 @@ describe("the printed quotation", () => {
       ["Loading mode", "Drop off container on ground"],
       ["Delivered on", "Container 1 — 2026-11-12 08:00\nContainer 2 — 2026-11-13 08:00"],
       ["Picked back on", "2026-11-14 16:00"],
+    ]);
+  });
+
+  it("prints when a box under direct loading is loaded, apart from a dropped box's moments", () => {
+    const mixed = route({
+      boxDetails: [
+        {
+          loadingMode: "Direct loading — 2 hours",
+          loadAddress: "Depot, Brugge",
+          stops: [],
+          delivered: "2026-11-10 07:30",
+        },
+        {
+          loadingMode: "Drop off container on ground",
+          loadAddress: "Depot, Brugge",
+          stops: [],
+          dropped: true,
+          delivered: "2026-11-12 08:00",
+          pickedBack: "2026-11-14 16:00",
+        },
+      ],
+    });
+    expect(loadingRows(quotation([mixed])).slice(2)).toEqual([
+      ["Loading on", "Container 1 — 2026-11-10 07:30"],
+      ["Delivered on", "Container 2 — 2026-11-12 08:00"],
+      ["Picked back on", "Container 2 — 2026-11-14 16:00"],
     ]);
   });
 

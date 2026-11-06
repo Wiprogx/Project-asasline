@@ -13,7 +13,7 @@ import {
   type RouteStop,
 } from "@/domain/route-service";
 import { BoxRows } from "./box-rows";
-import { DropMoments } from "./drop-moments";
+import { LoadingMoments } from "./loading-moments";
 import { type PlaceKit, PlacePicker } from "./place-picker";
 import { CommodityRows } from "./commodity-rows";
 import { StopRows } from "./stop-rows";
@@ -118,7 +118,7 @@ function OneBox({
           }}
         />
       </Field>
-      <DropMoments
+      <LoadingMoments
         idPrefix="box"
         box={box}
         set={(b) => set({ ...d, boxDetails: [b] })}
@@ -140,6 +140,7 @@ function OneBox({
             stops={d.stops}
             set={(stops) => set({ ...d, stops })}
             kit={kit}
+            modes={modes}
           />
         </>
       )}
