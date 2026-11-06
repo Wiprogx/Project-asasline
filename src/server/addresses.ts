@@ -48,7 +48,7 @@ export async function addressOf(tx: DbOrTx, id: string | null): Promise<string |
 
 /**
  * A place as the trucker reads it, one line each: the company's name, its street, its postcode
- * and city with the country, its phone — never all in one phrase.
+ * and city with the country, its phone and mobile — never all in one phrase.
  */
 export async function addressBlocksOf(
   tx: DbOrTx,
@@ -65,6 +65,7 @@ export async function addressBlocksOf(
       city: cityNameOf(contacts.cityId),
       country: contacts.country,
       phone: contacts.phone,
+      mobile: contacts.mobile,
     })
     .from(contacts)
     .where(inArray(contacts.id, wanted));
@@ -75,7 +76,7 @@ export async function addressBlocksOf(
         r.name,
         r.street,
         [[r.zip, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", "),
-        r.phone,
+        [r.phone, r.mobile].filter(Boolean).join(" · "),
       ]
         .filter(Boolean)
         .join("\n"),

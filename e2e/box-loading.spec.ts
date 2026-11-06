@@ -67,9 +67,9 @@ test("each box has its own loading, and the trucker copy says what a box still l
 
   // The driver of box 1 has everything; the copy of box 2 says what is missing.
   await page.goto(`/print/bookings/${id}/trucker?box=1`);
-  // The loading address is the customer's place on lines of its own — name, street, city;
-  // the stop is the same place in one phrase, written from the contact.
-  await expect(page.locator("dd", { hasText: new RegExp(`^${client}\\s+Kaai 1`) })).toHaveCount(1);
+  // The customer and the loading address (the customer's place) are each on lines of their
+  // own — name, street, city; the stop is the same place in one phrase, written from the contact.
+  await expect(page.locator("dd", { hasText: new RegExp(`^${client}\\s+Kaai 1`) })).toHaveCount(2);
   await expect(page.getByText(`${client}, Kaai 1`)).toHaveCount(1);
   await expect(page.getByText("Terminal", { exact: true })).toBeVisible();
   await expect(page.getByText("Drop off container on ground")).toBeVisible();

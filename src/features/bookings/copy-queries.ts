@@ -85,9 +85,11 @@ export async function bookingCopy(id: string) {
       street: contacts.street,
       zip: contacts.zip,
       city: cityNameOf(contacts.cityId),
+      country: contacts.country,
       vat: contacts.vat,
       eori: contacts.eori,
       phone: contacts.phone,
+      mobile: contacts.mobile,
       email: contacts.email,
       paymentTermId: contacts.paymentTermId,
     })

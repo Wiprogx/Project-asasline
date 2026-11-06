@@ -1,5 +1,10 @@
 import { boxesFor, boxTitle, cutOffRows } from "@/domain/booking-doc";
-import { copyGaps, loadingRows, truckerBoxRows } from "@/domain/booking-loading-doc";
+import {
+  copyGaps,
+  driverClientBlock,
+  loadingRows,
+  truckerBoxRows,
+} from "@/domain/booking-loading-doc";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
 import { RowGrid, SheetTitle } from "@/components/shared/sheet-parts";
@@ -22,14 +27,11 @@ export function TruckerCopy({
   return (
     <section className="grid gap-5 text-sm">
       <div className="text-right text-xs font-bold uppercase">{SHIPMENT_KIND_LABEL[b.kind]}</div>
-      <SheetTitle>Loading order — no price</SheetTitle>
+      <SheetTitle>Loading order</SheetTitle>
       <RowGrid
         cols={2}
         rows={[
-          [
-            "Customer",
-            [client?.name, client?.phone, client?.email].filter(Boolean).join("\n") || "—",
-          ],
+          ["Customer", client ? driverClientBlock(client).join("\n") : "—"],
           ["Booking", b.ref],
         ]}
       />

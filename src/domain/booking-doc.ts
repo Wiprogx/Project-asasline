@@ -54,9 +54,11 @@ export type CopyClient = {
   street: string | null;
   zip: string | null;
   city: string | null;
+  country?: string | null;
   vat: string | null;
   eori: string | null;
   phone: string | null;
+  mobile?: string | null;
   email: string | null;
 };
 

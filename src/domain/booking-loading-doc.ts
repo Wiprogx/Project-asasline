@@ -4,7 +4,14 @@
  * A box under a drop mode is "Delivered on" and "Picked back on"; direct loading is a
  * "Loading date". Nothing is inherited between boxes (domain/loading boxLoading).
  */
-import { addressLabel, type CopyBooking, type CopyBox, dash, type Row } from "./booking-doc";
+import {
+  addressLabel,
+  type CopyBooking,
+  type CopyBox,
+  type CopyClient,
+  dash,
+  type Row,
+} from "./booking-doc";
 import { boxLoading, isDropMode, type LoadingMode, type Stop, truckerCopyGaps } from "./loading";
 
 const moment = (date: string | null | undefined, time: string | null | undefined) =>
@@ -48,6 +55,19 @@ export function loadingRows(
       : []),
   ];
 }
+
+/**
+ * The customer as the driver needs it, one line each: the company's or the person's name, its
+ * street, its postcode and city with the country, its phone and mobile, its e-mail.
+ */
+export const driverClientBlock = (c: CopyClient) =>
+  [
+    c.name,
+    c.street,
+    [[c.zip, c.city].filter(Boolean).join(" "), c.country].filter(Boolean).join(", ") || null,
+    [c.phone, c.mobile].filter(Boolean).join(" · ") || null,
+    c.email,
+  ].filter((x): x is string => !!x);
 
 /** What keeps this box's copy from going out (domain/loading truckerCopyGaps). */
 export const copyGaps = (b: CopyBooking, box: CopyBox, boxCount: number) =>

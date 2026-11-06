@@ -9,7 +9,13 @@ import {
   priceTable,
   shipmentRows,
 } from "./booking-doc";
-import { copyGaps, customerLoadingRows, loadingRows, truckerBoxRows } from "./booking-loading-doc";
+import {
+  copyGaps,
+  customerLoadingRows,
+  driverClientBlock,
+  loadingRows,
+  truckerBoxRows,
+} from "./booking-loading-doc";
 import { DEFAULT_LOADING_MODES } from "./loading";
 
 /** A box that says nothing about its loading yet. */
@@ -208,6 +214,42 @@ describe("the copies", () => {
       "2026-10-02",
     );
     expect(Object.fromEntries(customerLoadingRows(booking, [], []))["Loading date"]).toBe("—");
+  });
+  it("tell the driver who the customer is, where, and how to reach them", () => {
+    expect(
+      driverClientBlock({
+        name: "ACME NV",
+        street: "Kaai 1",
+        zip: "2000",
+        city: "Antwerpen",
+        country: "BE",
+        vat: "BE0123456789",
+        eori: null,
+        phone: "+32 3 000 00 00",
+        mobile: "+32 470 11 12 22",
+        email: "ops@acme.example",
+      }),
+    ).toEqual([
+      "ACME NV",
+      "Kaai 1",
+      "2000 Antwerpen, BE",
+      "+32 3 000 00 00 · +32 470 11 12 22",
+      "ops@acme.example",
+    ]);
+    // a person with nothing but a name and a mobile
+    expect(
+      driverClientBlock({
+        name: "Jan Peeters",
+        street: null,
+        zip: null,
+        city: null,
+        vat: null,
+        eori: null,
+        phone: null,
+        mobile: "+32 470 11 12 22",
+        email: null,
+      }),
+    ).toEqual(["Jan Peeters", "+32 470 11 12 22"]);
   });
   it("say unloading on an import", () => {
     expect(addressLabel("import")).toBe("Unloading address");
