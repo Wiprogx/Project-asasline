@@ -24,7 +24,7 @@ const schema = z.object({
   JOBS_TOKEN: z.string().min(24).optional(),
   /** The EU registers (VIES, EORI) asked for a contact's numbers; "off" (the browser suite) asks nothing and leaves them unchecked. */
   ID_REGISTERS: z.enum(["live", "off"]).default("live"),
-  /** OVH Object Storage (S3): all four set, contacts' papers go to the bucket; else FILES_DIR. */
+  /** OVH Object Storage (S3): all four set, every file (bookings, messages, invoices, contacts) goes to the bucket; else FILES_DIR. */
   S3_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().min(1).default("gra"),
   S3_BUCKET: z.string().min(3).optional(),

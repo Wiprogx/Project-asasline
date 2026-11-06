@@ -18,7 +18,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
-    "files:to-bucket": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/move-contact-files.ts",
+    "files:to-bucket": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/move-files-to-bucket.ts",
     "db:convert-children": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/convert-child-addresses.ts",
     "import:legacy": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/import/legacy.ts",
     "db:up": "docker compose up -d",

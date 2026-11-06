@@ -12,17 +12,17 @@ import { getObject, hasBucket, putObject } from "./object-store";
  * metadata; the folder holds the bytes. Nothing here is ever deleted: a file taken off a
  * booking is archived in the database and its bytes stay where they are.
  *
- * Owners in IN_BUCKET go to the bucket instead when one is configured, under the same
- * `<owner>/<id>/<stored name>` key (one folder per contact); a file kept on disk before
- * the bucket is still read from disk.
+ * With a bucket configured (the S3_* variables, OVH Object Storage), every file of every owner
+ * goes to the bucket instead, under the same `<owner>/<id>/<stored name>` key; a file kept on
+ * disk before the bucket is still read from disk (`npm run files:to-bucket` copies them over).
  */
 const root = () => resolve(env.FILES_DIR);
 
 /** What a file hangs on: a booking's folder, a message's, an invoice's, or a contact's. */
 export type FileOwner = "bookings" | "messages" | "invoices" | "contacts";
 
-const IN_BUCKET: ReadonlySet<FileOwner> = new Set(["contacts"]);
-const inBucket = (owner: FileOwner) => IN_BUCKET.has(owner) && hasBucket();
+/** Every owner, in the order the move script walks them. */
+export const FILE_OWNERS: readonly FileOwner[] = ["bookings", "messages", "invoices", "contacts"];
 
 /** The absolute path of a stored file, refused if it would leave the files folder. */
 export function storedPath(ownerId: string, storedName: string, owner: FileOwner = "bookings") {
@@ -43,7 +43,7 @@ export async function storeFile(
   bytes: Uint8Array,
   owner: FileOwner = "bookings",
 ) {
-  if (inBucket(owner)) {
+  if (hasBucket()) {
     const key = objectKey(ownerId, storedName, owner);
     await putObject(key, bytes);
     return key;
@@ -60,7 +60,7 @@ export async function openStoredFile(
   storedName: string,
   owner: FileOwner = "bookings",
 ) {
-  if (inBucket(owner)) {
+  if (hasBucket()) {
     const stream = await getObject(objectKey(ownerId, storedName, owner));
     if (stream) return stream;
   }

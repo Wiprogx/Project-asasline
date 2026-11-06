@@ -3,8 +3,9 @@ import { AwsClient } from "aws4fetch";
 import { env } from "@/env";
 
 /**
- * The office's bucket (OVH Object Storage, S3-compatible). Configured by the S3_* variables;
- * without them there is no bucket and files stay in FILES_DIR. Objects are only ever written
+ * The office's bucket (OVH Object Storage, S3-compatible), where every file of the system goes.
+ * Configured by the S3_* variables; without them there is no bucket and files stay in
+ * FILES_DIR. Objects are only ever written
  * once and read: nothing here deletes, and the bucket keeps versions besides.
  */
 let client: AwsClient | null | undefined;
