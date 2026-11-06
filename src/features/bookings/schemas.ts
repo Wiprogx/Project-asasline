@@ -200,8 +200,9 @@ export const containerSchema = z.object({
 
 /**
  * The extra stops of a box as its form posts them, one row each (`formRows`): a place of the
- * customer or any other location — a stop is a place, never typed words — and when the truck
- * is expected there. Ten at most; a row is dropped only by its Remove button, never by being empty.
+ * customer or any other location — a stop is a place, never typed words — when the truck is
+ * expected there, how the box is handled there and, dropped there, when it is picked back. Ten
+ * at most; a row is dropped only by its Remove button, never by being empty.
  */
 export const containerStopsSchema = z
   .array(
@@ -209,6 +210,9 @@ export const containerStopsSchema = z
       stopPlaceId: z.uuid("Choose a place for every stop, or remove it"),
       stopDate: day.optional(),
       stopTime: time,
+      stopMode: z.string().max(80).optional(),
+      stopPickBackDate: day.optional(),
+      stopPickBackTime: time,
     }),
   )
   .max(10, "Ten stops at most");

@@ -59,6 +59,9 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await page.locator("#c0-stop-0").fill(client);
   await page.getByRole("listbox").getByRole("option").first().click();
   await page.locator("#c0-stop-0-when").fill("2026-10-21T09:00");
+  // The stop has a loading mode of its own; a drop mode asks when the box is picked back there.
+  await choose(page.locator("#c0-stop-0-mode"), "Disconnect chassis");
+  await page.locator("#c0-stop-0-pickBack").fill("2026-10-23T10:00");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
   await expectToast(page, "Container saved");
 
@@ -67,7 +70,11 @@ test("each box has its own loading, and the trucker copy says what a box still l
   // The loading address and the stop are both the customer's place, written from the contact.
   await expect(page.getByText(`${client}, Kaai 1`)).toHaveCount(2);
   await expect(page.getByText("Drop off container on ground")).toBeVisible();
-  await expect(page.getByText(/Kaai 1.*· 2026-10-21 09:00$/)).toBeVisible();
+  await expect(
+    page.getByText(
+      /Kaai 1.*· 2026-10-21 09:00 · Disconnect chassis · picked back 2026-10-23 10:00$/,
+    ),
+  ).toBeVisible();
   await expect(page.getByText("2026-10-22")).toBeVisible();
   await expect(page.getByText(/Not ready to go out/)).toHaveCount(0);
   await page.goto(`/print/bookings/${id}/trucker?box=2`);

@@ -27,12 +27,26 @@ import { replaceGoods, resolveGoods } from "@/server/container-goods";
 import { liveLookupIdByLabel } from "@/server/lookups";
 import type { Stop } from "@/domain/loading";
 
-const STOP_FIELDS = ["stopPlaceId", "stopDate", "stopTime"] as const;
+const STOP_FIELDS = [
+  "stopPlaceId",
+  "stopDate",
+  "stopTime",
+  "stopMode",
+  "stopPickBackDate",
+  "stopPickBackTime",
+] as const;
 
 /** A stop's words are written from its place when the box is saved, as the loading address's are. */
 async function stopsOf(
   tx: Tx,
-  rows: { stopPlaceId: string; stopDate?: string; stopTime?: string }[],
+  rows: {
+    stopPlaceId: string;
+    stopDate?: string;
+    stopTime?: string;
+    stopMode?: string;
+    stopPickBackDate?: string;
+    stopPickBackTime?: string;
+  }[],
 ): Promise<Stop[]> {
   const words = await addressesOf(
     tx,
@@ -41,7 +55,15 @@ async function stopsOf(
   return rows.map((r) => {
     const address = words.get(r.stopPlaceId);
     if (!address) throw new Refused("A stop's place no longer exists.");
-    return { placeId: r.stopPlaceId, address, date: r.stopDate ?? null, time: r.stopTime ?? null };
+    return {
+      placeId: r.stopPlaceId,
+      address,
+      date: r.stopDate ?? null,
+      time: r.stopTime ?? null,
+      loadingMode: r.stopMode ?? null,
+      pickBackDate: r.stopPickBackDate ?? null,
+      pickBackTime: r.stopPickBackTime ?? null,
+    };
   });
 }
 

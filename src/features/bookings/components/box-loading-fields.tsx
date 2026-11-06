@@ -199,6 +199,7 @@ export function BoxLoadingFields({
       <BoxStopRows
         p={p}
         stops={box.stops}
+        modes={modes}
         options={options}
         clientId={places.clientId}
         newPlace={places.newPlace}

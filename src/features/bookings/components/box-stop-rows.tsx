@@ -1,10 +1,12 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
+import { Field } from "@/components/shared/field";
 import { MomentInput } from "@/components/shared/moment-input";
+import { NativeSelect } from "@/components/shared/native-select";
 import { Button } from "@/components/ui/button";
 import type { PickerOption } from "@/components/shared/search-picker";
-import type { Stop } from "@/domain/loading";
+import { isDropMode, type LoadingMode, type Stop } from "@/domain/loading";
 import { PlaceField } from "./place-field";
 
 type Row = {
@@ -13,6 +15,9 @@ type Row = {
   before: string | null;
   date: string;
   time: string;
+  mode: string;
+  pickBackDate: string;
+  pickBackTime: string;
 };
 
 const rowsOf = (stops: readonly Stop[]): Row[] =>
@@ -22,14 +27,30 @@ const rowsOf = (stops: readonly Stop[]): Row[] =>
     before: s.placeId ? null : s.address,
     date: s.date ?? "",
     time: s.time ?? "",
+    mode: s.loadingMode ?? "",
+    pickBackDate: s.pickBackDate ?? "",
+    pickBackTime: s.pickBackTime ?? "",
   }));
+
+const blankRow = (key: number): Row => ({
+  key,
+  placeId: null,
+  before: null,
+  date: "",
+  time: "",
+  mode: "",
+  pickBackDate: "",
+  pickBackTime: "",
+});
 
 /**
  * "+ Add stop" (legacy stopRow): another place the truck calls at for this box — picked as the
- * loading address is, the customer's places first, any other location or "+ New location" — and
- * the day and hour it is expected there. Not every box has one. Each row posts `stopPlaceId`,
- * `stopDate` and `stopTime` once; a stop from before shows the words it carried until a place is
- * chosen for it.
+ * loading address is, the customer's places first, any other location or "+ New location" — how
+ * the box is handled there (a loading mode of its own) and the day and hour it is expected there;
+ * under a drop mode, as the box itself, when it is delivered there and when it is picked back.
+ * Not every box has one. Each row posts `stopPlaceId`, `stopDate`, `stopTime`, `stopMode`,
+ * `stopPickBackDate` and `stopPickBackTime` once (the pick-back empty when the mode asks none, so
+ * the rows stay aligned); a stop from before shows the words it carried until a place is chosen.
  */
 export function BoxStopRows({
   p,
@@ -39,10 +60,12 @@ export function BoxStopRows({
   newPlace,
   made,
   error,
+  modes,
 }: {
   p: string;
   stops: readonly Stop[];
   options: readonly PickerOption[];
+  modes: readonly LoadingMode[];
   /** The customer a new place is linked under, and the "+ New location" dialog. */
   clientId: string | null;
   newPlace?: ReactNode;
@@ -59,7 +82,7 @@ export function BoxStopRows({
       {rows.map((r, i) => (
         <div
           key={r.key}
-          className="grid gap-2 rounded-md border p-2 lg:grid-cols-[1fr_14rem_auto] lg:items-end"
+          className="grid gap-2 rounded-md border p-2 lg:grid-cols-[1fr_12rem_auto_auto] lg:items-end"
         >
           <PlaceField
             id={`${p}-stop-${i}`}
@@ -75,15 +98,49 @@ export function BoxStopRows({
             dialog={newPlace}
             error={i === 0 ? error : undefined}
           />
-          <MomentInput
-            id={`${p}-stop-${i}-when`}
-            aria-label={`Stop ${i + 1} date and hour`}
-            date={r.date || null}
-            time={r.time || null}
-            onChange={(date, time) => put(r.key, { date: date ?? "", time: time ?? "" })}
-            dateName="stopDate"
-            timeName="stopTime"
-          />
+          <Field id={`${p}-stop-${i}-mode`} label={`Stop ${i + 1} loading mode`}>
+            <NativeSelect
+              id={`${p}-stop-${i}-mode`}
+              name="stopMode"
+              value={r.mode}
+              placeholder="— not agreed yet —"
+              options={modes.map((m) => ({ value: m.name, label: m.name }))}
+              onChange={(e) => put(r.key, { mode: e.target.value })}
+            />
+          </Field>
+          <div className="flex flex-wrap gap-2">
+            <MomentInput
+              id={`${p}-stop-${i}-when`}
+              aria-label={
+                isDropMode(modes, r.mode)
+                  ? `Stop ${i + 1} delivered on`
+                  : `Stop ${i + 1} date and hour`
+              }
+              date={r.date || null}
+              time={r.time || null}
+              onChange={(date, time) => put(r.key, { date: date ?? "", time: time ?? "" })}
+              dateName="stopDate"
+              timeName="stopTime"
+            />
+            {isDropMode(modes, r.mode) ? (
+              <MomentInput
+                id={`${p}-stop-${i}-pickBack`}
+                aria-label={`Stop ${i + 1} picked back on`}
+                date={r.pickBackDate || null}
+                time={r.pickBackTime || null}
+                onChange={(pickBackDate, pickBackTime) =>
+                  put(r.key, { pickBackDate: pickBackDate ?? "", pickBackTime: pickBackTime ?? "" })
+                }
+                dateName="stopPickBackDate"
+                timeName="stopPickBackTime"
+              />
+            ) : (
+              <>
+                <input type="hidden" name="stopPickBackDate" value="" />
+                <input type="hidden" name="stopPickBackTime" value="" />
+              </>
+            )}
+          </div>
           <Button
             type="button"
             variant="ghost"
@@ -100,10 +157,7 @@ export function BoxStopRows({
           variant="outline"
           size="sm"
           onClick={() => {
-            setRows((rs) => [
-              ...rs,
-              { key: next, placeId: null, before: null, date: "", time: "" },
-            ]);
+            setRows((rs) => [...rs, blankRow(next)]);
             setNext((n) => n + 1);
           }}
         >
