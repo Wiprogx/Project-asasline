@@ -134,6 +134,33 @@ describe("the printed quotation", () => {
     ]);
   });
 
+  it("prints when a dropped box is delivered and picked back, per container when they differ", () => {
+    const dropped = route({
+      boxDetails: [
+        {
+          loadingMode: "Drop off container on ground",
+          loadAddress: "Depot, Brugge",
+          stops: [],
+          delivered: "2026-11-12 08:00",
+          pickedBack: "2026-11-14 16:00",
+        },
+        {
+          loadingMode: "Drop off container on ground",
+          loadAddress: "Depot, Brugge",
+          stops: [],
+          delivered: "2026-11-13 08:00",
+          pickedBack: "2026-11-14 16:00",
+        },
+      ],
+    });
+    expect(loadingRows(quotation([dropped]))).toEqual([
+      ["Loading address", "Depot, Brugge"],
+      ["Loading mode", "Drop off container on ground"],
+      ["Delivered on", "Container 1 — 2026-11-12 08:00\nContainer 2 — 2026-11-13 08:00"],
+      ["Picked back on", "2026-11-14 16:00"],
+    ]);
+  });
+
   it("names each destination's loading by its port when two destinations differ", () => {
     const q = quotation([
       route(),

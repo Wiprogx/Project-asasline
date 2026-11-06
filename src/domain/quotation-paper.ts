@@ -27,6 +27,9 @@ export type PaperBox = {
   loadAddress: string | null;
   /** The stops on the way: each place printed as the loading address is, and when the truck is expected there. */
   stops: readonly PaperStop[];
+  /** Under a drop mode: when the box is put down, "2026-11-12 08:00", and when it is picked back. */
+  delivered?: string | null;
+  pickedBack?: string | null;
 };
 
 export type PaperRoute = Omit<DocRoute, "lines"> & {
@@ -161,9 +164,14 @@ export function loadingRows(q: PaperQuotation): Row[] {
     r.service === "door_port" ? (perBox(r, (b) => b.loadAddress) ?? "To be advised") : PORT_TO_PORT,
   );
   const modes = perRoute(doors, (r) => perBox(r, (b) => b.loadingMode));
+  // A drop mode's moments, agreed here as the booking will ask them.
+  const delivered = perRoute(doors, (r) => perBox(r, (b) => b.delivered ?? null));
+  const pickedBack = perRoute(doors, (r) => perBox(r, (b) => b.pickedBack ?? null));
   return [
     [addressLabel(q.kind), addresses ?? "To be advised"],
     ...(modes ? [["Loading mode", modes] as Row] : []),
+    ...(delivered ? [["Delivered on", delivered] as Row] : []),
+    ...(pickedBack ? [["Picked back on", pickedBack] as Row] : []),
     ...stopRows(doors),
   ];
 }

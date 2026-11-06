@@ -9,6 +9,7 @@ import {
   type PaperStop,
   placeBlock,
 } from "@/domain/quotation-paper";
+import { momentWords } from "@/domain/moments";
 import { commodityWords, type RouteStop } from "@/domain/route-service";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { requirePermission } from "@/server/auth/dal";
@@ -79,6 +80,8 @@ function boxesOf(r: Route, at: Map<string, Place>): PaperBox[] {
       loadingMode: b?.loadingMode ?? r.loadingMode,
       loadAddress: addressId ? (at.get(addressId)?.block ?? null) : null,
       stops: (b?.stops ?? r.stops).map((s) => stopOf(at, s)),
+      delivered: momentWords(b?.loadDate, b?.loadTime) || null,
+      pickedBack: momentWords(b?.pickBackDate, b?.pickBackTime) || null,
     };
   });
 }
