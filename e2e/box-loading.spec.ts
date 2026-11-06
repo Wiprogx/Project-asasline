@@ -1,5 +1,14 @@
 import { expect, test } from "./fixtures";
-import { choose, expectToast, fillMandatory, login, open, submit, tag } from "./helpers";
+import {
+  choose,
+  expectChosen,
+  expectToast,
+  fillMandatory,
+  login,
+  open,
+  submit,
+  tag,
+} from "./helpers";
 
 test("each box has its own loading, and the trucker copy says what a box still lacks", async ({
   page,
@@ -7,9 +16,11 @@ test("each box has its own loading, and the trucker copy says what a box still l
   const t = tag();
   await login(page);
 
-  // Settings offers the legacy table of modes.
+  // Settings offers the legacy table of modes as a list, one row each.
   await open(page, "/settings/loading");
-  await expect(page.getByText(/12 entries/)).toBeVisible();
+  await expect(page.getByText(/12 modes/)).toBeVisible();
+  await expectChosen(page.getByLabel("Mode 11 kind"), "drop");
+  await expect(page.getByLabel("Mode 11 name")).toHaveValue("Drop off container on ground");
 
   // A booking with two boxes.
   const client = `E2E Loading ${t}`;
@@ -30,7 +41,7 @@ test("each box has its own loading, and the trucker copy says what a box still l
     page.getByText("missing: loading date, loading mode, container number").first(),
   ).toBeVisible();
 
-  // Box 1 is dropped on site, with a stop on the way; box 2 is left untouched.
+  // Box 1 is dropped on site, with a stop on the way (a place of the customer); box 2 is left untouched.
   await open(page, `/bookings/${id}/containers`);
   await page.locator("#c0-number").fill("MSCU1234566");
   // The loading address is a place: the booking's — the customer's own — is proposed.
@@ -39,16 +50,24 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await page.locator("#c0-load-time").fill("07:30");
   await choose(page.locator("#c0-mode"), "Drop off container on ground");
   await expect(page.getByText(/Box left on site/).first()).toBeVisible();
-  await page.locator("#c0-pick-date").fill("2026-10-22");
-  await page.locator("#c0-stops").fill("Depot Zeebrugge | 2026-10-21 | 09:00");
+  // A drop mode asks when the box is delivered and when it is picked back, never the CMR's end.
+  await expect(page.locator("#c0-pickBack-date")).toBeVisible();
+  await expect(page.locator("#c0-loadEnd-date")).toHaveCount(0);
+  await page.locator("#c0-pickBack-date").fill("2026-10-22");
+  await page.getByRole("button", { name: "+ Add stop" }).first().click();
+  await page.locator("#c0-stop-0").fill(client);
+  await page.getByRole("listbox").getByRole("option").first().click();
+  await page.locator("#c0-stop-0-date").fill("2026-10-21");
+  await page.locator("#c0-stop-0-time").fill("09:00");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
   await expectToast(page, "Container saved");
 
   // The driver of box 1 has everything; the copy of box 2 says what is missing.
   await page.goto(`/print/bookings/${id}/trucker?box=1`);
-  await expect(page.getByText(`${client}, Kaai 1`)).toBeVisible();
+  // The loading address and the stop are both the customer's place, written from the contact.
+  await expect(page.getByText(`${client}, Kaai 1`)).toHaveCount(2);
   await expect(page.getByText("Drop off container on ground")).toBeVisible();
-  await expect(page.getByText("Depot Zeebrugge · 2026-10-21 09:00")).toBeVisible();
+  await expect(page.getByText(/Kaai 1.*· 2026-10-21 09:00$/)).toBeVisible();
   await expect(page.getByText("2026-10-22")).toBeVisible();
   await expect(page.getByText(/Not ready to go out/)).toHaveCount(0);
   await page.goto(`/print/bookings/${id}/trucker?box=2`);

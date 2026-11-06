@@ -43,9 +43,9 @@ test("a loading that ran over the agreed hours is measured from the CMR and char
   await open(page, `${url}/containers`);
   await choose(page.getByLabel("Loading mode").first(), { label: "Direct loading — 2 hours" });
   await page.getByLabel("Loading date").first().fill("2026-10-14");
-  await page.getByLabel("Time", { exact: true }).first().fill("08:00");
-  await expect(page.getByLabel("Loading finished — date").first()).toBeVisible();
-  await page.getByLabel("Loading finished — date").first().fill("2026-10-14");
+  await page.getByLabel("Loading date — time").first().fill("08:00");
+  await expect(page.getByLabel("Loading finished", { exact: true }).first()).toBeVisible();
+  await page.getByLabel("Loading finished", { exact: true }).first().fill("2026-10-14");
   await page.getByLabel("Loading finished — time").first().fill("11:20");
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
   await expectToast(page, /saved/i);

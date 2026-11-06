@@ -5,9 +5,9 @@ import { Field } from "@/components/shared/field";
 import { NativeSelect } from "@/components/shared/native-select";
 import type { PickerOption } from "@/components/shared/search-picker";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { type CustomerPlace, defaultLoadPlace, loadPlaces } from "@/domain/load-place";
-import { isDropMode, type LoadingMode, modeNote, type Stop, stopLines } from "@/domain/loading";
+import { isDropMode, type LoadingMode, modeNote, type Stop } from "@/domain/loading";
+import { BoxStopRows } from "./box-stop-rows";
 import { PlaceField } from "./place-field";
 
 export type BoxLoading = {
@@ -40,12 +40,46 @@ export type LoadPlaces = {
 
 type Errors = Record<string, string[] | undefined> | undefined;
 
+/** A date and an hour side by side, as every moment of the loading card is asked. */
+function Moment({
+  p,
+  name,
+  label,
+  hint,
+  date,
+  time,
+  fe,
+}: {
+  p: string;
+  name: string;
+  label: string;
+  hint?: string;
+  date: string | null;
+  time: string | null;
+  fe: Errors;
+}) {
+  const dateName = `${name}Date`;
+  const timeName = `${name}Time`;
+  return (
+    <>
+      <Field id={`${p}-${name}-date`} label={label} hint={hint} error={fe?.[dateName]}>
+        <Input id={`${p}-${name}-date`} name={dateName} type="date" defaultValue={date ?? ""} />
+      </Field>
+      <Field id={`${p}-${name}-time`} label={`${label} — time`} error={fe?.[timeName]}>
+        <Input id={`${p}-${name}-time`} name={timeName} type="time" defaultValue={time ?? ""} />
+      </Field>
+    </>
+  );
+}
+
 /**
  * Loading — this box only (legacy per-box loading card). Nothing here is inherited by the
  * other boxes: a missing detail prints as missing on the trucker copy, and the copy says so.
  * The loading address is a place: the booking's proposal — the customer's delivery address,
  * else its own — stands in the picker until another is chosen, and any location may be.
- * A drop mode (box left on site) asks when the truck comes back for it.
+ * The mode decides the dates asked: direct loading has the day and hour the truck comes and
+ * waits the hours included; a chassis or box left on site (a drop mode) has the day it is
+ * delivered and the day it is picked back.
  */
 export function BoxLoadingFields({
   p,
@@ -72,6 +106,8 @@ export function BoxLoadingFields({
         : (places.proposed ?? defaultLoadPlace(places.customer, places.clientId))),
   );
   const [made, setMade] = useState<CustomerPlace[]>([]);
+  const options = loadPlaces([...made, ...places.customer], places.locations);
+  const add = (m: PickerOption) => setMade((ms) => [{ ...m, delivery: true }, ...ms]);
   return (
     <fieldset className="grid gap-3 rounded-md border p-3 sm:col-span-2 lg:col-span-6 lg:grid-cols-4">
       <legend className="px-1 text-xs font-medium text-muted-foreground">
@@ -82,36 +118,16 @@ export function BoxLoadingFields({
         name="loadAddressId"
         label="Loading address"
         hint="The customer's places first, its delivery address proposed; any other location after."
-        options={loadPlaces([...made, ...places.customer], places.locations)}
+        options={options}
         ownerId={places.clientId}
         value={place}
         set={setPlace}
-        made={(m) => setMade((ms) => [{ ...m, delivery: true }, ...ms])}
+        made={add}
         before={box.loadAddress}
         dialog={places.newPlace}
         error={fe?.loadAddressId}
         className="lg:col-span-2"
       />
-      <Field
-        id={`${p}-load-date`}
-        label={drop ? "Dropped off on" : "Loading date"}
-        error={fe?.loadDate}
-      >
-        <Input
-          id={`${p}-load-date`}
-          name="loadDate"
-          type="date"
-          defaultValue={box.loadDate ?? ""}
-        />
-      </Field>
-      <Field id={`${p}-load-time`} label="Time" error={fe?.loadTime}>
-        <Input
-          id={`${p}-load-time`}
-          name="loadTime"
-          type="time"
-          defaultValue={box.loadTime ?? ""}
-        />
-      </Field>
       <Field
         id={`${p}-mode`}
         label="Loading mode"
@@ -128,6 +144,40 @@ export function BoxLoadingFields({
           options={modes.map((m) => ({ value: m.name, label: m.name }))}
         />
       </Field>
+      <Moment
+        p={p}
+        name="load"
+        label={drop ? "Delivered on" : "Loading date"}
+        hint={
+          drop
+            ? "When the chassis or the box is put down at the address."
+            : "When the truck comes; it waits the hours the mode includes."
+        }
+        date={box.loadDate}
+        time={box.loadTime}
+        fe={fe}
+      />
+      {drop ? (
+        <Moment
+          p={p}
+          name="pickBack"
+          label="Picked back on"
+          hint="When the truck comes back for the loaded box."
+          date={box.pickBackDate}
+          time={box.pickBackTime}
+          fe={fe}
+        />
+      ) : (
+        <Moment
+          p={p}
+          name="loadEnd"
+          label="Loading finished"
+          hint="From the CMR, once loaded: compared with the hours the mode includes."
+          date={box.loadEndDate}
+          time={box.loadEndTime}
+          fe={fe}
+        />
+      )}
       <Field
         id={`${p}-trucker`}
         label="Trucker for this box"
@@ -142,71 +192,15 @@ export function BoxLoadingFields({
           options={truckers.map((t) => ({ value: t.id, label: t.name }))}
         />
       </Field>
-      {!drop && (
-        <>
-          <Field
-            id={`${p}-end-date`}
-            label="Loading finished — date"
-            hint="From the CMR: compared with the hours the mode includes."
-            error={fe?.loadEndDate}
-          >
-            <Input
-              id={`${p}-end-date`}
-              name="loadEndDate"
-              type="date"
-              defaultValue={box.loadEndDate ?? ""}
-            />
-          </Field>
-          <Field id={`${p}-end-time`} label="Loading finished — time" error={fe?.loadEndTime}>
-            <Input
-              id={`${p}-end-time`}
-              name="loadEndTime"
-              type="time"
-              defaultValue={box.loadEndTime ?? ""}
-            />
-          </Field>
-        </>
-      )}
-      {drop && (
-        <>
-          <Field
-            id={`${p}-pick-date`}
-            label="Picked back up — date"
-            hint="The date above is when the box is dropped; only the collection changes."
-            error={fe?.pickBackDate}
-          >
-            <Input
-              id={`${p}-pick-date`}
-              name="pickBackDate"
-              type="date"
-              defaultValue={box.pickBackDate ?? ""}
-            />
-          </Field>
-          <Field id={`${p}-pick-time`} label="Picked back up — time" error={fe?.pickBackTime}>
-            <Input
-              id={`${p}-pick-time`}
-              name="pickBackTime"
-              type="time"
-              defaultValue={box.pickBackTime ?? ""}
-            />
-          </Field>
-        </>
-      )}
-      <Field
-        id={`${p}-stops`}
-        label="Extra stops for this box"
-        className="lg:col-span-4"
-        hint="One per line: address | date | time — the date and the hour are optional."
+      <BoxStopRows
+        p={p}
+        stops={box.stops}
+        options={options}
+        clientId={places.clientId}
+        newPlace={places.newPlace}
+        made={add}
         error={fe?.stops}
-      >
-        <Textarea
-          id={`${p}-stops`}
-          name="stops"
-          rows={2}
-          defaultValue={stopLines(box.stops)}
-          className="font-mono text-sm"
-        />
-      </Field>
+      />
     </fieldset>
   );
 }

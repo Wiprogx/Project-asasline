@@ -139,5 +139,13 @@ Each is one commit, gate green, browser suite green on a production build.
   `containers.pickup_date`. The per-box card gets "Empty collected at / on", the line's depot
   proposed; the trucker copy reads the box's; the bookings search finds a booking by a box's
   depot. The booking's `pickup_depot_id` / `pickup_date` stay as the proposal.
+- **B2 — a stop is a place; the modes are a list** (done 2026-11-06). A box's extra stops are
+  picked as its loading address is (the customer's places first, any other location, "+ New
+  location"), one row each with its day and hour, "+ Add stop" — no longer typed lines; the
+  words the trucker copy prints are written from the contact when the box is saved
+  (`Stop.placeId`, `containerStopsSchema`, `formRows`). The loading card asks the dates its mode
+  needs: direct loading the day and hour the truck comes (the CMR's end beside it), a drop mode
+  the day the chassis or box is delivered and the day it is picked back. Settings › Loading modes
+  is a list, one row per mode (`LoadingModesEditor`, `loadingModesFromRows`).
 - **C — the dates a box reports.** `picked_up_on`, `gated_in_on`, `delivered_on`, set by the
   messages that report them and shown on the Containers tab and the Track tab.

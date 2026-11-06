@@ -73,7 +73,12 @@ export async function loadingOf(tx: DbOrTx, route: Route) {
   ].filter(Boolean) as string[];
   const at = await addressesOf(tx, ids);
   const asStops = (stops: readonly RouteStop[]): Stop[] =>
-    stops.map((s) => ({ address: at.get(s.contactId) ?? "", date: s.date, time: s.time }));
+    stops.map((s) => ({
+      placeId: s.contactId,
+      address: at.get(s.contactId) ?? "",
+      date: s.date,
+      time: s.time,
+    }));
   const loadAddressId = route.loadAddressId ?? per[0].loadAddressId ?? null;
   return {
     booking: {

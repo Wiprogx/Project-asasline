@@ -30,6 +30,24 @@ export function formToObject(fd: FormData): Record<string, string | undefined> {
 }
 
 /**
+ * The rows of a repeated group of fields (a box's stops, the modes of a Settings list), each
+ * field posted once per row under its name: the i-th value of every name makes row i, trimmed,
+ * an empty cell `undefined`. The group's length is its first name's.
+ */
+export function formRows<K extends string>(
+  fd: FormData,
+  names: readonly K[],
+): Record<K, string | undefined>[] {
+  const cells = (name: K) =>
+    fd.getAll(name).map((v) => (typeof v === "string" ? v.trim() || undefined : undefined));
+  const columns = names.map((n) => [n, cells(n)] as const);
+  const count = columns[0]?.[1].length ?? 0;
+  return Array.from({ length: count }, (_, i) =>
+    Object.fromEntries(columns.map(([n, c]) => [n, c[i]])),
+  ) as Record<K, string | undefined>[];
+}
+
+/**
  * For updates: an optional field the person emptied arrives as `undefined`, which Drizzle
  * silently skips — the old value would survive. Every listed key missing from `data` becomes
  * null, so clearing a field really clears it.

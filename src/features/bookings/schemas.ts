@@ -2,7 +2,6 @@ import { z } from "zod";
 import { containerNumberOk } from "@/domain/container";
 import { BOOKING_FLOW, SHIPMENT_KINDS, sailingProblem } from "@/domain/shipments";
 import { dayField } from "@/lib/zod-fields";
-import { parseStopLines } from "@/domain/loading";
 import { parseHsLines } from "@/domain/goods";
 import { parseEmails } from "@/domain/messages";
 import { PORT_CODE } from "@/domain/ports";
@@ -165,18 +164,6 @@ export const containerSchema = z.object({
   loadEndTime: time,
   pickBackDate: day.optional(),
   pickBackTime: time,
-  stops: z
-    .string()
-    .max(5000)
-    .optional()
-    .transform((v, ctx) => {
-      const { stops, problem } = parseStopLines(v ?? "");
-      if (problem) {
-        ctx.addIssue({ code: "custom", message: problem });
-        return z.NEVER;
-      }
-      return stops;
-    }),
   // Goods in this container (domain/goods): the lines' totals win over the box's own figures.
   hsLines: z
     .string()
@@ -194,6 +181,21 @@ export const containerSchema = z.object({
   packageType: z.string().max(60).optional(),
   blDescription: z.string().max(2000).optional(),
 });
+
+/**
+ * The extra stops of a box as its form posts them, one row each (`formRows`): a place of the
+ * customer or any other location — a stop is a place, never typed words — and when the truck
+ * is expected there. Ten at most; a row is dropped only by its Remove button, never by being empty.
+ */
+export const containerStopsSchema = z
+  .array(
+    z.object({
+      stopPlaceId: z.uuid("Choose a place for every stop, or remove it"),
+      stopDate: day.optional(),
+      stopTime: time,
+    }),
+  )
+  .max(10, "Ten stops at most");
 
 /** Where the shipment stands for the consignee; a hold says who asked and what must happen. */
 export const releaseSchema = z.object({

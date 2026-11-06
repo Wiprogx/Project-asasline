@@ -4,9 +4,9 @@ import { z } from "zod";
 import { matrixProblem, type PermissionMatrix, PERMISSIONS, ROLES } from "@/domain/permissions";
 import { parseActivityRuleLines } from "@/domain/activity-rules";
 import { parseHsCodeLines } from "@/domain/goods";
-import { parseLoadingModeLines } from "@/domain/loading";
+import { loadingModesFromRows } from "@/domain/loading";
 import { parseReleaseStateLines, parseSendModeLines, parseTrackStepLines } from "@/domain/release";
-import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-result";
+import { type ActionResult, fail, formRows, formToObject, invalid } from "@/lib/action-result";
 import { requirePermission } from "@/server/auth/dal";
 import { FILE_HINTS_TAG, fileHintsSchema } from "@/server/file-config";
 import { ACTIVITY_RULES_TAG, activityRulesSchema } from "@/server/activity-config";
@@ -139,11 +139,21 @@ export async function saveHsCodes(_p: ActionResult, fd: FormData): Promise<Actio
 }
 
 /** The loading modes, one per line as "name | hours | direct or drop | surcharge item | qty". */
+const MODE_FIELDS = ["name", "hours", "kind", "surcharge", "qty"] as const;
+
+/** The loading modes list, one row per mode: name, hours included, direct or drop, surcharge item, quantity. */
 export async function saveLoadingModes(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.settings");
-  const parsed = versioned.extend({ lines: z.string().max(50_000) }).safeParse(formToObject(fd));
+  const parsed = versioned.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { modes, problems } = parseLoadingModeLines(parsed.data.lines);
+  const rows = formRows(fd, MODE_FIELDS).map((r) => ({
+    name: r.name ?? "",
+    hours: r.hours ?? "",
+    kind: r.kind ?? "",
+    surcharge: r.surcharge ?? "",
+    qty: r.qty ?? "",
+  }));
+  const { modes, problems } = loadingModesFromRows(rows);
   if (problems.length) return fail(problems.slice(0, 3).join(" · "));
   const checked = loadingModesSchema.safeParse(modes);
   if (!checked.success) return fail("At least one mode, sixty at most.");

@@ -76,7 +76,7 @@ describe("mapLegacyBooking", () => {
       transporterId: "c-vrd",
       pickBackDate: "2026-09-26",
       pickBackTime: "15:30",
-      stops: [{ address: "Mechelen", date: "2026-09-26", time: "10:00" }],
+      stops: [{ placeId: null, address: "Mechelen", date: "2026-09-26", time: "10:00" }],
       blDescription: "USED CLOTHING",
     });
   });

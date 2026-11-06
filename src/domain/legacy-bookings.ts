@@ -50,7 +50,7 @@ const objects = (v: unknown): Record<string, unknown>[] =>
 const stopsOf = (v: unknown): Stop[] =>
   objects(v)
     .filter((s) => text(s.addr))
-    .map((s) => ({ address: text(s.addr)!, date: day(s.date), time: text(s.time) }));
+    .map((s) => ({ placeId: null, address: text(s.addr)!, date: day(s.date), time: text(s.time) }));
 
 const hsOf = (v: unknown): HsLine[] =>
   objects(v)

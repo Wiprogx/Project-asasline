@@ -1,11 +1,17 @@
 "use server";
 
 import { and, eq, isNull, max } from "drizzle-orm";
-import { type ActionResult, formToObject, invalid, nullMissing } from "@/lib/action-result";
+import {
+  type ActionResult,
+  formRows,
+  formToObject,
+  invalid,
+  nullMissing,
+} from "@/lib/action-result";
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db, type Tx } from "@/server/db/client";
-import { addressOf } from "@/server/addresses";
+import { addressesOf, addressOf } from "@/server/addresses";
 import { syncBookingRules } from "@/server/rules-sync";
 import { bookings, containers } from "@/server/db/schema";
 import { ConflictError, updateVersioned } from "@/server/versioned";
@@ -13,11 +19,31 @@ import {
   addContainerSchema,
   CLEARABLE_CONTAINER,
   containerSchema,
+  containerStopsSchema,
   removeContainerSchema,
 } from "./schemas";
 import { guarded, Refused } from "./settle";
 import { replaceGoods, resolveGoods } from "@/server/container-goods";
 import { liveLookupIdByLabel } from "@/server/lookups";
+import type { Stop } from "@/domain/loading";
+
+const STOP_FIELDS = ["stopPlaceId", "stopDate", "stopTime"] as const;
+
+/** A stop's words are written from its place when the box is saved, as the loading address's are. */
+async function stopsOf(
+  tx: Tx,
+  rows: { stopPlaceId: string; stopDate?: string; stopTime?: string }[],
+): Promise<Stop[]> {
+  const words = await addressesOf(
+    tx,
+    rows.map((r) => r.stopPlaceId),
+  );
+  return rows.map((r) => {
+    const address = words.get(r.stopPlaceId);
+    if (!address) throw new Refused("A stop's place no longer exists.");
+    return { placeId: r.stopPlaceId, address, date: r.stopDate ?? null, time: r.stopTime ?? null };
+  });
+}
 
 /** Box changes are logged on the booking, so its history tells the whole story. */
 async function editableBooking(tx: Tx, bookingId: string) {
@@ -41,6 +67,13 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
   const user = await requirePermission("bookings.edit");
   const parsed = containerSchema.safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
+  const stopRows = containerStopsSchema.safeParse(formRows(fd, STOP_FIELDS));
+  if (!stopRows.success)
+    return {
+      ok: false,
+      error: "Please correct the highlighted fields.",
+      fieldErrors: { stops: stopRows.error.issues.map((i) => i.message) },
+    };
   const { id, bookingId, version, seals, hsLines, packageType, type, ...fields } = parsed.data;
   const values: Record<string, unknown> = nullMissing(fields, CLEARABLE_CONTAINER);
 
@@ -59,6 +92,7 @@ export async function updateContainer(_p: ActionResult, fd: FormData): Promise<A
           values.loadAddress = await addressOf(tx, values.loadAddressId as string);
           if (!values.loadAddress) throw new Refused("The loading address no longer exists.");
         }
+        values.stops = await stopsOf(tx, stopRows.data);
         // Every package type and seal source must be in its Settings list (Package types, Seal sources).
         const goods = await resolveGoods(tx, { hsLines, seals, packageType });
         if (goods.problem !== null) throw new Refused(goods.problem);
