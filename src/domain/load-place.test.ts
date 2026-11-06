@@ -34,4 +34,19 @@ describe("loadPlaces", () => {
   it("offers every location when the customer has none", () => {
     expect(loadPlaces([], locations)).toEqual(locations);
   });
+  it("finds a place by the names of the contacts it is linked under, from either list", () => {
+    const customer = [
+      { value: "yard", label: "Yard (Loading)", delivery: false, keywords: "Acme" },
+    ];
+    const all = [
+      { value: "yard", label: "Yard — Kaai 2", keywords: "Acme Globex" },
+      { value: "quay", label: "Quay 730 — Antwerpen", keywords: "Globex" },
+      { value: "globex", label: "Globex — Rue 1" },
+    ];
+    expect(loadPlaces(customer, all)).toEqual([
+      { value: "yard", label: "Yard (Loading)", keywords: "Acme Globex" },
+      { value: "quay", label: "Quay 730 — Antwerpen", keywords: "Globex" },
+      { value: "globex", label: "Globex — Rue 1" },
+    ]);
+  });
 });

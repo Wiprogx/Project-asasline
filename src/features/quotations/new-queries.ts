@@ -55,8 +55,8 @@ export async function newQuotationChoices() {
     terms: terms.map((t) => ({ value: t.id, label: t.name })),
     modes,
     hs: hs.map((h) => ({ value: h.code, label: h.description, code: h.code })),
-    /** Every live location, offered after the customer's own places (domain/load-place). */
-    locations: locations.map((l) => ({ value: l.value, label: l.label })),
+    /** Every live place, after the customer's own, found by its owners' names (domain/load-place). */
+    locations: locations.map((l) => ({ value: l.value, label: l.label, keywords: l.keywords })),
   };
 }
 

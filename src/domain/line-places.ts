@@ -14,6 +14,8 @@ export type LinePlace = {
   label: string;
   /** The contacts it is linked under with this role, the most recently linked first. */
   under: readonly string[];
+  /** The names of the contacts it is linked under, searched, never shown (search-picker). */
+  keywords?: string;
 };
 
 const ofLine = (places: readonly LinePlace[], lineId: string | null) =>

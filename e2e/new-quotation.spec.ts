@@ -129,7 +129,24 @@ test("a door-to-port quotation for two containers, each box asked separately, it
   await customer.click();
   await customer.fill(client);
   await page.getByRole("listbox").getByRole("option", { name: client, exact: true }).click();
-  await expect(page.getByRole("combobox", { name: "Loading address", exact: true })).toHaveValue(
-    new RegExp(`^Depot ${t}`),
-  );
+  const load = page.getByRole("combobox", { name: "Loading address", exact: true });
+  await expect(load).toHaveValue(new RegExp(`^Depot ${t}`));
+  // Typing the customer's name lists its own address and every place linked under it.
+  await load.fill(client);
+  const listed = page.getByRole("listbox").getByRole("option");
+  await expect(listed.filter({ hasText: `${client} — Kaai 1` })).toHaveCount(1);
+  await expect(listed.filter({ hasText: `Warehouse ${t}` })).toHaveCount(1);
+  await expect(listed.filter({ hasText: `Depot ${t}` })).toHaveCount(1);
+  await page.keyboard.press("Escape");
+
+  // For another customer too: the places of any company are found by that company's name.
+  await customer.click();
+  await customer.fill(carrier);
+  await page.getByRole("listbox").getByRole("option", { name: carrier, exact: true }).click();
+  // The carrier has no delivery address: the picker empties once its places arrive, then settles.
+  await expect(load).toHaveValue("");
+  await load.fill(client);
+  await expect(listed.filter({ hasText: `${client} — Kaai 1` })).toHaveCount(1);
+  await expect(listed.filter({ hasText: `Warehouse ${t}` })).toHaveCount(1);
+  await expect(listed.filter({ hasText: `Depot ${t}` })).toHaveCount(1);
 });

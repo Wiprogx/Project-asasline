@@ -6,7 +6,8 @@ import { cityNameOf } from "@/server/city-sql";
 import { db } from "@/server/db/client";
 import { contactLinks, contacts, locationRoles } from "@/server/db/schema";
 
-export type Place = { value: string; label: string; delivery: boolean };
+/** `keywords`: the customer's name, so searching it finds its linked places (search-picker). */
+export type Place = { value: string; label: string; delivery: boolean; keywords?: string };
 
 const where = (c: { street: string | null; zip: string | null; city: string | null }) =>
   [c.street, [c.zip, c.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -14,7 +15,8 @@ const where = (c: { street: string | null; zip: string | null; city: string | nu
 /**
  * Where a customer's box can be loaded (legacy loadAddrsOf): its delivery addresses first, the
  * most recently linked first — the default — then its other linked locations, then its own
- * address. Live links to live contacts only.
+ * address. Live links to live contacts only. Each linked place is found by the customer's
+ * name too, so searching the customer shows its own address and every place linked to it.
  */
 export async function placesOf(contactId: string): Promise<Place[]> {
   await requirePermission("app.contacts");
@@ -59,10 +61,11 @@ export async function placesOf(contactId: string): Promise<Place[]> {
     })
     .from(contacts)
     .where(eq(contacts.id, contactId));
-  const places = linked.map((p) => ({
+  const places: Place[] = linked.map((p) => ({
     value: p.id,
     label: `${p.name}${p.role ? ` (${p.role})` : ""}${where(p) ? ` — ${where(p)}` : ""}`,
     delivery: p.delivery,
+    keywords: own?.name,
   }));
   if (own?.street)
     places.push({ value: own.id, label: `${own.name} — ${where(own)}`, delivery: false });

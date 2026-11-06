@@ -1,5 +1,6 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { type LinePlace, defaultPlace, placeLabel } from "../domain/line-places";
 import { PLACE_ROLE_CODES } from "../domain/lookup-tables";
 import { cityNameOf } from "./city-sql";
@@ -67,22 +68,63 @@ export async function rolePlaces(tx: DbOrTx): Promise<RolePlaces> {
 }
 
 /**
- * Every live location, by name: a box may well be loaded at, or call at, a place of another
- * contact than the customer — offered after the customer's own places (domain/load-place).
+ * Every live place, by name (legacy allAddrOptions): every live location, found by its own
+ * name and by the names of the live contacts it is linked under, and every live company's own
+ * address — a box may well be loaded at, or call at, a place of another contact than the
+ * customer, searched by that company's name — offered after the customer's own places
+ * (domain/load-place).
  */
 export async function liveLocations(tx: DbOrTx): Promise<LinePlace[]> {
-  const rows = await tx
-    .select({
-      id: contacts.id,
-      name: contacts.name,
-      street: contacts.street,
-      zip: contacts.zip,
-      city: cityNameOf(contacts.cityId),
-    })
-    .from(contacts)
-    .where(and(eq(contacts.type, "location"), isNull(contacts.archivedAt)))
-    .orderBy(asc(contacts.name));
-  return rows.map((l) => ({ value: l.id, label: placeLabel(l), under: [] }));
+  const [rows, owners] = await Promise.all([
+    tx
+      .select({
+        id: contacts.id,
+        name: contacts.name,
+        street: contacts.street,
+        zip: contacts.zip,
+        city: cityNameOf(contacts.cityId),
+      })
+      .from(contacts)
+      .where(
+        and(
+          isNull(contacts.archivedAt),
+          or(
+            eq(contacts.type, "location"),
+            and(eq(contacts.type, "company"), isNotNull(contacts.street)),
+          ),
+        ),
+      )
+      .orderBy(asc(contacts.name)),
+    locationOwners(tx),
+  ]);
+  const names = new Map<string, string[]>();
+  for (const o of owners) names.set(o.id, [...(names.get(o.id) ?? []), o.under]);
+  return rows.map((l) => ({
+    value: l.id,
+    label: placeLabel(l),
+    under: [],
+    keywords: names.get(l.id)?.join(" "),
+  }));
+}
+
+/** Each live location with the name of a live contact it is linked under, once per live link. */
+async function locationOwners(tx: DbOrTx): Promise<{ id: string; under: string }[]> {
+  const owner = alias(contacts, "owner");
+  return tx
+    .select({ id: contacts.id, under: owner.name })
+    .from(contactLinks)
+    .innerJoin(
+      contacts,
+      and(
+        or(eq(contacts.id, contactLinks.linkedId), eq(contacts.id, contactLinks.contactId)),
+        eq(contacts.type, "location"),
+      ),
+    )
+    .innerJoin(
+      owner,
+      sql`${owner.id} = case when ${contactLinks.contactId} = ${contacts.id} then ${contactLinks.linkedId} else ${contactLinks.contactId} end`,
+    )
+    .where(and(isNull(contactLinks.archivedAt), isNull(owner.archivedAt)));
 }
 
 /** What a booking with this line starts with: its latest linked depot and terminal, if any. */
