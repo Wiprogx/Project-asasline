@@ -4,6 +4,7 @@ import { type ReactNode, useState } from "react";
 import { Field } from "@/components/shared/field";
 import { SearchPicker } from "@/components/shared/search-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { OFFICE_PARTIES, partyOptions } from "@/domain/booking-parties";
 import { type LinePlace, defaultPlace, placesForLine } from "@/domain/line-places";
 import { PlaceField } from "./place-field";
@@ -86,7 +87,7 @@ export function OfficePartiesCard({
         <PlaceField
           id="pickupDepotId"
           label="Pick-up depot"
-          hint="Proposed for the boxes — each says where and when its empty is collected (Containers). The line's depots first, any other place after."
+          hint="Where the empty boxes are collected: the line's depots first, any other place after."
           options={placesForLine(all.depots, lineId, places.locations)}
           ownerId={lineId}
           value={depot}
@@ -96,6 +97,9 @@ export function OfficePartiesCard({
           dialog={dialogs.depot}
           error={errors?.pickupDepotId}
         />
+        <Field id="pickupDate" label="Pick-up date" error={errors?.pickupDate}>
+          <Input id="pickupDate" name="pickupDate" type="date" defaultValue={text("pickupDate")} />
+        </Field>
         <PlaceField
           id="terminalId"
           label="Terminal"

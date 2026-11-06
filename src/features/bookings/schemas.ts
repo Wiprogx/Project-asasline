@@ -75,6 +75,7 @@ export const bookingDetailsSchema = z
     // Where the empty box is collected and the full one delivered: locations linked under the
     // line with the Depot or Terminal role (domain/line-places); a booking from before keeps its words.
     pickupDepotId: party,
+    pickupDate: day.optional(),
     terminalId: party,
     pol: port,
     pod: port,
@@ -120,6 +121,7 @@ export const CLEARABLE_DETAILS = [
   "forwarderId",
   "customsAgentId",
   "pickupDepotId",
+  "pickupDate",
   "terminalId",
   "pol",
   "pod",
@@ -166,9 +168,6 @@ export const containerSchema = z.object({
     ),
   tareKg: kg,
   cargoKg: kg,
-  // The empty box — this box only: its depot (a contact) and the day it is collected.
-  pickupDepotId: party,
-  pickupDate: day.optional(),
   // Loading — this box only (domain/loading): nothing is inherited between boxes. The loading
   // address is a place (domain/load-place); its words are written from the contact.
   loadAddressId: party,
@@ -252,8 +251,6 @@ export const CLEARABLE_CONTAINER = [
   "number",
   "tareKg",
   "cargoKg",
-  "pickupDepotId",
-  "pickupDate",
   "loadAddressId",
   "loadDate",
   "loadTime",

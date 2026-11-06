@@ -73,7 +73,6 @@ async function editableBooking(tx: Tx, bookingId: string) {
     .select({
       status: bookings.status,
       loadingMode: bookings.loadingMode,
-      pickupDepotId: bookings.pickupDepotId,
       loadAddressId: bookings.loadAddressId,
       loadAddress: bookings.loadAddress,
     })
@@ -175,7 +174,6 @@ export async function addContainer(_p: ActionResult, fd: FormData): Promise<Acti
             // What a fresh box inherits (legacy BOX_DEF): the quoted mode and the proposed place —
             // never a date or an hour, which are each box's own.
             loadingMode: b.loadingMode,
-            pickupDepotId: b.pickupDepotId,
             loadAddressId: b.loadAddressId,
             loadAddress: b.loadAddress,
             createdBy: user.id,

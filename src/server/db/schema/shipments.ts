@@ -14,13 +14,7 @@ import type { AlertLevel } from "../../../domain/alerts";
 import type { TrackStep } from "../../../domain/release";
 import { day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
-import {
-  cancelReasons,
-  containerTypes,
-  docTypes,
-  packageTypes,
-  sealSources,
-} from "./lists";
+import { cancelReasons, containerTypes, docTypes, packageTypes, sealSources } from "./lists";
 import { bookingStatusEnum, shipmentKindEnum } from "./enums";
 import { ports } from "./ports";
 import { quotationRoutes, quotations } from "./quotations";
@@ -155,10 +149,6 @@ export const containers = pgTable(
       .references(() => containerTypes.id),
     tareKg: integer(),
     cargoKg: integer(),
-    // The empty box — this box only (docs/CONTAINER_FIELDS.md step B): collected at a depot of
-    // the line, the booking's proposed, on the box's own day.
-    pickupDepotId: uuid().references(() => contacts.id),
-    pickupDate: day(),
     // Loading — this box only (legacy per-box loading card): nothing is inherited between boxes.
     loadAddress: text(),
     /** The place this box is loaded at (domain/load-place); the words above are written from it. */
@@ -321,4 +311,3 @@ export const bookingAlerts = pgTable(
   },
   (t) => [index("booking_alerts_booking_idx").on(t.bookingId, t.resolvedAt)],
 );
-

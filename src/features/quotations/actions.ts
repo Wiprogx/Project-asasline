@@ -186,7 +186,6 @@ export async function acceptQuotation(_p: ActionResult, fd: FormData): Promise<A
             pickBackDate: box.pickBackDate,
             pickBackTime: box.pickBackTime,
             // The empty is collected at the line's depot unless the box says otherwise (step B).
-            pickupDepotId: parties.pickupDepotId ?? null,
             stops: box.stops,
             createdBy: user.id,
           })),

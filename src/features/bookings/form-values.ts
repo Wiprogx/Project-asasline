@@ -10,6 +10,7 @@ const FIELDS = [
   ...OFFICE_PARTIES.map((p) => p.key),
   "pickupDepotId",
   "pickupDepot",
+  "pickupDate",
   "terminalId",
   "terminal",
   "pol",

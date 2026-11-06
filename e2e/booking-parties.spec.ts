@@ -90,6 +90,8 @@ test("the office's counterparts are on the file: doc check gets the news, the li
   await expect(page.getByRole("combobox", { name: "Terminal" })).toHaveValue(
     new RegExp(`^Terminal ${t}`),
   );
+  // The empties are collected for the booking as a whole: its depot and its pick-up date.
+  await page.getByLabel("Pick-up date").fill("2026-10-19");
   await submit(page, page.getByRole("button", { name: "Save booking" }));
   await expectToast(page, "Saved");
 
@@ -100,13 +102,7 @@ test("the office's counterparts are on the file: doc check gets the news, the li
   await expect(page.getByRole("link", { name: `Depot ${t}` })).toBeVisible();
   await expect(page.getByRole("link", { name: `Terminal ${t}` })).toBeVisible();
 
-  // The empty box is collected per container: the box proposes the line's depot, its day is its
-  // own, and the trucker copy says where and when the driver collects the empty.
-  await open(page, `${url}/containers`);
-  await expect(page.locator("#c0-pickup-depot")).toHaveValue(new RegExp(`^Depot ${t}`));
-  await page.locator("#c0-pickup-date").fill("2026-10-19");
-  await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
-  await expectToast(page, "Container saved");
+  // The trucker copy says where and when the driver collects the empty: the booking's depot and day.
   await page.goto(`/print/bookings/${url.split("/bookings/")[1]}/trucker?box=1`);
   await expect(page.getByText(`Depot ${t}, Kaai 1`)).toBeVisible();
   await expect(page.getByText("2026-10-19")).toBeVisible();

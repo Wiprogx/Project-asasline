@@ -93,15 +93,15 @@ lives today and where it belongs.
 | `transporter_id`         | same       | The inland line's trucker, the default for each box                                 |
 | `load_address_id` (done) | same       | The customer's place, the proposal                                                  |
 
-### Facts of the box still only on the booking — add them to the box (step B)
+### Facts that stay on the booking — the empty's depot and day (step B, withdrawn)
 
-| Booking column                     | Why per box                                                                          | Box column to add |
-| ---------------------------------- | ------------------------------------------------------------------------------------ | ----------------- |
-| `pickup_depot_id` (+ legacy words) | Each empty box is collected by its own truck, often from a different depot           | `pickup_depot_id` |
-| `pickup_date`                      | On a different day per box; the trucker copy says when the driver collects the empty | `pickup_date`     |
+| Booking column                     | Why the booking's                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------------------- |
+| `pickup_depot_id` (+ legacy words) | The office agrees one depot with the line for the booking; the trucker copy prints it |
+| `pickup_date`                      | One day the empties are collected, entered beside the depot on the parties card       |
 
-The booking keeps both as the line's proposal (`server/line-places lineDefaults`), as for the
-depot today.
+Step B had moved both onto the box (migration 0087); the user withdrew it on 2026-11-06 ("erase
+this, it does not need"): the per-box card is gone and the columns dropped (migration 0090).
 
 ### Facts of the box the model does not have yet — later (step C)
 
@@ -135,10 +135,10 @@ Each is one commit, gate green, browser suite green on a production build.
   A new box starts from the booking's proposal (legacy `BOX_DEF`). The `loading` anchor of the
   document rules reads the earliest box date, the booking's proposal standing in while no box
   has one; a per-box rule reads its box's date. `boxLoading` keeps the one-box shortcut.
-- **B — pick-up depot and date per box** (done 2026-11-05, migration 0087). Migration: `containers.pickup_depot_id`,
-  `containers.pickup_date`. The per-box card gets "Empty collected at / on", the line's depot
-  proposed; the trucker copy reads the box's; the bookings search finds a booking by a box's
-  depot. The booking's `pickup_depot_id` / `pickup_date` stay as the proposal.
+- **B — pick-up depot and date per box** (done 2026-11-05, migration 0087; withdrawn 2026-11-06,
+  migration 0090). The per-box "Empty box — this box only" card was taken out at the user's word:
+  the depot and the pick-up date are the booking's, entered on the parties card, printed on every
+  box's trucker copy; the bookings search finds a booking by its depot as before.
 - **B2 — a stop is a place; the modes are a list** (done 2026-11-06). A box's extra stops are
   picked as its loading address is (the customer's places first, any other location, "+ New
   location"), one row each with its day and hour, "+ Add stop" — no longer typed lines; the
