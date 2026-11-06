@@ -12,7 +12,40 @@ import { readContainerSpecs } from "@/server/container-config";
 import { cityNameOf } from "@/server/city-sql";
 import { specsByType } from "@/domain/lookups";
 import { scheduleConflict } from "@/domain/vessels";
-import { addressesOf } from "@/server/addresses";
+import { addressBlocksOf, addressOf } from "@/server/addresses";
+import { readLoadingModes } from "@/server/loading-config";
+
+type CopyPlaces = {
+  pickupDepotId: string | null;
+  pickupDepot: string | null;
+  terminalId: string | null;
+  terminal: string | null;
+  loadAddressId: string | null;
+  loadAddress: string | null;
+  containers: readonly { loadAddressId: string | null }[];
+};
+
+/**
+ * The places of the copy, written as the driver needs them: the depot the empties are collected
+ * at and the terminal the full box goes to as "Name, street, city"; the loading address of the
+ * booking and of each box as a block — name, street, city, phone on lines of their own. A
+ * booking from before keeps the words it carried.
+ */
+async function placesOf(b: CopyPlaces) {
+  const blocks = await addressBlocksOf(db, [
+    b.loadAddressId,
+    ...b.containers.map((c) => c.loadAddressId),
+  ]);
+  const loadAddress = (id: string | null) => (id ? (blocks.get(id) ?? null) : null);
+  return {
+    booking: {
+      pickupDepot: (await addressOf(db, b.pickupDepotId)) ?? b.pickupDepot,
+      terminal: (await addressOf(db, b.terminalId)) ?? b.terminal,
+      loadAddress: loadAddress(b.loadAddressId) ?? b.loadAddress,
+    },
+    loadAddress,
+  };
+}
 
 /**
  * What a printed copy of the booking needs: the booking with its boxes, the customer as it
@@ -34,17 +67,15 @@ export async function bookingCopy(id: string) {
         .where(inArray(contacts.id, truckerIds))
     : [];
   const nameOf = new Map(truckers.map((t) => [t.id, t.name]));
-  // The depots the empties are collected at, written as the driver needs them: name and address.
-  const depotWords = await addressesOf(db, [
-    ...new Set(booking.containers.map((c) => c.pickupDepotId).filter((x): x is string => !!x)),
-  ]);
+  const places = await placesOf(booking);
   const hs = await readHsCodes();
   const b = {
     ...booking,
+    ...places.booking,
     containers: booking.containers.map((c) => ({
       ...c,
+      loadAddress: places.loadAddress(c.loadAddressId) ?? c.loadAddress,
       transporter: c.transporterId ? (nameOf.get(c.transporterId) ?? null) : null,
-      pickupDepot: c.pickupDepotId ? (depotWords.get(c.pickupDepotId) ?? null) : null,
       hsLines: c.hsLines.map((l) => ({ ...l, description: hsDescription(hs, l.code) })),
     })),
   };
@@ -103,6 +134,8 @@ export async function bookingCopy(id: string) {
     client: client ?? null,
     price,
     specs: specsByType(await readContainerSpecs()),
+    /** Which modes are a drop: the copies then say "Delivered on" and "Picked back on". */
+    loadingModes: await readLoadingModes(),
     /** Why the copy may not go out: a date typed over the sailing's (legacy scheduleConflict). */
     blocked: scheduleConflict(b, b.vessel),
   };

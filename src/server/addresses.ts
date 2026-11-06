@@ -45,3 +45,40 @@ export async function addressOf(tx: DbOrTx, id: string | null): Promise<string |
   if (!id) return null;
   return (await addressesOf(tx, [id])).get(id) ?? null;
 }
+
+/**
+ * A place as the trucker reads it, one line each: the company's name, its street, its postcode
+ * and city with the country, its phone — never all in one phrase.
+ */
+export async function addressBlocksOf(
+  tx: DbOrTx,
+  ids: readonly (string | null)[],
+): Promise<Map<string, string>> {
+  const wanted = [...new Set(ids.filter((x): x is string => !!x))];
+  if (!wanted.length) return new Map();
+  const rows = await tx
+    .select({
+      id: contacts.id,
+      name: contacts.name,
+      street: contacts.street,
+      zip: contacts.zip,
+      city: cityNameOf(contacts.cityId),
+      country: contacts.country,
+      phone: contacts.phone,
+    })
+    .from(contacts)
+    .where(inArray(contacts.id, wanted));
+  return new Map(
+    rows.map((r) => [
+      r.id,
+      [
+        r.name,
+        r.street,
+        [[r.zip, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", "),
+        r.phone,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    ]),
+  );
+}

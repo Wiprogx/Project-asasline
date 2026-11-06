@@ -2,13 +2,14 @@
  * The booking as its readers see it on paper (legacy preview(b, kind)): the customer copy,
  * with the price, and the trucker copy, one box per driver and no price. Nothing is inherited
  * from another box: a detail not agreed prints as missing, so the copy will not go out with
- * another box's address or hour on it (legacy 1أ.10).
+ * another box's address or hour on it (legacy 1أ.10). The loading of each box is said by
+ * booking-loading-doc.
  */
 import { invoiceTotals, vatMentions } from "./invoicing";
 import { lineAmount, type QuotationDisplay, quotationDoc } from "./quotation-doc";
 import type { ShipmentKind } from "./shipments";
 import { formatKg } from "./container";
-import { boxLoading, truckerCopyGaps, type Stop } from "./loading";
+import type { Stop } from "./loading";
 import { momentWords } from "./moments";
 import { cargoKgOf, packagesOf, packageTypeOf, type HsLine } from "./goods";
 import { sealLabel, sealOf } from "./seals";
@@ -25,6 +26,8 @@ export type CopyBooking = {
   /** The depot the empty boxes are collected at, as the paper writes a place; and the day. */
   pickupDepot: string | null;
   pickupDate: string | null;
+  /** The terminal the full box is delivered to, as the paper writes a place. */
+  terminal: string | null;
   carrierBookingNo: string | null;
   blNo: string | null;
   vesselName: string | null;
@@ -97,7 +100,7 @@ export type CopyPrice = {
 };
 
 export type Row = [label: string, value: string];
-const dash = (v: string | number | null | undefined) =>
+export const dash = (v: string | number | null | undefined) =>
   v === null || v === undefined || v === "" ? "—" : String(v);
 
 /** "Unloading address" on an import, "Loading address" otherwise (legacy addrLbl). */
@@ -116,8 +119,6 @@ export const clientBlock = (c: CopyClient) =>
 export function shipmentRows(b: CopyBooking): Row[] {
   return [
     ["Route", b.pol || b.pod ? `${dash(b.pol)} › ${dash(b.pod)}` : "—"],
-    [addressLabel(b.kind), dash(b.loadAddress)],
-    ["Loading date", [b.loadDate, b.loadTime].filter(Boolean).join(" ") || "—"],
     ["Document type", dash(b.docType)],
     ["Shipping line booking", dash(b.carrierBookingNo)],
     ["Vessel · voyage", [b.vesselName, b.voyage].filter(Boolean).join(" · ") || "—"],
@@ -138,42 +139,6 @@ export function cutOffRows(b: CopyBooking): Row[] {
 
 export const boxTitle = (box: CopyBox, i: number, n: number) =>
   `${n > 1 ? `Container ${i + 1} of ${n}` : "Container"} — ${box.number ?? "number to follow"}`;
-
-/**
- * Where, when and how this box is loaded (domain/loading boxLoading): the box's own details,
- * the booking's only when there is one box, each stop and the pick-up of a dropped box.
- */
-export function loadingRows(b: CopyBooking, box: CopyBox, boxCount: number): Row[] {
-  const l = boxLoading({ ...b, boxCount }, box);
-  const when = [l.date, l.time].filter(Boolean).join(" ");
-  return [
-    ["Empty collected at", dash(b.pickupDepot)],
-    ["Empty collected on", dash(b.pickupDate)],
-    [addressLabel(b.kind), dash(l.address)],
-    ["Loading date", when || "—"],
-    ["Loading mode", dash(l.mode)],
-    ["Trucker", dash(box.transporter)],
-    ...box.stops.map((st, k): Row => [
-      `Stop ${k + 1}`,
-      [
-        st.address,
-        [st.date, st.time].filter(Boolean).join(" "),
-        st.loadingMode,
-        st.pickBackDate &&
-          `picked back ${[st.pickBackDate, st.pickBackTime].filter(Boolean).join(" ")}`,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-    ]),
-    ...(box.pickBackDate
-      ? [["Picked back up", [box.pickBackDate, box.pickBackTime].filter(Boolean).join(" ")] as Row]
-      : []),
-  ];
-}
-
-/** What keeps this box's copy from going out (domain/loading truckerCopyGaps). */
-export const copyGaps = (b: CopyBooking, box: CopyBox, boxCount: number) =>
-  truckerCopyGaps({ ...b, boxCount }, box);
 
 export function boxRows(b: CopyBooking, box: CopyBox): Row[] {
   const cargo = cargoKgOf(box);

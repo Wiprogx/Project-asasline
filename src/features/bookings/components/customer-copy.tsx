@@ -6,6 +6,7 @@ import {
   priceTable,
   shipmentRows,
 } from "@/domain/booking-doc";
+import { customerLoadingRows } from "@/domain/booking-loading-doc";
 import { formatCents } from "@/domain/money";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
@@ -13,8 +14,15 @@ import { RowGrid, SheetTitle } from "@/components/shared/sheet-parts";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof bookingCopy>>>;
 
-/** The customer copy (legacy preview "client"): the booking confirmed, with its price. */
-export function CustomerCopy({ copy: { booking: b, client, price } }: { copy: Copy }) {
+/**
+ * The customer copy (legacy preview "client"): the booking confirmed, with its price — where,
+ * when and how each box is loaded (delivered and picked back under a drop mode), its goods.
+ */
+export function CustomerCopy({
+  copy: { booking: b, client, price, loadingModes },
+}: {
+  copy: Copy;
+}) {
   const t = price ? priceTable(price) : null;
   return (
     <section className="grid gap-5 text-sm">
@@ -32,6 +40,7 @@ export function CustomerCopy({ copy: { booking: b, client, price } }: { copy: Co
         </div>
       </div>
       <RowGrid rows={shipmentRows(b)} />
+      <RowGrid rows={customerLoadingRows(b, b.containers, loadingModes)} />
       <RowGrid rows={cutOffRows(b)} />
       <SheetTitle>Containers &amp; goods</SheetTitle>
       {b.containers.map((c, i) => (

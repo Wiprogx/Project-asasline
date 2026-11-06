@@ -6,11 +6,11 @@ import {
   clientBlock,
   type CopyBooking,
   type CopyBox,
-  copyGaps,
-  loadingRows,
   priceTable,
   shipmentRows,
 } from "./booking-doc";
+import { copyGaps, customerLoadingRows, loadingRows, truckerBoxRows } from "./booking-loading-doc";
+import { DEFAULT_LOADING_MODES } from "./loading";
 
 /** A box that says nothing about its loading yet. */
 const bare = (number: string | null): CopyBox => ({
@@ -44,6 +44,7 @@ const booking: CopyBooking = {
   loadingMode: null,
   pickupDepot: null,
   pickupDate: null,
+  terminal: "PSA 913, Antwerp",
   carrierBookingNo: null,
   blNo: null,
   vesselName: "MSC ROMA",
@@ -61,9 +62,13 @@ const booking: CopyBooking = {
 describe("the copies", () => {
   it("print a missing detail as missing, never another box's", () => {
     const rows = Object.fromEntries(shipmentRows(booking));
-    expect(rows["Loading address"]).toBe("—");
     expect(rows["Vessel · voyage"]).toBe("MSC ROMA · FA534A");
     expect(boxRows(booking, bare(null))).toContainEqual(["Seal", "—"]);
+    // two boxes: the booking's loading date is not either box's
+    const loading = Object.fromEntries(loadingRows(booking, bare(null), 2));
+    expect(loading["Loading address"]).toBe("—");
+    expect(loading["Loading date"]).toBe("—");
+    expect(loading["Terminal"]).toBe("PSA 913, Antwerp");
   });
   it("tell the driver where this box loads, its stops and its pick-up, and what is still missing", () => {
     const box: CopyBox = {
@@ -86,16 +91,41 @@ describe("the copies", () => {
         },
       ],
     };
-    const rows = Object.fromEntries(loadingRows(booking, box, 2));
+    const rows = Object.fromEntries(loadingRows(booking, box, 2, DEFAULT_LOADING_MODES));
     expect(rows["Loading address"]).toBe("Quay 730, Antwerp");
-    expect(rows["Loading date"]).toBe("2026-10-03 07:30");
+    // a drop mode: the box is delivered, not loaded
+    expect(rows["Delivered on"]).toBe("2026-10-03 07:30");
+    expect(rows["Loading date"]).toBeUndefined();
     expect(rows["Loading mode"]).toBe("Drop off container on ground");
     expect(rows["Trucker"]).toBe("Transports Dupont");
+    expect(rows["Terminal"]).toBe("PSA 913, Antwerp");
     expect(rows["Stop 1"]).toBe(
       "Depot Zeebrugge · 2026-10-04 · Disconnect chassis · picked back 2026-10-06 10:00",
     );
-    expect(rows["Picked back up"]).toBe("2026-10-05 16:00");
+    expect(rows["Picked back on"]).toBe("2026-10-05 16:00");
+    // without the modes table a mode is read as direct loading
+    expect(Object.fromEntries(loadingRows(booking, box, 2))["Loading date"]).toBe(
+      "2026-10-03 07:30",
+    );
     expect(copyGaps(booking, box, 2)).toEqual([]);
+    // the driver is told what is inside by name, never the weights or the seal
+    const trucker = Object.fromEntries(
+      truckerBoxRows(booking, {
+        ...box,
+        cargoKg: 12000,
+        seals: ["ML123"],
+        hsLines: [
+          {
+            code: "630900",
+            description: "Worn clothing",
+            weightKg: 12000,
+            packages: 620,
+            packageType: "Bales",
+          },
+        ],
+      }),
+    );
+    expect(trucker).toEqual({ Type: "40HC", Commodity: "—", "HS 630900": "Worn clothing" });
     // the second box inherits nothing from the first, not even the booking's date
     expect(copyGaps(booking, bare(null), 2)).toEqual([
       "loading address",
@@ -133,6 +163,46 @@ describe("the copies", () => {
     expect(rows["Packages"]).toBe("660 Bales + Cartons");
     expect(rows["Cargo weight"]).toBe("15,000 kg");
     expect(rows["B/L description"]).toBe("620 BALES OF WORN CLOTHING");
+  });
+  it("tell the customer when each box is loaded — delivered and picked back under a drop mode", () => {
+    const dropped: CopyBox = {
+      ...bare("MSKU1234567"),
+      loadAddress: "ACME\nQuay 730\n2000 Antwerp, BE\n+32 3 000 00 00",
+      loadDate: "2026-10-03",
+      loadTime: "07:30",
+      loadingMode: "Drop off container on ground",
+      pickBackDate: "2026-10-05",
+      pickBackTime: "16:00",
+    };
+    const direct: CopyBox = {
+      ...bare(null),
+      loadAddress: "ACME\nQuay 730\n2000 Antwerp, BE\n+32 3 000 00 00",
+      loadDate: "2026-10-04",
+      loadTime: "09:00",
+      loadingMode: "Direct loading — 2 hours",
+      stops: [{ address: "Depot Zeebrugge", date: "2026-10-04", time: "12:00" }],
+    };
+    // one dropped box: delivered on, and picked back on
+    const one = Object.fromEntries(customerLoadingRows(booking, [dropped], DEFAULT_LOADING_MODES));
+    expect(one["Loading address"]).toBe("ACME\nQuay 730\n2000 Antwerp, BE\n+32 3 000 00 00");
+    expect(one["Delivered on"]).toBe("2026-10-03 07:30");
+    expect(one["Loading mode"]).toBe(
+      "Drop off container on ground · picked back on 2026-10-05 16:00",
+    );
+    // the booking's own date never stands in for a box when there are several
+    const two = Object.fromEntries(
+      customerLoadingRows(booking, [dropped, direct], DEFAULT_LOADING_MODES),
+    );
+    expect(two["Loading / delivery date"]).toBe(
+      "MSKU1234567 — 2026-10-03 07:30\nContainer 2 — 2026-10-04 09:00",
+    );
+    expect(two["Loading address"]).toBe("ACME\nQuay 730\n2000 Antwerp, BE\n+32 3 000 00 00");
+    expect(two["Container 2 — Stop 1"]).toBe("Depot Zeebrugge · 2026-10-04 12:00");
+    // no box says anything yet: the booking's proposal stands for its one box
+    expect(Object.fromEntries(customerLoadingRows(booking, [bare(null)], []))["Loading date"]).toBe(
+      "2026-10-02",
+    );
+    expect(Object.fromEntries(customerLoadingRows(booking, [], []))["Loading date"]).toBe("—");
   });
   it("say unloading on an import", () => {
     expect(addressLabel("import")).toBe("Unloading address");

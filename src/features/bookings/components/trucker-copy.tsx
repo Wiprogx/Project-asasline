@@ -1,25 +1,18 @@
-import {
-  boxesFor,
-  boxRows,
-  boxTitle,
-  copyGaps,
-  cutOffRows,
-  loadingRows,
-} from "@/domain/booking-doc";
-import { formatKg, vgm } from "@/domain/container";
+import { boxesFor, boxTitle, cutOffRows } from "@/domain/booking-doc";
+import { copyGaps, loadingRows, truckerBoxRows } from "@/domain/booking-loading-doc";
 import { SHIPMENT_KIND_LABEL } from "@/domain/shipments";
 import type { bookingCopy } from "../copy-queries";
 import { RowGrid, SheetTitle } from "@/components/shared/sheet-parts";
-import { cargoKgOf } from "@/domain/goods";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof bookingCopy>>>;
 
 /**
- * The trucker copy (legacy preview "driver"): no price; one box per driver unless the office
- * asks for all, so a loading address and hour cannot be confused between drivers.
+ * The trucker copy (legacy preview "driver"): no price and no cargo figures — where the empty
+ * is collected, where and when the box is loaded, the terminal it goes to; one box per driver
+ * unless the office asks for all, so a loading address and hour cannot be confused between drivers.
  */
 export function TruckerCopy({
-  copy: { booking: b, client, specs },
+  copy: { booking: b, client, loadingModes },
   box,
 }: {
   copy: Copy;
@@ -50,7 +43,6 @@ export function TruckerCopy({
       />
       {boxes.length === 0 && <p>No such container on this booking.</p>}
       {boxes.map(({ box: c, i }) => {
-        const g = vgm({ ...c, cargoKg: cargoKgOf(c) }, specs);
         const gaps = copyGaps(b, c, b.containers.length);
         return (
           <div key={i} className="grid gap-2 rounded border border-neutral-800 p-3">
@@ -62,16 +54,8 @@ export function TruckerCopy({
             )}
             <RowGrid
               rows={[
-                ...loadingRows(b, c, b.containers.length),
-                ...boxRows(b, c),
-                [
-                  "VGM",
-                  g.state === "unknown"
-                    ? `— (${g.reason})`
-                    : g.state === "over" && g.maxGrossKg !== null
-                      ? `${formatKg(g.grossKg)} — ${formatKg(g.grossKg - g.maxGrossKg)} OVER the ${formatKg(g.maxGrossKg)} limit`
-                      : formatKg(g.grossKg),
-                ],
+                ...loadingRows(b, c, b.containers.length, loadingModes),
+                ...truckerBoxRows(b, c),
               ]}
             />
           </div>

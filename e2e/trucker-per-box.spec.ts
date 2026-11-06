@@ -42,8 +42,7 @@ test("each box's trucker copy goes to its own trucker, naming only its container
   await open(page, `/bookings/${id}/containers`);
   await page.locator("#c0-number").fill("MSCU1234566");
   await expect(page.locator("#c0-load-address")).toHaveValue(new RegExp(`^${client}`));
-  await page.locator("#c0-load-date").fill("2026-10-20");
-  await page.locator("#c0-load-time").fill("07:30");
+  await page.locator("#c0-load").fill("2026-10-20T07:30");
   await choose(page.locator("#c0-mode"), "Drop off container on ground");
   await choose(page.locator("#c0-trucker"), { label: trucker });
   await submit(page, page.getByRole("button", { name: "Save", exact: true }).first());
