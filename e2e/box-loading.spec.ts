@@ -31,6 +31,8 @@ test("each box has its own loading, and the trucker copy says what a box still l
   await expect(page.getByRole("heading", { level: 1, name: client })).toBeVisible();
   await open(page, "/bookings/new");
   await choose(page.getByLabel("Customer"), { label: client });
+  // The customer's own address is proposed once its places arrive; the boxes start from it.
+  await expect(page.locator("#loadAddressId")).toHaveValue(new RegExp(`^${client}`));
   await page.getByLabel("Port of loading").fill("BEANR");
   await page.getByLabel("Port of discharge").fill("TRMER");
   await page.getByLabel("Number of containers").fill("2");
