@@ -6,9 +6,10 @@ import {
   type PaperPlace,
   type PaperQuotation,
   type PaperRoute,
+  type PaperStop,
   placeBlock,
 } from "@/domain/quotation-paper";
-import { commodityWords, type RouteStop, stopAddress } from "@/domain/route-service";
+import { commodityWords, type RouteStop } from "@/domain/route-service";
 import { readPaymentTerms } from "@/server/accounting-config";
 import { requirePermission } from "@/server/auth/dal";
 import { cityNameOf } from "@/server/city-sql";
@@ -22,12 +23,12 @@ import { getQuotation } from "./queries";
 type Quotation = NonNullable<Awaited<ReturnType<typeof getQuotation>>>;
 type Route = Quotation["routes"][number];
 
-/** A place in words: the loading address in full (domain placeBlock), a stop on one line. */
-type Place = { block: string; line: string };
+/** A place in words, in full (domain placeBlock): the loading address and each stop alike. */
+type Place = { block: string };
 
 /**
  * The customer's places the paper names (location contacts): the loading address with what
- * the driver needs — mobile, instructions, note — and each stop as one line.
+ * the driver needs — mobile, instructions, note — and each stop the same way.
  */
 async function placesOf(tx: DbOrTx, ids: readonly string[]): Promise<Map<string, Place>> {
   if (!ids.length) return new Map();
@@ -55,24 +56,16 @@ async function placesOf(tx: DbOrTx, ids: readonly string[]): Promise<Map<string,
         ...r,
         country: r.country ? (countryName.get(r.country) ?? r.country) : null,
       };
-      const address = stopAddress({
-        street: r.street ?? "",
-        zip: r.zip,
-        city: r.city ?? "",
-        country: r.country ?? "",
-      });
-      return [
-        r.id,
-        { block: placeBlock(place), line: [r.name, address].filter(Boolean).join(", ") },
-      ];
+      return [r.id, { block: placeBlock(place) }];
     }),
   );
 }
 
-const stopWords = (at: Map<string, Place>, s: RouteStop) =>
-  [at.get(s.contactId)?.line ?? "", [s.date, s.time].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(" · ");
+/** A stop as the paper prints it: the place in full, and the day and hour the truck is expected. */
+const stopOf = (at: Map<string, Place>, s: RouteStop): PaperStop => ({
+  place: at.get(s.contactId)?.block ?? "",
+  when: [s.date, s.time].filter(Boolean).join(" ") || null,
+});
 
 /**
  * Each container's loading in words (as accepting the destination carries it, accept-store
@@ -85,7 +78,7 @@ function boxesOf(r: Route, at: Map<string, Place>): PaperBox[] {
     return {
       loadingMode: b?.loadingMode ?? r.loadingMode,
       loadAddress: addressId ? (at.get(addressId)?.block ?? null) : null,
-      stops: (b?.stops ?? r.stops).map((s) => stopWords(at, s)),
+      stops: (b?.stops ?? r.stops).map((s) => stopOf(at, s)),
     };
   });
 }

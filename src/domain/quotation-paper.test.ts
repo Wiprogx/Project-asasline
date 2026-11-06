@@ -53,7 +53,7 @@ const route = (over: Partial<PaperRoute> = {}): PaperRoute => ({
     {
       loadingMode: "Direct loading — 2 hours",
       loadAddress: "Warehouse, Kaai 12, Zeebrugge",
-      stops: ["Depot, Industrieweg 5, Brugge · 2026-11-12"],
+      stops: [{ place: "Depot\nIndustrieweg 5\nBrugge", when: "2026-11-12" }],
     },
   ],
   ...over,
@@ -116,7 +116,8 @@ describe("the printed quotation", () => {
     expect(rows).toEqual([
       ["Loading address", "Warehouse, Kaai 12, Zeebrugge"],
       ["Loading mode", "Direct loading — 2 hours"],
-      ["Additional stops", "Container 2 · Stop 1: Depot, Industrieweg 5, Brugge · 2026-11-12"],
+      ["Container 2 · Stop 1", "Depot\nIndustrieweg 5\nBrugge"],
+      ["Container 2 · Stop 1 — expected on", "2026-11-12"],
     ]);
     const differ = route({
       boxDetails: [

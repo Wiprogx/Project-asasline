@@ -18,12 +18,15 @@ import type { QuoteFields } from "./quote-fields";
 import { ROUTE_SERVICE_FREIGHT } from "./route-service";
 import type { ShipmentKind } from "./shipments";
 
+/** A stop on the way: the place in full (placeBlock) and the day and hour, "2026-11-12 08:00". */
+export type PaperStop = { place: string; when: string | null };
+
 /** One container's loading as the paper says it, in words the query resolved. */
 export type PaperBox = {
   loadingMode: string | null;
   loadAddress: string | null;
-  /** "Depot, Industrieweg 5, 8000 Brugge, BE · 2026-11-12 08:00" */
-  stops: readonly string[];
+  /** The stops on the way: each place printed as the loading address is, and when the truck is expected there. */
+  stops: readonly PaperStop[];
 };
 
 export type PaperRoute = Omit<DocRoute, "lines"> & {
@@ -120,12 +123,31 @@ const perBox = (r: PaperRoute, get: (b: PaperBox) => string | null) =>
 const perRoute = (routes: readonly PaperRoute[], get: (r: PaperRoute) => string | null) =>
   grouped(routes, get, (r) => r.pod || routeTitle(r, true));
 
-const stopsOf = (r: PaperRoute) =>
-  r.boxDetails
-    .flatMap((b, i) =>
-      b.stops.map((s, k) => `${boxCount(r) > 1 ? `Container ${i + 1} · ` : ""}Stop ${k + 1}: ${s}`),
-    )
-    .join("\n") || null;
+/**
+ * Each stop on the way as its own pair of rows — the place printed as the loading address is
+ * (name, street, city, mobile…), and beside it the day and hour the truck is expected — named
+ * by its container when the destination has several, by its destination when there are several.
+ */
+function stopRows(doors: readonly PaperRoute[]): Row[] {
+  const many = doors.length > 1;
+  return doors.flatMap((r) =>
+    r.boxDetails.flatMap((b, i) =>
+      b.stops.flatMap((s, k): Row[] => {
+        const name = [
+          many ? r.pod || routeTitle(r, true) : null,
+          boxCount(r) > 1 ? `Container ${i + 1}` : null,
+          `Stop ${k + 1}`,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        return [
+          [name, s.place || "To be advised"],
+          [`${name} — expected on`, dash(s.when)],
+        ];
+      }),
+    ),
+  );
+}
 
 /**
  * Where the boxes are collected, how, and the stops on the way (legacy loadingHeader): said
@@ -139,11 +161,10 @@ export function loadingRows(q: PaperQuotation): Row[] {
     r.service === "door_port" ? (perBox(r, (b) => b.loadAddress) ?? "To be advised") : PORT_TO_PORT,
   );
   const modes = perRoute(doors, (r) => perBox(r, (b) => b.loadingMode));
-  const stops = perRoute(doors, stopsOf);
   return [
     [addressLabel(q.kind), addresses ?? "To be advised"],
     ...(modes ? [["Loading mode", modes] as Row] : []),
-    ...(stops ? [["Additional stops", stops] as Row] : []),
+    ...stopRows(doors),
   ];
 }
 
