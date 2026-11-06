@@ -58,3 +58,48 @@ describe("loading modes", () => {
     });
   });
 });
+
+describe("a box's loading details", () => {
+  const booking = {
+    loadAddress: "Rue du Port 1, Brussels",
+    loadDate: "2026-10-12",
+    loadTime: "09:00",
+    loadingMode: "Direct loading — 2 hours",
+  };
+  const blank = { loadAddress: null, loadDate: null, loadTime: null, loadingMode: null };
+
+  it("stand in for the booking's details when there is one box only", () => {
+    expect(boxLoading({ ...booking, boxCount: 1 }, blank)).toEqual({
+      address: booking.loadAddress,
+      date: "2026-10-12",
+      time: "09:00",
+      mode: booking.loadingMode,
+    });
+  });
+
+  it("inherit nothing with two boxes: a missing detail is missing", () => {
+    expect(boxLoading({ ...booking, boxCount: 2 }, blank)).toEqual({
+      address: null,
+      date: null,
+      time: null,
+      mode: null,
+    });
+    expect(truckerCopyGaps({ ...booking, boxCount: 2 }, { ...blank, number: null })).toEqual([
+      "loading address",
+      "loading date",
+      "loading mode",
+      "container number",
+    ]);
+  });
+
+  it("never mix the hour of one box with the date of another", () => {
+    const own = { ...blank, loadDate: "2026-10-13" };
+    expect(boxLoading({ ...booking, boxCount: 1 }, own)).toMatchObject({
+      date: "2026-10-13",
+      time: null,
+    });
+    expect(truckerCopyGaps({ ...booking, boxCount: 1 }, { ...own, number: "MSCU1234565" })).toEqual(
+      [],
+    );
+  });
+});
