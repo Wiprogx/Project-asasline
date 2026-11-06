@@ -147,17 +147,8 @@ export function boxRows(b: CopyBooking, box: CopyBox): Row[] {
   return [
     ["Type", box.type],
     ["Seal", box.seals.length ? sealLabel(sealOf(box.seals[box.seals.length - 1])) : "—"],
-    ["Commodity", dash(b.commodity)],
-    ...box.hsLines.map((l): Row => [
-      `HS ${l.code}`,
-      [
-        l.description,
-        l.weightKg === null ? null : formatKg(l.weightKg),
-        l.packages === null ? null : `${l.packages} ${l.packageType ?? "packages"}`,
-      ]
-        .filter(Boolean)
-        .join(" · ") || "—",
-    ]),
+    // The goods once, as the commodity (else the goods lines by name); the lines' totals below.
+    ["Commodity", dash(b.commodity ?? box.hsLines.map((l) => l.description ?? l.code).join("\n"))],
     ["Packages", packages === null ? "—" : `${packages} ${packageType ?? "packages"}`],
     ["Cargo weight", cargo === null ? "—" : formatKg(cargo)],
     ["Tare", box.tareKg === null ? "—" : formatKg(box.tareKg)],

@@ -139,7 +139,7 @@ describe("the copies", () => {
       "container number",
     ]);
   });
-  it("print the goods per HS code and let the lines' totals be the box's weight and packages", () => {
+  it("name the goods once and let the lines' totals be the box's weight and packages", () => {
     const rows = Object.fromEntries(
       boxRows(booking, {
         ...bare("MSKU1234567"),
@@ -163,8 +163,8 @@ describe("the copies", () => {
         blDescription: "620 BALES OF WORN CLOTHING",
       }),
     );
-    expect(rows["HS 630900"]).toBe("Worn clothing · 12,000 kg · 620 Bales");
-    expect(rows["HS 640399"]).toBe("3,000 kg · 40 Cartons");
+    expect(rows["Commodity"]).toBe("Worn clothing\n640399");
+    expect(rows["HS 630900"]).toBeUndefined();
     expect(rows["Packages"]).toBe("660 Bales + Cartons");
     expect(rows["Cargo weight"]).toBe("15,000 kg");
     expect(rows["B/L description"]).toBe("620 BALES OF WORN CLOTHING");

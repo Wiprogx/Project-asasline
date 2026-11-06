@@ -41,12 +41,12 @@ test("the goods of a box are weight and packages per HS code, and the VGM follow
   // 15,000 kg of cargo plus the 40HC tare from the type (3,900) is the VGM.
   await expect(page.getByText(/VGM 18,900 kg/)).toBeVisible();
 
-  // The customer copy prints the goods per code and the B/L text word for word.
+  // The customer copy names the goods once, as the commodity — no HS rows beside it — with
+  // the lines' totals and the B/L text word for word.
   await page.goto(`/print/bookings/${id}/customer`);
-  await expect(page.getByText("HS 630900")).toBeVisible();
-  await expect(
-    page.getByText("Worn clothing and other worn articles · 12,000 kg · 620 Bales"),
-  ).toBeVisible();
+  await expect(page.getByText(/Worn clothing and other worn articles/)).toHaveCount(1);
+  await expect(page.getByText("HS 630900")).toHaveCount(0);
+  await expect(page.getByText("15,000 kg")).toBeVisible();
   await expect(page.getByText("660 Bales + Cartons")).toBeVisible();
   await expect(page.getByText("620 BALES OF WORN CLOTHING")).toBeVisible();
   // The trucker copy names the goods once, as the commodity — no HS rows beside it, never
