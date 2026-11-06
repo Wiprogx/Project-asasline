@@ -7,22 +7,19 @@ import { type ActionResult, fail, formToObject, invalid } from "@/lib/action-res
 import { audit } from "@/server/audit";
 import { requirePermission } from "@/server/auth/dal";
 import { db, type DbOrTx } from "@/server/db/client";
-import { invalidateLookups, lookupFlagKey, lookupTable } from "@/server/lookups";
+import { invalidateLookups, lookupTable } from "@/server/lookups";
 import { ConflictError, updateVersioned } from "@/server/versioned";
 import {
   archiveLookupSchema,
+  columnValues,
   createLookupSchema,
+  kindSchema,
   restoreLookupSchema,
   updateLookupSchema,
 } from "./schemas";
 
 const LABEL = "This reason";
 const TAKEN = "These words are already in the list.";
-/** The yes/no column's value, for a list that has one; nothing for the others. */
-const flagOf = (kind: LookupKind, flag: boolean) => {
-  const key = lookupFlagKey(kind);
-  return key ? { [key]: flag } : {};
-};
 
 const isUniqueViolation = (e: unknown) =>
   typeof e === "object" && e !== null && "code" in e && e.code === "23505";
@@ -74,11 +71,17 @@ async function settle(
   return { ok: true, data: undefined, message };
 }
 
+/** Which list the form is about, before its fields can be read (each list has its own). */
+const kindOf = (fd: FormData) => kindSchema.safeParse(fd.get("kind"));
+
 export async function createLookup(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.settings");
-  const parsed = createLookupSchema.safeParse(formToObject(fd));
+  const which = kindOf(fd);
+  if (!which.success) return invalid(which.error);
+  const parsed = createLookupSchema(which.data).safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { kind, label, position, flag } = parsed.data;
+  const { kind, label, position } = parsed.data;
+  const columns = columnValues(kind, parsed.data);
   const t = lookupTable(kind);
   return settle(kind, `Added · ${label}`, () =>
     db.transaction(async (tx) => {
@@ -87,7 +90,7 @@ export async function createLookup(_p: ActionResult, fd: FormData): Promise<Acti
         .insert(t)
         .values({
           label,
-          ...flagOf(kind, flag),
+          ...columns,
           position: position ?? (await lastPosition(tx, kind)) + 10,
           createdBy: user.id,
           updatedBy: user.id,
@@ -98,7 +101,7 @@ export async function createLookup(_p: ActionResult, fd: FormData): Promise<Acti
         userId: user.id,
         entity: kind,
         entityId: row.id,
-        detail: { label },
+        detail: { label, ...columns },
       });
     }),
   );
@@ -107,9 +110,12 @@ export async function createLookup(_p: ActionResult, fd: FormData): Promise<Acti
 /** A reworded reason reads the new words on every record that names it. */
 export async function updateLookup(_p: ActionResult, fd: FormData): Promise<ActionResult> {
   const user = await requirePermission("app.settings");
-  const parsed = updateLookupSchema.safeParse(formToObject(fd));
+  const which = kindOf(fd);
+  if (!which.success) return invalid(which.error);
+  const parsed = updateLookupSchema(which.data).safeParse(formToObject(fd));
   if (!parsed.success) return invalid(parsed.error);
-  const { kind, id, version, label, position, flag } = parsed.data;
+  const { kind, id, version, label, position } = parsed.data;
+  const columns = columnValues(kind, parsed.data);
   const t = lookupTable(kind);
   return settle(kind, "Saved", () =>
     db.transaction(async (tx) => {
@@ -118,7 +124,7 @@ export async function updateLookup(_p: ActionResult, fd: FormData): Promise<Acti
       if (!before) throw new ConflictError(LABEL);
       const values = {
         label,
-        ...flagOf(kind, flag),
+        ...columns,
         position: position ?? before.position,
         updatedBy: user.id,
       };
@@ -128,7 +134,7 @@ export async function updateLookup(_p: ActionResult, fd: FormData): Promise<Acti
         userId: user.id,
         entity: kind,
         entityId: id,
-        detail: { from: before.label, to: label, position: values.position },
+        detail: { from: before.label, to: label, position: values.position, ...columns },
       });
     }),
   );

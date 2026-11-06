@@ -23,7 +23,7 @@ const listColumns = {
   code: text(),
 };
 
-const listTable = <
+export const listTable = <
   N extends string,
   E extends Record<string, PgColumnBuilderBase> = Record<never, never>,
 >(
@@ -90,9 +90,14 @@ export const tagList = listTable("tags");
 
 /**
  * Container sizes and types, by ISO code (legacy CONTAINER_TYPES): 20DV, 40HC… The code is
- * the row's words. 40HC is coded `default_box`: a new box starts as one.
+ * the row's words. 40HC is coded `default_box`: a new box starts as one. `tareKg` is the empty
+ * weight the VGM takes when the box has none of its own, `maxGrossKg` the gross it may not
+ * exceed (legacy CONTAINER_TARE / CONTAINER_MAX); a type without them has no VGM check.
  */
-export const containerTypes = listTable("container_types");
+export const containerTypes = listTable("container_types", {
+  tareKg: integer(),
+  maxGrossKg: integer(),
+});
 
 /** The regions a port is filed under (legacy PORTS headings): North Africa, West Africa… */
 export const portRegions = listTable("port_regions");

@@ -41,7 +41,7 @@ Paths are under `src/`. "Words" means a text column holding a list's label, with
 - `bookings.pickupDepot`, `bookings.terminal` (words picked from contact addresses): FKs to location contacts.
 - `quotation_routes.finalPlace`: a candidate for an FK to `cities` or `ports` (`rate_items.fromCityId`/`toCityId` point at `cities` since migration 0083; the words stay beside them for the rows from before).
 - `quotation_lines.itemCode` beside `itemId`: a copy, to drop or justify.
-- Container specs (`containerSpecs`: tare and max gross by ISO type) repeat `container_types`: merge as two columns.
+- ~~Container specs (the containerSpecs config row: tare and max gross by ISO type) repeat `container_types`: merge as two columns.~~ Done (0088): `container_types.tare_kg` / `max_gross_kg`; the box owners are `box_owners` (prefix, owner, `carrier_id` → contacts).
 - `EU_COUNTRIES` (`domain/accounting.ts`) repeats what a country is: an `eu` column on `countries`.
 
 ## C. Accounting references still in code or JSON
@@ -93,7 +93,7 @@ rules, auto-send, inbox, escalation); per-booking snapshots such as `bookings.tr
    | Rate sources   | Rate sources                                                                         |
    | Line items     | Line items                                                                           |
    | Loading        | Loading modes, Grace before waiting time                                             |
-   | Containers     | Container types — tare and maximum gross (merged into `container_types`), Box owners |
+   | Containers     | ~~Container types — tare and maximum gross, Box owners~~ done (0088): both are lists |
    | Release        | Release states, Ways to send the originals, Journey steps                            |
    | HS codes       | HS codes                                                                             |
    | Checklists     | Checklists                                                                           |

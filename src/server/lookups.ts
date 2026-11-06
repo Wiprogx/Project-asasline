@@ -24,19 +24,27 @@ const TABLES: Record<LookupKind, LookupTable> = {
   professions: schema.professions as unknown as LookupTable,
   "contact-tags": schema.tagList as unknown as LookupTable,
   "container-types": schema.containerTypes as unknown as LookupTable,
+  "box-owners": schema.boxOwners as unknown as LookupTable,
   "port-regions": schema.portRegions as unknown as LookupTable,
 };
 
 export const lookupTable = (kind: LookupKind) => TABLES[kind];
 
-/** A list's one yes/no column, when it has one (a document type travels on paper). */
-const FLAGS: Partial<Record<LookupKind, string>> = { "doc-types": "onPaper" };
+/**
+ * A list's own columns beyond its words (features/lookups/meta says how each is asked): a
+ * document type travels on paper; a container type has a tare and a maximum gross; a box
+ * owner's prefix names its owner and, when it is one of the contacts, the shipping line.
+ */
+const COLUMNS: Partial<Record<LookupKind, readonly string[]>> = {
+  "doc-types": ["onPaper"],
+  "container-types": ["tareKg", "maxGrossKg"],
+  "box-owners": ["owner", "carrierId"],
+};
 
-export const lookupFlagKey = (kind: LookupKind) => FLAGS[kind] ?? null;
-
-export function lookupFlagColumn(kind: LookupKind): PgColumn | null {
-  const key = FLAGS[kind];
-  return key ? (TABLES[kind] as unknown as Record<string, PgColumn>)[key] : null;
+/** The list's own columns by their key, in their order; empty for a list of words alone. */
+export function lookupColumns(kind: LookupKind): Record<string, PgColumn> {
+  const t = TABLES[kind] as unknown as Record<string, PgColumn>;
+  return Object.fromEntries((COLUMNS[kind] ?? []).map((key) => [key, t[key]]));
 }
 
 /** Offered to a person: live, and — in a list of the app's own reasons — not a coded one. */

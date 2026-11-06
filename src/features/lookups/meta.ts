@@ -1,5 +1,22 @@
 import type { LookupKind } from "@/domain/lookup-tables";
 
+/**
+ * One of a list's own columns (server/lookups COLUMNS), as the form asks it and the table heads
+ * it: a yes/no, a whole number, a few words, or one of the rows the page offers (`select`).
+ */
+export type LookupColumn = {
+  key: string;
+  label: string;
+  column: string;
+  hint?: string;
+  required?: boolean;
+} & (
+  | { type: "bool" }
+  | { type: "int"; min: number; max: number }
+  | { type: "text"; max: number; placeholder?: string }
+  | { type: "select"; placeholder: string }
+);
+
 export type LookupMeta = {
   /** The list's name in Settings › Lists. */
   title: string;
@@ -7,8 +24,10 @@ export type LookupMeta = {
   /** What one row is, as the column header and the field call it. */
   noun: string;
   placeholder: string;
-  /** The list's yes/no column (server/lookups FLAGS), as the checkbox and the column say it. */
-  flag?: { label: string; column: string };
+  /** The shape the words must have, when the list is one of codes: spelled in capitals. */
+  code?: { pattern: RegExp; message: string };
+  /** The list's own columns beyond its words, in their order. */
+  columns?: readonly LookupColumn[];
 };
 
 export const LOOKUP_META: Record<LookupKind, LookupMeta> = {
@@ -38,7 +57,9 @@ export const LOOKUP_META: Record<LookupKind, LookupMeta> = {
       "The transport document a quotation or a booking carries: offered on both, read by the printed copies, the letters and the document rules. One that travels on paper has its originals followed on the Tracking tab.",
     noun: "Document type",
     placeholder: "ORIGINAL BL",
-    flag: { label: "Its originals travel on paper", column: "On paper" },
+    columns: [
+      { key: "onPaper", type: "bool", label: "Its originals travel on paper", column: "On paper" },
+    ],
   },
   "task-types": {
     title: "Task types",
@@ -99,9 +120,48 @@ export const LOOKUP_META: Record<LookupKind, LookupMeta> = {
   "container-types": {
     title: "Container types",
     description:
-      "Container sizes and types by ISO code (20DV, 40HC…): offered on quotations, bookings, boxes and the catalogue. Tare and maximum gross per type are in Settings › Containers.",
+      "Container sizes and types by ISO code (20DV, 40HC…): offered on quotations, bookings, boxes and the catalogue. The tare is the empty weight the VGM takes when the box has none of its own; the maximum gross is what the line refuses above. A type without them has no VGM check.",
     noun: "Container type",
     placeholder: "45HC",
+    code: { pattern: /^[A-Z0-9]{2,10}$/, message: "An ISO type: letters and digits (40HC)." },
+    columns: [
+      { key: "tareKg", type: "int", label: "Tare kg", column: "Tare", min: 1, max: 20_000 },
+      {
+        key: "maxGrossKg",
+        type: "int",
+        label: "Maximum gross kg",
+        column: "Max gross",
+        min: 1,
+        max: 100_000,
+      },
+    ],
+  },
+  "box-owners": {
+    title: "Box owners",
+    description:
+      "Whose box a container is, by the four letters its number starts with (MSCU is MSC's): the owner is shown next to the number on the booking. A prefix that is one of the shipping lines in Contacts points at it — the tracking will follow that link; a lessor's prefix (Triton, Textainer) has no contact.",
+    noun: "Prefix",
+    placeholder: "MSCU",
+    code: { pattern: /^[A-Z]{4}$/, message: "Four letters (MSCU)." },
+    columns: [
+      {
+        key: "owner",
+        type: "text",
+        label: "Owner",
+        column: "Owner",
+        placeholder: "MSC",
+        max: 60,
+        required: true,
+      },
+      {
+        key: "carrierId",
+        type: "select",
+        label: "Shipping line",
+        column: "Shipping line",
+        placeholder: "Not one of the contacts",
+        hint: "The carrier's contact, when the owner is one.",
+      },
+    ],
   },
   "port-regions": {
     title: "Port regions",

@@ -14,7 +14,14 @@ import type { AlertLevel } from "../../../domain/alerts";
 import type { TrackStep } from "../../../domain/release";
 import { day, recordColumns } from "./_columns";
 import { contacts } from "./contacts";
-import { cancelReasons, containerTypes, docTypes, packageTypes, sealSources } from "./lists";
+import {
+  cancelReasons,
+  containerTypes,
+  docTypes,
+  listTable,
+  packageTypes,
+  sealSources,
+} from "./lists";
 import { bookingStatusEnum, shipmentKindEnum } from "./enums";
 import { ports } from "./ports";
 import { quotationRoutes, quotations } from "./quotations";
@@ -308,3 +315,14 @@ export const bookingAlerts = pgTable(
   },
   (t) => [index("booking_alerts_booking_idx").on(t.bookingId, t.resolvedAt)],
 );
+
+/**
+ * Whose box a container is, by the four letters its number starts with (legacy BOX_OWNERS): the
+ * row's words are the prefix (MSCU), `owner` the name shown next to the number on the booking,
+ * `carrierId` the shipping line it is when it is one of the office's contacts — what the
+ * tracking will follow; a lessor's prefix (TCLU, Triton) has no contact.
+ */
+export const boxOwners = listTable("box_owners", {
+  owner: text().notNull(),
+  carrierId: uuid().references(() => contacts.id),
+});

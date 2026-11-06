@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { LOOKUP_KINDS, type LookupKind } from "@/domain/lookup-tables";
 import { LookupEditor } from "@/features/lookups/components/lookup-editor";
 import { LOOKUP_META } from "@/features/lookups/meta";
-import { lookupsForEdit } from "@/features/lookups/queries";
+import { lookupSelects, lookupsForEdit } from "@/features/lookups/queries";
 import { requirePagePermission } from "@/server/auth/dal";
 
 const isKind = (k: string): k is LookupKind => (LOOKUP_KINDS as readonly string[]).includes(k);
@@ -20,5 +20,6 @@ export default async function LookupPage({ params }: PageProps<"/settings/lists/
   await requirePagePermission("app.settings");
   const { kind } = await params;
   if (!isKind(kind)) notFound();
-  return <LookupEditor kind={kind} rows={await lookupsForEdit(kind)} />;
+  const [rows, selects] = await Promise.all([lookupsForEdit(kind), lookupSelects(kind)]);
+  return <LookupEditor kind={kind} rows={rows} selects={selects} />;
 }

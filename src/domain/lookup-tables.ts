@@ -17,6 +17,7 @@ export const LOOKUP_KINDS = [
   "professions",
   "contact-tags",
   "container-types",
+  "box-owners",
   "port-regions",
 ] as const;
 export type LookupKind = (typeof LOOKUP_KINDS)[number];

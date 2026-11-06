@@ -8,7 +8,6 @@ import { readFileHintsForEdit } from "@/server/file-config";
 import { readPaymentTermsForEdit } from "@/server/accounting-config";
 import { readActivityRulesForEdit } from "@/server/activity-config";
 import { readBooksForEdit } from "@/server/books-config";
-import { readBoxOwnersForEdit, readContainerSpecsForEdit } from "@/server/container-config";
 import { readHsCodesForEdit } from "@/server/goods-config";
 import { readLoadingGraceForEdit, readLoadingModesForEdit } from "@/server/loading-config";
 import {
@@ -41,13 +40,6 @@ export async function accountingSettingsForEdit() {
     readChartForEdit(),
   ]);
   return { terms, books, bank, rules, sequences: seq, chart };
-}
-
-/** The container specs and the box owners, for Settings › Containers. */
-export async function containerTablesForEdit() {
-  await requirePermission("app.settings");
-  const [specs, owners] = await Promise.all([readContainerSpecsForEdit(), readBoxOwnersForEdit()]);
-  return { specs, owners };
 }
 
 /** The VAT and EORI formats per country, for Settings › Number formats. */

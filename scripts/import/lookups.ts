@@ -29,6 +29,7 @@ const TABLES: Record<LookupKind, LookupTable> = {
   professions: schema.professions as unknown as LookupTable,
   "contact-tags": schema.tagList as unknown as LookupTable,
   "container-types": schema.containerTypes as unknown as LookupTable,
+  "box-owners": schema.boxOwners as unknown as LookupTable,
   "port-regions": schema.portRegions as unknown as LookupTable,
 };
 export const LEGACY_LOOKUP_LISTS: Record<string, LookupKind> = {
