@@ -53,12 +53,15 @@ export function loadingRows(
 export const copyGaps = (b: CopyBooking, box: CopyBox, boxCount: number) =>
   truckerCopyGaps({ ...b, boxCount }, box);
 
-/** The box as the driver needs it: its type and what is inside, by name — no weights, no seal. */
+/**
+ * The box as the driver needs it: its type and what is inside, in one line — the booking's
+ * commodity words, else the goods lines by name; no codes beside them, no weights, no seal.
+ */
 export function truckerBoxRows(b: CopyBooking, box: CopyBox): Row[] {
+  const goods = box.hsLines.map((l) => l.description ?? l.code).join("\n");
   return [
     ["Type", box.type],
-    ["Commodity", dash(b.commodity)],
-    ...box.hsLines.map((l): Row => [`HS ${l.code}`, dash(l.description)]),
+    ["Commodity", dash(b.commodity ?? goods)],
   ];
 }
 

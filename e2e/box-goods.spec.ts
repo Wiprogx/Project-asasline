@@ -49,11 +49,12 @@ test("the goods of a box are weight and packages per HS code, and the VGM follow
   ).toBeVisible();
   await expect(page.getByText("660 Bales + Cartons")).toBeVisible();
   await expect(page.getByText("620 BALES OF WORN CLOTHING")).toBeVisible();
-  // The trucker copy names the goods, never their weights, packages, tare or seal.
+  // The trucker copy names the goods once, as the commodity — no HS rows beside it, never
+  // their weights, packages, tare or seal.
   await page.goto(`/print/bookings/${id}/trucker`);
-  await expect(page.getByText("HS 630900")).toBeVisible();
+  await expect(page.getByText("Commodity", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Worn clothing and other worn articles/)).toHaveCount(1);
   await expect(
-    page.getByText("Worn clothing and other worn articles", { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText(/^(Cargo weight|Tare|Seal|VGM|Packages)$|12,000 kg/)).toHaveCount(0);
+    page.getByText(/^(Cargo weight|Tare|Seal|VGM|Packages|HS 630900)$|12,000 kg/),
+  ).toHaveCount(0);
 });

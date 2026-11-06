@@ -125,7 +125,12 @@ describe("the copies", () => {
         ],
       }),
     );
-    expect(trucker).toEqual({ Type: "40HC", Commodity: "—", "HS 630900": "Worn clothing" });
+    expect(trucker).toEqual({ Type: "40HC", Commodity: "Worn clothing" });
+    expect(
+      Object.fromEntries(truckerBoxRows({ ...booking, commodity: "Used clothing" }, box))[
+        "Commodity"
+      ],
+    ).toBe("Used clothing");
     // the second box inherits nothing from the first, not even the booking's date
     expect(copyGaps(booking, bare(null), 2)).toEqual([
       "loading address",
